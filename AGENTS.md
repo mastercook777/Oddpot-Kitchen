@@ -25,3 +25,13 @@ The current executable prototype is **v0.3**. Read `docs/GDD_v0.3_PROTOTYPE.md` 
 - For visual fixes, inspect on representative 390×844 and 375×667 viewports; check 320×568 small phone where practical.
 - Test at least one path from ingredient pickup → new recipe → menu selection → completed restaurant service → report. Avoid menu-only static demonstrations.
 - Preserve test evidence and note deviations from the design contract in docs.
+
+
+## v0.4 boundaries (2026-10-09)
+- See `docs/GDD_v0.4_PLAYABLE.md` for explicitly delivered behaviors and caveats.
+- Do NOT replace lightweight real-time exploration with tile clicking or pretend static hazard squares are enemy AI.
+- Do NOT pick all tonight's menu items before guests arrive: actual arrivals determine recipes, so intermission swaps matter.
+- Service event / swap / emergency prep is a mutually exclusive intermission decision; no double transactions.
+- Preserve keyboard accessibility and touch joystick, save-before-background, and no scrollable body on iPhone.
+- Canvas is presentation, while engine owns deterministic settlement, cost and stock.
+- v0.4 remains subject to user validation, avoid claiming full Kairosoft-style simulation.
