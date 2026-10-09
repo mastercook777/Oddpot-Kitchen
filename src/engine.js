@@ -10,7 +10,12 @@ export function save(s){try{localStorage.setItem(SAVE_KEY,JSON.stringify(s))}cat
 export function load(){try{
 const s=JSON.parse(localStorage.getItem(SAVE_KEY));
 if(s?.version!==1||!PHASES.includes(s.phase))return null;
-if(s.service){s.service.paused ??= true;s.service.breakAt ??= 0;s.service.breakUsed ??= false;s.service.breakSeen ??= [];s.service.events ??= [];}
+if(s.service){s.service.paused ??= true;s.service.breakAt ??= 0;s.service.breakUsed ??= false;s.service.breakSeen ??= [];s.service.events ??= [];
+ // v0.1 浏览器存档尚无固定桌位，按当前等餐顺序温和迁移。
+ const active=s.service.orders.filter(o=>['queued','cooking'].includes(o.status));
+ const taken=new Set(active.map(o=>o.tableId).filter(x=>x!==undefined));
+ for(const o of active){if(o.tableId==null){const n=[0,1].find(i=>!taken.has(i));if(n!==undefined){o.tableId=n;taken.add(n)}}}
+ }
 if(s.cook)s.cook.flame ??= 0;
 return s;
 }catch{return null}}
