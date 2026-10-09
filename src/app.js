@@ -1,6 +1,6 @@
-import {ING,RECIPES,FORECAST,ROUTES,CUSTOMERS} from './data.js';
-import {restaurantScene} from './diner.js';
-import {PHASES,newGame,save,load,today,enterField,collectNode,settleField,skipField,purchase,startCook,moveTile,beat,finishCook,synergyFor,canMenu,prepDish,createService,tick,expedite,markManual,closeService,nextPhase,advanceDay,buyUpgrade,canUse,setServicePaused,resumeBreak,breakPrep,setFlame,tossWok,previewHeat} from './engine.js';
+import {ING,RECIPES,FORECAST,ROUTES,CUSTOMERS} from './data.js?v=0.2.1';
+import {restaurantScene} from './diner.js?v=0.2.1';
+import {PHASES,newGame,save,load,today,enterField,collectNode,settleField,skipField,purchase,startCook,moveTile,beat,finishCook,synergyFor,canMenu,prepDish,createService,tick,expedite,markManual,closeService,nextPhase,advanceDay,buyUpgrade,canUse,setServicePaused,resumeBreak,breakPrep,setFlame,tossWok,previewHeat} from './engine.js?v=0.2.1';
 let game=load()||newGame();let message='欢迎来到怪味食堂！先观察今晚的客人。';let tileSelected=null;let dragFrom=null;let selectedOrderId=null;let selectedStation=null;const app=document.querySelector('#app');
 const clean=s=>String(s).replaceAll('&','&amp;').replaceAll('<','&lt;').replaceAll('>','&gt;').replaceAll('"','&quot;');
 const btn=(action,label,disabled=false,cls='')=>`<button class="button ${cls}" data-act="${action}" ${disabled?'disabled':''}>${label}</button>`;
