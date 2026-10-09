@@ -1,4 +1,4 @@
-import {CUSTOMERS, RECIPES} from './data.js';
+import {CUSTOMERS, RECIPES} from './data.js?v=0.2.1';
 
 // A scene presentation, never a separate restaurant simulation. Every occupied chair,
 // kitchen flame and order bubble reads from the shared deterministic service state.
