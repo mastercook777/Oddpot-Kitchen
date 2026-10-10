@@ -1,0 +1,16 @@
+/* v0.5C: two-seat diner stage, legible scenario and single-action HUD */
+.diner-table.two-seat{position:relative;overflow:visible}
+.diner-table.two-seat .little-human,.diner-table.two-seat .speech{display:none!important}
+.diner-table.two-seat .wood-table{background:transparent!important;box-shadow:none!important;color:transparent!important}
+.diner-table.two-seat .wood-table span{display:none!important}
+.diner-seat-marker{position:absolute;z-index:4;top:5%;width:27px;height:29px;display:flex;align-items:center;justify-content:center;border:1px solid #e1c69188;border-radius:9px;background:#284a3ecc;color:#f6dfb0;font-weight:900;font-size:17px;pointer-events:auto}
+.diner-seat-marker.seat-0{left:9%}.diner-seat-marker.seat-1{right:9%}
+.diner-seat-marker.occupied{background:#f3d9a4;color:#37503b;border-color:#fff1c8}.diner-seat-marker.selected{box-shadow:0 0 0 3px #a0eac0}
+.diner-table.two-seat .seat-label{font-size:12px!important;line-height:1.2!important;white-space:nowrap!important;max-width:96%!important}
+.service-day-brief{display:flex;align-items:center;gap:7px;justify-content:space-between;background:#d5b777;color:#2d4336;border-radius:8px;padding:6px 8px;font-size:12px;line-height:1.25;min-height:29px}
+.service-day-brief b{font-size:13px;white-space:nowrap}.service-day-brief span{text-align:right;font-size:12px}
+.service-goal-label{overflow:hidden;text-overflow:ellipsis;white-space:nowrap;max-width:40%;font-size:11px;color:#ffebad;flex-shrink:1}
+.daily-goal-result{display:flex;flex-direction:column;gap:4px;margin:6px 0;padding:8px 10px;border-radius:8px;border:1px solid #b3c88a;background:#264e39;color:#fbe5b7;font-size:13px}
+.daily-goal-result b{font-size:14px}.daily-goal-result span{color:#f2dfab}
+@media(max-width:355px){.service-day-brief{padding:4px 6px;gap:4px;font-size:11px}.service-day-brief span{font-size:11px}.service-goal-label{max-width:37%;font-size:10px}}
+@media(max-height:650px){.service-day-brief{min-height:23px;padding:3px 6px}.service-day-brief span{font-size:11px}}
