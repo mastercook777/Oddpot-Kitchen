@@ -40,3 +40,33 @@
 .action-forest .field-event{z-index:11}.diner-world .little-human,.diner-world .cook-avatar>span{visibility:hidden}
 .diner-world .cook-avatar{pointer-events:none}.diner-world .diner-tables .diner-table{background:transparent}
 @media(max-width:355px){.field-touch-tip{font-size:10px;flex:0.75}.field-buttons .game-btn{font-size:10px;padding:5px}.floating-joystick{width:114px;height:114px}}
+
+/* v0.4.2: functional prep overlay, camera readability, and two-region selector */
+.stage.prep .diner-world,.stage.upgrade .diner-world{pointer-events:none}
+.prep-card,.upgrade-card{z-index:6;pointer-events:auto;max-height:78%;overflow-y:auto;overscroll-behavior:contain;touch-action:pan-y}
+.prep-card .prep-item,.upgrade-card .game-btn{position:relative;z-index:7;pointer-events:auto;min-height:45px}
+.region-tabs{position:absolute;z-index:4;top:34%;left:8%;right:8%;display:flex;gap:8px}
+.region-tabs button{flex:1;padding:9px 5px;border-radius:9px;border:2px solid #b8a479;background:#375746;color:#f2e4bb;font-weight:850}
+.region-tabs button.current{background:#e4ba77;color:#362f24;border-color:#fff0b8}
+.route-scene .route-options{top:50%;bottom:auto}
+.service-scene .scene-float.service-compact{top:1%;left:9px;right:9px;padding:5px 9px;pointer-events:none;background:#19382fdc;border-width:1px}
+.service-scene .service-compact .scene-tag{flex-direction:row;align-items:center;justify-content:space-between;gap:8px}
+.service-scene .service-compact .scene-tag strong{font-size:11px;white-space:nowrap}
+.service-scene .service-compact .scene-tag small{font-size:10px;white-space:nowrap}
+.service-scene .service-event{bottom:2%;left:12%;right:12%;pointer-events:none;font-size:10px;padding:5px}
+.service-scene .management-card{top:auto;bottom:2%;transform:none;max-height:39%;overflow-y:auto;overscroll-behavior:contain;padding:7px 10px;box-shadow:0 3px 12px #0f2b2077}
+.service-scene .management-card strong{font-size:13px}
+.service-scene .management-card p{font-size:10px;margin:3px 0}
+.service-scene .management-card>button{padding:6px;min-height:30px;margin:2px 0}
+.service-scene .selected-guest{display:none}
+.diner-world .diner-table .speech{font-size:10px;top:5%;padding:3px 5px;max-width:95%}
+.diner-world .diner-table .seat-label{bottom:17%;font-size:9px}
+.diner-world .diner-tables{top:46%;height:27%;z-index:3}
+.diner-world .diner-station{max-height:38px;font-size:10px}
+@media(max-height:650px){.service-scene .management-card{max-height:46%}.region-tabs{top:33%}.route-scene .route-options{top:48%}}
+
+/* Restaurant hit regions line up with the zoomed-out world rather than covering guests. */
+.service-scene .diner-kitchen{top:21%;height:13%}
+.diner-world .diner-station{align-self:center}
+.diner-world .diner-table .speech{top:65%;font-size:10px;max-width:92%;padding:3px 5px;box-shadow:0 2px #0003}
+.diner-world .diner-table .seat-label{bottom:12%}

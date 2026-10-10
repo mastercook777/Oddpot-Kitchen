@@ -1,7 +1,7 @@
 # Oddpot Kitchen — Agent / Codex instructions
 
 ## Goal and source precedence
-The current executable prototype is **v0.3**. Read `docs/GDD_v0.3_PROTOTYPE.md` first for changes explicitly authorized by the player; then read `docs/SOURCES.md` for the original v0.2 GDD and Codex handoff. v0.3 overrides the *number of ingredients/recipes* and *default manual cooking in the restaurant*, not the original accounting / challenge invariants.
+The current executable prototype is **v0.4.2**. Read `docs/GDD_v0.4.2_PLAYABLE.md` first, then `docs/GDD_v0.4_PLAYABLE.md` and `docs/GDD_v0.3_PROTOTYPE.md` for changes explicitly authorized by the player; then read `docs/SOURCES.md` for the original v0.2 GDD and Codex handoff. v0.3 experiments override the *number of ingredients/recipes* and *default manual cooking in the restaurant*, not the original accounting / challenge invariants.
 
 ## Do not destroy the working prototype
 - The `prototype/v0.2-baseline` branch preserves the previous approach.
@@ -36,10 +36,18 @@ The current executable prototype is **v0.3**. Read `docs/GDD_v0.3_PROTOTYPE.md` 
 - Canvas is presentation, while engine owns deterministic settlement, cost and stock.
 - v0.4 remains subject to user validation, avoid claiming full Kairosoft-style simulation.
 
-## v0.4.1 input and graphics
+## v0.4.2 input and graphics
 
 - `src/controls_v041.js`: single source for analog dead-zone and radius mapping. Do not reintroduce fixed bottom-left controls.
 - `src/pixels_v041.js`: reusable low-resolution original sprite primitives; scene animations only read authoritative engine combat/order flags.
 - `src/field_v04.js`: preserve deterministic damage/reward events; visual timers cannot grant loot or alter economics.
 - Mobile controls must preserve secondary-touch skill use and `touch-action: none` on the playfield.
 - Rebuild `standalone.html` using `python scripts/build-standalone.py` after source edits.
+
+## v0.4.2 rules
+
+- Two distinct source maps with safe/risk variants; do not merge into static tile-path clicking.
+- Backpack permanently upgrades 6→7→8 at real gold cost; full bags can discard expedition-only stacks, never persistent restaurant ingredients.
+- Intermission/service animation progress must be derived from authoritative `service.time` and frozen when paused. Never use `clock % 1` to restart enter/serve effects.
+- Prep panel must remain clickable above the diner canvas/hitmap; verify all three dishes and the open-restaurant button on 390×844, 375×667, and 320×568.
+- Keep the zoomed-out restaurant and compact labels; customers, not UI overlays, are the scene focus.
