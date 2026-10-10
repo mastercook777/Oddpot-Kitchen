@@ -1,8 +1,8 @@
-import {joystickVector} from './controls_v041.js?v=0.4.2';
-import {ING,RECIPES,FORECAST,ROUTES,CUSTOMERS} from './data.js?v=0.4.2';
-import {PHASES,newGame,save,load,today,enterField,settleField,discardFieldStack,skipField,purchase,startCook,moveTile,beat,finishCook,synergyFor,canMenu,prepDish,createService,tick,expedite,closeService,nextPhase,advanceDay,buyUpgrade,buyBagUpgrade,bagUpgradePrice,canUse,setServicePaused,resumeBreak,breakPrep,setFlame,tossWok,previewHeat,moveExplorer,interactExplorer,sootheGuest,newRecipeLead,currentServiceEvent,chooseServiceEvent,swapBreakMenu} from './engine.js?v=0.4.2';
-import {startActionField,stepActionField,useFieldSkill,resolveFieldEvent} from './field_v04.js?v=0.4.2';
-import {drawField,drawDiner} from './scenes_v04.js?v=0.4.4';
+import {joystickVector} from './controls_v041.js?v=0.4.5';
+import {ING,RECIPES,FORECAST,ROUTES,CUSTOMERS} from './data.js?v=0.4.5';
+import {PHASES,newGame,save,load,today,enterField,settleField,discardFieldStack,skipField,purchase,startCook,moveTile,beat,finishCook,synergyFor,canMenu,prepDish,createService,tick,expedite,closeService,nextPhase,advanceDay,buyUpgrade,buyBagUpgrade,bagUpgradePrice,canUse,setServicePaused,resumeBreak,breakPrep,setFlame,tossWok,previewHeat,moveExplorer,interactExplorer,sootheGuest,newRecipeLead,currentServiceEvent,chooseServiceEvent,swapBreakMenu} from './engine.js?v=0.4.5';
+import {startActionField,stepActionField,useFieldSkill,resolveFieldEvent} from './field_v04.js?v=0.4.5';
+import {drawField,drawDiner} from './scenes_v04.js?v=0.4.5';
 
 let game=load()||newGame();
 let flashUntil=0;
@@ -20,7 +20,7 @@ const meal=r=>`${r.emoji} ${r.name}`;
 const onlyName=id=>ING[id]?.name||id;
 const itemCount=()=>Object.keys(game.recipes).length;
 
-function hud(){return `<div class="hud"><div class="brand"><span class="logo" aria-hidden="true">🍳</span><div><strong>怪味食堂</strong><small>ODDPOT · v0.4.4</small></div></div><div class="hud-meta"><span aria-label="金币">🪙 ${game.coins}</span><span aria-label="声望">⭐ ${game.reputation}</span></div><button class="hud-gear" data-act="settings" aria-label="设置">⚙</button></div><div class="day-strip"><b>第 ${game.cycle} 轮 · 第 ${game.day} 天</b><span class="day-phase">${phaseLabels[game.phase]}</span><span class="day-recipes">图鉴 ${itemCount()}/${Object.keys(RECIPES).length}</span></div>`}
+function hud(){return `<div class="hud"><div class="brand"><span class="logo" aria-hidden="true">🍳</span><div><strong>怪味食堂</strong><small>ODDPOT · v0.4.5</small></div></div><div class="hud-meta"><span aria-label="金币">🪙 ${game.coins}</span><span aria-label="声望">⭐ ${game.reputation}</span></div><button class="hud-gear" data-act="settings" aria-label="设置">⚙</button></div><div class="day-strip"><b>第 ${game.cycle} 轮 · 第 ${game.day} 天</b><span class="day-phase">${phaseLabels[game.phase]}</span><span class="day-recipes">图鉴 ${itemCount()}/${Object.keys(RECIPES).length}</span></div>`}
 function toast(){return `<div class="game-toast" role="status"><span>${esc(message)}</span></div>`}
 function playablePhase(){return game.phase==='service'||(game.phase==='field'&&!!game.field?.action)}
 function sceneNotice(){return `<div class="ingame-notice" role="status" id="ingame-notice" ${performance.now()>flashUntil?'hidden':''}>${esc(message.slice(0,28))}</div>`}
@@ -48,12 +48,12 @@ function restaurantView(interactive=false){
  const table=(i)=>{
   const o=v?.orders.find(o=>o.tableId===i&&['queued','cooking'].includes(o.status));
   const recent=!o&&v?.orders.find(x=>x.tableId===i&&x.status==='served'&&v.time-x.served<=4);
-  const pct=o?Math.max(0,Math.round(100*(1-(v.time-o.arrival)/o.patience))):100;
+
   const look=o?RECIPES[o.recipeId]:recent?RECIPES[recent.recipeId]:null;
   return `<button class="diner-table ${o?'occupied':''} ${selectedOrderId===o?.id?'selected':''}" data-seat="${i}" ${interactive?'':'disabled'} aria-label="${i+1}号餐桌">
      ${o?`<div class="speech">${look?.emoji||'🍽'} <span>${o.status==='queued'?'等餐中':'制作中'}</span></div>`:recent?'<div class="speech">😋 真好吃！</div>':''}
      <span class="little-human ${o?.segment||'regular'}">${o?CUSTOMERS[o.segment]?.emoji:'·'}</span><span class="wood-table"><span>${look?.emoji||'☕'}</span></span>
-     <span class="seat-label">${i+1}号桌 ${o?o.status==='queued'?'⏳ 等待':'🍽 制作中':'空位'}</span>${o?`<span class="patience"><i style="width:${pct}%;background:${pct<35?'#e96e4e':'#b8d96e'}"></i></span>`:''}
+     <span class="seat-label">${i+1}号桌 ${o?o.status==='queued'?'⏳ 等待':'🍽 制作中':'空位'}</span>
   </button>`;
  };
  const st=type=>{const job=v?.stations[type],r=job?RECIPES[v.orders.find(o=>o.id===job.orderId)?.recipeId]:null;return `<button class="diner-station" data-station="${type}" ${interactive?'':'disabled'}><span class="station-object">${type==='WOK'?'🍳':'🍲'}</span><strong>${type==='WOK'?'炒锅':'炖锅'}</strong><small>${r?`${r.emoji} ${job.left}s`:'待命'}</small></button>`};

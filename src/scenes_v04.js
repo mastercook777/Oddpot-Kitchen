@@ -1,6 +1,6 @@
-import {pixelActor,pixelEnemy,pixelImpact} from './pixels_v041.js?v=0.4.3';
+import {pixelActor,pixelEnemy,pixelImpact} from './pixels_v041.js?v=0.4.5';
 // Lightweight procedural game graphics: original Canvas shapes, no art pack.
-import {ING,RECIPES,CUSTOMERS} from './data.js?v=0.4.3';
+import {ING,RECIPES,CUSTOMERS} from './data.js?v=0.4.5';
 const color={ink:'#24382a',leaf:'#386b43',soil:'#806044',stone:'#a6b392',cream:'#f4dfb0',gold:'#dfb873'};
 function rect(c,x,y,w,h,fill){c.fillStyle=fill;c.fillRect(x,y,w,h)}
 function circle(c,x,y,r,fill){c.fillStyle=fill;c.beginPath();c.arc(x,y,r,0,Math.PI*2);c.fill()}
@@ -53,6 +53,18 @@ export function drawField(canvas,s,clock){const size=setCanvas(canvas);if(!size|
  // Gameplay feedback lives in a short-lived DOM notice; never reserve a permanent text strip over the forest.
 }
 function guest(c,x,y,kind,time,walking=false){pixelActor(c,kind||'regular',x,y,1.4,{walk:walking?time:0});}
+// Patience indicator is drawn next to the pixel customer, not below the table.
+export function guestWaitRatio(simTime,arrival,patience){
+ const total=Math.max(1,Number(patience)||1);
+ return Math.max(0,Math.min(1,(total-Math.max(0,simTime-arrival))/total));
+}
+function waitingRing(c,x,y,ratio){
+ const pct=Math.max(0,Math.min(1,ratio));
+ circle(c,x,y,12,'#203b32dd');
+ c.strokeStyle='#819182';c.lineWidth=3;c.beginPath();c.arc(x,y,9,-Math.PI/2,3*Math.PI/2);c.stroke();
+ if(pct>0){c.strokeStyle=pct>.36?'#b4e27c':pct>.18?'#f6c563':'#f07f5b';c.lineWidth=3.5;c.lineCap='round';c.beginPath();c.arc(x,y,9,-Math.PI/2,-Math.PI/2+Math.PI*2*pct);c.stroke();}
+ circle(c,x,y,2.2,'#f2e8cd');
+}
 function dish(c,x,y,kind){circle(c,x,y,12,'#f1e5c6');circle(c,x,y,9,'#9ba288');circle(c,x-3,y-1,4,kind==='POT'?'#ca9866':'#9a5438');circle(c,x+4,y-2,3,'#d3b76b');circle(c,x+1,y+4,3,'#719b55')}
 // These pure timelines have no clock modulo. Each order animates exactly once.
 export function arrivalProgress(simTime,arrivedAt,duration=.85){return Math.max(0,Math.min(1,(simTime-arrivedAt)/duration))}
@@ -86,6 +98,7 @@ export function drawDiner(canvas,s,clock,simTime=s.service?.time??clock){const s
    const appear=arrivalProgress(t,at);
    const gy=h*.84-(h*.84-(y-51))*appear+(v?.paused||v?.breakAt?0:Math.sin(t*3+i)*.6);
    guest(c,x,gy,g.segment,t,appear<1);
+   if(o)waitingRing(c,x+25,gy-10,guestWaitRatio(t,o.arrival,o.patience));
    // The game-world table needs no tiny repeated dish text; tap a guest for details.
    if(recent){dish(c,x,y,'WOK');text(c,'好吃!',x,y-78,'#f8e1a4',12)}
   }
