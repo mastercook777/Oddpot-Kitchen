@@ -44,13 +44,15 @@ test('进入营业明确暂停，恢复才推进餐厅时间；后台暂停不�
  assert.equal(tick(s,9),false);
  assert.equal(s.service.time,initial+4);
 });
-test('两张真实桌位互斥，新客只在空出的桌位落座',()=>{
+test('两桌各有独立两座，客人不会占用同一把椅子',()=>{
  const s=newGame();s.phase='service';createService(s);
  assert.equal(s.service.orders[0].tableId,0);
  setServicePaused(s,false);
  for(let i=0;i<13;i++)tick(s);
  const active=s.service.orders.filter(o=>['queued','cooking'].includes(o.status));
- assert.equal(new Set(active.map(o=>o.tableId)).size,active.length);
+ assert.equal(new Set(active.map(o=>`${o.tableId}:${o.seatId}`)).size,active.length);
+ assert.ok(active.every(o=>[0,1].includes(o.seatId)));
+ assert.ok(active.length<=4);
  assert.ok(active.every(o=>[0,1].includes(o.tableId)));
 });
 test('两次真实波间决策，制备有成本，二次点击不刷材料',()=>{

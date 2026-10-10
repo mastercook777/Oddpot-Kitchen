@@ -1,6 +1,6 @@
-import {pixelActor,pixelEnemy,pixelImpact} from './pixels_v041.js?v=0.5.1';
+import {pixelActor,pixelEnemy,pixelImpact} from './pixels_v041.js?v=0.5.2';
 // Lightweight procedural game graphics: original Canvas shapes, no art pack.
-import {ING,RECIPES,CUSTOMERS} from './data.js?v=0.5.1';
+import {ING,RECIPES,CUSTOMERS} from './data.js?v=0.5.2';
 const color={ink:'#24382a',leaf:'#386b43',soil:'#806044',stone:'#a6b392',cream:'#f4dfb0',gold:'#dfb873'};
 function rect(c,x,y,w,h,fill){c.fillStyle=fill;c.fillRect(x,y,w,h)}
 function circle(c,x,y,r,fill){c.fillStyle=fill;c.beginPath();c.arc(x,y,r,0,Math.PI*2);c.fill()}
@@ -70,46 +70,101 @@ function dish(c,x,y,kind){circle(c,x,y,12,'#f1e5c6');circle(c,x,y,9,'#9ba288');c
 // These pure timelines have no clock modulo. Each order animates exactly once.
 export function arrivalProgress(simTime,arrivedAt,duration=.85){return Math.max(0,Math.min(1,(simTime-arrivedAt)/duration))}
 export function servingProgress(simTime,servedAt,duration=1.25){const age=simTime-servedAt;return age<0||age>=duration?null:age/duration}
-export function drawDiner(canvas,s,clock,simTime=s.service?.time??clock){const size=setCanvas(canvas);if(!size)return;const {c,w,h}=size,v=s.service;const t=v?simTime:clock;
- rect(c,0,0,w,h,'#6e5845');for(let y=0;y<h;y+=24){rect(c,0,y,w,22,y%48===0?'#765f49':'#705640');line(c,0,y,w,y,'#694d37',1)}
- // Wider camera: smaller furniture/actors leave a readable band for the HUD.
- c.save();c.translate(w*.105,h*.08);c.scale(.79,.81);
- // restaurant wall, kitchen and counter
- rect(c,0,0,w,h*.21,'#536f58');rect(c,w*.09,15,w*.32,26,'#c9a16c');text(c,'ODDPOT',w*.25,28,'#493928',13);rect(c,w*.76,7,w*.14,45,'#315d62');rect(c,w*.79,7,w*.02,45,'#b7d2ba');
- for(const [i,x] of [[0,w*.20],[1,w*.80]]){
-  rect(c,x-43,h*.24-17,86,64,'#654b35');rect(c,x-39,h*.24-13,78,56,'#aa7950');
-  const slot=s.kitchen?.slots?.[i],pot=(slot?.type||(i?'POT':'WOK'))==='POT';circle(c,x,h*.24,24,pot?'#7796a1':'#576f71');circle(c,x,h*.24,17,pot?'#3c474d':'#3a4144');if(pot){circle(c,x,h*.24-4,13,'#8aa8a9');rect(c,x-26,h*.24-6,7,11,'#cba978');rect(c,x+19,h*.24-6,7,11,'#cba978')}else{line(c,x-29,h*.24-1,x-42,h*.24-13,'#ddbc81',5)}if(slot?.level===2){circle(c,x+26,h*.24-24,8,'#f5d781');text(c,'Ⅱ',x+26,h*.24-24,'#5a4725',10)}
-  const busy=v?.stations[i?'POT':'WOK'];if(busy){for(let n=0;n<3;n++){circle(c,x-14+n*14,h*.24-22+Math.sin(t*3+n)*3,4,'#f3e0b588')}text(c,`${Math.max(0,Math.ceil(busy.left))}s`,x,h*.24+35,'#fff5d5',11)}
+// Physical restaurant set. World units are scaled together, including ALL actors.
+// Actor size, seat locations, chef throw, and waiter walk are a single visual contract.
+export const DINER_ACTOR_SCALE=1.13;
+export function seatLocation(table,seat,w,h){
+ const tx=w*(table===0?.28:.72),ty=h*.60;
+ return {x:tx+(seat===0?-33:33),y:ty-51};
+}
+export function plateFlight(simTime,servedAt,duration=1.12){
+ const age=simTime-servedAt;
+ return {progress:Math.max(0,Math.min(1,age/duration)),flying:age>=0&&age<duration,landed:age>=duration};
+}
+function lerp(a,b,t){return a+(b-a)*t}
+function smooth(t){const p=Math.max(0,Math.min(1,t));return p*p*(3-2*p)}
+function walkGuest(c,order,v,t,w,h){
+ const slot=seatLocation(order.tableId,order.seatId??0,w,h);
+ const arrival=v.events.find(e=>e.type==='arrived'&&e.order===order.id)?.t??order.arrival;
+ const age=t-arrival,enter=smooth(age/1.8);
+ // Walk up the aisle, then to the actual chair; never cut through table centers.
+ const start={x:w*.5,y:h*.92};const aisle={x:w*.5,y:h*.72};
+ let x,y;
+ if(enter<.55){x=start.x;y=lerp(start.y,aisle.y,smooth(enter/.55));}
+ else {x=lerp(aisle.x,slot.x,smooth((enter-.55)/.45));y=lerp(aisle.y,slot.y,smooth((enter-.55)/.45));}
+ if(order.status==='served'&&order.served!==null&&t-order.served>=2.25){
+  const out=smooth((t-order.served-2.25)/1.5);x=lerp(slot.x,start.x,out);y=lerp(slot.y,start.y,out);
+  if(t-order.served>3.85)return;
  }
- rect(c,w*.12,h*.43,w*.76,17,'#6f4d33');rect(c,w*.12,h*.43,w*.76,7,'#d3a66d');
- // Actual team members walk to work areas. Their effect is in engine rules;
- // this visual follows the same hired snapshot used to calculate service.
- const team=v?.crew||s.crew||{},helper=team.helper,waiter=team.waiter;
- if(helper?.hired){const sx=helper.station===1?w*.76:w*.24;const busy=!!v?.stations[helper.station===1?'POT':'WOK'];pixelActor(c,'helper',sx+32,h*.34+(busy?Math.sin(t*3)*1.3:0),1.12,{walk:busy&&!v?.paused&&!v?.breakAt?t:0,attack:busy&&!v?.paused&&!v?.breakAt});}
- if(waiter?.hired){const customers=(v?.orders||[]).filter(o=>['queued','cooking'].includes(o.status));const atTable=customers.length>0,fromX=w*.50,toX=customers[0]?.tableId?w*.76:w*.24;const move=atTable&&!v?.paused&&!v?.breakAt;const wx=move?w*.5+(toX-w*.5)*(.5+.5*Math.sin(t*.7)):fromX;pixelActor(c,'waiter',wx,h*.50,1.1,{walk:move?t:0});}
- // A pixel-art chef animates continuously even between discrete order ticks.
- chef(c,w*.5+Math.sin(t*1.8)*3,h*.35+Math.sin(t*3),t,{scale:1.65,walk:!!v&&!v.paused&&!v.breakAt,attack:!!(v?.stations.WOK||v?.stations.POT)&&!v.paused&&!v.breakAt});
- for(const evt of (v?.events||[]).filter(e=>e.type==='served'&&servingProgress(t,e.t)!==null)){
-  const order=v.orders.find(o=>o.id===evt.order);if(!order||order.tableId==null)continue;
-  const r=servingProgress(t,evt.t),endX=order.tableId?w*.75:w*.25;
-  if(r<1) dish(c,w*.5+(endX-w*.5)*r,h*.45+(h*.65-h*.45)*r,'WOK');
- }
+ pixelActor(c,order.segment,x,y,DINER_ACTOR_SCALE,{walk:enter<.98?t:0});
+ if(['queued','cooking'].includes(order.status))waitingRing(c,x+20,y-15,guestWaitRatio(t,order.arrival,order.patience));
+}
+function paintDinerStaff(c,s,v,t,w,h){
+ const staff=v?.crew||s.crew||{};
+ const jobs=v?.stations||{};
+ const recentThrow=(v?.events||[]).slice().reverse().find(e=>e.type==='served'&&plateFlight(t,e.t).flying);
  for(let i=0;i<2;i++){
-  const x=i?w*.75:w*.25,y=h*.60;
-  circle(c,x,y+8,52,'#5b392b88');circle(c,x,y,46,'#674936');circle(c,x,y-5,41,'#c0905d');
-  const o=v?.orders.find(o=>o.tableId===i&&['queued','cooking'].includes(o.status));
-  const recent=!o&&v?.orders.find(o=>o.tableId===i&&o.status==='served'&&t-o.served<=4.5);
-  if(o||recent){const g=o||recent;
-   const events=v?.events?.filter(e=>e.order===g.id&&e.type==='arrived')||[];const at=events[0]?.t??v?.time??0;
-   const appear=arrivalProgress(t,at);
-   const gy=h*.84-(h*.84-(y-51))*appear+(v?.paused||v?.breakAt?0:Math.sin(t*3+i)*.6);
-   guest(c,x,gy,g.segment,t,appear<1);
-   if(o)waitingRing(c,x+(i?25:25),gy-10,guestWaitRatio(t,o.arrival,o.patience));
-   // The game-world table needs no tiny repeated dish text; tap a guest for details.
-   if(recent){dish(c,x,y,'WOK');text(c,'好吃!',x,y-78,'#f8e1a4',12)}
+  const x=w*(i===0?.21:.79),active=!!jobs[i===0?'WOK':'POT'];
+  if(staff.helper?.hired&&staff.helper.station===i){
+   pixelActor(c,'helper',x+(i===0?35:-35),h*.345,DINER_ACTOR_SCALE,{walk:active?t:0,attack:active});
   }
  }
- // Event result is surfaced in the transient HUD notice, not across customer sprites.
+ // Waiter walks only along open aisles, stopping OUTSIDE the chairs.
+ if(staff.waiter?.hired){
+  const latest=[...(v?.events||[])].reverse().find(e=>e.type==='arrived');
+  const customer=latest&&v.orders.find(o=>o.id===latest.order&&['queued','cooking'].includes(o.status));
+  const start={x:w*.5+20,y:h*.80};let x=start.x,y=start.y,walk=0;
+  if(customer){const target={x:customer.tableId===0?w*.43:w*.57,y:h*.68};
+   const a=smooth((t-latest.t)/1.7);x=lerp(start.x,target.x,a);y=lerp(start.y,target.y,a);if(a<.99)walk=t;}
+  pixelActor(c,'waiter',x,y,DINER_ACTOR_SCALE,{walk});
+ }
+ // Chef remains the same scale as all staff and guests. Throw animation
+ // belongs to a specific serve event, never a looping idle gesture.
+ pixelActor(c,'chef',w*.5,h*.34,DINER_ACTOR_SCALE,{attack:!!recentThrow,walk:jobs.WOK||jobs.POT?t:0});
+}
+export function drawDiner(canvas,s,clock,simTime=s.service?.time??clock){
+ const size=setCanvas(canvas);if(!size)return;
+ const {c,w,h}=size,v=s.service,t=v?simTime:clock;
+ rect(c,0,0,w,h,'#66523e');
+ for(let y=0;y<h;y+=24){rect(c,0,y,w,22,y%48===0?'#765d46':'#71563f');line(c,0,y,w,y,'#674b34',1)}
+ // A little wider than v0.5B, but without stretching character proportions.
+ c.save();c.translate(w*.095,h*.075);c.scale(.81,.82);
+ rect(c,0,0,w,h*.20,'#4c7158');rect(c,w*.1,14,w*.31,26,'#d0a56b');text(c,'ODDPOT',w*.25,28,'#48382a',13);
+ rect(c,w*.77,7,w*.13,43,'#346064');rect(c,w*.80,7,w*.018,43,'#c9dac6');
+ for(let i=0;i<2;i++){
+  const x=w*(i===0?.21:.79),slot=s.kitchen?.slots?.[i],isPot=(slot?.type||(i?'POT':'WOK'))==='POT';
+  rect(c,x-45,h*.24-16,90,62,'#694c33');rect(c,x-40,h*.24-11,80,52,'#b58457');
+  circle(c,x,h*.24,24,isPot?'#7296a0':'#576d69');circle(c,x,h*.24,17,'#3b4545');
+  if(isPot)rect(c,x-25,h*.24-4,50,6,'#8eabb0');else line(c,x-21,h*.24,x-41,h*.24-10,'#ddbc81',5);
+  if(slot?.level===2){circle(c,x+26,h*.24-23,8,'#f2d584');text(c,'Ⅱ',x+26,h*.24-23,'#564627',10)}
+  const busy=v?.stations[i===0?'WOK':'POT'];if(busy){for(let j=0;j<3;j++)circle(c,x-15+j*14,h*.24-23+Math.sin(t*2+j)*2.4,4,'#f3e1bd99');
+   text(c,`${Math.max(0,Math.ceil(busy.left))}s`,x,h*.24+37,'#fff4ce',12)}
+ }
+ rect(c,w*.14,h*.43,w*.72,17,'#6b4930');rect(c,w*.14,h*.43,w*.72,7,'#d7a96d');
+ // Two real chairs per table, with reserved physical positions.
+ for(let i=0;i<2;i++){
+  const x=w*(i===0?.28:.72),y=h*.60;
+  for(let seat=0;seat<2;seat++){const pos=seatLocation(i,seat,w,h);
+   rect(c,pos.x-13,pos.y+16,26,14,'#684931');rect(c,pos.x-10,pos.y+18,20,9,'#b68a62');}
+  circle(c,x,y+9,49,'#4b3526a8');circle(c,x,y,43,'#654a35');circle(c,x,y-5,38,'#c08b5a');
+ }
+ // Serving is one transaction but a visible plate enters only after landing.
+ const serveEvents=(v?.events||[]).filter(e=>e.type==='served');
+ for(const e of serveEvents){const o=v.orders.find(order=>order.id===e.order);if(!o||o.tableId==null)continue;
+  const progress=plateFlight(t,e.t);if(t-e.t>4.5)continue;
+  const center=w*(o.tableId===0?.28:.72),tx=center+(o.seatId===0?-13:13),ty=h*.60-9;
+  if(progress.flying){
+    const p=smooth(progress.progress),sx=w*.5,sy=h*.42;
+    const x=lerp(sx,tx,p),y=lerp(sy,ty,p)-35*4*p*(1-p);
+    circle(c,x-12*p,y+10,3,'#f5e9c17a');dish(c,x,y,RECIPES[o.recipeId]?.station||'WOK');
+  }else if(progress.landed){dish(c,tx,ty,RECIPES[o.recipeId]?.station||'WOK');}
+ }
+ // Characters are drawn in separate chair slots after table/plate geometry.
+ if(v){const occupants=v.orders.filter(o=>o.tableId!=null&&(
+   ['queued','cooking'].includes(o.status)||(o.status==='served'&&t-o.served<3.85)));
+  for(const o of occupants)walkGuest(c,o,v,t,w,h);
+ }
+ paintDinerStaff(c,s,v,t,w,h);
  rect(c,w*.45,h*.87,w*.1,h*.11,'#b98b62');rect(c,w*.47,h*.87,w*.06,h*.07,'#2b473a');
  for(const [x,y] of [[w*.12,h*.83],[w*.88,h*.82]]){rect(c,x-4,y+5,8,15,'#795436');circle(c,x,y,11,'#5d975d')}
  c.restore();

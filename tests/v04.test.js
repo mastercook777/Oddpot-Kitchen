@@ -36,10 +36,11 @@ test('forest event offers a real HP vs materials decision',()=>{
 });
 test('wave1 event appears at actual break and once-chosen change affects wave2',()=>{
  const s=service();assert.equal(s.service.breakAt,1);
- assert.equal(currentServiceEvent(s).id,'rush');
+ assert.ok(['rush','rain','market'].includes(currentServiceEvent(s).id));
  const target=s.service.orders.find(o=>o.wave===1);assert.equal(target.status,'waiting');
- assert.equal(chooseServiceEvent(s,'sign'),true);assert.equal(target.segment,'adventurer');assert.equal(target.recipeId,null);
- assert.equal(chooseServiceEvent(s,'sign'),false);
+ const choice=currentServiceEvent(s).choices.find(c=>['sign','soup'].includes(c.id))?.id;
+ assert.ok(choice);assert.equal(chooseServiceEvent(s,choice),true);assert.equal(target.segment,choice==='sign'?'adventurer':'family');assert.equal(target.recipeId,null);
+ assert.equal(chooseServiceEvent(s,choice),false);
  resumeBreak(s);tick(s,1);assert.equal(target.recipeId!==null,true);
 });
 test('intermission swap changes arriving recipes, not seated orders',()=>{

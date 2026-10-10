@@ -83,3 +83,11 @@ The current executable prototype is **v0.4.4**. Read `docs/GDD_v0.4.2_PLAYABLE.m
 - Snapshot the active crew at service creation. Helper modifies duration of the selected physical kitchen position, waiter modifies customer patience on actual arrival.
 - Report real helper seconds / waiter patience changes, subtract staff-meal ingredient costs exactly once; do not duplicate a sale or touch third-day challenge payout.
 - Keep SAVE_KEY/version-4 compatibility; migrate active v0.5A service gracefully. Run all Node tests and mobile 320px/375px/390px smoke checks after changes.
+
+## v0.5C 约束
+- Two fixed physical tables, each with two real seat indices (0,1). No two active orders may share `(tableId,seatId)`.
+- Scene actor scale must stay unified; waiters move along aisles and chef throw is event-driven, not clock modulo.
+- No displayed plated food before `plateFlight(simTime,servedAt).landed`.
+- Crowd plan, daily goal and each break event are deterministic from seed, cycle, day, reputation, saved with service state and not rerolled per UI render.
+- Daily goal reputation reward is idempotent. The per-order revenue/ingredient ledger remains authoritative.
+- Manual cooking research behavior is intentionally not redesigned here; reserve its gameplay redesign for v0.6.
