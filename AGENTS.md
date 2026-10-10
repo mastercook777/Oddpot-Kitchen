@@ -97,3 +97,7 @@ The current executable prototype is **v0.4.4**. Read `docs/GDD_v0.4.2_PLAYABLE.m
 - 顾客已 served 后仍占座至离席动画结束；实际出餐收入只在 engine 结算。
 - `serviceSupplyStatus` 只读共享库存、预制、排队订单，缺料警示不能自行扣料或改变订单。
 - 经营主题选择不能使用 `rand(key)%5`（LCG 低位与模5互相抵消）；修改后需多 seed 测试五种主题及各自客流规则。
+
+
+## v0.5E 客户行为不可破坏的约束
+顾客的完整有序链：waiting → entering → ordering → queued → cooking → flying → eating → review → served/离店；缺料/超时直接 rejected/left。必须保留事务幂等：落桌才 sale、吃完才 reviewed、同订单只结算一次；只有已落座顾客可以点单；暂停时所有行为使用营业模拟时间。透明两座位点击热区是允许的，但不允许恢复四个可见座位方块。先运行 `npm test` 再提交。

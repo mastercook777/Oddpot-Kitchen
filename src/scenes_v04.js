@@ -1,6 +1,6 @@
-import {pixelActor,pixelEnemy,pixelImpact} from './pixels_v041.js?v=0.5.3';
+import {pixelActor,pixelEnemy,pixelImpact} from './pixels_v041.js?v=0.5.4';
 // Lightweight procedural game graphics: original Canvas shapes, no art pack.
-import {ING,RECIPES,CUSTOMERS} from './data.js?v=0.5.3';
+import {ING,RECIPES,CUSTOMERS} from './data.js?v=0.5.4';
 const color={ink:'#24382a',leaf:'#386b43',soil:'#806044',stone:'#a6b392',cream:'#f4dfb0',gold:'#dfb873'};
 function rect(c,x,y,w,h,fill){c.fillStyle=fill;c.fillRect(x,y,w,h)}
 function circle(c,x,y,r,fill){c.fillStyle=fill;c.beginPath();c.arc(x,y,r,0,Math.PI*2);c.fill()}
@@ -97,45 +97,72 @@ function routePoint(points,p){
  return {x:lerp(points[i].x,points[i+1].x,smooth(t-i)),y:lerp(points[i].y,points[i+1].y,smooth(t-i))};
 }
 export function guestStagePosition(order,simTime,w,h){
- const points=guestPathPoints(order,w,h),age=simTime-order.arrival;
- const leaving=order.status==='served'&&order.served!==null&&simTime-order.served>=2.25
+ const points=guestPathPoints(order,w,h),age=simTime-(order.doorAt??order.arrival);
+ const leaving=order.status==='served'&&order.served!==null&&simTime-(order.reviewedAt??order.served)>=.65
   ||(['left','rejected'].includes(order.status)&&Number.isFinite(order.leftAt));
- if(leaving){const elapsed=order.status==='served'?simTime-order.served-2.25:simTime-order.leftAt;
-  const progress=Math.max(0,Math.min(1,elapsed/(order.status==='served'?1.6:2.5)));
+ if(leaving){const elapsed=order.status==='served'?simTime-(order.reviewedAt??order.served)-.65:simTime-order.leftAt;
+  const progress=Math.max(0,Math.min(1,elapsed/(order.status==='served'?1.55:2.5)));
   return {...routePoint(points,1-progress),moving:progress<1,visible:progress<1};}
  if(age<0)return {...points[0],moving:false,visible:false};
- const progress=Math.max(0,Math.min(1,age/1.8));
+ const progress=Math.max(0,Math.min(1,age/2));
  return {...routePoint(points,progress),moving:progress<1,visible:true};
+}
+// Review bubbles are driven by deterministic quality/fit/wait values from
+// the simulation, not random decorative phrases.
+export function guestSceneBubble(order,t){
+ if(order.status==='ordering')return {text:'我看看菜单…',kind:'choice'};
+ if(['queued','cooking'].includes(order.status))return {text:RECIPES[order.recipeId]?.name||'点单中',kind:'order'};
+ if(order.status==='eating')return {text:'',kind:'eating'};
+ if(order.status==='review'||(order.status==='served'&&t-(order.reviewedAt??0)<.9))return {text:order.reviewText||'谢谢招待！',kind:order.reviewType||'happy'};
+ return null;
+}
+function reviewBubble(c,x,y,words,kind){
+ const name=(words||'').slice(0,13),sz=kind==='order'?11:10;
+ const width=Math.min(146,Math.max(63,name.length*(sz+.3)+17));
+ const positive=['delicious','happy','choice'].includes(kind),negative=['bad','quality','late','taste'].includes(kind);
+ const bg=negative?'#ffe1d3':positive?'#e5f3d1':'#f6e8c7';
+ capsule(c,x-width/2,y-58,width,23,bg,negative?'#b77363':'#7f8b68');
+ text(c,name,x,y-46,negative?'#703c32':'#394636',sz);
+ // Tiny bubble tail toward the character.
+ c.fillStyle=bg;c.beginPath();c.moveTo(x-4,y-35);c.lineTo(x+3,y-35);c.lineTo(x,y-30);c.fill();
 }
 function walkGuest(c,order,v,t,w,h){
  const pos=guestStagePosition(order,t,w,h);if(!pos.visible)return;
- pixelActor(c,order.segment,pos.x,pos.y,DINER_ACTOR_SCALE,{walk:pos.moving?t:0});
- if(['queued','cooking'].includes(order.status)){
-  waitingRing(c,pos.x+20,pos.y-14,guestWaitRatio(t,order.arrival,order.patience));
-  // Guest's actual request stays visible while waiting. Keep it short and
-  // attached to the actor instead of hiding it in a detached menu.
-  const name=(RECIPES[order.recipeId]?.name||'点餐').slice(0,4),width=Math.max(39,name.length*12+14);
-  capsule(c,pos.x-width/2,pos.y-49,width,21,order.status==='queued'?'#fff0cfe9':'#cfefcde9','#6f6550');
-  text(c,name,pos.x,pos.y-38,'#3c4431',11);
- }
+ const eating=order.status==='eating',review=order.status==='review';
+ const bob=eating?Math.sin((t-(order.landedAt||t))*6)*1.3:review?Math.sin(t*3)*.5:0;
+ pixelActor(c,order.segment,pos.x,pos.y+bob,DINER_ACTOR_SCALE,{walk:pos.moving?t:0});
+ const bubble=guestSceneBubble(order,t);
+ if(bubble?.kind==='eating'){
+  // Small rhythmic cutlery animation, no permanent text or emoji blocks.
+  line(c,pos.x-8,pos.y-23,pos.x-4,pos.y-32,'#f3e8bc',2);
+ }else if(bubble?.text)reviewBubble(c,pos.x,pos.y-(order.seatId===1?28:0),bubble.text,bubble.kind);
+ if(['queued','cooking'].includes(order.status))waitingRing(c,pos.x+19,pos.y-14,guestWaitRatio(t,order.arrival,order.patience));
 }
-// A waiter round trip always starts AND ends in the same aisle position.
-// New arrival events never reset the current position to the doorway.
+// Every shift begins and ends at the service station. Queue interactions
+// rather than retarget a moving actor when another guest arrives.
+export function waiterJobs(v){
+ const events=(v?.events||[]).filter(e=>['seated','ordered','served'].includes(e.type));
+ let end=0;
+ return events.map(e=>{
+  const start=Math.max(e.t,end),duration=e.type==='ordered'?3.4:3.8;
+  end=start+duration;
+  return {start,end,type:e.type,table:e.table??v.orders?.find(o=>o.id===e.order)?.tableId??0};
+ });
+}
 export function waiterStagePosition(v,t,w,h){
- const home={x:w*.51,y:h*.78},block=Math.floor(Math.max(0,t)/5),cycleStart=block*5;
- const arrivals=(v?.events||[]).filter(e=>e.type==='arrived'&&e.t<=cycleStart&&e.t>cycleStart-5);
- if(block===0){arrivals.push(...(v?.events||[]).filter(e=>e.type==='arrived'&&e.t===0));}
- const ev=arrivals.at(-1);
- if(!ev)return {...home,moving:false};
- const toward=(ev.table===0?-1:1),target={x:home.x+toward*w*.075,y:h*.685};
- const local=t-cycleStart;
- const p=local<2? smooth(local/2):local<2.5?1:local<4.5?1-smooth((local-2.5)/2):0;
- return {x:lerp(home.x,target.x,p),y:lerp(home.y,target.y,p),moving:p>.001&&p<.999};
+ const home={x:w*.5,y:h*.79};
+ const job=waiterJobs(v).find(j=>t>=j.start&&t<j.end);
+ if(!job)return {...home,moving:false};
+ const a=(t-job.start)/(job.end-job.start);
+ const p=a<.43?smooth(a/.43):a>.63?1-smooth((a-.63)/.37):1;
+ const side=job.table===0?-1:1;
+ const target={x:home.x+side*w*.10,y:h*.718};
+ return {x:lerp(home.x,target.x,p),y:lerp(home.y,target.y,p),moving:p>.01&&p<.99,action:job.type};
 }
 function paintDinerStaff(c,s,v,t,w,h){
  const staff=v?.crew||s.crew||{};
  const jobs=v?.stations||{};
- const recentThrow=(v?.events||[]).slice().reverse().find(e=>e.type==='served'&&plateFlight(t,e.t).flying);
+ const recentThrow=(v?.events||[]).slice().reverse().find(e=>e.type==='throw'&&plateFlight(t,e.t,2).flying);
  for(let i=0;i<2;i++){
   const x=w*(i===0?.21:.79),active=!!jobs[i===0?'WOK':'POT'];
   if(staff.helper?.hired&&staff.helper.station===i){
@@ -170,6 +197,8 @@ export function drawDiner(canvas,s,clock,simTime=s.service?.time??clock){
   const busy=v?.stations[i===0?'WOK':'POT'];if(busy){for(let j=0;j<3;j++)circle(c,x-15+j*14,h*.24-23+Math.sin(t*2+j)*2.4,4,'#f3e1bd99');
    text(c,`${Math.max(0,Math.ceil(busy.left))}s`,x,h*.24+37,'#fff4ce',12)}
  }
+ // Cooking steam and gentle work motions remain tied to the simulation clock.
+ for(const [idx,station] of ['WOK','POT'].entries()){if(!v?.stations[station])continue;const xx=w*(idx===0?.21:.79);circle(c,xx+Math.sin(t*.65+idx)*5,h*.20-20,3,'#eed9b55c');}
  rect(c,w*.14,h*.43,w*.72,17,'#6b4930');rect(c,w*.14,h*.43,w*.72,7,'#d7a96d');
  // Two real chairs per table, with reserved physical positions.
  for(let i=0;i<2;i++){
@@ -179,19 +208,19 @@ export function drawDiner(canvas,s,clock,simTime=s.service?.time??clock){
   circle(c,x,y+9,49,'#4b3526a8');circle(c,x,y,43,'#654a35');circle(c,x,y-5,38,'#c08b5a');
  }
  // Serving is one transaction but a visible plate enters only after landing.
- const serveEvents=(v?.events||[]).filter(e=>e.type==='served');
+ const serveEvents=(v?.events||[]).filter(e=>e.type==='throw');
  for(const e of serveEvents){const o=v.orders.find(order=>order.id===e.order);if(!o||o.tableId==null)continue;
-  const progress=plateFlight(t,e.t);if(t-e.t>4.5)continue;
+  const progress=plateFlight(t,e.t,2);if(t-e.t>8)continue;
   const center=w*(o.tableId===0?.28:.72),tx=center+(o.seatId===0?-13:13),ty=h*.60-9;
   if(progress.flying){
     const p=smooth(progress.progress),sx=w*.5,sy=h*.42;
     const x=lerp(sx,tx,p),y=lerp(sy,ty,p)-35*4*p*(1-p);
     circle(c,x-12*p,y+10,3,'#f5e9c17a');dish(c,x,y,RECIPES[o.recipeId]?.station||'WOK');
-  }else if(progress.landed){dish(c,tx,ty,RECIPES[o.recipeId]?.station||'WOK');}
+  }else if(progress.landed&&(['eating','review'].includes(o.status)||(o.status==='served'&&t-(o.reviewedAt??o.served)<1.5))){dish(c,tx,ty,RECIPES[o.recipeId]?.station||'WOK');}
  }
  // Characters are drawn in separate chair slots after table/plate geometry.
  if(v){const occupants=v.orders.filter(o=>o.tableId!=null&&(
-   ['queued','cooking'].includes(o.status)||(o.status==='served'&&t-o.served<3.85)||(['left','rejected'].includes(o.status)&&Number.isFinite(o.leftAt)&&t-o.leftAt<2.5)));
+   ['entering','ordering','queued','cooking','flying','eating','review'].includes(o.status)||(o.status==='served'&&t-(o.reviewedAt??o.served)<2.2)||(['left','rejected'].includes(o.status)&&Number.isFinite(o.leftAt)&&t-o.leftAt<2.5)));
   for(const o of occupants)walkGuest(c,o,v,t,w,h);
  }
  paintDinerStaff(c,s,v,t,w,h);

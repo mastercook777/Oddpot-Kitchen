@@ -41,7 +41,7 @@ test('wave1 event appears at actual break and once-chosen change affects wave2',
  const choice=currentServiceEvent(s).choices.find(c=>['sign','soup'].includes(c.id))?.id;
  assert.ok(choice);assert.equal(chooseServiceEvent(s,choice),true);assert.equal(target.segment,choice==='sign'?'adventurer':'family');assert.equal(target.recipeId,null);
  assert.equal(chooseServiceEvent(s,choice),false);
- resumeBreak(s);tick(s,1);assert.equal(target.recipeId!==null,true);
+ resumeBreak(s);tick(s,4);assert.equal(target.recipeId!==null,true);
 });
 test('intermission swap changes arriving recipes, not seated orders',()=>{
  const s=service(), v=s.service;
@@ -51,7 +51,7 @@ test('intermission swap changes arriving recipes, not seated orders',()=>{
  assert.ok(swapBreakMenu(s,0,'chili_meat'));
  assert.notEqual(s.menu[0],old);assert.equal(seated.recipeId,original);
  assert.equal(chooseServiceEvent(s,'sign'),false);assert.equal(breakPrep(s,s.menu[0]),false);
- resumeBreak(s);tick(s,1);assert.notEqual(next.recipeId,null);
+ resumeBreak(s);tick(s,4);assert.notEqual(next.recipeId,null);
 });
 test('event expense debits once and is represented in the close-of-day P&L',()=>{
  const s=service();const before=s.coins;
