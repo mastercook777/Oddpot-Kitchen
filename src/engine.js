@@ -1,11 +1,11 @@
-import {ING,RECIPES,CUSTOMERS,FORECAST,DEFAULT_INVENTORY} from './data.js?v=0.4.1';
+import {ING,RECIPES,CUSTOMERS,FORECAST,DEFAULT_INVENTORY} from './data.js?v=0.4.2';
 export const PHASES=['forecast','field','research','menu','prep','service','report','upgrade'];
 export const SAVE_KEY='oddpot-prototype-v04'; // v0.2 兼容先前试玩存档
 const clone=x=>structuredClone(x);
 export const clamp=(n,a,b)=>Math.min(b,Math.max(a,n));
 export function rand(seed){return (Math.imul(1664525,seed>>>0)+1013904223)>>>0}
 export function uniqueAdd(ledger,id,type,extra={}){if(ledger.some(x=>x.id===id))return false;ledger.push({id,type,...extra});return true}
-export function newGame(seed=20261009){return {version:4,seed,cycle:1,day:1,phase:'forecast',coins:120,reputation:0,inventory:{...DEFAULT_INVENTORY},recipes:{chicken_stew:76,mushroom_stir:76,veg_stir:72},learned:{},tech:false,upgrade:false,selectedTarget:'chili',route:null,field:null,cook:null,menu:['chicken_stew','mushroom_stir','veg_stir'],prep:{},prepCost:0,manualCost:0,service:null,report:null,lastCook:null,ledger:[],logs:[],result:null,step:0};}
+export function newGame(seed=20261009){return {version:4,seed,cycle:1,day:1,phase:'forecast',coins:120,reputation:0,inventory:{...DEFAULT_INVENTORY},recipes:{chicken_stew:76,mushroom_stir:76,veg_stir:72},learned:{},tech:false,upgrade:false,bagSlots:6,selectedTarget:'chili',route:null,field:null,cook:null,menu:['chicken_stew','mushroom_stir','veg_stir'],prep:{},prepCost:0,manualCost:0,service:null,report:null,lastCook:null,ledger:[],logs:[],result:null,step:0};}
 export function save(s){try{localStorage.setItem(SAVE_KEY,JSON.stringify(s))}catch{}}
 export function load(){try{
 const s=JSON.parse(localStorage.getItem(SAVE_KEY));
@@ -16,6 +16,8 @@ if(s.service){s.service.paused ??= true;s.service.breakAt ??= 0;s.service.breakU
  const taken=new Set(active.map(o=>o.tableId).filter(x=>x!==undefined));
  for(const o of active){if(o.tableId==null){const n=[0,1].find(i=>!taken.has(i));if(n!==undefined){o.tableId=n;taken.add(n)}}}
  }
+s.bagSlots ??= 6;
+if(s.field)s.field.capacity ??= s.bagSlots;
 if(s.cook)s.cook.flame ??= 0;
 return s;
 }catch{return null}}
@@ -25,12 +27,13 @@ export function canUse(s,ids){return Object.entries(countIds(ids)).every(([id,n]
 export function countIds(ids){const o={};for(const id of ids)o[id]=(o[id]||0)+1;return o}
 export function consume(s,ids,txn){if(!canUse(s,ids))return false;return transact(s,txn,'consume',Object.fromEntries(Object.entries(countIds(ids)).map(([id,n])=>[id,-n]))) }
 export function nextPhase(s,phase){s.phase=phase;s.step++;return s}
-export function enterField(s,route){if(s.phase!=='field'||s.field)return false;const target=s.selectedTarget;const isRisk=route==='risk';s.route=route;const sequence=isRisk?[{type:'gather',id:target,n:2,label:'定向采集'},{type:'danger',id:'beef',n:2,label:'野牛领地'},{type:'event',id:'mushroom',n:2,label:'菌菇奇遇'}]:[{type:'gather',id:target,n:2,label:'目标采集'},{type:'gather',id:s.day===2?'chili':'mushroom',n:3,label:'林间采集'},{type:'event',id:'chicken',n:2,label:'流浪农夫'}];s.field={route,hp:3,node:0,bag:{},sequence,finished:false,...buildFieldMap(s,route,target)};return true}
+export function enterField(s,route){if(s.phase!=='field'||s.field)return false;const target=s.selectedTarget;const isRisk=route==='risk'||route==='spring_risk';if(!['safe','risk','spring_safe','spring_risk'].includes(route))return false;s.route=route;const sequence=isRisk?[{type:'gather',id:target,n:2,label:'定向采集'},{type:'danger',id:'beef',n:2,label:'野牛领地'},{type:'event',id:'mushroom',n:2,label:'菌菇奇遇'}]:[{type:'gather',id:target,n:2,label:'目标采集'},{type:'gather',id:s.day===2?'chili':'mushroom',n:3,label:'林间采集'},{type:'event',id:'chicken',n:2,label:'流浪农夫'}];s.field={route,hp:3,node:0,bag:{},capacity:s.bagSlots||6,sequence,finished:false,...buildFieldMap(s,route,target)};return true}
 export function bagCount(bag){return Object.values(bag).reduce((a,n)=>a+n,0)}
 export function collectNode(s,choice='collect'){const f=s.field;if(!f||f.finished||f.node>=f.sequence.length)return {ok:false,message:'探索已结束'};const n=f.sequence[f.node];if(choice==='skip'){f.node++;return {ok:true,message:'绕过当前节点'};}if(n.type==='danger'){const hit=rand(s.seed+s.cycle*100+s.day*10+f.node)%3===0?2:1;f.hp-=hit;if(f.hp<=0){f.finished=true;return settleField(s,'faint')} }
 if(f.bag[n.id]>=3)return {ok:false,message:'单格堆叠已满，先撤离'};
-if(Object.keys(f.bag).length>=6&&!f.bag[n.id])return {ok:false,message:'背包六格已满，先撤离'};
+if(Object.keys(f.bag).length>=(f.capacity||6)&&!f.bag[n.id])return {ok:false,message:'背包六格已满，先撤离'};
 const gain=Math.min(n.n,3-(f.bag[n.id]||0));f.bag[n.id]=(f.bag[n.id]||0)+gain;f.node++;if(f.node>=f.sequence.length)f.finished=true;return {ok:true,message:`收获 ${ING[n.id].name} ×${gain}${n.type==='danger'?' · 遭遇受伤':''}`};}
+export function discardFieldStack(s,id){const f=s.field;if(s.phase!=='field'||!f||f.settled||f.finished||!Number.isInteger(f.bag?.[id])||f.bag[id]<=0)return false;delete f.bag[id];return true}
 export function settleField(s,reason='retreat'){const f=s.field;if(!f||f.settled)return false;let items={...f.bag};if(reason==='faint')for(const id of Object.keys(items)){items[id]=Math.ceil(items[id]/2);if(items[id]===0)delete items[id]};f.settled=true;f.reason=reason;f.winnings=items;transact(s,`field-${s.cycle}-${s.day}`,'exploration',items);nextPhase(s,'research');return true}
 export function skipField(s){if(s.phase!=='field'||s.field)return false;nextPhase(s,'research');return true}
 export function purchase(s,id,n=1){if(!ING[id]||!['garlic','mushroom','cabbage','chicken','chili','onion','potato'].includes(id)||n<1||n>5)return false;const price=ING[id].cost*n;if(s.coins<price)return false;return transact(s,`buy-${s.cycle}-${s.day}-${s.step++}`,'purchase',{[id]:n},-price)}
@@ -183,20 +186,37 @@ if(won&&!s.tech){s.tech=true;uniqueAdd(s.ledger,'first-boss-reward','unlock',{te
 s.report={day:s.day,revenue,cost,profit:revenue-cost-hospitalityCost-eventExpense,hospitalityCost,eventExpense,choices:v.events.filter(e=>e.type==='management_choice'||e.type==='menu_swap'),served:served.length,left:left.length,rejected:rej.length,sat:Math.round(served.reduce((a,o)=>a+o.sat,0)/Math.max(1,served.length)),byDish,congestion:v.congestion,synergy:synergyFor(s.menu),suggested,challenge,won};s.result=won?'win':challenge?'loss':null;nextPhase(s,'report');return s.report}
 export function advanceDay(s){if(s.phase!=='upgrade')return false;const day=s.day;s.day=day===3?1:day+1;if(day===3)s.cycle++;s.phase='forecast';s.route=null;s.field=null;s.cook=null;s.report=null;s.lastCook=null;s.prep={};s.prepCost=0;s.manualCost=0;s.service=null;s.step++;return true}
 export function buyUpgrade(s){if(s.phase!=='upgrade'||s.upgrade||s.coins<60)return false;transact(s,'upgrade-wok','upgrade',{},-60);s.upgrade=true;return true}
+export function bagUpgradePrice(s){return (s.bagSlots||6)>=8?null:(s.bagSlots||6)===6?45:75}
+export function buyBagUpgrade(s){const price=bagUpgradePrice(s);if(s.phase!=='upgrade'||price===null||s.coins<price)return false;const next=(s.bagSlots||6)+1;if(!transact(s,`bag-upgrade-${next}`,'upgrade',{},-price))return false;s.bagSlots=next;return true}
 
 // v0.3 walkable, deterministic field. Each node is claimed once, and nothing
 // reaches restaurant inventory until settleField() records the unique transaction.
 export function buildFieldMap(s,route,target){
- const risky=route==='risk',seed=rand(s.seed+s.cycle*301+s.day*37+(risky?997:0));
- const extras=risky?['beef','chili','potato','chicken']:['mushroom','cabbage','onion','garlic','potato','chicken'];
+ const springs=route.startsWith('spring'),risky=route==='risk'||route==='spring_risk';
+ const seed=rand(s.seed+s.cycle*301+s.day*37+(risky?997:0)+(springs?1381:0));
+ const extras=springs?['chili','garlic','potato','beef','onion']:['mushroom','cabbage','onion','garlic','chicken','potato'];
  const bonus=extras[seed%extras.length];
- return {x:4,y:9,steps:0,worldW:9,worldH:11,visitedHazards:[],nodes:[
+ const used=new Set([target]);const pool=springs?['chili','garlic','beef','potato','onion','chicken','mushroom','cabbage']:['mushroom','cabbage','onion','garlic','chicken','potato','chili','beef'];
+ const pick=(wanted)=>{const id=(!used.has(wanted)&&wanted)||pool.find(id=>!used.has(id));used.add(id);return id};
+ // Two distinct reusable maps, not simply a recolor of the same 9x11 board.
+ const nodes=springs?[
+  {key:'target',id:target,x:2,y:8,n:2,type:'gather',claimed:false},
+  {key:'grove',id:pick(bonus),x:6,y:7,n:2,type:'gather',claimed:false},
+  {key:'branch',id:pick(risky?'beef':extras[(seed>>>9)%extras.length]),x:7,y:3,n:risky?2:1,type:risky?'danger':'gather',claimed:false},
+  {key:'cache',id:pick(extras[(seed>>>15)%extras.length]),x:3,y:2,n:1,type:'event',claimed:false}
+ ]:[
   {key:'target',id:target,x:4,y:6,n:2,type:'gather',claimed:false},
-  {key:'grove',id:bonus,x:1,y:4,n:2,type:'gather',claimed:false},
-  {key:'branch',id:risky?'beef':extras[(seed>>>9)%extras.length],x:7,y:2,n:risky?2:1,type:risky?'danger':'gather',claimed:false},
-  {key:'cache',id:extras[(seed>>>15)%extras.length],x:4,y:1,n:1,type:'event',claimed:false}
- ],obstacles:[{x:2,y:6},{x:6,y:5},{x:2,y:2},{x:6,y:8}],hazards:risky?[{x:5,y:5},{x:6,y:3}]:[{x:6,y:3}]};
+  {key:'grove',id:pick(bonus),x:1,y:4,n:2,type:'gather',claimed:false},
+  {key:'branch',id:pick(risky?'beef':extras[(seed>>>9)%extras.length]),x:7,y:2,n:risky?2:1,type:risky?'danger':'gather',claimed:false},
+  {key:'cache',id:pick(extras[(seed>>>15)%extras.length]),x:4,y:1,n:1,type:'event',claimed:false}
+ ];
+ const spots=springs?[[0,8],[8,5],[1,3],[6,9]]:[[0,6],[8,6],[2,9],[6,1]];
+ for(const [i,[x,y]] of spots.entries())nodes.push({key:`side-${i}`,id:pick(pool.find(id=>!used.has(id))),x,y,n:1,type:'gather',claimed:false});
+ return {region:springs?'spring':'forest',spawn:springs?{x:2.5,y:10.1}:{x:4.5,y:9.4},x:springs?2:4,y:9,steps:0,worldW:9,worldH:11,visitedHazards:[],nodes,
+  obstacles:springs?[{x:4,y:8},{x:5,y:5},{x:1,y:5},{x:4,y:3},{x:7,y:9}]:[{x:2,y:6},{x:6,y:5},{x:2,y:2},{x:6,y:8}],
+  hazards:springs?[{x:3,y:5},{x:6,y:4},{x:7,y:6}]:risky?[{x:5,y:5},{x:6,y:3}]:[{x:6,y:3}]};
 }
+
 export function moveExplorer(s,dx,dy){
  const f=s.field;if(s.phase!=='field'||!f||f.settled||f.finished||!Number.isInteger(dx)||!Number.isInteger(dy)||Math.abs(dx)+Math.abs(dy)!==1)return {ok:false,message:'不能移动'};
  const x=f.x+dx,y=f.y+dy;

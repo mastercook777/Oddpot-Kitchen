@@ -1,18 +1,18 @@
 // v0.4 real-time forest encounter. The underlying kitchen inventory remains
 // governed by engine.settleField; this file only mutates the expedition bag.
-import {ING} from './data.js?v=0.4.1';
-import {clamp, rand, settleField} from './engine.js?v=0.4.1';
+import {ING} from './data.js?v=0.4.2';
+import {clamp, rand, settleField} from './engine.js?v=0.4.2';
 const dist=(a,b)=>Math.hypot(a.x-b.x,a.y-b.y);
 const pushMsg=(f,message)=>{f.actionMessage=message;f.actionMessageTTL=2.7;};
 export function startActionField(s){
  const f=s.field;if(!f||f.action)return false;
- f.action=true;f.pos={x:4.5,y:9.4};f.x=f.pos.x;f.y=f.pos.y;
+ f.action=true;f.pos={...(f.spawn||{x:4.5,y:9.4})};f.x=f.pos.x;f.y=f.pos.y;
  f.elapsed=0;f.harvestProgress=0;f.harvestNode=null;f.attackCd=0;f.skillCd=0;f.damageCd=0;f.activeEvent=null;
  f.projectiles=[];f.attackFx=null;f.skillFx=0;f.hurtFx=0;f.popFx=[];f.facing={x:0,y:-1};f.moving=false;f.actionMessage='移动寻找食材。靠近目标会自动采集。';f.actionMessageTTL=4;
- f.enemies=f.route==='risk'?
+ f.enemies=(f.route==='risk'||f.route==='spring_risk')?
  [{id:'chicken',kind:'chicken',x:6.85,y:6.6,hp:3,maxHp:3,cooldown:1.5,phase:0},
   {id:'pepper',kind:'pepper',x:2,y:3.3,hp:3,maxHp:3,cooldown:2.3,phase:1}]:
- [{id:'chicken',kind:'chicken',x:7.2,y:2.9,hp:2,maxHp:2,cooldown:2.0,phase:0}];
+ [f.region==='spring'?{id:'pepper',kind:'pepper',x:6.8,y:3.3,hp:2,maxHp:2,cooldown:2.5,phase:0}:{id:'chicken',kind:'chicken',x:7.2,y:2.9,hp:2,maxHp:2,cooldown:2.0,phase:0}];
  // A target is always safely reachable before enemy engagement. Additional
  // meat from a combat-only reward sits near the high-risk side branch.
  f.nodes=f.nodes.map(n=>({...n,x:n.x+.5,y:n.y+.5,type:n.type==='danger'?'combat':n.type}));
@@ -43,6 +43,9 @@ export function stepActionField(s,axisX,axisY,dt){
  f.popFx=(f.popFx||[]).filter(x=>(x.ttl-=dt)>0);
  const len=Math.hypot(axisX,axisY), dx=len>0?axisX/len:0,dy=len>0?axisY/len:0;
  f.moving=len>.08; if(f.moving)f.facing={x:dx,y:dy};
+ // Hot springs vent on a visible, deterministic cycle. The warning pool can
+ // be crossed safely if the player pays attention; forest has no vent pulse.
+ if(f.region==='spring'&&f.hp>0){for(const vent of f.hazards){const phase=(f.elapsed+(vent.x%2)*1.7)%4.2;if(phase>3.45&&Math.hypot(f.pos.x-(vent.x+.5),f.pos.y-(vent.y+.5))<.55){hurt(s,1);break}}}
  const speed=2.8;
  if(len>.08){const px={x:f.pos.x+dx*speed*dt,y:f.pos.y};if(!blocked(f,px))f.pos.x=px.x;const py={x:f.pos.x,y:f.pos.y+dy*speed*dt};if(!blocked(f,py))f.pos.y=py.y;f.x=f.pos.x;f.y=f.pos.y;}
  let event=null;
