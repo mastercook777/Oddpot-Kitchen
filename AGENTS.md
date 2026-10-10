@@ -1,7 +1,7 @@
 # Oddpot Kitchen — Agent / Codex instructions
 
 ## Goal and source precedence
-The current executable prototype is **v0.4.2**. Read `docs/GDD_v0.4.2_PLAYABLE.md` first, then `docs/GDD_v0.4_PLAYABLE.md` and `docs/GDD_v0.3_PROTOTYPE.md` for changes explicitly authorized by the player; then read `docs/SOURCES.md` for the original v0.2 GDD and Codex handoff. v0.3 experiments override the *number of ingredients/recipes* and *default manual cooking in the restaurant*, not the original accounting / challenge invariants.
+The current executable prototype is **v0.4.4**. Read `docs/GDD_v0.4.2_PLAYABLE.md` first, then `docs/GDD_v0.4_PLAYABLE.md` and `docs/GDD_v0.3_PROTOTYPE.md` for changes explicitly authorized by the player; then read `docs/SOURCES.md` for the original v0.2 GDD and Codex handoff. v0.3 experiments override the *number of ingredients/recipes* and *default manual cooking in the restaurant*, not the original accounting / challenge invariants.
 
 ## Do not destroy the working prototype
 - The `prototype/v0.2-baseline` branch preserves the previous approach.
@@ -61,3 +61,12 @@ The current executable prototype is **v0.4.2**. Read `docs/GDD_v0.4.2_PLAYABLE.m
 - Keep scroll position for horizontal ingredient chips and long recipe/library sheets across `render()` state updates.
 - `src/mobile_ux_043.css` is part of the production layout: both `index.html` and `scripts/build-standalone.py` must include it.
 - This release is UX-only: retain existing v0.4 saves and engine settlement behavior.
+
+## v0.4.4 HUD rules
+
+- `src/hud_044.css` is required in `index.html` and standalone build. No permanent exposition banners on live field or restaurant.
+- Forest HUD should only surface HP / bag count / elapsed time; active skillet skill lives bottom-right of the **scene**, joystick stays floating where touched.
+- Second finger presses must work during the first finger's floating movement; use pointerdown, not synthetic click alone. Preserve stick visual after app render updates.
+- Restaurant HTML overlay only annotates interactive pots and seats; guest graphics, actual work and serving should stay unobstructed. Don't re-add event text across tables or the chef.
+- Short-lived HUD notifications must never mutate economy or timers; restaurant animations stay frozen on pause.
+- Check all 3 viewport sizes and click both kitchen and table targets after every HUD change.
