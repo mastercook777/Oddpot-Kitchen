@@ -91,3 +91,9 @@ The current executable prototype is **v0.4.4**. Read `docs/GDD_v0.4.2_PLAYABLE.m
 - Crowd plan, daily goal and each break event are deterministic from seed, cycle, day, reputation, saved with service state and not rerolled per UI render.
 - Daily goal reputation reward is idempotent. The per-order revenue/ingredient ledger remains authoritative.
 - Manual cooking research behavior is intentionally not redesigned here; reserve its gameplay redesign for v0.6.
+
+## v0.5D 经营状态一致性
+- 角色离席/跑堂动画由 service 时间和事件派生，不得以 modulo 或最新到店事件直接改变角色位置。
+- 顾客已 served 后仍占座至离席动画结束；实际出餐收入只在 engine 结算。
+- `serviceSupplyStatus` 只读共享库存、预制、排队订单，缺料警示不能自行扣料或改变订单。
+- 经营主题选择不能使用 `rand(key)%5`（LCG 低位与模5互相抵消）；修改后需多 seed 测试五种主题及各自客流规则。

@@ -1,0 +1,19 @@
+/* v0.5D: situational awareness without covering the dining tables. */
+.service-scene .service-mini-hud{min-height:36px;align-items:center}
+.service-operational-hud{position:absolute;z-index:5;top:52px;left:10px;right:10px;display:grid;gap:4px;pointer-events:none;font-variant-numeric:tabular-nums}
+.service-demand-line{display:flex;align-items:center;justify-content:space-between;gap:5px;background:#173b32ea;color:#f9eac5;border-radius:7px;padding:4px 9px;font-size:12px;border:1px solid #729178}
+.service-demand-line b{color:#f6ce86;white-space:nowrap;font-size:12px}
+.service-demand-line span{white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.service-goal-progress{position:relative;display:flex;justify-content:space-between;gap:6px;align-items:center;background:#243d32ec;color:#fff0c9;border:1px solid #799779;border-radius:7px;padding:4px 9px 7px;font-size:12px;overflow:hidden}
+.service-goal-progress>span,.service-goal-progress>strong{position:relative;z-index:1}
+.service-goal-progress>span{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.service-goal-progress>strong{color:#f6d68b;white-space:nowrap}
+.service-goal-progress>i{position:absolute;bottom:0;left:0;height:3px;width:var(--fill);background:#a6d686;transition:width .25s ease}
+.service-goal-progress.complete{border-color:#f0cd76;background:#3f6446}
+.service-stock-warning{background:#80392fea;color:#fff2d0;border:1px solid #ffad76;border-radius:7px;padding:5px 9px;font-size:12px;font-weight:750;line-height:1.2}
+/* Visibility and touch targets remain attached to the actual two-chair tables. */
+.service-scene .diner-seat-marker.occupied{background:#fbe5b7;color:#293b2e}
+@media(max-width:355px){.service-operational-hud{top:45px;left:5px;right:5px;gap:3px}.service-demand-line,.service-goal-progress{font-size:11px;padding-left:5px;padding-right:5px}.service-demand-line b{font-size:11px}}
+@media(max-height:650px){.service-operational-hud{top:42px;gap:2px}.service-demand-line,.service-goal-progress{padding-top:2px;padding-bottom:4px}.service-goal-progress{padding-bottom:6px}}
+
+.service-goal-celebration{border:1px solid #f5d580;background:#41684adf;border-radius:7px;padding:5px 9px;color:#ffefbd;text-align:center;font-size:12px;font-weight:850}

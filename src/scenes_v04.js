@@ -1,6 +1,6 @@
-import {pixelActor,pixelEnemy,pixelImpact} from './pixels_v041.js?v=0.5.2';
+import {pixelActor,pixelEnemy,pixelImpact} from './pixels_v041.js?v=0.5.3';
 // Lightweight procedural game graphics: original Canvas shapes, no art pack.
-import {ING,RECIPES,CUSTOMERS} from './data.js?v=0.5.2';
+import {ING,RECIPES,CUSTOMERS} from './data.js?v=0.5.3';
 const color={ink:'#24382a',leaf:'#386b43',soil:'#806044',stone:'#a6b392',cream:'#f4dfb0',gold:'#dfb873'};
 function rect(c,x,y,w,h,fill){c.fillStyle=fill;c.fillRect(x,y,w,h)}
 function circle(c,x,y,r,fill){c.fillStyle=fill;c.beginPath();c.arc(x,y,r,0,Math.PI*2);c.fill()}
@@ -83,21 +83,54 @@ export function plateFlight(simTime,servedAt,duration=1.12){
 }
 function lerp(a,b,t){return a+(b-a)*t}
 function smooth(t){const p=Math.max(0,Math.min(1,t));return p*p*(3-2*p)}
+// Deliberate lanes: entry -> center aisle -> outside table -> chair.
+// Guests traverse this route in reverse when leaving, never crossing a table.
+export function guestPathPoints(order,w,h){
+ const seat=seatLocation(order.tableId,order.seatId??0,w,h);
+ const side=(order.seatId??0)===0?-1:1;
+ const flank={x:seat.x+side*29,y:seat.y};
+ const lower={x:flank.x,y:h*.735};
+ return [{x:w*.5,y:h*.94},{x:w*.5,y:h*.735},lower,flank,seat];
+}
+function routePoint(points,p){
+ const t=Math.max(0,Math.min(.999999,p))*(points.length-1),i=Math.floor(t);
+ return {x:lerp(points[i].x,points[i+1].x,smooth(t-i)),y:lerp(points[i].y,points[i+1].y,smooth(t-i))};
+}
+export function guestStagePosition(order,simTime,w,h){
+ const points=guestPathPoints(order,w,h),age=simTime-order.arrival;
+ const leaving=order.status==='served'&&order.served!==null&&simTime-order.served>=2.25
+  ||(['left','rejected'].includes(order.status)&&Number.isFinite(order.leftAt));
+ if(leaving){const elapsed=order.status==='served'?simTime-order.served-2.25:simTime-order.leftAt;
+  const progress=Math.max(0,Math.min(1,elapsed/(order.status==='served'?1.6:2.5)));
+  return {...routePoint(points,1-progress),moving:progress<1,visible:progress<1};}
+ if(age<0)return {...points[0],moving:false,visible:false};
+ const progress=Math.max(0,Math.min(1,age/1.8));
+ return {...routePoint(points,progress),moving:progress<1,visible:true};
+}
 function walkGuest(c,order,v,t,w,h){
- const slot=seatLocation(order.tableId,order.seatId??0,w,h);
- const arrival=v.events.find(e=>e.type==='arrived'&&e.order===order.id)?.t??order.arrival;
- const age=t-arrival,enter=smooth(age/1.8);
- // Walk up the aisle, then to the actual chair; never cut through table centers.
- const start={x:w*.5,y:h*.92};const aisle={x:w*.5,y:h*.72};
- let x,y;
- if(enter<.55){x=start.x;y=lerp(start.y,aisle.y,smooth(enter/.55));}
- else {x=lerp(aisle.x,slot.x,smooth((enter-.55)/.45));y=lerp(aisle.y,slot.y,smooth((enter-.55)/.45));}
- if(order.status==='served'&&order.served!==null&&t-order.served>=2.25){
-  const out=smooth((t-order.served-2.25)/1.5);x=lerp(slot.x,start.x,out);y=lerp(slot.y,start.y,out);
-  if(t-order.served>3.85)return;
+ const pos=guestStagePosition(order,t,w,h);if(!pos.visible)return;
+ pixelActor(c,order.segment,pos.x,pos.y,DINER_ACTOR_SCALE,{walk:pos.moving?t:0});
+ if(['queued','cooking'].includes(order.status)){
+  waitingRing(c,pos.x+20,pos.y-14,guestWaitRatio(t,order.arrival,order.patience));
+  // Guest's actual request stays visible while waiting. Keep it short and
+  // attached to the actor instead of hiding it in a detached menu.
+  const name=(RECIPES[order.recipeId]?.name||'点餐').slice(0,4),width=Math.max(39,name.length*12+14);
+  capsule(c,pos.x-width/2,pos.y-49,width,21,order.status==='queued'?'#fff0cfe9':'#cfefcde9','#6f6550');
+  text(c,name,pos.x,pos.y-38,'#3c4431',11);
  }
- pixelActor(c,order.segment,x,y,DINER_ACTOR_SCALE,{walk:enter<.98?t:0});
- if(['queued','cooking'].includes(order.status))waitingRing(c,x+20,y-15,guestWaitRatio(t,order.arrival,order.patience));
+}
+// A waiter round trip always starts AND ends in the same aisle position.
+// New arrival events never reset the current position to the doorway.
+export function waiterStagePosition(v,t,w,h){
+ const home={x:w*.51,y:h*.78},block=Math.floor(Math.max(0,t)/5),cycleStart=block*5;
+ const arrivals=(v?.events||[]).filter(e=>e.type==='arrived'&&e.t<=cycleStart&&e.t>cycleStart-5);
+ if(block===0){arrivals.push(...(v?.events||[]).filter(e=>e.type==='arrived'&&e.t===0));}
+ const ev=arrivals.at(-1);
+ if(!ev)return {...home,moving:false};
+ const toward=(ev.table===0?-1:1),target={x:home.x+toward*w*.075,y:h*.685};
+ const local=t-cycleStart;
+ const p=local<2? smooth(local/2):local<2.5?1:local<4.5?1-smooth((local-2.5)/2):0;
+ return {x:lerp(home.x,target.x,p),y:lerp(home.y,target.y,p),moving:p>.001&&p<.999};
 }
 function paintDinerStaff(c,s,v,t,w,h){
  const staff=v?.crew||s.crew||{};
@@ -109,14 +142,11 @@ function paintDinerStaff(c,s,v,t,w,h){
    pixelActor(c,'helper',x+(i===0?35:-35),h*.345,DINER_ACTOR_SCALE,{walk:active?t:0,attack:active});
   }
  }
- // Waiter walks only along open aisles, stopping OUTSIDE the chairs.
+ // A deterministic, home-anchored patrol prevents the waiter teleporting
+ // between guests and keeps them outside the chair collision zone.
  if(staff.waiter?.hired){
-  const latest=[...(v?.events||[])].reverse().find(e=>e.type==='arrived');
-  const customer=latest&&v.orders.find(o=>o.id===latest.order&&['queued','cooking'].includes(o.status));
-  const start={x:w*.5+20,y:h*.80};let x=start.x,y=start.y,walk=0;
-  if(customer){const target={x:customer.tableId===0?w*.43:w*.57,y:h*.68};
-   const a=smooth((t-latest.t)/1.7);x=lerp(start.x,target.x,a);y=lerp(start.y,target.y,a);if(a<.99)walk=t;}
-  pixelActor(c,'waiter',x,y,DINER_ACTOR_SCALE,{walk});
+  const pos=waiterStagePosition(v,t,w,h);
+  pixelActor(c,'waiter',pos.x,pos.y,DINER_ACTOR_SCALE,{walk:pos.moving?t:0});
  }
  // Chef remains the same scale as all staff and guests. Throw animation
  // belongs to a specific serve event, never a looping idle gesture.
@@ -161,7 +191,7 @@ export function drawDiner(canvas,s,clock,simTime=s.service?.time??clock){
  }
  // Characters are drawn in separate chair slots after table/plate geometry.
  if(v){const occupants=v.orders.filter(o=>o.tableId!=null&&(
-   ['queued','cooking'].includes(o.status)||(o.status==='served'&&t-o.served<3.85)));
+   ['queued','cooking'].includes(o.status)||(o.status==='served'&&t-o.served<3.85)||(['left','rejected'].includes(o.status)&&Number.isFinite(o.leftAt)&&t-o.leftAt<2.5)));
   for(const o of occupants)walkGuest(c,o,v,t,w,h);
  }
  paintDinerStaff(c,s,v,t,w,h);

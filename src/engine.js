@@ -1,4 +1,4 @@
-import {ING,RECIPES,CUSTOMERS,FORECAST,DEFAULT_INVENTORY} from './data.js?v=0.5.2';
+import {ING,RECIPES,CUSTOMERS,FORECAST,DEFAULT_INVENTORY} from './data.js?v=0.5.3';
 export const PHASES=['forecast','field','research','menu','prep','service','report','upgrade'];
 export const SAVE_KEY='oddpot-prototype-v04'; // v0.2 兼容先前试玩存档
 const clone=x=>structuredClone(x);
@@ -197,9 +197,20 @@ export function selectArrivalDish(s,o){
 // v0.5C: seeded nightly scenarios. Save/restore does not reroll guests or goals.
 export function serviceDayPlan(s){
  const key=rand(s.seed+s.cycle*3109+s.day*701+Math.max(0,s.reputation)*11);
- const pressure=['街坊小聚','周末食客','冒险者晚宴','雨夜热汤','节日高峰'][key%5];
- const count=6+((key>>>5)%5)+(s.day===3?1:0); // six to eleven diners, not fixed seven
- const favorite=s.day===1?'family':s.day===2?'adventurer':'critic';
+ // The LCG multiplier is divisible by 5, so key % 5 was CONSTANT.
+ // Use mixed high bits or every night falsely advertises the same scenario.
+ const pressure=['街坊小聚','周末食客','冒险者晚宴','雨夜热汤','节日高峰'][(key>>>17)%5];
+ // Crowd labels represent different *operational pressure*, not cosmetic themes.
+ const crowdRules={
+  '街坊小聚':{min:6,spread:2,spacing:3,favorite:'regular'},
+  '周末食客':{min:8,spread:2,spacing:2,favorite:'family'},
+  '冒险者晚宴':{min:8,spread:3,spacing:1,favorite:'adventurer'},
+  '雨夜热汤':{min:6,spread:3,spacing:3,favorite:'family'},
+  '节日高峰':{min:10,spread:2,spacing:1,favorite:'adventurer'}
+ };
+ const rule=crowdRules[pressure];
+ const count=Math.min(11,rule.min+((key>>>5)%rule.spread)+(s.day===3?1:0));
+ const favorite=rule.favorite;
  const baseline=today(s).segments;
  const guests=Array.from({length:count},(_,i)=>{
   if(s.day===3&&i===count-1)return 'critic';
@@ -214,7 +225,31 @@ export function serviceDayPlan(s){
   {kind:'flavor',target:2,label:'卖出至少 2 道辛辣料理'}
  ];
  const goal=goals[(key>>>9)%goals.length];
- return {seed:key,pressure,count,guests,goal};
+ return {seed:key,pressure,count,guests,goal,arrivalSpacing:rule.spacing};
+}
+// A physical chair stays occupied until the guest has finished leaving.
+// This prevents a newly seated diner overlapping an exiting actor.
+export function seatOccupiedAt(o,t){
+ if(o.tableId===null||o.tableId===undefined)return false;
+ if(['queued','cooking'].includes(o.status))return true;
+ if(o.status==='served'&&Number.isFinite(o.served))return t-o.served<3.85;
+ if(['left','rejected'].includes(o.status)&&Number.isFinite(o.leftAt))return t-o.leftAt<2.6;
+ return false;
+}
+export function serviceSupplyStatus(s){
+ const v=s.service;if(!v)return {queued:0,cooking:0,arrived:0,shortages:[],lastProblem:null};
+ const queued=v.orders.filter(o=>o.status==='queued');
+ const stock={...s.inventory},prep={...s.prep},shortages=[];
+ for(const o of queued){const r=RECIPES[o.recipeId];if(!r)continue;
+  if((prep[o.recipeId]||0)>0){prep[o.recipeId]--;continue}
+  const need={};for(const id of r.ids)need[id]=(need[id]||0)+1;
+  const missing=Object.entries(need).filter(([id,n])=>(stock[id]||0)<n).map(([id,n])=>({id,amount:n-(stock[id]||0)}));
+  if(missing.length)shortages.push({orderId:o.id,recipeId:o.recipeId,tableId:o.tableId,seatId:o.seatId,missing});
+  else for(const [id,n] of Object.entries(need))stock[id]-=n;
+ }
+ const lastProblem=[...v.events].reverse().find(ev=>ev.type==='rejected'&&ev.reason==='食材不足'&&v.time-ev.t<=7)||null;
+ return {queued:queued.length,cooking:v.orders.filter(o=>o.status==='cooking').length,
+  arrived:v.orders.filter(o=>o.status!=='waiting').length,shortages,lastProblem};
 }
 export function tableSeatState(v,table){
  return [0,1].map(seat=>v?.orders?.find(o=>o.tableId===table&&o.seatId===seat&&['queued','cooking'].includes(o.status))||null);
@@ -234,7 +269,7 @@ export function createService(s){if(s.phase!=='service'||s.service||!kitchenHasM
   const wave=Math.min(2,Math.floor(i*3/size));
   const waveIndex=plan.guests.slice(0,i).filter((_,j)=>Math.min(2,Math.floor(j*3/size))===wave).length;
   return {id:`${s.cycle}-${s.day}-o${i}`,segment,recipeId:null,fit:0,wave,
-   arrival:wave*21+waveIndex*2,status:'waiting',patience:CUSTOMERS[segment].patience,
+   arrival:wave*21+waveIndex*plan.arrivalSpacing,status:'waiting',patience:CUSTOMERS[segment].patience,
    elapsed:0,quality:null,started:null,served:null,tableId:null,seatId:null,partySize:1};
  });
  // Pairs are formed from adjacent visitors in a wave. Their orders remain
@@ -338,8 +373,8 @@ function spawnArrivals(s){
  const v=s.service;
  for(const o of v.orders){
   if(o.status!=='waiting'||o.arrival>v.time)continue;
-  if(v.orders.filter(x=>['queued','cooking'].includes(x.status)).length>=4)continue;
-  const occupied=v.orders.filter(x=>['queued','cooking'].includes(x.status));
+  if(v.orders.filter(x=>seatOccupiedAt(x,v.time)).length>=4)continue;
+  const occupied=v.orders.filter(x=>seatOccupiedAt(x,v.time));
   // Keep party members together if a seat is available. Else seat pairs in
   // the same table, using both chairs before spilling into another table.
   const party=occupied.find(x=>x.partyId&&x.partyId===o.partyId);
@@ -352,7 +387,7 @@ function spawnArrivals(s){
   selectArrivalDish(s,o);if(o.fit<45||!o.recipeId){o.status='rejected';record(s,{type:'rejected',order:o.id,reason:'菜单不匹配'});continue}
   o.basePatience=o.patience;const bonus=v.crew?.waiter?.patience||0;
   o.patience+=bonus;v.staffStats.waiterBonus+=bonus;if(bonus)v.staffStats.waiterOrders++;
-  o.status='queued';o.tableId=table;o.seatId=seat;v.queued.push(o.id);record(s,{type:'arrived',order:o.id,table,seat});
+  o.status='queued';o.arrival=v.time;o.tableId=table;o.seatId=seat;v.queued.push(o.id);record(s,{type:'arrived',order:o.id,table,seat});
  }
 }
 
@@ -364,13 +399,16 @@ if((v.time===20||v.time===41)&&!v.breakSeen.includes(v.time)){
 }
 spawnArrivals(s);
 for(const st of ['WOK','POT']){const job=v.stations[st];if(job){v.congestion[st]++;job.left--;if(job.left<=0){v.stations[st]=null;const o=v.orders.find(x=>x.id===job.orderId);if(o.status==='cooking')finishOrder(s,o,job.quality);else record(s,{type:'waste',order:job.orderId});}}}
-for(const o of v.orders){if((o.status==='queued'||o.status==='cooking')&&v.time-o.arrival>o.patience){o.status='left';s.reputation=Math.max(-20,s.reputation-1);v.queued=v.queued.filter(id=>id!==o.id);record(s,{type:'left',order:o.id,reason:'等待超时'});}}
+for(const o of v.orders){if((o.status==='queued'||o.status==='cooking')&&v.time-o.arrival>o.patience){o.status='left';o.leftAt=v.time;s.reputation=Math.max(-20,s.reputation-1);v.queued=v.queued.filter(id=>id!==o.id);record(s,{type:'left',order:o.id,reason:'等待超时'});}}
 for(const st of ['WOK','POT']){if(v.stations[st])continue;let i=v.queued.findIndex(id=>{const o=v.orders.find(x=>x.id===id);return o&&RECIPES[o.recipeId].station===ensureKitchen(s).slots[st==='WOK'?0:1].type});if(i<0)continue;const id=v.queued.splice(i,1)[0];const o=v.orders.find(x=>x.id===id);const r=RECIPES[o.recipeId];if(o.manual){o.status='cooking';v.stations[st]={orderId:id,left:stationDuration(s,st,r,v),quality:o.manual.sellable&&o.manual.recipeId===o.recipeId?o.manual.quality:0};if(!o.manual.sellable||o.manual.recipeId!==o.recipeId){o.status='left';record(s,{type:'failed_cook',order:id})}continue;}
 if((s.prep[o.recipeId]||0)>0){s.prep[o.recipeId]--;finishOrder(s,o,s.recipes[o.recipeId]);continue;}
-if(!canUse(s,r.ids)){o.status='rejected';record(s,{type:'rejected',order:id,reason:'食材不足'});continue;}
+if(!canUse(s,r.ids)){o.status='rejected';o.leftAt=v.time;const shortage=r.ids.filter(x=>(s.inventory[x]||0)<r.ids.filter(y=>y===x).length);record(s,{type:'rejected',order:id,reason:'食材不足',recipeId:o.recipeId,missing:[...new Set(shortage)]});continue;}
 consume(s,r.ids,`service-cook-${id}`);v.cost+=materialCost(r.ids);o.status='cooking';o.started=v.time;v.stations[st]={orderId:id,left:stationDuration(s,st,r,v),quality:s.recipes[o.recipeId]||72};v.stationStats[st].count++;v.stationStats[st].secondsSaved+=Math.max(0,r.time-v.stations[st].left);const helper=v.crew?.helper;if(helper?.hired&&helper.station===(st==='WOK'?0:1)){const withoutHelper=Math.max(1,r.time-(ensureKitchen(s).slots[st==='WOK'?0:1].level-1)*2-(v.eventEffects?.[r.station]||0));v.staffStats.helperSeconds+=withoutHelper-v.stations[st].left;v.staffStats.helperOrders++;}record(s,{type:'started',order:id,station:st,cookType:r.station,level:ensureKitchen(s).slots[st==='WOK'?0:1].level});}
-if(v.orders.every(o=>['served','left','rejected'].includes(o.status))&&Object.values(v.stations).every(x=>!x)&&v.time>=44){v.done=true;break}if(v.time>=100){for(const o of v.orders)if(!['served','left','rejected'].includes(o.status)){o.status='left';record(s,{type:'left',order:o.id,reason:'营业结束'})}v.done=true;break}
-v.wave=v.time<21?0:v.time<42?1:2;}
+if(v.orders.every(o=>['served','left','rejected'].includes(o.status))&&Object.values(v.stations).every(x=>!x)&&v.time>=44){v.done=true;break}if(v.time>=100){for(const o of v.orders)if(!['served','left','rejected'].includes(o.status)){o.status='left';o.leftAt=v.time;record(s,{type:'left',order:o.id,reason:'营业结束'})}v.done=true;break}
+v.wave=v.time<21?0:v.time<42?1:2;
+ const goalNow=serviceGoalResult(v);
+ if(goalNow?.success&&!v.goalCelebrated){v.goalCelebrated=true;record(s,{type:'goal_reached',label:goalNow.label});}
+ }
 return true}
 export function challengeScore(v){const n=v.orders.length,served=v.orders.filter(o=>o.status==='served'),svc=Math.round(v.orders.reduce((x,o)=>x+(o.sat||0),0)/n),theme=Math.round(served.reduce((x,o)=>x+(RECIPES[o.recipeId].tags.some(t=>['辣','爆香'].includes(t))?100:50),0)/Math.max(n,1)),fulfillment=Math.round(100*served.length/n),judge=v.orders.find(o=>o.id===v.judgeOrderId)||v.orders[6],signature=judge?.status==='served'&&RECIPES[judge.recipeId].tags.some(t=>['辣','爆香'].includes(t))?(judge.quality||0):0;return {service:svc,theme,fulfillment,signature,score:Math.round(.4*svc+.25*theme+.2*fulfillment+.15*signature)} }
 export function closeService(s){const v=s.service;if(!v||!v.done||v.reportBuilt)return false;v.reportBuilt=true;const served=v.orders.filter(o=>o.status==='served');const left=v.orders.filter(o=>o.status==='left');const rej=v.orders.filter(o=>o.status==='rejected');const byDish={};for(const o of served){const x=byDish[o.recipeId]||{count:0,totalSat:0};x.count++;x.totalSat+=o.sat;byDish[o.recipeId]=x;}

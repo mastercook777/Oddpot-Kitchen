@@ -67,7 +67,7 @@ test('v0.5A end of service includes exact station configuration and savings for 
  assert.equal(closeService(s)!==false,true);
  assert.equal(s.report.kitchen.slots[0].type,'WOK');
  assert.equal(s.report.kitchen.slots[1].type,'WOK');
- assert.equal(s.report.kitchen.stats.WOK.count+s.report.kitchen.stats.POT.count,7);
+ assert.equal(s.report.kitchen.stats.WOK.count+s.report.kitchen.stats.POT.count,s.report.served);
  assert.equal(s.ledger.filter(x=>x.type==='sale').length,s.report.served);
 });
 
