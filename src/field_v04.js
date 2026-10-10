@@ -1,7 +1,7 @@
 // v0.4 real-time forest encounter. The underlying kitchen inventory remains
 // governed by engine.settleField; this file only mutates the expedition bag.
-import {ING} from './data.js?v=0.4.3';
-import {clamp, rand, settleField} from './engine.js?v=0.4.3';
+import {ING} from './data.js?v=0.4.5';
+import {clamp, rand, settleField} from './engine.js?v=0.4.5';
 const dist=(a,b)=>Math.hypot(a.x-b.x,a.y-b.y);
 const pushMsg=(f,message)=>{f.actionMessage=message;f.actionMessageTTL=2.7;};
 export function startActionField(s){
@@ -19,9 +19,9 @@ export function startActionField(s){
  return true;
 }
 function blocked(f,p,r=.20){return p.x<r||p.y<r||p.x>f.worldW-r||p.y>f.worldH-r||f.obstacles.some(o=>Math.abs(p.x-(o.x+.5))<.40+r&&Math.abs(p.y-(o.y+.5))<.40+r)}
-function addBag(f,id,n){if(!ING[id]||!n)return 0;const old=f.bag[id]||0;if(old>=3||(!old&&Object.keys(f.bag).length>=6))return 0;const actual=Math.min(n,3-old);f.bag[id]=old+actual;return actual}
+export function addBag(f,id,n){if(!ING[id]||!n)return 0;const old=f.bag[id]||0;const capacity=Math.max(6,Number(f.capacity)||6);if(old>=3||(!old&&Object.keys(f.bag).length>=capacity))return 0;const actual=Math.min(n,3-old);f.bag[id]=old+actual;return actual}
 function hurt(s,amount=1){const f=s.field;if(f.damageCd>0)return false;f.hp=Math.max(0,f.hp-amount);f.damageCd=1.15;f.hurtFx=.46;pushMsg(f,`受伤 -${amount}，可随时撤离保住收获。`);if(f.hp===0){f.finished=true;settleField(s,'faint')}return true}
-function gather(f,n){let gained=addBag(f,n.id,n.n);if(!gained){pushMsg(f,'背包已满：请撤离或去找另一种食材');return false}n.claimed=true;f.popFx??=[];f.popFx.push({x:n.x,y:n.y,text:`+${gained}`,ttl:.76,color:'#ffe8a3'});pushMsg(f,`采到 ${ING[n.id].name} ×${gained}${n.key==='target'?' · 今日目标已完成，可撤离！':''}`);return true}
+function gather(f,n){let gained=addBag(f,n.id,n.n);if(!gained){pushMsg(f,'背包或同类堆叠已满：可在背包中丢弃材料');return false}n.claimed=true;f.popFx??=[];f.popFx.push({x:n.x,y:n.y,text:`+${gained}`,ttl:.76,color:'#ffe8a3'});pushMsg(f,`采到 ${ING[n.id].name} ×${gained}${n.key==='target'?' · 今日目标已完成，可撤离！':''}`);return true}
 export function useFieldSkill(s){const f=s.field;if(s.phase!=='field'||!f?.action||f.skillCd>0||f.finished)return false;f.skillCd=6.5;f.skillFx=.42;let hits=0;for(const e of f.enemies){if(e.hp<=0||dist(f.pos,e)>1.85)continue; e.hp-=2;e.hurtFx=.4;f.popFx??=[];f.popFx.push({x:e.x,y:e.y,text:'-2',ttl:.72,color:'#ffeab4'});e.x=clamp(e.x+Math.sign(e.x-f.pos.x)*.65,.35,f.worldW-.35);e.y=clamp(e.y+Math.sign(e.y-f.pos.y)*.65,.35,f.worldH-.35);hits++;}pushMsg(f,hits?`锅铲震荡！击退 ${hits} 个食材怪`:'挥动锅铲，没有击中目标');return true}
 export function resolveFieldEvent(s,choice){const f=s.field;if(!f?.action||!f.activeEvent||f.finished)return false;const n=f.nodes.find(n=>n.key===f.activeEvent);if(!n||n.claimed)return false;let label='';if(choice==='trade'){
  if(!f.bag.mushroom){pushMsg(f,'没有采到蘑菇，无法交换');return false}
@@ -62,7 +62,7 @@ export function stepActionField(s,axisX,axisY,dt){
  }
  for(const p of f.projectiles){p.x+=p.vx*dt;p.y+=p.vy*dt;p.life-=dt;if(dist(f.pos,p)<.28){p.life=0;hurt(s)}}f.projectiles=f.projectiles.filter(p=>p.life>0&&!blocked(f,p,0));
  if(f.attackCd<=0){const target=f.enemies.filter(e=>e.hp>0&&dist(f.pos,e)<1.25).sort((a,b)=>dist(f.pos,a)-dist(f.pos,b))[0];if(target){f.attackCd=.72;f.attackFx={ttl:.33,duration:.33,dx:(target.x-f.pos.x)/Math.max(.001,dist(f.pos,target)),dy:(target.y-f.pos.y)/Math.max(.001,dist(f.pos,target))};f.facing={x:f.attackFx.dx,y:f.attackFx.dy};target.hp--;target.hurtFx=.31;f.popFx.push({x:target.x,y:target.y,text:'-1',ttl:.58,color:'#fef4bf'});if(target.hp<=0){target.deathFx=.27;}if(target.hp<=0){pushMsg(f,`击败${target.kind==='chicken'?'林地啄啄鸡':'香辛小精怪'}，附近可以取得新食材！`);if(target.kind==='pepper')f.nodes.push({key:'pepper-drop',x:target.x,y:target.y,id:'chili',n:1,type:'gather',claimed:false});else f.nodes.push({key:'chicken-drop',x:target.x,y:target.y,id:'chicken',n:1,type:'gather',claimed:false});event='enemy_defeated';}}}
- const nearby=f.nodes.find(n=>!n.claimed&&dist(f.pos,n)<.65&&n.type!=='combat');
+ const nearby=f.nodes.find(n=>!n.claimed&&dist(f.pos,n)<.86&&n.type!=='combat');
  if(nearby){if(nearby.type==='event'){
   f.activeEvent=nearby.key;pushMsg(f,'遇见流浪调味师：你要如何处理？');event='field_event';
  }else {
@@ -70,6 +70,6 @@ export function stepActionField(s,axisX,axisY,dt){
   f.harvestProgress+=dt;if(f.harvestProgress>=.82){if(gather(f,nearby))event='harvest';f.harvestProgress=0;f.harvestNode=null}
  }}else{f.harvestNode=null;f.harvestProgress=0;}
  // Combat side reward is claimable once nearby hostile units have been defeated.
- for(const n of f.nodes){if(n.type==='combat'&&!n.claimed&&dist(f.pos,n)<.75){const alive=f.enemies.some(e=>e.hp>0&&dist(e,n)<3);if(!alive){if(gather(f,n))event='harvest'}else if(f.actionMessageTTL<=0)pushMsg(f,'食材被怪物看守。可以战斗，也可以绕开。')}}
+ for(const n of f.nodes){if(n.type==='combat'&&!n.claimed&&dist(f.pos,n)<.90){const alive=f.enemies.some(e=>e.hp>0&&dist(e,n)<3);if(!alive){if(gather(f,n))event='harvest'}else if(f.actionMessageTTL<=0)pushMsg(f,'食材被怪物看守。可以战斗，也可以绕开。')}}
  return event;
 }
