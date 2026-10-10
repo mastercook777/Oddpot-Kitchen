@@ -1,0 +1,76 @@
+/* v0.4.4 — game-HUD focus, not more forms. This stylesheet is limited to
+   playable exploration and restaurant; business logic stays in engine. */
+:root{--hud043-cream:#fff2d6;--hud043-dark:#17372c;--hud043-edge:#c8b687}
+.stage.field:has(.action-forest),.stage.service{isolation:isolate}
+/* Removing the permanent message strip gives the world back ~32px. */
+.stage.field:has(.action-forest)~.dock,.stage.service~.dock{min-height:calc(70px + env(safe-area-inset-bottom))}
+.ingame-notice{position:absolute;top:48px;left:50%;transform:translateX(-50%);z-index:15;max-width:calc(100% - 36px);width:max-content;pointer-events:none;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;padding:8px 15px;color:#fff2d8;background:#183b30ed;border:1px solid #dabd81;border-radius:999px;font-size:13px;font-weight:800;box-shadow:0 3px 12px #061c1599;animation:noteIn .15s ease-out}
+.ingame-notice[hidden],.field-action-notice[hidden],.skill-cooldown[hidden]{display:none!important}
+@keyframes noteIn{from{opacity:0;transform:translate(-50%,-5px)}to{opacity:1;transform:translate(-50%,0)}}
+/* Foraging: one line of glanceable counters and one actual combat button. */
+.action-forest .action-hud{top:9px;left:10px;right:10px;padding:0;min-height:39px;background:none;border:0;box-shadow:none;display:flex;align-items:center;justify-content:space-between;gap:8px;flex-wrap:nowrap;pointer-events:none}
+.action-hud>*{height:38px;display:flex;align-items:center;justify-content:center;background:#15382ddf;color:#fff3d8;border:1px solid #a8b68f;border-radius:12px;box-shadow:0 2px 5px #10302766;font-weight:900;white-space:nowrap}
+.action-hud .field-hp{font-size:22px;letter-spacing:1px;min-width:94px;color:#ef8471;padding:0 8px}
+.action-hud .field-bag-chip{pointer-events:auto;min-width:93px;gap:6px;padding:0 11px;cursor:pointer;font-size:13px;font-family:inherit}
+.action-hud .field-bag-chip b{font-weight:900;color:#f9d387}
+.action-hud .field-clock{font-size:15px;min-width:52px;padding:0 8px}
+.field-action-notice{position:absolute;z-index:4;top:54px;left:50%;transform:translateX(-50%);max-width:calc(100% - 24px);padding:6px 12px;border-radius:8px;color:#fff1d2;background:#183c31de;font-size:13px;line-height:1.35;font-weight:750;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;pointer-events:none;box-shadow:0 2px 8px #15351c80}
+.action-forest .field-skill{position:absolute;z-index:10;right:14px;bottom:18px;width:78px;height:78px;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:0;overflow:hidden;background:radial-gradient(circle at 36% 24%,#e6a56b,#ad543d 67%,#7b392f);border:3px solid #ffe0a1;color:#fff5d9;border-radius:50%;box-shadow:0 4px 0 #633b2b,0 4px 15px #1524178c;touch-action:none;-webkit-tap-highlight-color:transparent}
+.action-forest .field-skill:active{transform:scale(.94);box-shadow:0 2px 0 #633b2b}
+.field-skill .skill-glyph{font-size:27px;line-height:1.0;filter:drop-shadow(0 1px #59382a)}
+.field-skill .skill-caption{font-weight:900;font-size:13px;letter-spacing:.5px;line-height:1.25}
+.field-skill .skill-cooldown{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;background:conic-gradient(#10271fc9 var(--cooldown,100%),#173b32af var(--cooldown,100%));font-size:23px;font-weight:900;color:#fff6dc;text-shadow:0 2px 2px #172d26}
+.action-forest .field-skill:disabled{opacity:.9;filter:saturate(.58)}
+.field-compact-dock{min-height:42px;height:45px;display:flex;justify-content:space-between;align-items:center;gap:10px}
+.field-compact-dock .field-touch-tip{flex:1;padding:0;color:#f6dca8;font-size:13px;font-weight:750;text-align:left}
+.field-compact-dock .game-btn{flex:none;min-height:42px;min-width:114px;font-size:13px;padding:7px 13px}
+/* Reduce preparation text; large route targets and cards remain. */
+.ux-route .route-intro h2{font-size:19px;margin:0 0 4px}.ux-route .route-intro p{font-size:13px;line-height:1.3}
+.ux-route .route-panel{gap:7px}.ux-route .ux-field-label strong{font-size:14px}
+/* Restaurant uses ONE compact status line on top of the wall. */
+.service-scene .service-mini-hud{position:absolute;z-index:4;top:9px;left:10px;right:10px;min-height:40px;display:flex;justify-content:space-between;align-items:center;gap:8px;padding:7px 13px;background:#17382de8;color:#f9ecc8;border:1px solid #bfa67b;border-radius:11px;box-shadow:0 2px 8px #162a25a8;pointer-events:none;font-size:14px;line-height:1.25}
+.service-mini-hud strong{font-size:15px;color:#ffe3a3}.service-mini-hud span{white-space:nowrap}.service-mini-hud .paused-chip{font-size:11px;color:#392e1b;background:#f7ce83;padding:3px 7px;border-radius:7px}
+/* Canvas owns objects: HTML only supplies invisible hit targets and
+   minimal, legible status on the edge of the painted objects. */
+.service-scene .diner-kitchen{top:19%;height:16%;left:8%;right:8%;pointer-events:none;align-items:end}
+.service-scene .diner-kitchen .diner-station{pointer-events:auto;background:transparent;border:none;border-radius:0;box-shadow:none;backdrop-filter:none;min-height:61px;max-height:61px;height:61px;align-self:end;justify-content:flex-end;gap:0}
+.service-scene .diner-station strong{display:inline-block;padding:4px 8px;background:#153b30dd;border:1px solid #a8ba99;border-bottom:none;border-radius:6px 6px 0 0;color:#fff0c6;font-size:12px;line-height:1.15}
+.service-scene .diner-station small{min-width:58px;display:inline-block;padding:3px 8px;background:#153b30e8;border:1px solid #a8ba99;border-radius:0 0 6px 6px;font-size:12px;color:#ffe0a8;line-height:1.15}
+.service-scene .diner-tables{top:49%;height:30%;left:5%;right:5%}
+.service-scene .diner-table .speech{display:none!important}
+.service-scene .diner-table .seat-label{bottom:7%;padding:4px 9px;border-radius:8px;color:#fff0ce;background:#183b30e9;font-size:12px;font-weight:850;line-height:1.3;text-shadow:none;max-width:92%;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.service-scene .diner-table:not(.occupied):not(.selected) .seat-label{opacity:.68;font-weight:650}
+.service-scene .diner-table .patience{bottom:0;width:70%;height:5px;border:1px solid #1b2a24;border-radius:4px}
+.service-scene .diner-world .scene-corner{display:none!important}
+.service-scene .diner-world .service-counter{background:transparent;border:0;box-shadow:none;color:transparent;pointer-events:none}
+.service-scene .diner-world .service-counter i{visibility:hidden}
+.service-scene .service-event{display:none!important}
+.service-scene .diner-kitchen .cook-avatar{display:none}
+/* Events may temporarily overlay the floor, but normal play never gets
+   a permanent blocking box. */
+.service-scene .management-card{z-index:9}
+.stage.service~.dock .dock-head{min-height:16px;max-width:100%;font-size:13px;line-height:1.3;overflow:hidden}
+.stage.service~.dock .dock-head span:first-child{min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.stage.service~.dock .action-row{min-height:49px}
+.stage.service~.dock .game-btn{min-height:48px;font-size:14px}
+@media(max-width:355px){
+ .action-hud .field-hp{font-size:19px;min-width:83px}.action-hud .field-bag-chip{min-width:82px;font-size:12px;padding:0 7px}
+ .action-hud .field-clock{min-width:46px;font-size:14px}
+ .action-forest .field-skill{width:69px;height:69px;right:9px;bottom:10px}
+ .service-scene .service-mini-hud{padding:6px 8px;font-size:12px;gap:5px}.service-mini-hud strong{font-size:13px}
+ .service-scene .diner-table .seat-label{font-size:11px;padding:3px 6px}
+ .field-compact-dock .field-touch-tip{font-size:12px}
+}
+@media(max-height:690px){
+ .action-forest .field-skill{bottom:12px}.service-scene .service-mini-hud{top:6px;min-height:34px}
+ .stage.service~.dock .game-btn{min-height:43px}
+ .stage.service~.dock .dock-head{font-size:12px}
+}
+
+/* Seat chips hug the table and never sit over the customer walking path. */
+.service-scene .diner-tables{top:47%;height:24%}
+.service-scene .diner-table .seat-label{bottom:2%}
+.service-scene .diner-table .patience{bottom:-8%;width:65%}
+.service-scene .diner-table:not(.occupied):not(.selected) .seat-label{display:none}
+/* A recipe tally is useful on the cookbook, not while fighting or watching tables. */
+.game-shell:has(.action-forest) .day-recipes,.game-shell:has(.service-scene) .day-recipes{visibility:hidden}

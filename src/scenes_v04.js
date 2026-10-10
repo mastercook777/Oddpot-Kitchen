@@ -50,9 +50,7 @@ export function drawField(canvas,s,clock){const size=setCanvas(canvas);if(!size|
  chef(c,0,Math.sin(clock*9)*(f.moving?1.5:.35),clock,{scale:1.55,walk:f.moving,attack:!!f.attackFx,face:(f.facing?.x||0)<-.15?-1:1,hurt:f.hurtFx});c.restore();
  if(f.harvestNode){const n=f.nodes.find(n=>n.key===f.harvestNode);if(n){capsule(c,n.x-.40,n.y-.49,.8,.10,'#304d39');capsule(c,n.x-.40,n.y-.49,.8*(f.harvestProgress/.82),.10,'#f3dd7e')}}
  c.restore();
- // bottom prompt is painted as part of the scene, not a scrolling paragraph.
- const txt=f.activeEvent?'调味师正在等待你的回答':f.actionMessageTTL>0?f.actionMessage:'靠近自动采集 · 接近怪物自动攻击';
- capsule(c,10,h-42,w-20,29,'#17382dcc','#9db27f');text(c,txt.slice(0,32),w/2,h-27,'#f3e9cd',11);
+ // Gameplay feedback lives in a short-lived DOM notice; never reserve a permanent text strip over the forest.
 }
 function guest(c,x,y,kind,time,walking=false){pixelActor(c,kind||'regular',x,y,1.4,{walk:walking?time:0});}
 function dish(c,x,y,kind){circle(c,x,y,12,'#f1e5c6');circle(c,x,y,9,'#9ba288');circle(c,x-3,y-1,4,kind==='POT'?'#ca9866':'#9a5438');circle(c,x+4,y-2,3,'#d3b76b');circle(c,x+1,y+4,3,'#719b55')}
@@ -88,11 +86,11 @@ export function drawDiner(canvas,s,clock,simTime=s.service?.time??clock){const s
    const appear=arrivalProgress(t,at);
    const gy=h*.84-(h*.84-(y-51))*appear+(v?.paused||v?.breakAt?0:Math.sin(t*3+i)*.6);
    guest(c,x,gy,g.segment,t,appear<1);
-   if(o){const r=RECIPES[o.recipeId];text(c,r?.name?.slice(0,6)||'点餐',x,y+12,'#fff2cc',11);}
+   // The game-world table needs no tiny repeated dish text; tap a guest for details.
    if(recent){dish(c,x,y,'WOK');text(c,'好吃!',x,y-78,'#f8e1a4',12)}
   }
  }
- if(v?.decisionFlash&&(v.breakAt||v.time-(v.decisionAt??-999)<5)){capsule(c,w*.19,h*.48,w*.62,30,'#f4dd9e','#805d39');text(c,v.decisionFlash.slice(0,18),w*.50,h*.48+15,'#493526',12)}
+ // Event result is surfaced in the transient HUD notice, not across customer sprites.
  rect(c,w*.45,h*.87,w*.1,h*.11,'#b98b62');rect(c,w*.47,h*.87,w*.06,h*.07,'#2b473a');
  for(const [x,y] of [[w*.12,h*.83],[w*.88,h*.82]]){rect(c,x-4,y+5,8,15,'#795436');circle(c,x,y,11,'#5d975d')}
  c.restore();
