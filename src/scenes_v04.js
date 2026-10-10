@@ -1,6 +1,6 @@
-import {pixelActor,pixelEnemy,pixelImpact} from './pixels_v041.js?v=0.5.0';
+import {pixelActor,pixelEnemy,pixelImpact} from './pixels_v041.js?v=0.5.1';
 // Lightweight procedural game graphics: original Canvas shapes, no art pack.
-import {ING,RECIPES,CUSTOMERS} from './data.js?v=0.5.0';
+import {ING,RECIPES,CUSTOMERS} from './data.js?v=0.5.1';
 const color={ink:'#24382a',leaf:'#386b43',soil:'#806044',stone:'#a6b392',cream:'#f4dfb0',gold:'#dfb873'};
 function rect(c,x,y,w,h,fill){c.fillStyle=fill;c.fillRect(x,y,w,h)}
 function circle(c,x,y,r,fill){c.fillStyle=fill;c.beginPath();c.arc(x,y,r,0,Math.PI*2);c.fill()}
@@ -82,6 +82,11 @@ export function drawDiner(canvas,s,clock,simTime=s.service?.time??clock){const s
   const busy=v?.stations[i?'POT':'WOK'];if(busy){for(let n=0;n<3;n++){circle(c,x-14+n*14,h*.24-22+Math.sin(t*3+n)*3,4,'#f3e0b588')}text(c,`${Math.max(0,Math.ceil(busy.left))}s`,x,h*.24+35,'#fff5d5',11)}
  }
  rect(c,w*.12,h*.43,w*.76,17,'#6f4d33');rect(c,w*.12,h*.43,w*.76,7,'#d3a66d');
+ // Actual team members walk to work areas. Their effect is in engine rules;
+ // this visual follows the same hired snapshot used to calculate service.
+ const team=v?.crew||s.crew||{},helper=team.helper,waiter=team.waiter;
+ if(helper?.hired){const sx=helper.station===1?w*.76:w*.24;const busy=!!v?.stations[helper.station===1?'POT':'WOK'];pixelActor(c,'helper',sx+32,h*.34+(busy?Math.sin(t*3)*1.3:0),1.12,{walk:busy&&!v?.paused&&!v?.breakAt?t:0,attack:busy&&!v?.paused&&!v?.breakAt});}
+ if(waiter?.hired){const customers=(v?.orders||[]).filter(o=>['queued','cooking'].includes(o.status));const atTable=customers.length>0,fromX=w*.50,toX=customers[0]?.tableId?w*.76:w*.24;const move=atTable&&!v?.paused&&!v?.breakAt;const wx=move?w*.5+(toX-w*.5)*(.5+.5*Math.sin(t*.7)):fromX;pixelActor(c,'waiter',wx,h*.50,1.1,{walk:move?t:0});}
  // A pixel-art chef animates continuously even between discrete order ticks.
  chef(c,w*.5+Math.sin(t*1.8)*3,h*.35+Math.sin(t*3),t,{scale:1.65,walk:!!v&&!v.paused&&!v.breakAt,attack:!!(v?.stations.WOK||v?.stations.POT)&&!v.paused&&!v.breakAt});
  for(const evt of (v?.events||[]).filter(e=>e.type==='served'&&servingProgress(t,e.t)!==null)){

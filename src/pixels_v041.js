@@ -3,7 +3,7 @@
 const P={outline:'#2b3334',skin:'#e4b18a',skinLight:'#f7d0a1',white:'#f5ead1',shadow:'#534b48'};
 function r(c,x,y,w,h,col){c.fillStyle=col;c.fillRect(x|0,y|0,w|0,h|0)}
 function person(c,kind,walk,attack){
- const p={chef:['#477a91','#e7d4a7','#7e4f37'],adventurer:['#4d8a66','#c59d55','#5d4630'],family:['#d67872','#f0cf79','#8a5747'],regular:['#729aba','#9bc1ce','#6c5440'],critic:['#795777','#bb9abd','#362e48']}[kind]||['#729aba','#9bc1ce','#6c5440'];
+ const p={chef:['#477a91','#e7d4a7','#7e4f37'],helper:['#d27a46','#f2d69a','#654730'],waiter:['#708d62','#dfc18e','#466251'],adventurer:['#4d8a66','#c59d55','#5d4630'],family:['#d67872','#f0cf79','#8a5747'],regular:['#729aba','#9bc1ce','#6c5440'],critic:['#795777','#bb9abd','#362e48']}[kind]||['#729aba','#9bc1ce','#6c5440'];
  const step=walk?Math.round(Math.sin(walk*13)*2):0,arm=attack? -7:Math.round(Math.sin(walk*13+2)*1);
  // Shoes, alternating leg pixels, outlined torso/arms, expressive large face.
  r(c,3,18+step,5,5,P.outline);r(c,10,18-step,5,5,P.outline);
@@ -14,8 +14,10 @@ function person(c,kind,walk,attack){
  r(c,5,11,8,8,p[1]);r(c,8,11,2,6,kind==='chef'?'#d26f52':p[0]);
  r(c,3,2,13,11,P.outline);r(c,4,3,11,9,P.skin);r(c,5,4,9,6,P.skinLight);
  r(c,5,6,2,2,P.outline);r(c,12,6,2,2,P.outline);r(c,9,9,3,1,'#9d644f');
- if(kind==='chef'){
+ if(kind==='chef'||kind==='helper'){
   r(c,2,1,15,4,P.outline);r(c,3,1,13,3,P.white);r(c,5,-4,9,6,P.outline);r(c,6,-4,7,5,P.white);r(c,8,-6,4,3,P.white);
+ }else if(kind==='waiter'){
+  r(c,2,0,14,3,'#466251');r(c,6,-2,7,3,'#ddc391');r(c,6,13,8,3,'#e9daa7');
  }else if(kind==='adventurer'){
   r(c,2,1,15,4,P.outline);r(c,4,0,12,4,p[2]);r(c,14,11,4,8,'#8c764b');
  }else if(kind==='critic'){
