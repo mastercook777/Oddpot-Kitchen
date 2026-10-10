@@ -51,3 +51,13 @@ The current executable prototype is **v0.4.2**. Read `docs/GDD_v0.4.2_PLAYABLE.m
 - Intermission/service animation progress must be derived from authoritative `service.time` and frozen when paused. Never use `clock % 1` to restart enter/serve effects.
 - Prep panel must remain clickable above the diner canvas/hitmap; verify all three dishes and the open-restaurant button on 390×844, 375×667, and 320×568.
 - Keep the zoomed-out restaurant and compact labels; customers, not UI overlays, are the scene focus.
+
+## v0.4.3 mobile UX invariants
+
+- Keep stage, toast, and dock in a fixed viewport; do not reintroduce document-body scrolling or overlapping fixed coordinate cards for route selection.
+- In `src/mobile_ux_043.css`, prefer at least 12px secondary copy, 14px primary list labels, 44px decision tap targets, distinct selected states and high contrast.
+- Test short phone 320×568 as well as 375×667 and 390×844. The three menu slots, kitchen split, and synergy need to remain visible, not clipped behind the toast.
+- Intermission four decisions must stay usable without tiny squeezed labels. Event cards must expose **all** options on short screens (or have clearly usable internal scrolling).
+- Keep scroll position for horizontal ingredient chips and long recipe/library sheets across `render()` state updates.
+- `src/mobile_ux_043.css` is part of the production layout: both `index.html` and `scripts/build-standalone.py` must include it.
+- This release is UX-only: retain existing v0.4 saves and engine settlement behavior.

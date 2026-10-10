@@ -1,6 +1,6 @@
-import {pixelActor,pixelEnemy,pixelImpact} from './pixels_v041.js?v=0.4.2';
+import {pixelActor,pixelEnemy,pixelImpact} from './pixels_v041.js?v=0.4.3';
 // Lightweight procedural game graphics: original Canvas shapes, no art pack.
-import {ING,RECIPES,CUSTOMERS} from './data.js?v=0.4.2';
+import {ING,RECIPES,CUSTOMERS} from './data.js?v=0.4.3';
 const color={ink:'#24382a',leaf:'#386b43',soil:'#806044',stone:'#a6b392',cream:'#f4dfb0',gold:'#dfb873'};
 function rect(c,x,y,w,h,fill){c.fillStyle=fill;c.fillRect(x,y,w,h)}
 function circle(c,x,y,r,fill){c.fillStyle=fill;c.beginPath();c.arc(x,y,r,0,Math.PI*2);c.fill()}
