@@ -1,6 +1,6 @@
-import {pixelActor,pixelEnemy,pixelImpact} from './pixels_v041.js?v=0.4.5';
+import {pixelActor,pixelEnemy,pixelImpact} from './pixels_v041.js?v=0.5.0';
 // Lightweight procedural game graphics: original Canvas shapes, no art pack.
-import {ING,RECIPES,CUSTOMERS} from './data.js?v=0.4.5';
+import {ING,RECIPES,CUSTOMERS} from './data.js?v=0.5.0';
 const color={ink:'#24382a',leaf:'#386b43',soil:'#806044',stone:'#a6b392',cream:'#f4dfb0',gold:'#dfb873'};
 function rect(c,x,y,w,h,fill){c.fillStyle=fill;c.fillRect(x,y,w,h)}
 function circle(c,x,y,r,fill){c.fillStyle=fill;c.beginPath();c.arc(x,y,r,0,Math.PI*2);c.fill()}
@@ -53,7 +53,8 @@ export function drawField(canvas,s,clock){const size=setCanvas(canvas);if(!size|
  // Gameplay feedback lives in a short-lived DOM notice; never reserve a permanent text strip over the forest.
 }
 function guest(c,x,y,kind,time,walking=false){pixelActor(c,kind||'regular',x,y,1.4,{walk:walking?time:0});}
-// Patience indicator is drawn next to the pixel customer, not below the table.
+// Countdown lives next to each customer instead of consuming a table-width HUD strip.
+// Derived from the same service clock and patience values used for order resolution.
 export function guestWaitRatio(simTime,arrival,patience){
  const total=Math.max(1,Number(patience)||1);
  return Math.max(0,Math.min(1,(total-Math.max(0,simTime-arrival))/total));
@@ -77,12 +78,12 @@ export function drawDiner(canvas,s,clock,simTime=s.service?.time??clock){const s
  rect(c,0,0,w,h*.21,'#536f58');rect(c,w*.09,15,w*.32,26,'#c9a16c');text(c,'ODDPOT',w*.25,28,'#493928',13);rect(c,w*.76,7,w*.14,45,'#315d62');rect(c,w*.79,7,w*.02,45,'#b7d2ba');
  for(const [i,x] of [[0,w*.20],[1,w*.80]]){
   rect(c,x-43,h*.24-17,86,64,'#654b35');rect(c,x-39,h*.24-13,78,56,'#aa7950');
-  circle(c,x,h*.24,24,i?'#7796a1':'#576f71');circle(c,x,h*.24,17,i?'#3c474d':'#3a4144');
+  const slot=s.kitchen?.slots?.[i],pot=(slot?.type||(i?'POT':'WOK'))==='POT';circle(c,x,h*.24,24,pot?'#7796a1':'#576f71');circle(c,x,h*.24,17,pot?'#3c474d':'#3a4144');if(pot){circle(c,x,h*.24-4,13,'#8aa8a9');rect(c,x-26,h*.24-6,7,11,'#cba978');rect(c,x+19,h*.24-6,7,11,'#cba978')}else{line(c,x-29,h*.24-1,x-42,h*.24-13,'#ddbc81',5)}if(slot?.level===2){circle(c,x+26,h*.24-24,8,'#f5d781');text(c,'Ⅱ',x+26,h*.24-24,'#5a4725',10)}
   const busy=v?.stations[i?'POT':'WOK'];if(busy){for(let n=0;n<3;n++){circle(c,x-14+n*14,h*.24-22+Math.sin(t*3+n)*3,4,'#f3e0b588')}text(c,`${Math.max(0,Math.ceil(busy.left))}s`,x,h*.24+35,'#fff5d5',11)}
  }
  rect(c,w*.12,h*.43,w*.76,17,'#6f4d33');rect(c,w*.12,h*.43,w*.76,7,'#d3a66d');
  // A pixel-art chef animates continuously even between discrete order ticks.
- chef(c,w*.5+Math.sin(t*1.8)*3,h*.35+Math.sin(t*3),t,{scale:1.65,walk:!!v&&!v.paused&&!v.breakAt,attack:!!v?.stations.WOK&&!v.paused&&!v.breakAt});
+ chef(c,w*.5+Math.sin(t*1.8)*3,h*.35+Math.sin(t*3),t,{scale:1.65,walk:!!v&&!v.paused&&!v.breakAt,attack:!!(v?.stations.WOK||v?.stations.POT)&&!v.paused&&!v.breakAt});
  for(const evt of (v?.events||[]).filter(e=>e.type==='served'&&servingProgress(t,e.t)!==null)){
   const order=v.orders.find(o=>o.id===evt.order);if(!order||order.tableId==null)continue;
   const r=servingProgress(t,evt.t),endX=order.tableId?w*.75:w*.25;
@@ -98,7 +99,7 @@ export function drawDiner(canvas,s,clock,simTime=s.service?.time??clock){const s
    const appear=arrivalProgress(t,at);
    const gy=h*.84-(h*.84-(y-51))*appear+(v?.paused||v?.breakAt?0:Math.sin(t*3+i)*.6);
    guest(c,x,gy,g.segment,t,appear<1);
-   if(o)waitingRing(c,x+25,gy-10,guestWaitRatio(t,o.arrival,o.patience));
+   if(o)waitingRing(c,x+(i?25:25),gy-10,guestWaitRatio(t,o.arrival,o.patience));
    // The game-world table needs no tiny repeated dish text; tap a guest for details.
    if(recent){dish(c,x,y,'WOK');text(c,'好吃!',x,y-78,'#f8e1a4',12)}
   }

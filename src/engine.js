@@ -1,21 +1,80 @@
-import {ING,RECIPES,CUSTOMERS,FORECAST,DEFAULT_INVENTORY} from './data.js?v=0.4.3';
+import {ING,RECIPES,CUSTOMERS,FORECAST,DEFAULT_INVENTORY} from './data.js?v=0.5.0';
 export const PHASES=['forecast','field','research','menu','prep','service','report','upgrade'];
 export const SAVE_KEY='oddpot-prototype-v04'; // v0.2 兼容先前试玩存档
 const clone=x=>structuredClone(x);
 export const clamp=(n,a,b)=>Math.min(b,Math.max(a,n));
 export function rand(seed){return (Math.imul(1664525,seed>>>0)+1013904223)>>>0}
 export function uniqueAdd(ledger,id,type,extra={}){if(ledger.some(x=>x.id===id))return false;ledger.push({id,type,...extra});return true}
-export function newGame(seed=20261009){return {version:4,seed,cycle:1,day:1,phase:'forecast',coins:120,reputation:0,inventory:{...DEFAULT_INVENTORY},recipes:{chicken_stew:76,mushroom_stir:76,veg_stir:72},learned:{},tech:false,upgrade:false,bagSlots:6,selectedTarget:'chili',route:null,field:null,cook:null,menu:['chicken_stew','mushroom_stir','veg_stir'],prep:{},prepCost:0,manualCost:0,service:null,report:null,lastCook:null,ledger:[],logs:[],result:null,step:0};}
+export function newGame(seed=20261009){return {version:4,seed,cycle:1,day:1,phase:'forecast',coins:120,reputation:0,inventory:{...DEFAULT_INVENTORY},recipes:{chicken_stew:76,mushroom_stir:76,veg_stir:72},learned:{},tech:false,upgrade:false,kitchen:{slots:[{type:'WOK',level:1},{type:'POT',level:1}],refitDay:null,freeRefitUsed:false,extraRefits:0},bagSlots:6,selectedTarget:'chili',route:null,field:null,cook:null,menu:['chicken_stew','mushroom_stir','veg_stir'],prep:{},prepCost:0,manualCost:0,service:null,report:null,lastCook:null,ledger:[],logs:[],result:null,step:0};}
+// Kitchen station IDs remain WOK/POT for compatibility with 0.4 saves,
+// but now denote PHYSICAL positions (left/right), not stove types.
+export const KITCHEN_POSITIONS=['WOK','POT'];
+export function ensureKitchen(s){
+ if(!s.kitchen||!Array.isArray(s.kitchen.slots))s.kitchen={slots:[{type:'WOK',level:s.upgrade?2:1},{type:'POT',level:1}],refitDay:null,freeRefitUsed:false,extraRefits:0};
+ s.kitchen.slots=[0,1].map(i=>{const v=s.kitchen.slots[i]||{};return {type:v.type==='WOK'?'WOK':'POT',level:v.level===2?2:1}});
+ if(s.upgrade&&s.kitchen.slots[0].level<2)s.kitchen.slots[0].level=2;
+ s.kitchen.extraRefits??=0;s.kitchen.freeRefitUsed??=false;
+ return s.kitchen;
+}
+export function kitchenDayKey(s){return `${s.cycle}-${s.day}`}
+export function kitchenRefitCost(s){const k=ensureKitchen(s);return k.refitDay===kitchenDayKey(s)&&k.freeRefitUsed?12:0}
+export function configureKitchenSlot(s,index,type){
+ if(s.phase!=='prep'||![0,1].includes(index)||!['WOK','POT'].includes(type))return false;
+ const k=ensureKitchen(s);if(k.slots[index].type===type)return false;
+ const today=kitchenDayKey(s),normalFee=kitchenRefitCost(s);
+ // Never soft-lock a player who experimented with a free refit. If the
+ // kitchen is currently incompatible and this change restores coverage,
+ // allow an emergency zero-cost correction when money is insufficient.
+ const coverageAfter=(()=>{const types=k.slots.map((x,i)=>i===index?type:x.type);return s.menu.every(id=>!s.recipes[id]||!RECIPES[id]||types.includes(RECIPES[id].station))})();
+ const fee=normalFee>s.coins&&!kitchenHasMenuCoverage(s)&&coverageAfter?0:normalFee;
+ if(s.coins<fee)return false;
+ const seq=k.extraRefits||0;
+ if(fee&&!transact(s,`kitchen-refit-${today}-${seq}`,'kitchen_refit',{},-fee))return false;
+ if(fee)k.extraRefits=seq+1;
+ k.refitDay=today;k.freeRefitUsed=true;k.slots[index].type=type;return true;
+}
+export function kitchenHasMenuCoverage(s){
+ const k=ensureKitchen(s),needed=new Set(s.menu.filter(id=>s.recipes[id]&&RECIPES[id]).map(id=>RECIPES[id].station));
+ return [...needed].every(type=>k.slots.some(slot=>slot.type===type));
+}
+export function kitchenPreview(s){
+ const k=ensureKitchen(s),demand={WOK:0,POT:0};
+ for(const id of s.menu)if(s.recipes[id]&&RECIPES[id])demand[RECIPES[id].station]++;
+ const capacity={WOK:k.slots.filter(x=>x.type==='WOK').length,POT:k.slots.filter(x=>x.type==='POT').length};
+ const risk=['WOK','POT'].filter(type=>demand[type]&&!capacity[type]);
+ const pressure=['WOK','POT'].map(type=>({type,menu:demand[type],capacity:capacity[type],pressure:capacity[type]?demand[type]/capacity[type]:null}));
+ return {pressure,risk,valid:risk.length===0};
+}
+export function kitchenUpgradeCost(s,index){
+ if(![0,1].includes(index))return null;
+ return ensureKitchen(s).slots[index].level>=2?null:index===0?60:75;
+}
+export function buyKitchenUpgrade(s,index){
+ if(s.phase!=='upgrade'||![0,1].includes(index))return false;
+ const k=ensureKitchen(s),cost=kitchenUpgradeCost(s,index);
+ if(cost===null||s.coins<cost)return false;
+ const key=index===0?'upgrade-wok':'kitchen-upgrade-1';
+ if(!transact(s,key,'upgrade',{},-cost))return false;
+ k.slots[index].level=2;if(index===0)s.upgrade=true;return true;
+}
+export function stationDuration(s,position,recipe,v){
+ const k=ensureKitchen(s),i=position==='WOK'?0:1,slot=k.slots[i];
+ const bonus=(slot.level-1)*2;
+ return Math.max(1,recipe.time-bonus-(v?.eventEffects?.[slot.type]||0));
+}
 export function save(s){try{localStorage.setItem(SAVE_KEY,JSON.stringify(s))}catch{}}
 export function load(){try{
 const s=JSON.parse(localStorage.getItem(SAVE_KEY));
 if(s?.version!==4||!PHASES.includes(s.phase))return null;
 if(s.service){s.service.paused ??= true;s.service.breakAt ??= 0;s.service.breakUsed ??= false;s.service.breakSeen ??= [];s.service.events ??= [];s.service.treatUsed ??= false;
+ s.service.kitchenSnapshot ??= structuredClone(ensureKitchen(s).slots);
+ s.service.stationStats ??= {WOK:{count:0,secondsSaved:0},POT:{count:0,secondsSaved:0}};
  // v0.1 浏览器存档尚无固定桌位，按当前等餐顺序温和迁移。
  const active=s.service.orders.filter(o=>['queued','cooking'].includes(o.status));
  const taken=new Set(active.map(o=>o.tableId).filter(x=>x!==undefined));
  for(const o of active){if(o.tableId==null){const n=[0,1].find(i=>!taken.has(i));if(n!==undefined){o.tableId=n;taken.add(n)}}}
  }
+ensureKitchen(s);
 s.bagSlots ??= 6;
 if(s.field)s.field.capacity ??= s.bagSlots;
 if(s.cook)s.cook.flame ??= 0;
@@ -83,10 +142,10 @@ export function selectArrivalDish(s,o){
  const best=themed[0]||options[0];o.recipeId=best?.id||null;o.fit=best?.score||0;
  return best;
 }
-export function createService(s){if(s.phase!=='service'||s.service)return false;
+export function createService(s){if(s.phase!=='service'||s.service||!kitchenHasMenuCoverage(s))return false;
  const customers=today(s).segments;
  const orders=customers.map((segment,i)=>{const wave=i<2?0:i<5?1:2;return {id:`${s.cycle}-${s.day}-o${i}`,segment: s.day===3&&i===6?'critic':segment,recipeId:null,fit:0,wave,arrival:wave*21+(wave===0?i*3:(i-(wave===1?2:5))*3),status:'waiting',patience:CUSTOMERS[segment].patience,elapsed:0,quality:null,started:null,served:null}});
- s.service={orders,time:0,stations:{WOK:null,POT:null},queued:[],wave:0,done:false,events:[],income:0,cost:0,congestion:{WOK:0,POT:0},initialInventory:clone(s.inventory),reportBuilt:false,manualUsed:0,treatUsed:false,paused:true,breakAt:0,breakSeen:[],breakUsed:false,eventChoiceMade:[],eventEffects:{WOK:0,POT:0},eventExpense:0,guestMood:0};
+ s.service={orders,time:0,stations:{WOK:null,POT:null},kitchenSnapshot:clone(ensureKitchen(s).slots),stationStats:{WOK:{count:0,secondsSaved:0},POT:{count:0,secondsSaved:0}},queued:[],wave:0,done:false,events:[],income:0,cost:0,congestion:{WOK:0,POT:0},initialInventory:clone(s.inventory),reportBuilt:false,manualUsed:0,treatUsed:false,paused:true,breakAt:0,breakSeen:[],breakUsed:false,eventChoiceMade:[],eventEffects:{WOK:0,POT:0},eventExpense:0,guestMood:0};
  spawnArrivals(s);return true;
 }
 
@@ -169,10 +228,10 @@ if((v.time===20||v.time===41)&&!v.breakSeen.includes(v.time)){
 spawnArrivals(s);
 for(const st of ['WOK','POT']){const job=v.stations[st];if(job){v.congestion[st]++;job.left--;if(job.left<=0){v.stations[st]=null;const o=v.orders.find(x=>x.id===job.orderId);if(o.status==='cooking')finishOrder(s,o,job.quality);else record(s,{type:'waste',order:job.orderId});}}}
 for(const o of v.orders){if((o.status==='queued'||o.status==='cooking')&&v.time-o.arrival>o.patience){o.status='left';s.reputation=Math.max(-20,s.reputation-1);v.queued=v.queued.filter(id=>id!==o.id);record(s,{type:'left',order:o.id,reason:'等待超时'});}}
-for(const st of ['WOK','POT']){if(v.stations[st])continue;let i=v.queued.findIndex(id=>{const o=v.orders.find(x=>x.id===id);return o&&RECIPES[o.recipeId].station===st});if(i<0)continue;const id=v.queued.splice(i,1)[0];const o=v.orders.find(x=>x.id===id);const r=RECIPES[o.recipeId];if(o.manual){o.status='cooking';v.stations[st]={orderId:id,left:Math.max(1,r.time-(st==='WOK'&&s.upgrade?2:0)-(v.eventEffects?.[st]||0)),quality:o.manual.sellable&&o.manual.recipeId===o.recipeId?o.manual.quality:0};if(!o.manual.sellable||o.manual.recipeId!==o.recipeId){o.status='left';record(s,{type:'failed_cook',order:id})}continue;}
+for(const st of ['WOK','POT']){if(v.stations[st])continue;let i=v.queued.findIndex(id=>{const o=v.orders.find(x=>x.id===id);return o&&RECIPES[o.recipeId].station===ensureKitchen(s).slots[st==='WOK'?0:1].type});if(i<0)continue;const id=v.queued.splice(i,1)[0];const o=v.orders.find(x=>x.id===id);const r=RECIPES[o.recipeId];if(o.manual){o.status='cooking';v.stations[st]={orderId:id,left:stationDuration(s,st,r,v),quality:o.manual.sellable&&o.manual.recipeId===o.recipeId?o.manual.quality:0};if(!o.manual.sellable||o.manual.recipeId!==o.recipeId){o.status='left';record(s,{type:'failed_cook',order:id})}continue;}
 if((s.prep[o.recipeId]||0)>0){s.prep[o.recipeId]--;finishOrder(s,o,s.recipes[o.recipeId]);continue;}
 if(!canUse(s,r.ids)){o.status='rejected';record(s,{type:'rejected',order:id,reason:'食材不足'});continue;}
-consume(s,r.ids,`service-cook-${id}`);v.cost+=materialCost(r.ids);o.status='cooking';o.started=v.time;v.stations[st]={orderId:id,left:Math.max(1,r.time-(st==='WOK'&&s.upgrade?2:0)-(v.eventEffects?.[st]||0)),quality:s.recipes[o.recipeId]||72};record(s,{type:'started',order:id,station:st});}
+consume(s,r.ids,`service-cook-${id}`);v.cost+=materialCost(r.ids);o.status='cooking';o.started=v.time;v.stations[st]={orderId:id,left:stationDuration(s,st,r,v),quality:s.recipes[o.recipeId]||72};v.stationStats[st].count++;v.stationStats[st].secondsSaved+=Math.max(0,r.time-v.stations[st].left);record(s,{type:'started',order:id,station:st,cookType:r.station,level:ensureKitchen(s).slots[st==='WOK'?0:1].level});}
 if(v.orders.every(o=>['served','left','rejected'].includes(o.status))&&Object.values(v.stations).every(x=>!x)&&v.time>=44){v.done=true;break}if(v.time>=100){for(const o of v.orders)if(!['served','left','rejected'].includes(o.status)){o.status='left';record(s,{type:'left',order:o.id,reason:'营业结束'})}v.done=true;break}
 v.wave=v.time<21?0:v.time<42?1:2;}
 return true}
@@ -183,9 +242,9 @@ const suggested=rej.length?'存在无法接单的顾客：优先补料或调整�
 const revenue=v.income;let cost=v.cost+s.prepCost+s.manualCost;const hospitalityCost=v.events.filter(e=>e.type==='guest_care').length*5;const eventExpense=v.eventExpense||0;s.prep={};s.prepCost=0;s.manualCost=0;
 const challenge=s.day===3?challengeScore(v):null;const won=!!challenge&&challenge.score>70;
 if(won&&!s.tech){s.tech=true;uniqueAdd(s.ledger,'first-boss-reward','unlock',{tech:'heat-mastery'})}
-s.report={day:s.day,revenue,cost,profit:revenue-cost-hospitalityCost-eventExpense,hospitalityCost,eventExpense,choices:v.events.filter(e=>e.type==='management_choice'||e.type==='menu_swap'),served:served.length,left:left.length,rejected:rej.length,sat:Math.round(served.reduce((a,o)=>a+o.sat,0)/Math.max(1,served.length)),byDish,congestion:v.congestion,synergy:synergyFor(s.menu),suggested,challenge,won};s.result=won?'win':challenge?'loss':null;nextPhase(s,'report');return s.report}
+s.report={day:s.day,revenue,cost,profit:revenue-cost-hospitalityCost-eventExpense,hospitalityCost,eventExpense,choices:v.events.filter(e=>e.type==='management_choice'||e.type==='menu_swap'),served:served.length,left:left.length,rejected:rej.length,sat:Math.round(served.reduce((a,o)=>a+o.sat,0)/Math.max(1,served.length)),byDish,congestion:v.congestion,kitchen:{slots:clone(v.kitchenSnapshot||ensureKitchen(s).slots),stats:clone(v.stationStats||{})},synergy:synergyFor(s.menu),suggested,challenge,won};s.result=won?'win':challenge?'loss':null;nextPhase(s,'report');return s.report}
 export function advanceDay(s){if(s.phase!=='upgrade')return false;const day=s.day;s.day=day===3?1:day+1;if(day===3)s.cycle++;s.phase='forecast';s.route=null;s.field=null;s.cook=null;s.report=null;s.lastCook=null;s.prep={};s.prepCost=0;s.manualCost=0;s.service=null;s.step++;return true}
-export function buyUpgrade(s){if(s.phase!=='upgrade'||s.upgrade||s.coins<60)return false;transact(s,'upgrade-wok','upgrade',{},-60);s.upgrade=true;return true}
+export function buyUpgrade(s){return buyKitchenUpgrade(s,0)}
 export function bagUpgradePrice(s){return (s.bagSlots||6)>=8?null:(s.bagSlots||6)===6?45:75}
 export function buyBagUpgrade(s){const price=bagUpgradePrice(s);if(s.phase!=='upgrade'||price===null||s.coins<price)return false;const next=(s.bagSlots||6)+1;if(!transact(s,`bag-upgrade-${next}`,'upgrade',{},-price))return false;s.bagSlots=next;return true}
 
