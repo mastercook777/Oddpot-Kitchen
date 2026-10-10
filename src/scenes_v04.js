@@ -1,6 +1,6 @@
-import {pixelActor,pixelEnemy,pixelImpact} from './pixels_v041.js?v=0.5.4';
+import {pixelActor,pixelEnemy,pixelImpact} from './pixels_v041.js?v=0.5.5';
 // Lightweight procedural game graphics: original Canvas shapes, no art pack.
-import {ING,RECIPES,CUSTOMERS} from './data.js?v=0.5.4';
+import {ING,RECIPES,CUSTOMERS} from './data.js?v=0.5.5';
 const color={ink:'#24382a',leaf:'#386b43',soil:'#806044',stone:'#a6b392',cream:'#f4dfb0',gold:'#dfb873'};
 function rect(c,x,y,w,h,fill){c.fillStyle=fill;c.fillRect(x,y,w,h)}
 function circle(c,x,y,r,fill){c.fillStyle=fill;c.beginPath();c.arc(x,y,r,0,Math.PI*2);c.fill()}
@@ -116,15 +116,67 @@ export function guestSceneBubble(order,t){
  if(order.status==='review'||(order.status==='served'&&t-(order.reviewedAt??0)<.9))return {text:order.reviewText||'谢谢招待！',kind:order.reviewType||'happy'};
  return null;
 }
-function reviewBubble(c,x,y,words,kind){
- const name=(words||'').slice(0,13),sz=kind==='order'?11:10;
- const width=Math.min(146,Math.max(63,name.length*(sz+.3)+17));
+// Dialogue follows the actual head position. Plan ALL currently visible guest
+// bubbles together so a two-seat table never layers one text card over another.
+// Only this renderer owns their offsets; no arbitrary seat-specific -28px shift.
+export function dinerBubbleSize(words,kind){
+ const characters=Array.from(words||'').slice(0,16);
+ const lines=characters.length>8?[characters.slice(0,8).join(''),characters.slice(8).join('')]:[characters.join('')];
+ const fontSize=kind==='order'?11:10.5;
+ const width=Math.min(135,Math.max(62,Math.ceil(Math.max(...lines.map(x=>x.length))*fontSize+20)));
+ return {width,height:lines.length>1?39:25,lines,fontSize};
+}
+export function dinerBubbleLayout(orders,t,w,h){
+ const padding=8,placed=[];
+ // Sit-down seats get fixed positions, but the speech follows a moving guest
+ // on the approach/exit. Keep ordering deterministic for screenshot stability.
+ let actors=(orders||[]).map(order=>{
+  const bubble=guestSceneBubble(order,t),pos=guestStagePosition(order,t,w,h);
+  if(!bubble?.text||!pos.visible)return null;
+  const size=dinerBubbleSize(bubble.text,bubble.kind);
+  return {id:order.id,tableId:order.tableId,seatId:order.seatId,kind:bubble.kind,words:bubble.text,
+   anchorX:pos.x,anchorY:pos.y-22,...size};
+ }).filter(Boolean);
+ // Low-value menu musing yields to actual dish requests and post-meal reviews.
+ // Two diners can still chat together; crowded tables don't make four loud cards.
+ const important=actors.filter(a=>a.kind!=='choice');
+ if(actors.length>2)actors=[...important,...actors.filter(a=>a.kind==='choice').slice(0,Math.max(0,2-important.length))];
+ actors.sort((a,b)=>a.anchorY-b.anchorY||Math.min(a.anchorX,w-a.anchorX)-Math.min(b.anchorX,w-b.anchorX)||a.anchorX-b.anchorX||String(a.id).localeCompare(String(b.id)));
+ for(const item of actors){
+  const side=item.seatId===0?-1:1;
+  const xOffsets=[side*26,0,side*49,-side*18,side*65,-side*42];
+  const upOffsets=[0,7,22,39,55,72,90,110];
+  let best=null;
+  for(const up of upOffsets){
+   for(const dx of xOffsets){
+    const x=Math.max(padding,Math.min(w-padding-item.width,item.anchorX+dx-item.width/2));
+    const y=Math.max(padding,Math.min(h-padding-item.height,item.anchorY-6-up-item.height));
+    const overlap=placed.reduce((sum,p)=>{
+      const ix=Math.max(0,Math.min(x+item.width,p.x+p.width+5)-Math.max(x,p.x-5));
+      const iy=Math.max(0,Math.min(y+item.height,p.y+p.height+5)-Math.max(y,p.y-5));
+      return sum+ix*iy;
+    },0);
+    const displacement=Math.abs((x+item.width/2)-item.anchorX);
+    const penalty=overlap*10000+up*.8+displacement*.20+Math.abs(dx-side*26)*.55;
+    if(best===null||penalty<best.penalty)best={x,y,penalty};
+   }
+  }
+  placed.push({...item,x:best.x,y:best.y});
+ }
+ return placed;
+}
+function drawReviewBubble(c,item){
+ const {x,y,width,height,lines,fontSize,kind,anchorX,anchorY}=item;
  const positive=['delicious','happy','choice'].includes(kind),negative=['bad','quality','late','taste'].includes(kind);
  const bg=negative?'#ffe1d3':positive?'#e5f3d1':'#f6e8c7';
- capsule(c,x-width/2,y-58,width,23,bg,negative?'#b77363':'#7f8b68');
- text(c,name,x,y-46,negative?'#703c32':'#394636',sz);
- // Tiny bubble tail toward the character.
- c.fillStyle=bg;c.beginPath();c.moveTo(x-4,y-35);c.lineTo(x+3,y-35);c.lineTo(x,y-30);c.fill();
+ const stroke=negative?'#b77363':'#7f8b68';
+ capsule(c,x,y,width,height,bg,stroke);
+ for(let i=0;i<lines.length;i++)text(c,lines[i],x+width/2,y+(lines.length===1?height/2:12+i*16),negative?'#703c32':'#394636',fontSize);
+ // Connector starts inside the bubble border and ends just above the head.
+ const baseX=Math.max(x+12,Math.min(x+width-12,anchorX));
+ c.fillStyle=bg;c.beginPath();c.moveTo(baseX-3,y+height-1);c.lineTo(baseX+3,y+height-1);
+ c.lineTo(anchorX,Math.max(y+height+1,anchorY-1));c.closePath();c.fill();
+ c.strokeStyle=stroke;c.lineWidth=1;c.beginPath();c.moveTo(baseX-3,y+height);c.lineTo(anchorX,Math.max(y+height+1,anchorY-1));c.stroke();
 }
 function walkGuest(c,order,v,t,w,h){
  const pos=guestStagePosition(order,t,w,h);if(!pos.visible)return;
@@ -132,10 +184,7 @@ function walkGuest(c,order,v,t,w,h){
  const bob=eating?Math.sin((t-(order.landedAt||t))*6)*1.3:review?Math.sin(t*3)*.5:0;
  pixelActor(c,order.segment,pos.x,pos.y+bob,DINER_ACTOR_SCALE,{walk:pos.moving?t:0});
  const bubble=guestSceneBubble(order,t);
- if(bubble?.kind==='eating'){
-  // Small rhythmic cutlery animation, no permanent text or emoji blocks.
-  line(c,pos.x-8,pos.y-23,pos.x-4,pos.y-32,'#f3e8bc',2);
- }else if(bubble?.text)reviewBubble(c,pos.x,pos.y-(order.seatId===1?28:0),bubble.text,bubble.kind);
+ if(bubble?.kind==='eating')line(c,pos.x-8,pos.y-23,pos.x-4,pos.y-32,'#f3e8bc',2);
  if(['queued','cooking'].includes(order.status))waitingRing(c,pos.x+19,pos.y-14,guestWaitRatio(t,order.arrival,order.patience));
 }
 // Every shift begins and ends at the service station. Queue interactions
@@ -222,8 +271,9 @@ export function drawDiner(canvas,s,clock,simTime=s.service?.time??clock){
  if(v){const occupants=v.orders.filter(o=>o.tableId!=null&&(
    ['entering','ordering','queued','cooking','flying','eating','review'].includes(o.status)||(o.status==='served'&&t-(o.reviewedAt??o.served)<2.2)||(['left','rejected'].includes(o.status)&&Number.isFinite(o.leftAt)&&t-o.leftAt<2.5)));
   for(const o of occupants)walkGuest(c,o,v,t,w,h);
- }
- paintDinerStaff(c,s,v,t,w,h);
+  paintDinerStaff(c,s,v,t,w,h);
+  for(const bubble of dinerBubbleLayout(occupants,t,w,h))drawReviewBubble(c,bubble);
+ }else paintDinerStaff(c,s,v,t,w,h);
  rect(c,w*.45,h*.87,w*.1,h*.11,'#b98b62');rect(c,w*.47,h*.87,w*.06,h*.07,'#2b473a');
  for(const [x,y] of [[w*.12,h*.83],[w*.88,h*.82]]){rect(c,x-4,y+5,8,15,'#795436');circle(c,x,y,11,'#5d975d')}
  c.restore();
