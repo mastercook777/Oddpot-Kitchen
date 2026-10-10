@@ -74,3 +74,5 @@
 .service-scene .diner-table:not(.occupied):not(.selected) .seat-label{display:none}
 /* A recipe tally is useful on the cookbook, not while fighting or watching tables. */
 .game-shell:has(.action-forest) .day-recipes,.game-shell:has(.service-scene) .day-recipes{visibility:hidden}
+/* v0.4.5: timer is now a Canvas ring by each customer. */
+.service-scene .diner-table .patience{display:none!important}
