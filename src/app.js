@@ -19,8 +19,8 @@ const meal=r=>`${r.emoji} ${r.name}`;
 const onlyName=id=>ING[id]?.name||id;
 const itemCount=()=>Object.keys(game.recipes).length;
 
-function hud(){return `<div class="hud"><div class="brand"><span class="logo">🍳</span><div><strong>怪味食堂</strong><small>ODDPOT KITCHEN · v0.4.2</small></div></div><div class="hud-meta"><span>🪙 ${game.coins}</span><span>⭐ ${game.reputation}</span></div><button class="hud-gear" data-act="settings" aria-label="设置">⚙</button></div><div class="day-strip"><b>第 ${game.cycle} 轮 · DAY ${game.day}</b><span>${phaseLabels[game.phase]}</span><span>📖 ${itemCount()}/${Object.keys(RECIPES).length}</span></div>`}
-function toast(){return `<div class="game-toast" role="status">${esc(message)}</div>`}
+function hud(){return `<div class="hud"><div class="brand"><span class="logo" aria-hidden="true">🍳</span><div><strong>怪味食堂</strong><small>ODDPOT · v0.4.3</small></div></div><div class="hud-meta"><span aria-label="金币">🪙 ${game.coins}</span><span aria-label="声望">⭐ ${game.reputation}</span></div><button class="hud-gear" data-act="settings" aria-label="设置">⚙</button></div><div class="day-strip"><b>第 ${game.cycle} 轮 · 第 ${game.day} 天</b><span class="day-phase">${phaseLabels[game.phase]}</span><span class="day-recipes">图鉴 ${itemCount()}/${Object.keys(RECIPES).length}</span></div>`}
+function toast(){return `<div class="game-toast" role="status"><span>${esc(message)}</span></div>`}
 function shell(stage,dock){return `<div class="game-shell">${hud()}<main class="stage ${game.phase}${game.cook?' wok-active':''}">${stage}</main>${toast()}<nav class="dock">${dock}</nav>${overlayMarkup()}</div>`}
 function overlayMarkup(){if(!overlay)return '';
  let body='';
@@ -63,9 +63,20 @@ function forecast(){const f=today(game);return [
  ]}
 function field(){
  const f=game.field;
- if(!f){return [
- `<div class="forest-scene route-scene">${forestBackdrop()}<div class="scene-float top">${sceneTag(selectedRegion==='spring'?'热泉峡谷':'晨露森林','轻动作探索 · 目标材料驱动')}</div><div class="field-target"><small>今天主要寻找</small><div class="target-scroller">${Object.entries(ING).map(([id,ing])=>`<button class="target-chip ${game.selectedTarget===id?'chosen':''}" data-target="${id}">${ing.emoji} ${ing.name}</button>`).join('')}</div></div><div class="region-tabs"><button data-region="forest" class="${selectedRegion==='forest'?'current':''}">晨露森林</button><button data-region="spring" class="${selectedRegion==='spring'?'current':''}">热泉峡谷</button></div><div class="route-options">${(selectedRegion==='forest'?ROUTES:[{id:'spring_safe',name:'热泉浅滩',emoji:'♨',subtitle:'安全采集 · 火椒、蒜瓣'},{id:'spring_risk',name:'热泉断坡',emoji:'🌋',subtitle:'高风险 · 火椒、野牛肉'}]).map(r=>`<button class="route-card" data-route="${r.id}"><span>${r.emoji}</span><div><strong>${r.name}</strong><small>${r.subtitle}</small></div><b>›</b></button>`).join('')}</div></div>`,
- `<div class="dock-head"><span>单次约 60 秒 · 背包 ${game.bagSlots||6} 格 · 可撤离</span></div><div class="action-row">${b('skip-field','跳过探索，直接研发 →','secondary wide')}</div>`]}
+ if(!f){
+  const activeRoutes=selectedRegion==='forest'?ROUTES:[{id:'spring_safe',name:'热泉浅滩',emoji:'♨',subtitle:'火椒、蒜瓣 · 可避开战斗'},{id:'spring_risk',name:'热泉断坡',emoji:'🌋',subtitle:'火椒、野牛肉 · 高风险'}];
+  return [
+ `<div class="forest-scene route-scene ux-route">${forestBackdrop()}<div class="route-panel">
+   <div class="route-intro"><span class="ux-kicker">出发准备</span><h2>今天去哪找食材？</h2><p>先选目标，再选地图和路线。安全路线也能带回材料。</p></div>
+   <div class="ux-field-label"><strong>① 目标食材</strong><span>当前：${ING[game.selectedTarget]?.name||'未选'}</span></div>
+   <div class="target-scroller" role="group" aria-label="目标食材">${Object.entries(ING).map(([id,ing])=>`<button class="target-chip ${game.selectedTarget===id?'chosen':''}" data-target="${id}" aria-pressed="${game.selectedTarget===id}">${ing.emoji} ${ing.name}</button>`).join('')}</div>
+   <div class="ux-field-label"><strong>② 探索区域</strong></div>
+   <div class="region-tabs" role="group" aria-label="探索区域"><button data-region="forest" class="${selectedRegion==='forest'?'current':''}" aria-pressed="${selectedRegion==='forest'}">晨露森林</button><button data-region="spring" class="${selectedRegion==='spring'?'current':''}" aria-pressed="${selectedRegion==='spring'}">热泉峡谷</button></div>
+   <div class="ux-field-label"><strong>③ 选择路线</strong><span>点击直接进入</span></div>
+   <div class="route-options">${activeRoutes.map(r=>`<button class="route-card ${/risk/.test(r.id)?'route-risk':'route-safe'}" data-route="${r.id}"><span class="route-emoji" aria-hidden="true">${r.emoji}</span><div><strong>${r.name}</strong><small>${r.subtitle}</small></div><span class="route-risk-label">${/risk/.test(r.id)?'高风险':'安全'}</span><b aria-hidden="true">›</b></button>`).join('')}</div>
+  </div></div>`,
+ `<div class="dock-head"><span>预计约 60 秒</span><span>背包 ${game.bagSlots||6} 格 · 随时撤离</span></div><div class="action-row">${b('skip-field','暂不探索 · 去研发','secondary wide')}</div>`]
+ }
  const bag=Object.entries(f.bag).map(([id,n])=>`${ING[id].name}${n}`).join(' · ')||'空';
  const event=f.activeEvent&&f.nodes.find(n=>n.key===f.activeEvent);
  return [`<div class="forest-scene action-forest"><canvas id="forest-canvas" class="forest-canvas"></canvas><div class="floating-joystick" id="field-stick" aria-hidden="true"><div class="floating-joystick-knob" id="field-stick-knob"></div></div><div class="action-hud"><span>体力 ${f.hp}/3</span><span>背包 ${Object.keys(f.bag).length}/${f.capacity||6} · ${esc(bag)}</span><span>${Math.floor(f.elapsed)}s</span></div>${event?`<div class="field-event"><strong>野外遭遇 · 流浪调味师</strong><p>你在林中发现一份料理线索，如何处理？</p><button data-event="trade">用蘑菇交换火椒</button><button data-event="forage">深入调查：损失生命，争取两份材料</button><button data-event="leave">绕开，保留现有收获</button></div>`:''}</div>`,
@@ -85,7 +96,7 @@ function menu(){const syn=synergyFor(game.menu);const wok=game.menu.filter(id=>R
  return [`<div class="menu-scene"><div class="menu-title">🪧 今晚的三道招牌菜</div><div class="menu-blackboard">${game.menu.map((id,i)=>{const r=RECIPES[id];return `<button class="menu-line" data-edit-slot="${i}"><span class="menu-num">0${i+1}</span><span class="menu-icon">${r?.emoji||'❔'}</span><div><strong>${r?.name||'未选择'}</strong><small>${r?.station} · ${r?.time}s · 售价 ${r?.price}</small></div><span class="menu-switch">⇄</span></button>`}).join('')}</div><div class="menu-forecast">${today(game).hint}</div><div class="menu-balance"><div>🍳 炒锅任务 <strong>${wok}</strong></div><div>🍲 炖锅任务 <strong>${pot}</strong></div></div><div class="synergy-box">✨ ${syn?`主共鸣：${syn}`:'暂无主共鸣 · 不同料理搭配可能产生额外好评'}</div></div>`,
  `<div class="dock-head"><span>点击菜名替换 · 厨房仅有两口锅</span></div><div class="action-row">${b('book','📖 图鉴','secondary')}${b('to-prep','确认菜单 →','primary wide',!canMenu(game))}</div>`]
 }
-function prep(){return [`<div class="scene-bg diner-bg">${restaurantView(false)}<div class="prep-card"><h2>🍱 开业前的备餐</h2><p>提前做好一份标准菜，遇到同款订单可以直接送达。但卖不完也会计入材料损耗。</p><div class="prep-items">${game.menu.map(id=>`<button class="prep-item" data-act="prep:${id}" ${!canUse(game,RECIPES[id].ids)?'disabled':''}>${RECIPES[id].emoji} ${RECIPES[id].name}<span>已备 ${game.prep[id]||0}　＋</span></button>`).join('')}</div></div></div>`,
+function prep(){return [`<div class="scene-bg diner-bg">${restaurantView(false)}<div class="prep-card"><h2>🍱 开业前的备餐</h2><p>选择菜品即可预制 1 份；开业后同款订单能立即上菜。未售出的会报损。</p><div class="prep-items">${game.menu.map(id=>`<button class="prep-item" data-act="prep:${id}" ${!canUse(game,RECIPES[id].ids)?'disabled':''}>${RECIPES[id].emoji} ${RECIPES[id].name}<span>已备 ${game.prep[id]||0} · ＋1</span></button>`).join('')}</div></div></div>`,
  `<div class="action-row">${b('stock','🎒 库存','secondary')}${b('open','🏠 开门迎客！','primary wide')}</div>`]}
 function service(){const v=game.service;if(!v)return ['<div class="empty">餐厅正在准备...</div>',b('open','开业','primary')];
  const served=v.orders.filter(o=>o.status==='served').length;
@@ -101,7 +112,18 @@ function report(){const r=game.report;const lead=newRecipeLead(game);if(!r)retur
  `<div class="action-row">${b('details','📊 账本','secondary')}${b('to-upgrade','🌅 结束本日 →','primary wide')}</div>`]}
 function upgrade(){return [`<div class="scene-bg diner-bg">${restaurantView(false)}<div class="upgrade-card"><h2>🏠 让小食堂越来越好</h2><p>你做出来的菜谱与食堂成长都会永久保留。不同菜单会吸引不同的客人。</p><div class="upgrade-feature">${game.tech?'🔥 猛火掌控：首次厨王胜利已解锁':'🔒 首次赢得厨王战可解锁「猛火掌控」'}</div><div class="upgrade-feature">⚙ 炒锅改装（炒锅出餐 -2 秒） ${game.upgrade?'已安装':`需要 60 金币`}</div>${b('upgrade','⚙ 改装炒锅','secondary',game.upgrade||game.coins<60)}<div class="upgrade-feature">🎒 远行背包 ${game.bagSlots||6}/8 格 · ${bagUpgradePrice(game)===null?'已升满':`扩容费用 ${bagUpgradePrice(game)} 金币`}</div>${b('upgrade-bag','🎒 增加 1 个食材格','secondary',bagUpgradePrice(game)===null||game.coins<bagUpgradePrice(game))}</div></div>`,
  `<div class="action-row">${b('next-day',game.day===3?'🔁 再开一轮':'🌅 开始下一天','primary wide')}</div>`]}
-function render(){if(walking&&(!game.field||game.phase!=='field')){clearInterval(walking);walking=null;}const [stage,dock]=({forecast,field,research,menu,prep,service,report,upgrade}[game.phase])();app.innerHTML=shell(stage,dock);save(game)}
+function render(){
+ if(walking&&(!game.field||game.phase!=='field')){clearInterval(walking);walking=null;}
+ // Restoring horizontal chip position prevents the target selector from snapping
+ // back to the first ingredient on every tap; same for an open reference sheet.
+ const prevTargetScroll=app.querySelector('.target-scroller')?.scrollLeft||0;
+ const prevSheetScroll=app.querySelector('.sheet-body')?.scrollTop||0;
+ const [stage,dock]=({forecast,field,research,menu,prep,service,report,upgrade}[game.phase])();
+ app.innerHTML=shell(stage,dock);
+ const target=app.querySelector('.target-scroller');if(target)target.scrollLeft=prevTargetScroll;
+ const sheet=app.querySelector('.sheet-body');if(sheet)sheet.scrollTop=prevSheetScroll;
+ save(game);
+}
 function note(txt){message=txt;render()}
 function stepMove(dx,dy){const result=moveExplorer(game,dx,dy);if(result.ok)message=result.message;render();return result.ok}
 function findPath(x,y){const f=game.field;if(!f)return [];const start=[f.x,f.y];const seen=new Set([start.join(',')]);let paths=[[...start,[]]];while(paths.length){const [cx,cy,path]=paths.shift();if(cx===x&&cy===y)return path;for(const [dx,dy] of [[0,-1],[1,0],[0,1],[-1,0]]){const nx=cx+dx,ny=cy+dy,key=`${nx},${ny}`;if(nx<0||ny<0||nx>=f.worldW||ny>=f.worldH||seen.has(key)||f.obstacles.some(o=>o.x===nx&&o.y===ny))continue;seen.add(key);paths.push([nx,ny,[...path,[dx,dy]]]);}}return []}

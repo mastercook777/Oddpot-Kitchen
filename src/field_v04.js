@@ -1,7 +1,7 @@
 // v0.4 real-time forest encounter. The underlying kitchen inventory remains
 // governed by engine.settleField; this file only mutates the expedition bag.
-import {ING} from './data.js?v=0.4.2';
-import {clamp, rand, settleField} from './engine.js?v=0.4.2';
+import {ING} from './data.js?v=0.4.3';
+import {clamp, rand, settleField} from './engine.js?v=0.4.3';
 const dist=(a,b)=>Math.hypot(a.x-b.x,a.y-b.y);
 const pushMsg=(f,message)=>{f.actionMessage=message;f.actionMessageTTL=2.7;};
 export function startActionField(s){
