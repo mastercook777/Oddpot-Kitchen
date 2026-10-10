@@ -62,8 +62,8 @@ test('map and node variants reproduce for equal seed, day and route',()=>{
  enterField(a,'risk');enterField(b,'risk');assert.deepEqual(a.field,b.field);
 });
 test('hospitality is a meaningful single-use decision and charges only once',()=>{
- const s=newGame(66);s.phase='service';createService(s);
- const o=s.service.orders.find(v=>v.status==='queued');
+ const s=newGame(66);s.phase='service';createService(s);setServicePaused(s,false);tick(s,3);setServicePaused(s,true);
+ const o=s.service.orders.find(v=>v.status==='queued'||v.status==='cooking');
  assert.ok(o);const before=s.coins;const patience=o.patience;
  assert.equal(sootheGuest(s,o.id),true);
  assert.equal(o.patience,patience+9);assert.equal(s.coins,before-5);
@@ -91,8 +91,8 @@ test('night feedback points to an actually undiscovered cookable recipe',()=>{
  assert.deepEqual(lead.ingredients,RECIPES[lead.id].ids);
 });
 test('guest hospitality is counted in contribution profit but never charged twice',()=>{
- const s=newGame(92);s.phase='service';createService(s);
- const o=s.service.orders.find(x=>x.status==='queued');const coin=s.coins;
+ const s=newGame(92);s.phase='service';createService(s);setServicePaused(s,false);tick(s,3);setServicePaused(s,true);
+ const o=s.service.orders.find(x=>x.status==='queued'||x.status==='cooking');const coin=s.coins;
  assert.equal(sootheGuest(s,o.id),true);assert.equal(s.coins,coin-5);
  setServicePaused(s,false);
  for(let i=0;i<115;i++){

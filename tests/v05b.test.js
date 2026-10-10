@@ -50,6 +50,7 @@ test('v0.5B dish flavor, stove assignment and quality materially change helper o
 test('v0.5B waiter food increases real order patience on arrival, not only a UI label',()=>{
  const base=prepWithEnough(),fed=prepWithEnough();hireCrew(fed,'waiter');feedCrew(fed,'waiter','chicken_stew');
  base.phase='service';fed.phase='service';createService(base);createService(fed);
+ setServicePaused(base,false);setServicePaused(fed,false);tick(base,3);tick(fed,3);
  assert.equal(base.service.orders[0].patience,32);
  assert.equal(fed.service.orders[0].patience,41);
  assert.equal(fed.service.crew.waiter.patience,9);

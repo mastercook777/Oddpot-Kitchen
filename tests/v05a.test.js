@@ -10,7 +10,7 @@ function cookingGame(dual=false){
  s.phase='service';assert.equal(createService(s),true);
  s.service.orders[1].arrival=0;
  assert.equal(setServicePaused(s,false),true);
- tick(s,1);return s;
+ tick(s,4);return s;
 }
 
 test('v0.5A first daily refit is free, second costs 12, persisted no double refund',()=>{

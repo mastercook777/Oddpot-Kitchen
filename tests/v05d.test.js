@@ -15,7 +15,7 @@ test('guest departure retraces entry path around furniture and ends at door',()=
  const w=390,h=600,o={tableId:0,seatId:0,arrival:0,status:'served',served:8};
  const pts=guestPathPoints(o,w,h),seat=seatLocation(0,0,w,h);
  assert.deepEqual(pts.at(-1),seat);
- const entering=guestStagePosition({...o,status:'queued'},1.8,w,h);
+ const entering=guestStagePosition({...o,status:'queued'},2,w,h);
  assert.ok(Math.abs(entering.x-seat.x)<.05&&Math.abs(entering.y-seat.y)<.05);
  const half=guestStagePosition(o,11.05,w,h),center={x:w*.28,y:h*.60};
  assert.ok(Math.hypot(half.x-center.x,half.y-center.y)>44,'should not cross tabletop on departure');
@@ -31,18 +31,15 @@ test('waiter always returns home at each patrol boundary and never teleports on 
  }
 });
 
-test('live situation shows actual demands and accurate daily goal progress',()=>{
- const s=serveSetup();const a=serviceSupplyStatus(s);
- assert.equal(a.arrived>=1,true);assert.equal(a.queued>=1,true);
+test('live situation starts without ghost orders, warns once kitchen actually receives a table order',()=>{
+ const s=serveSetup(),a=serviceSupplyStatus(s);
+ assert.equal(a.arrived>=1,true);assert.equal(a.queued,0,'guests must sit and order before joining kitchen');
  assert.equal(serviceGoalResult(s.service).value,0);
- const o=s.service.orders.find(x=>x.status==='queued');
- assert.ok(o.recipeId,'guest picked an actual dish');
- // Deplete the needed recipe while the guest is still queued.
+ const entering=s.service.orders.find(x=>x.status==='entering');assert.ok(entering);
  for(const id of Object.keys(s.inventory))s.inventory[id]=0;
- const b=serviceSupplyStatus(s);
- assert.ok(b.shortages.some(x=>x.orderId===o.id));
- assert.equal(b.shortages[0].tableId,o.tableId);
- setServicePaused(s,false);tick(s,1);
+ setServicePaused(s,false);tick(s,3);
+ assert.ok(entering.recipeId,'guest chose a real dish after sitting');
+ assert.ok(s.service.events.some(x=>x.type==='ordered'&&x.order===entering.id));
  assert.ok(s.service.events.some(x=>x.type==='rejected'&&x.reason==='食材不足'));
  assert.ok(serviceSupplyStatus(s).lastProblem);
 });

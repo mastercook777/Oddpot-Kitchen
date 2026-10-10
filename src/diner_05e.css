@@ -1,0 +1,10 @@
+/* v0.5E: chairs and pixel guests communicate seating; no debug-like badges. */
+.service-scene .diner-seat-marker,.diner-seat-marker{display:none!important}
+.diner-table .seat-hit-target{position:absolute;display:block;z-index:6;top:2%;height:39px;width:37%;border:0;background:transparent;cursor:pointer;touch-action:manipulation}
+.diner-table .seat-hit-target.seat-0{left:0}.diner-table .seat-hit-target.seat-1{right:0}
+.diner-table .seat-hit-target:focus-visible{outline:2px solid #f5e7a9;border-radius:12px}
+/* De-emphasize debug table labels; actual meal requests live with the actors. */
+.service-scene .seat-label{font-size:11px;opacity:.8}
+
+.guest-feedback-list{display:flex;flex-direction:column;gap:5px;margin:7px 0;padding:9px 11px;background:#234b3e;border:1px solid #8aa07b;border-radius:10px;color:#f9e3b2;font-size:12px}
+.guest-feedback-list strong{font-size:14px}.review-line{display:flex;gap:8px;justify-content:space-between;align-items:center;border-top:1px solid #ffffff22;padding-top:5px}.review-line span:last-child{text-align:right;color:#f0e5c3}
