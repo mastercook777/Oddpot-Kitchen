@@ -1,4 +1,6 @@
-> **v0.4.5 小修复**：采集背包升级容量与接近距离、顾客头侧环形等待提示。详见 [修复说明](docs/HOTFIX_v0.4.5.md)。新方向见 [v0.5 餐馆成长草案](docs/V0.5_GROWTH_PROPOSAL.md)。
+> **v0.5A 可玩原型**：双厨位可配置炒锅/炖锅，永久升级 Lv2，支持真正的双炒锅并行出餐。见 [v0.5A 验收说明](docs/V0.5A_PLAYABLE.md)。员工与料理增益仍属于 [v0.5 设计草案](docs/V0.5_GROWTH_PROPOSAL.md)，尚未实施。
+
+> **v0.4.5 小修复**：实时采集背包容量及靠近判定、餐厅顾客头旁圆形等待倒计时。见 [变更说明](docs/HOTFIX_v0.4.5.md)。下一步方案见 [料理驱动的食堂成长 v0.5 草案](docs/V0.5_GROWTH_PROPOSAL.md)。
 
 # 怪味食堂 · Oddpot Kitchen H5 v0.4.4
 

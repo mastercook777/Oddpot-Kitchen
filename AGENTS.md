@@ -1,3 +1,9 @@
+## v0.5A 最新实现边界
+- 双物理厨位的字段位于 `s.kitchen.slots[0/1]`（类型 WOK/POT，等级 1/2）；`s.service.stations.WOK/POT` 仍作为**左/右物理槽的历史键**，不要把键名当成当前锅具类型。
+- 调度需调用 `kitchenHasMenuCoverage`、`stationDuration`、`ensureKitchen`，不得绕开库存账本、波次或双工位互斥。
+- 旧 `upgrade` 布尔值升级映射左厨位 Lv2；不可重复给原升级扣款。
+- 任何变更先跑 `npm test`，特别是 `tests/v05a.test.js` 与旧版 51 项。
+
 # Oddpot Kitchen — Agent / Codex instructions
 
 ## Goal and source precedence
