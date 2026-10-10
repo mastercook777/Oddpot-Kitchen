@@ -35,3 +35,11 @@ The current executable prototype is **v0.3**. Read `docs/GDD_v0.3_PROTOTYPE.md` 
 - Preserve keyboard accessibility and touch joystick, save-before-background, and no scrollable body on iPhone.
 - Canvas is presentation, while engine owns deterministic settlement, cost and stock.
 - v0.4 remains subject to user validation, avoid claiming full Kairosoft-style simulation.
+
+## v0.4.1 input and graphics
+
+- `src/controls_v041.js`: single source for analog dead-zone and radius mapping. Do not reintroduce fixed bottom-left controls.
+- `src/pixels_v041.js`: reusable low-resolution original sprite primitives; scene animations only read authoritative engine combat/order flags.
+- `src/field_v04.js`: preserve deterministic damage/reward events; visual timers cannot grant loot or alter economics.
+- Mobile controls must preserve secondary-touch skill use and `touch-action: none` on the playfield.
+- Rebuild `standalone.html` using `python scripts/build-standalone.py` after source edits.

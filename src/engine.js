@@ -1,4 +1,4 @@
-import {ING,RECIPES,CUSTOMERS,FORECAST,DEFAULT_INVENTORY} from './data.js?v=0.4.0';
+import {ING,RECIPES,CUSTOMERS,FORECAST,DEFAULT_INVENTORY} from './data.js?v=0.4.1';
 export const PHASES=['forecast','field','research','menu','prep','service','report','upgrade'];
 export const SAVE_KEY='oddpot-prototype-v04'; // v0.2 兼容先前试玩存档
 const clone=x=>structuredClone(x);
@@ -104,7 +104,7 @@ export function breakPrep(s,recipeId){
  if(s.phase!=='service'||!v||!v.breakAt||v.breakUsed||!recipe||!s.menu.includes(recipeId)||!s.recipes[recipeId]||!canUse(s,recipe.ids))return false;
  if(!consume(s,recipe.ids,`emergency-prep-${s.cycle}-${s.day}-${v.breakAt}`))return false;
  s.prep[recipeId]=(s.prep[recipeId]||0)+1;
- v.cost+=materialCost(recipe.ids);v.breakUsed=true;
+ v.cost+=materialCost(recipe.ids);v.breakUsed=true;v.decisionFlash=`应急预制：${recipe.name}`;v.decisionAt=v.time;
  record(s,{type:'emergency_prep',recipeId});return true;
 }
 export const SERVICE_EVENTS={
@@ -132,12 +132,13 @@ export function chooseServiceEvent(s,choice){
  else if(choice==='assist'){v.eventEffects.WOK=3;v.eventEffects.POT=3;}
  else if(choice==='publicity'){v.guestMood=10;v.eventMoodWave=wave;}
  v.eventChoiceMade.push(wave);v.breakUsed=true;
+ v.decisionFlash=({sign:'冒险者客群增加',kitchen:'炒锅加速 -3秒',steady:'稳住服务节奏',soup:'家庭客群增加',assist:'双厨具加速 -3秒',publicity:'顾客好感 +10'})[choice]||'事件已处理';v.decisionAt=v.time;
  record(s,{type:'management_choice',wave,choice,cost});return true;
 }
 export function swapBreakMenu(s,slot,id){
  const v=s.service;
  if(s.phase!=='service'||!v?.breakAt||v.breakUsed||!Number.isInteger(slot)||slot<0||slot>2||!s.recipes[id]||!RECIPES[id])return false;
- const before=s.menu[slot];if(before===id)return false;s.menu[slot]=id;v.breakUsed=true;
+ const before=s.menu[slot];if(before===id)return false;s.menu[slot]=id;v.breakUsed=true;v.decisionFlash=`下一波新上架：${RECIPES[id].name}`;v.decisionAt=v.time;
  record(s,{type:'menu_swap',wave:v.breakAt,slot,before,after:id});return true;
 }
 function materialCost(ids){return ids.reduce((sum,id)=>sum+ING[id].cost,0)}

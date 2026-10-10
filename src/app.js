@@ -1,14 +1,15 @@
-import {ING,RECIPES,FORECAST,ROUTES,CUSTOMERS} from './data.js?v=0.4.0';
-import {PHASES,newGame,save,load,today,enterField,settleField,skipField,purchase,startCook,moveTile,beat,finishCook,synergyFor,canMenu,prepDish,createService,tick,expedite,closeService,nextPhase,advanceDay,buyUpgrade,canUse,setServicePaused,resumeBreak,breakPrep,setFlame,tossWok,previewHeat,moveExplorer,interactExplorer,sootheGuest,newRecipeLead,currentServiceEvent,chooseServiceEvent,swapBreakMenu} from './engine.js?v=0.4.0';
-import {startActionField,stepActionField,useFieldSkill,resolveFieldEvent} from './field_v04.js?v=0.4.0';
-import {drawField,drawDiner} from './scenes_v04.js?v=0.4.0';
+import {joystickVector} from './controls_v041.js?v=0.4.1';
+import {ING,RECIPES,FORECAST,ROUTES,CUSTOMERS} from './data.js?v=0.4.1';
+import {PHASES,newGame,save,load,today,enterField,settleField,skipField,purchase,startCook,moveTile,beat,finishCook,synergyFor,canMenu,prepDish,createService,tick,expedite,closeService,nextPhase,advanceDay,buyUpgrade,canUse,setServicePaused,resumeBreak,breakPrep,setFlame,tossWok,previewHeat,moveExplorer,interactExplorer,sootheGuest,newRecipeLead,currentServiceEvent,chooseServiceEvent,swapBreakMenu} from './engine.js?v=0.4.1';
+import {startActionField,stepActionField,useFieldSkill,resolveFieldEvent} from './field_v04.js?v=0.4.1';
+import {drawField,drawDiner} from './scenes_v04.js?v=0.4.1';
 
 let game=load()||newGame();
 let message='欢迎回到边境食堂！今天会有谁来吃饭呢？';
 let overlay='',tileSelected=null,selectedOrderId=null;let servicePanel='';
 let selectedIngredients=['chicken','chili'],selectedMethod='stir';
 let routeTarget=null,walking=null,drag=null;
-const stick={x:0,y:0,pointer:null};const keys=new Set();let lastFrame=0,lastSave=0;let gameClock=0;const touched=new Map();
+const stick={x:0,y:0,pointer:null,originX:0,originY:0};const keys=new Set();let lastFrame=0,lastSave=0;let gameClock=0;const touched=new Map();
 const app=document.getElementById('app');
 const esc=s=>String(s??'').replaceAll('&','&amp;').replaceAll('<','&lt;').replaceAll('>','&gt;').replaceAll('"','&quot;');
 const b=(act,text,klass='',disabled=false)=>`<button class="game-btn ${klass}" data-act="${act}" ${disabled?'disabled':''}>${text}</button>`;
@@ -18,7 +19,7 @@ const meal=r=>`${r.emoji} ${r.name}`;
 const onlyName=id=>ING[id]?.name||id;
 const itemCount=()=>Object.keys(game.recipes).length;
 
-function hud(){return `<div class="hud"><div class="brand"><span class="logo">🍳</span><div><strong>怪味食堂</strong><small>ODDPOT KITCHEN · v0.4</small></div></div><div class="hud-meta"><span>🪙 ${game.coins}</span><span>⭐ ${game.reputation}</span></div><button class="hud-gear" data-act="settings" aria-label="设置">⚙</button></div><div class="day-strip"><b>第 ${game.cycle} 轮 · DAY ${game.day}</b><span>${phaseLabels[game.phase]}</span><span>📖 ${itemCount()}/${Object.keys(RECIPES).length}</span></div>`}
+function hud(){return `<div class="hud"><div class="brand"><span class="logo">🍳</span><div><strong>怪味食堂</strong><small>ODDPOT KITCHEN · v0.4.1</small></div></div><div class="hud-meta"><span>🪙 ${game.coins}</span><span>⭐ ${game.reputation}</span></div><button class="hud-gear" data-act="settings" aria-label="设置">⚙</button></div><div class="day-strip"><b>第 ${game.cycle} 轮 · DAY ${game.day}</b><span>${phaseLabels[game.phase]}</span><span>📖 ${itemCount()}/${Object.keys(RECIPES).length}</span></div>`}
 function toast(){return `<div class="game-toast" role="status">${esc(message)}</div>`}
 function shell(stage,dock){return `<div class="game-shell">${hud()}<main class="stage ${game.phase}${game.cook?' wok-active':''}">${stage}</main>${toast()}<nav class="dock">${dock}</nav>${overlayMarkup()}</div>`}
 function overlayMarkup(){if(!overlay)return '';
@@ -65,8 +66,8 @@ function field(){
  `<div class="dock-head"><span>单次约 60 秒 · 可主动撤离</span></div><div class="action-row">${b('skip-field','跳过探索，直接研发 →','secondary wide')}</div>`]}
  const bag=Object.entries(f.bag).map(([id,n])=>`${ING[id].name}${n}`).join(' · ')||'空';
  const event=f.activeEvent&&f.nodes.find(n=>n.key===f.activeEvent);
- return [`<div class="forest-scene action-forest"><canvas id="forest-canvas" class="forest-canvas"></canvas><div class="action-hud"><span>体力 ${f.hp}/3</span><span>收获：${esc(bag)}</span><span>${Math.floor(f.elapsed)}s</span></div>${event?`<div class="field-event"><strong>野外遭遇 · 流浪调味师</strong><p>你在林中发现一份料理线索，如何处理？</p><button data-event="trade">用蘑菇交换火椒</button><button data-event="forage">深入调查：损失生命，争取两份材料</button><button data-event="leave">绕开，保留现有收获</button></div>`:''}</div>`,
- `<div class="action-field-dock"><div class="joystick" id="field-stick"><div class="joystick-knob" id="field-stick-knob"></div><small>移动</small></div><div class="field-buttons">${b('skill',`锅铲击退${f.skillCd>0?' '+Math.ceil(f.skillCd)+'s':''}`,'skill',f.skillCd>0)}${b('retreat','带材料撤离','secondary')}</div></div>`]
+ return [`<div class="forest-scene action-forest"><canvas id="forest-canvas" class="forest-canvas"></canvas><div class="floating-joystick" id="field-stick" aria-hidden="true"><div class="floating-joystick-knob" id="field-stick-knob"></div></div><div class="action-hud"><span>体力 ${f.hp}/3</span><span>收获：${esc(bag)}</span><span>${Math.floor(f.elapsed)}s</span></div>${event?`<div class="field-event"><strong>野外遭遇 · 流浪调味师</strong><p>你在林中发现一份料理线索，如何处理？</p><button data-event="trade">用蘑菇交换火椒</button><button data-event="forage">深入调查：损失生命，争取两份材料</button><button data-event="leave">绕开，保留现有收获</button></div>`:''}</div>`,
+ `<div class="action-field-dock"><div class="field-touch-tip">手指按住森林任意位置<br>拖动移动 · 松开停止</div><div class="field-buttons">${b('skill',`锅铲击退${f.skillCd>0?' '+Math.ceil(f.skillCd)+'s':''}`,'skill',f.skillCd>0)}${b('retreat','带材料撤离','secondary')}</div></div>`]
 }
 
 function forestBackdrop(){return `<div class="forest-cloud c1">🌲</div><div class="forest-cloud c2">🌲</div><div class="forest-cloud c3">🍄</div><div class="forest-cloud c4">🌿</div><div class="forest-cloud c5">🦬</div>`}
@@ -111,7 +112,7 @@ function action(act){
  if(act==='to-field'){nextPhase(game,'field');note('想做什么菜，就去寻找那道菜缺少的食材。');return}
  if(act==='skip-field'){skipField(game);note('跳过探索，直接开始今天的料理研发。');return}
  if(act==='skill'){if(useFieldSkill(game)){message=game.field.actionMessage;render()}return}
- if(act==='retreat'){stick.x=stick.y=0;if(walking){clearInterval(walking);walking=null}const result=settleField(game);note(result?'已带着背包回店，收获已入库！':'本次探索已结算。');return}
+ if(act==='retreat'){releaseStick();if(walking){clearInterval(walking);walking=null}const result=settleField(game);note(result?'已带着背包回店，收获已入库！':'本次探索已结算。');return}
  if(act.startsWith('method:')){selectedMethod=act.slice(7);render();return}
  if(act==='start-research'){note(startCook(game,selectedIngredients,selectedMethod)?'开锅！改变位置和火力，尝试做出新的料理。':'请选择 2–3 份有库存的不同食材。');return}
  if(act.startsWith('flame:')){setFlame(game,Number(act.slice(6)));render();return}
@@ -139,11 +140,11 @@ function action(act){
 app.addEventListener('click',e=>{
  const tile=e.target.closest('[data-tile]');if(tile&&game.cook){const i=+tile.dataset.tile;if(tileSelected===null){if(game.cook.tiles[i]){tileSelected=i;note('再点一次目的格，交换或移动食材。');}}else{const from=tileSelected;tileSelected=null;note(moveTile(game,from,i)?'已翻动锅内食材。':'本拍换位机会已用完。')}return}
  const ev=e.target.closest('[data-event]');if(ev){if(resolveFieldEvent(game,ev.dataset.event)){message=game.field.actionMessage;render()}return}
- const ch=e.target.closest('[data-choice]');if(ch){if(chooseServiceEvent(game,ch.dataset.choice)){servicePanel='';note('处理结果已经生效，下一波将按选择发生变化。')}else note('目前条件不足或已经处理过本波事件。');return}
- const bp=e.target.closest('[data-breakprep]');if(bp){servicePanel='';note(breakPrep(game,bp.dataset.breakprep)?'应急餐点已做好，下一波将优先消耗。':'原料不足或本波应急机会已用。');return}
- const swap=e.target.closest('[data-apply-swap]');if(swap){const slot=Number(swap.dataset.applySwap),id=app.querySelector(`[data-swap-slot="${slot}"]`)?.value;const ok=swapBreakMenu(game,slot,id);servicePanel='';note(ok?'临时换菜成功；下一波新顾客会重新选择菜品。':'无法换菜：只能一次，或与现有菜相同。');return}
+ const ch=e.target.closest('[data-choice]');if(ch){if(chooseServiceEvent(game,ch.dataset.choice)){servicePanel='';note(game.service.decisionFlash+'，下一波将兑现。')}else note('目前条件不足或已经处理过本波事件。');return}
+ const bp=e.target.closest('[data-breakprep]');if(bp){servicePanel='';note(breakPrep(game,bp.dataset.breakprep)?game.service.decisionFlash+'，下波同款订单将优先出餐。':'原料不足或本波应急机会已用。');return}
+ const swap=e.target.closest('[data-apply-swap]');if(swap){const slot=Number(swap.dataset.applySwap),id=app.querySelector(`[data-swap-slot="${slot}"]`)?.value;const ok=swapBreakMenu(game,slot,id);servicePanel='';note(ok?game.service.decisionFlash+'，只影响尚未入店的顾客。':'无法换菜：只能一次，或与现有菜相同。');return}
  const a=e.target.closest('[data-act]');if(a){if(!a.disabled)action(a.dataset.act);return}
- const route=e.target.closest('[data-route]');if(route){const entered=enterField(game,route.dataset.route);if(entered)startActionField(game);note(entered?'推动左下摇杆移动，靠近植物自动采集；遇敌会自动挥铲！':'路线无法进入。');return}
+ const route=e.target.closest('[data-route]');if(route){const entered=enterField(game,route.dataset.route);if(entered)startActionField(game);note(entered?'按住森林任意位置并拖动移动，靠近目标会自动采集、挥铲！':'路线无法进入。');return}
  const target=e.target.closest('[data-target]');if(target){game.selectedTarget=target.dataset.target;render();return}
  const item=e.target.closest('[data-ingredient]');if(item){const id=item.dataset.ingredient;if(selectedIngredients.includes(id))selectedIngredients=selectedIngredients.filter(i=>i!==id);else if(selectedIngredients.length<3)selectedIngredients=[...selectedIngredients,id];else message='一锅最多放三种食材。';render();return}
  const book=e.target.closest('[data-book]');if(book){const r=RECIPES[book.dataset.book];selectedIngredients=[...r.ids];selectedMethod=r.method;overlay='';note(`已选择实验线索：${r.hint}`);return}
@@ -168,8 +169,8 @@ function analogAxis(){let x=stick.x,y=stick.y;for(const key of keys){if(['ArrowL
 function frame(now){const delta=Math.min(.045,(now-(lastFrame||now))/1000);lastFrame=now;gameClock+=delta;
  if(game.phase==='field'&&game.field?.action&&!document.hidden&&!overlay){
   const [dx,dy]=analogAxis(),evt=stepActionField(game,dx,dy,delta);
-  if(evt==='field_event'){message='遇见流浪调味师：请选择方案。';stick.x=stick.y=0;render()}
-  else if(game.phase!=='field'){stick.x=stick.y=0;message='探索结束：只损失本次背包收获，原仓库安全。';render()}
+  if(evt==='field_event'){message='遇见流浪调味师：请选择方案。';releaseStick();render()}
+  else if(game.phase!=='field'){releaseStick();message='探索结束：只损失本次背包收获，原仓库安全。';render()}
   else {const f=game.field;const hud=app.querySelector('.action-hud');if(hud)hud.innerHTML=`<span>体力 ${f.hp}/3</span><span>收获 ${Object.entries(f.bag).map(([k,n])=>ING[k].name+'×'+n).join(' · ')||'空'}</span><span>${Math.floor(f.elapsed)}s</span>`;
    const skill=app.querySelector('[data-act="skill"]');if(skill){skill.disabled=f.skillCd>0;skill.textContent=f.skillCd>0?`锅铲 ${Math.ceil(f.skillCd)}s`:'锅铲击退'};
   }
@@ -180,9 +181,30 @@ function frame(now){const delta=Math.min(.045,(now-(lastFrame||now))/1000);lastF
  requestAnimationFrame(frame);
 }
 requestAnimationFrame(frame);
-// Pointer joystick with pointer capture. The root is stable between normal
-// canvas frames; rerender only occurs for phase/event transitions.
-app.addEventListener('pointerdown',e=>{const root=e.target.closest('#field-stick');if(!root)return;e.preventDefault();stick.pointer=e.pointerId;root.setPointerCapture(e.pointerId);updateStick(e,root)},{passive:false});
-app.addEventListener('pointermove',e=>{if(stick.pointer!==e.pointerId)return;const root=e.target.closest('#field-stick')||app.querySelector('#field-stick');if(root){e.preventDefault();updateStick(e,root)}},{passive:false});
-function updateStick(e,root){const b=root.getBoundingClientRect(),cx=b.left+b.width/2,cy=b.top+b.height/2;const x=(e.clientX-cx)/(b.width*.35),y=(e.clientY-cy)/(b.height*.35);const d=Math.max(1,Math.hypot(x,y));stick.x=x/d;stick.y=y/d;const knob=root.querySelector('.joystick-knob');if(knob)knob.style.transform=`translate(${stick.x*27}px,${stick.y*27}px)`}
-for(const name of ['pointerup','pointercancel','lostpointercapture'])app.addEventListener(name,e=>{if(stick.pointer!==e.pointerId)return;stick.pointer=null;stick.x=stick.y=0;const knob=app.querySelector('.joystick-knob');if(knob)knob.style.transform='translate(0,0)'});
+// Floating analog: anchored at finger-down anywhere on the forest canvas.
+// Pointer capture stays on #app, which does not get replaced during scene updates.
+function releaseStick(){
+ stick.pointer=null;stick.x=stick.y=0;
+ const el=app.querySelector('#field-stick');if(el){el.classList.remove('active');el.style.left='-100px';el.style.top='-100px';}
+ const knob=app.querySelector('#field-stick-knob');if(knob)knob.style.transform='translate(0px,0px)';
+}
+function updateStick(e){
+ const v=joystickVector(stick.originX,stick.originY,e.clientX,e.clientY,54,9);
+ stick.x=v.x;stick.y=v.y;
+ const knob=app.querySelector('#field-stick-knob');
+ if(knob)knob.style.transform=`translate(${v.knobX}px,${v.knobY}px)`;
+}
+app.addEventListener('pointerdown',e=>{
+ if(game.phase!=='field'||!game.field?.action||game.field.finished||game.field.activeEvent||overlay||stick.pointer!==null)return;
+ // The scene is the input surface. Do not steal events from active buttons or dialogs.
+ if(!e.target.closest('.action-forest')||e.target.closest('.field-event,button,select'))return;
+ e.preventDefault();stick.pointer=e.pointerId;stick.originX=e.clientX;stick.originY=e.clientY;
+ const pad=app.querySelector('#field-stick');if(pad){pad.classList.add('active');pad.style.left=e.clientX+'px';pad.style.top=e.clientY+'px';}
+ try{app.setPointerCapture(e.pointerId)}catch{}
+ updateStick(e);
+},{passive:false});
+app.addEventListener('pointermove',e=>{
+ if(stick.pointer!==e.pointerId)return;e.preventDefault();updateStick(e);
+},{passive:false});
+for(const name of ['pointerup','pointercancel','lostpointercapture'])app.addEventListener(name,e=>{if(stick.pointer===e.pointerId)releaseStick();});
+window.addEventListener('blur',releaseStick);
