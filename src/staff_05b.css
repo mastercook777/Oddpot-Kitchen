@@ -1,0 +1,15 @@
+/* v0.5B compact, touch-friendly staff / meal panel */
+.staff-open-prep{width:100%;min-height:39px;display:flex;align-items:center;justify-content:space-between;gap:6px;padding:7px 10px;background:#456b51;border:1px solid #a2bb89;border-radius:9px;font-weight:900;color:#ffedba;font-size:13px}
+.staff-open-prep span{font-size:12px;font-weight:650;color:#dbdfb7}
+.staff-roster{display:flex;flex-direction:column;gap:12px;padding-bottom:15px}
+.staff-person{background:#284f3e;border:1px solid #91a883;border-radius:12px;padding:10px;display:flex;flex-direction:column;gap:7px;color:#fff2ca}
+.staff-person-head{display:flex;justify-content:space-between;gap:8px;align-items:center}.staff-person-head b{font-size:17px}.staff-person-head span{font-size:12px;color:#edc77f}
+.staff-person p{margin:0;font-size:13px;line-height:1.4;color:#d1e0c4}.staff-buff{font-size:13px;color:#eadaad}
+.staff-feed-list{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:6px}
+.staff-feed-list button{display:flex;flex-direction:column;align-items:center;justify-content:center;gap:3px;min-height:46px;padding:5px 2px;border-radius:8px;color:#2c4436;background:#f1d9a7;border:1px solid #fff0c8;font-size:12px;font-weight:900}
+.staff-feed-list button:disabled{opacity:.36}.staff-feed-list button small{font-size:11px;color:#756342}
+.staff-assign{display:flex;gap:6px}.staff-assign button{flex:1;min-height:40px;background:#365f49;color:#e9e5cf;border:1px solid #8eae91;border-radius:8px;font-size:13px;font-weight:800}.staff-assign button.active{background:#efd18b;color:#273d31;border-color:#fff0be}
+.staff-person>.game-btn{width:100%;min-height:45px}
+.staff-report{display:flex;flex-direction:column;gap:4px;background:#30533e;border:1px solid #aac18d;border-radius:10px;padding:9px 11px;font-size:12px;line-height:1.45}
+.staff-report b{font-size:14px;color:#ffe0a0}.staff-report span{color:#e7e8c8}.staff-report small{color:#cfdbc4}
+@media(max-height:650px){.kitchen-prep-card{gap:2px}.staff-open-prep{min-height:33px;font-size:12px;padding:4px 7px}.staff-open-prep span{font-size:11px}}

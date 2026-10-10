@@ -76,3 +76,10 @@ The current executable prototype is **v0.4.4**. Read `docs/GDD_v0.4.2_PLAYABLE.m
 - Restaurant HTML overlay only annotates interactive pots and seats; guest graphics, actual work and serving should stay unobstructed. Don't re-add event text across tables or the chef.
 - Short-lived HUD notifications must never mutate economy or timers; restaurant animations stay frozen on pause.
 - Check all 3 viewport sizes and click both kitchen and table targets after every HUD change.
+
+## v0.5B crew rules
+- Staff are optional: one helper and one waiter at most; hire once, persist across days. Keep their pixel actors connected to service state.
+- Feed each role only one unlocked standard recipe per day; consume shared inventory through a unique ledger transaction. Save per-day meal buffs and cap familiarity.
+- Snapshot the active crew at service creation. Helper modifies duration of the selected physical kitchen position, waiter modifies customer patience on actual arrival.
+- Report real helper seconds / waiter patience changes, subtract staff-meal ingredient costs exactly once; do not duplicate a sale or touch third-day challenge payout.
+- Keep SAVE_KEY/version-4 compatibility; migrate active v0.5A service gracefully. Run all Node tests and mobile 320px/375px/390px smoke checks after changes.
