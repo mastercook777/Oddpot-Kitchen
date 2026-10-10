@@ -1,20 +1,22 @@
+import {pixelActor,pixelEnemy,pixelImpact} from './pixels_v041.js?v=0.4.1';
 // Lightweight procedural game graphics: original Canvas shapes, no art pack.
-import {ING,RECIPES,CUSTOMERS} from './data.js?v=0.4.0';
+import {ING,RECIPES,CUSTOMERS} from './data.js?v=0.4.1';
 const color={ink:'#24382a',leaf:'#386b43',soil:'#806044',stone:'#a6b392',cream:'#f4dfb0',gold:'#dfb873'};
 function rect(c,x,y,w,h,fill){c.fillStyle=fill;c.fillRect(x,y,w,h)}
 function circle(c,x,y,r,fill){c.fillStyle=fill;c.beginPath();c.arc(x,y,r,0,Math.PI*2);c.fill()}
 function line(c,x1,y1,x2,y2,stroke,width=1){c.strokeStyle=stroke;c.lineWidth=width;c.beginPath();c.moveTo(x1,y1);c.lineTo(x2,y2);c.stroke()}
 function text(c,string,x,y,fill='#fff1d0',size=12,align='center'){c.textAlign=align;c.textBaseline='middle';c.fillStyle=fill;c.font=`bold ${size}px system-ui`;c.fillText(string,x,y)}
 function capsule(c,x,y,w,h,fill,stroke){c.beginPath();c.roundRect(x,y,w,h,h/2);c.fillStyle=fill;c.fill();if(stroke){c.strokeStyle=stroke;c.lineWidth=2;c.stroke()}}
-export function setCanvas(canvas){if(!canvas)return null;const {width,height}=canvas.getBoundingClientRect();if(width<10||height<10)return null;const dpr=Math.min(window.devicePixelRatio||1,2);const W=Math.floor(width*dpr),H=Math.floor(height*dpr);if(canvas.width!==W||canvas.height!==H){canvas.width=W;canvas.height=H}const c=canvas.getContext('2d');c.setTransform(dpr,0,0,dpr,0,0);c.clearRect(0,0,width,height);return {c,w:width,h:height};}
+export function setCanvas(canvas){if(!canvas)return null;const {width,height}=canvas.getBoundingClientRect();if(width<10||height<10)return null;const dpr=Math.min(window.devicePixelRatio||1,2);const W=Math.floor(width*dpr),H=Math.floor(height*dpr);if(canvas.width!==W||canvas.height!==H){canvas.width=W;canvas.height=H}const c=canvas.getContext('2d');c.setTransform(dpr,0,0,dpr,0,0);c.imageSmoothingEnabled=false;c.clearRect(0,0,width,height);return {c,w:width,h:height};}
 function tree(c,x,y,t=0){rect(c,x-4,y+2,8,16,'#6d4930');circle(c,x,y-8,16,'#214d34');circle(c,x-6,y-12,12,'#3e7850');circle(c,x+7,y-13,10,'#4e8a50');circle(c,x-6,y-16,2,'#92b66d')}
-function chef(c,x,y,t=0){
- circle(c,x,y+11,12,'#26463377');rect(c,x-9,y-2,18,21,'#d4a660');rect(c,x-5,y+13,4,6,'#473c32');rect(c,x+3,y+13,4,6,'#473c32');circle(c,x,y-6,9,'#edc4a0');rect(c,x-10,y-16,20,5,'#f5ead8');rect(c,x-7,y-22,14,10,'#faf3e5');rect(c,x-5,y-5,2,2,'#382e2b');rect(c,x+4,y-5,2,2,'#382e2b');rect(c,x-3,y+6,6,2,'#9d5533')}
-function monster(c,e,t){const x=e.x,y=e.y;
- if(e.kind==='chicken'){circle(c,x,y+6,13,'#54452d80');circle(c,x,y,13,'#e4cf90');circle(c,x-2,y-4,8,'#f6e5bd');circle(c,x+7,y-2,2,'#202a26');rect(c,x+10,y+1,7,4,'#d18a4a');rect(c,x-6,y-17,5,7,'#ad5641');rect(c,x+1,y-17,5,7,'#b65a3d');}
- else{circle(c,x,y+5,12,'#34283580');circle(c,x,y,11,'#b34f42');circle(c,x-4,y-4,5,'#e48f48');circle(c,x+4,y-4,5,'#d56b3a');circle(c,x+9,y,2,'#fff1d2');rect(c,x-2,y-16,5,8,'#477a42');}
- if(e.warning>0){circle(c,x,y,19,'#e9c26445');text(c,'!',x,y-28,'#ffdf83',16)}
- capsule(c,x-12,y-24,24,4,'#28352f');capsule(c,x-12,y-24,24*e.hp/e.maxHp,4,'#e3b65d');
+function chef(c,x,y,t=0,options={}){
+ pixelActor(c,'chef',x,y,options.scale||1.7,{face:options.face||1,walk:options.walk?t:0,attack:options.attack||false,hurt:options.hurt||0});
+}
+function monster(c,e,t){
+ const x=e.x,y=e.y;
+ if(e.hp>0||e.deathFx>0){c.save();if(e.hp<=0)c.globalAlpha=Math.min(1,(e.deathFx||0)/.27);pixelEnemy(c,e.kind,x,y,1.8,{face:e.face||1,walk:t,hurt:e.hurtFx||0});c.restore();}
+ if(e.warning>0){circle(c,x,y,19+Math.sin(t*14)*3,'#e9c26445');text(c,'!',x,y-29,'#ffdf83',16)}
+ if(e.hp>0){capsule(c,x-12,y-27,24,4,'#28352f');capsule(c,x-12,y-27,24*e.hp/e.maxHp,4,'#e3b65d')}
 }
 function plant(c,n,t){const x=n.x,y=n.y;if(n.claimed)return;
  circle(c,x,y+6,13,'#274a3677');circle(c,x,y,11,n.key==='target'?'#f3d27d':'#8ba87a');
@@ -33,15 +35,26 @@ export function drawField(canvas,s,clock){const size=setCanvas(canvas);if(!size|
  for(const o of f.obstacles){c.save();c.translate(o.x+.5,o.y+.5);c.scale(1/sc,1/sc);tree(c,0,0);c.restore()}
  for(const n of f.nodes){if(n.type==='event'&&!n.claimed){circle(c,n.x,n.y,.23,'#ecd597');rect(c,n.x-.11,n.y-.17,.23,.32,'#916b4b');text(c,'?',n.x,n.y-.04,'#4d3d28',.27)}else {c.save();c.translate(n.x,n.y);c.scale(1/sc,1/sc);plant(c,{...n,x:0,y:0},clock);c.restore()}}
  for(const p of f.projectiles||[]){circle(c,p.x,p.y,.12,'#ef9c4e');circle(c,p.x,p.y,.05,'#ffe5a3')}
- for(const e of f.enemies||[]){if(e.hp>0){c.save();c.translate(e.x,e.y);c.scale(1/sc,1/sc);monster(c,{...e,x:0,y:0},clock);c.restore()}}
- c.save();c.translate(f.pos.x,f.pos.y);c.scale(1/sc,1/sc);chef(c,0,Math.sin(clock*9)*1.5,clock);c.restore();
+ for(const e of f.enemies||[]){if(e.hp>0||e.deathFx>0){c.save();c.translate(e.x,e.y);c.scale(1/sc,1/sc);monster(c,{...e,x:0,y:0},clock);c.restore()}}
+ // Attack swipe uses the *same* direction and trigger as combat hit detection.
+ if(f.attackFx?.ttl>0){
+  const fx=f.attackFx,progress=1-fx.ttl/fx.duration,angle=Math.atan2(fx.dy,fx.dx);
+  c.save();c.translate(f.pos.x,f.pos.y);c.rotate(angle);c.globalAlpha=Math.min(1,fx.ttl*4);
+  c.strokeStyle='#ffe6a1';c.lineWidth=.15;c.beginPath();c.arc(0,0,.79,-.93+progress*.7,.52+progress*.7);c.stroke();
+  c.strokeStyle='#fff9e0';c.lineWidth=.07;c.beginPath();c.arc(0,0,1.05,-.65+progress*.65,.30+progress*.65);c.stroke();c.restore();
+ }
+ if(f.skillFx>0){c.save();c.strokeStyle=`rgba(255,231,151,${Math.min(.95,f.skillFx*2.4)})`;c.lineWidth=.12;c.beginPath();c.arc(f.pos.x,f.pos.y,(.42-f.skillFx)*3+.35,0,Math.PI*2);c.stroke();c.restore();}
+ for(const e of f.enemies||[]){if(e.hurtFx>0&&e.hp>0){c.save();c.translate(e.x,e.y);c.scale(1/sc,1/sc);pixelImpact(c,0,-5,8);c.restore()}}
+ for(const fx of f.popFx||[]){c.save();c.translate(fx.x,fx.y-(.76-fx.ttl)*.5);c.scale(1/sc,1/sc);text(c,fx.text,0,-17,fx.color||'#fff1b1',12);c.restore()}
+ c.save();c.translate(f.pos.x,f.pos.y);c.scale(1/sc,1/sc);
+ chef(c,0,Math.sin(clock*9)*(f.moving?1.5:.35),clock,{scale:1.55,walk:f.moving,attack:!!f.attackFx,face:(f.facing?.x||0)<-.15?-1:1,hurt:f.hurtFx});c.restore();
  if(f.harvestNode){const n=f.nodes.find(n=>n.key===f.harvestNode);if(n){capsule(c,n.x-.40,n.y-.49,.8,.10,'#304d39');capsule(c,n.x-.40,n.y-.49,.8*(f.harvestProgress/.82),.10,'#f3dd7e')}}
  c.restore();
  // bottom prompt is painted as part of the scene, not a scrolling paragraph.
  const txt=f.activeEvent?'调味师正在等待你的回答':f.actionMessageTTL>0?f.actionMessage:'靠近自动采集 · 接近怪物自动攻击';
  capsule(c,10,h-42,w-20,29,'#17382dcc','#9db27f');text(c,txt.slice(0,32),w/2,h-27,'#f3e9cd',11);
 }
-function guest(c,x,y,kind,time){const pal={regular:'#96b2c8',family:'#d19b80',adventurer:'#6f9b7d',critic:'#a68aac'}[kind]||'#d3b88a';circle(c,x,y+8,13,'#322b2766');rect(c,x-8,y-3,16,17,pal);circle(c,x,y-10,9,'#e8bb93');rect(c,x-8,y-20,16,6,kind==='critic'?'#67485c':'#70513c');rect(c,x-5,y-12,2,2,'#382d2a');rect(c,x+4,y-12,2,2,'#382d2a');rect(c,x-6,y+11,4,7,'#4f4a45');rect(c,x+2,y+11,4,7,'#4f4a45')}
+function guest(c,x,y,kind,time){pixelActor(c,kind||'regular',x,y,1.65,{walk:time});}
 function dish(c,x,y,kind){circle(c,x,y,12,'#f1e5c6');circle(c,x,y,9,'#9ba288');circle(c,x-3,y-1,4,kind==='POT'?'#ca9866':'#9a5438');circle(c,x+4,y-2,3,'#d3b76b');circle(c,x+1,y+4,3,'#719b55')}
 export function drawDiner(canvas,s,clock){const size=setCanvas(canvas);if(!size)return;const {c,w,h}=size,v=s.service;
  rect(c,0,0,w,h,'#987856');for(let y=0;y<h;y+=24){rect(c,0,y,w,22,y%48===0?'#9b7956':'#987452');line(c,0,y,w,y,'#6f523e',1)}
@@ -53,8 +66,8 @@ export function drawDiner(canvas,s,clock){const size=setCanvas(canvas);if(!size)
   const busy=v?.stations[i?'POT':'WOK'];if(busy){for(let n=0;n<3;n++){circle(c,x-14+n*14,h*.24-22+Math.sin(clock*3+n)*3,4,'#f3e0b588')}text(c,`${Math.max(0,Math.ceil(busy.left))}s`,x,h*.24+35,'#fff5d5',11)}
  }
  rect(c,w*.12,h*.43,w*.76,17,'#6f4d33');rect(c,w*.12,h*.43,w*.76,7,'#d3a66d');
- // A tiny kitchen crew animates independently of the invoice/queue update.
- chef(c,w*.5+Math.sin(clock*1.8)*5,h*.35+Math.sin(clock*3)*2,clock);
+ // A pixel-art chef animates continuously even between discrete order ticks.
+ chef(c,w*.5+Math.sin(clock*1.8)*5,h*.35+Math.sin(clock*3)*2,clock,{scale:1.9,walk:true,attack:!!v?.stations.WOK});
  for(const evt of (v?.events||[]).filter(e=>e.type==='served'&&v.time-e.t<=3)){
   const order=v.orders.find(o=>o.id===evt.order);if(!order||order.tableId==null)continue;
   const elapsed=(v.time-evt.t)+(clock%1),r=Math.min(1,elapsed/1.7),endX=order.tableId?w*.75:w*.25;
@@ -74,6 +87,7 @@ export function drawDiner(canvas,s,clock){const size=setCanvas(canvas);if(!size)
    if(recent){dish(c,x,y,'WOK');text(c,'好吃!',x,y-78,'#f8e1a4',12)}
   }
  }
+ if(v?.decisionFlash&&(v.breakAt||v.time-(v.decisionAt??-999)<5)){capsule(c,w*.19,h*.48,w*.62,30,'#f4dd9e','#805d39');text(c,v.decisionFlash.slice(0,18),w*.50,h*.48+15,'#493526',12)}
  rect(c,w*.45,h*.87,w*.1,h*.11,'#b98b62');rect(c,w*.47,h*.87,w*.06,h*.07,'#2b473a');
  for(const [x,y] of [[w*.12,h*.83],[w*.88,h*.82]]){rect(c,x-4,y+5,8,15,'#795436');circle(c,x,y,11,'#5d975d')}
 }
