@@ -503,11 +503,13 @@ function stepWalkableShift(s){
  // Kitchenless orders sit on the pass. Helpers deliver without player travel,
  // but always via the same delivery/landing path used by the original ledger.
  for(const o of v.orders){
-  if(o.status==='pickup'&&v.time-o.pickupAt>=(v.crew.waiter.hired?2:9)){
+  if(o.status==='pickup'&&v.time-o.pickupAt>=(v.crew.waiter.hired?2:9)&&(!v.crew.waiter.hired||(!v.orders.some(other=>other.status==='delivering')&&v.time>=(v.waiterBusyUntil||0)))){
    if(v.crew.waiter.hired){o.status='delivering';o.deliveryAt=v.time;record(s,{type:'waiter_pickup',order:o.id});}
    else deliverWalkableOrder(s,o,'self');
   }
-  if(o.status==='delivering'&&v.time-o.deliveryAt>=3)deliverWalkableOrder(s,o,'waiter');
+  if(o.status==='delivering'&&v.time-o.deliveryAt>=3){
+   if(deliverWalkableOrder(s,o,'waiter')){v.waiterBusyUntil=v.time+2;record(s,{type:'waiter_return',order:o.id,table:o.tableId});}
+  }
  }
  const active=!!h.carryOrderId||((zone==='WOK'||zone==='POT')&&!!v.stations[zone]);
  h.recovery+=1/(active?12:7);
