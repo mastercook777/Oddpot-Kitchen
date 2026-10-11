@@ -116,6 +116,49 @@ export function serviceZoneIntent(s){
  if(zone==='WOK'||zone==='POT')return {zone,action:carry?'carrying':'cook',order:kitchenBusy(s,zone)};
  return {zone:null,action:carry?'carrying':'move',order:carry};
 }
+// Normal labor is proximity-driven and NEVER spends energy.
+// Exceptional actions require an explicit UI click from a real player.
+export function serviceSpecialAction(s){
+ if(s.done||s.paused)return null;
+ const h=s.hero,zone=nearbyZone(h);
+ if(carriedPlate(s))return null;
+ if(zone==='WOK'||zone==='POT'){
+   const o=kitchenBusy(s,zone);
+   if(!o||o.boosted||o.left<=2.2)return null;
+   return {kind:'burst',zone,orderId:o.id,cost:2,canUse:h.energy>=2,
+     label:'🔥 全力烹饪',details:'当前 '+o.name+' 额外缩短 2 秒'};
+ }
+ if(zone?.startsWith('TABLE')){
+   const table=Number(zone.slice(5));
+   const o=s.orders.find(o=>o.table===table&&waitStatuses.has(o.status)&&!o.comforted);
+   if(!o)return null;
+   const timeLeft=o.patience-(s.time-o.arrive);
+   // Normal waiting does not warrant consuming precious stamina.
+   if(timeLeft>12||timeLeft<=0)return null;
+   return {kind:'comfort',zone,orderId:o.id,cost:1,canUse:h.energy>=1,
+     label:'💛 紧急安抚',details:'耐心 +4 秒 · 还剩 '+Math.ceil(timeLeft)+' 秒'};
+ }
+ return null;
+}
+export function activateServiceSpecial(s){
+ const action=serviceSpecialAction(s);
+ if(!action||!action.canUse)return false;
+ const o=s.orders.find(o=>o.id===action.orderId);
+ if(!o)return false;
+ const h=s.hero;
+ if(action.kind==='burst'){
+   if(o.status!=='cooking'||o.boosted||s.kitchen[action.zone]!==o.id)return false;
+   o.boosted=true;h.energy-=2;h.assists++;
+   o.left=Math.max(.8,o.left-2);
+   say(s,'🔥 主动全力烹饪：'+o.name+' 省 2 秒，精力 -2');
+ }else if(action.kind==='comfort'){
+   if(!waitStatuses.has(o.status)||o.comforted)return false;
+   o.comforted=true;h.energy-=1;h.comforts++;
+   o.patience+=4;s.score.comfortSaves+=4;
+   say(s,'💛 主动安抚 '+(o.table+1)+'号桌：耐心 +4 秒，精力 -1');
+ }else return false;
+ return true;
+}
 function useZone(s,dt){
  const h=s.hero,intent=serviceZoneIntent(s),zone=intent.zone;
  // Changing either zone or nearby objective resets dwell; no extra click.
@@ -136,21 +179,9 @@ function useZone(s,dt){
  if(intent.action==='serve'){
   finishServing(s,intent.order,'chef');h.dwell=0;return;
  }
- if(intent.action==='cook'){
-  const order=intent.order;
-  if(!order||order.boosted||h.energy<2)return;
-  order.boosted=true;h.energy-=2;h.assists++;
-  order.left=Math.max(.8,order.left-2);
-  say(s,'🍳 主厨协助 '+order.name+'：省 2 秒，精力 -2');
-  return;
- }
- if(intent.action==='comfort'){
-  const order=intent.order;
-  if(!order||h.energy<1||order.comforted)return;
-  h.energy-=1;h.comforts++;order.comforted=true;
-  order.patience+=4;s.score.comfortSaves+=4;
-  say(s,'💛 安抚 '+(order.table+1)+' 号桌：耐心 +4 秒，精力 -1');
- }
+ // Cooking remains a passive in-range activity. Never consume stamina here;
+ // emergency boosting and comfort are voluntary button actions.
+
 }
 
 function cook(s,dt){
@@ -201,9 +232,15 @@ export function stepServiceLab(s,dx,dy,dt){
  const z=nearbyZone(s.hero);
  if(z)useZone(s,dt);
  cook(s,dt);resolve(s,dt);
- // Recovery is tied to ACTIVE service time, never background idle time.
- s.hero.recharge+=dt;
- if(s.hero.recharge>=10){const units=Math.floor(s.hero.recharge/10);s.hero.recharge%=10;s.hero.energy=Math.min(s.hero.maxEnergy,s.hero.energy+units)}
+ // Recovery is tied to active service time. Resting returns 1 point in 7s;
+ // cooking or carrying returns 1 in 12s. Neither requires stopping work.
+ const h=s.hero,zone=nearbyZone(h);
+ const working=!!carriedPlate(s)||
+   ((zone==='WOK'||zone==='POT')&&!!kitchenBusy(s,zone))||
+   (zone==='PASS'&&!!passOrder(s));
+ h.recharge=Math.min(1,h.recharge+dt/(working?12:7));
+ if(h.recharge>=1){h.recharge-=1;h.energy=Math.min(h.maxEnergy,h.energy+1);}
+ if(h.energy===h.maxEnergy)h.recharge=0;
  if(s.time>=s.limit || (s.nextOrder===ORDER_PLAN.length&&s.orders.every(o=>['served','left'].includes(o.status)))){
   s.done=true;s.time=Math.min(s.time,s.limit);say(s,'🌙 营业演示结束：送达 '+s.score.served+' / '+s.orders.length);
  }
@@ -215,7 +252,7 @@ export function snapshotLab(s){
   mode:laboratoryMode(s),served:s.score.served,lost:s.score.lost,
   total:ORDER_PLAN.length,pending,energy:s.hero.energy,maxEnergy:s.hero.maxEnergy,
   kitchen:{WOK:kitchenBusy(s,'WOK'),POT:kitchenBusy(s,'POT')},
-  zone:nearbyZone(s.hero),intent:serviceZoneIntent(s),carry:carriedPlate(s),
+  zone:nearbyZone(s.hero),intent:serviceZoneIntent(s),special:serviceSpecialAction(s),carry:carriedPlate(s),
   passReady:s.orders.filter(o=>o.status==='pickup').length,
   manualServed:s.score.manualServed,waiterServed:s.score.waiterServed,selfPicked:s.score.selfPicked,
   message:s.message,finished:s.done
