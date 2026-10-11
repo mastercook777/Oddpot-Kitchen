@@ -45,19 +45,20 @@ export function walkServiceHero(hero,dx,dy,dt){
  return hero.moving;
 }
 export function waiterDeliveryPose(s,simTime){
- const v=s?.service;
+ const v=s?.service,home={x:HERO_PASS.x,y:HERO_PASS.y};
  const o=v?.orders.find(x=>x.status==='delivering'&&Number.isFinite(x.deliveryAt));
- const home={x:.5,y:.75};
- if(!o)return {...home,moving:false,plate:false};
- // One continuous pass -> aisle -> corresponding table path. No retargeting.
- const elapsed=clamp((simTime-o.deliveryAt)/3,0,1);
- const side=o.tableId===0?.28:.72;
- const pts=[HERO_PASS,{x:.5,y:.54},{x:side,y:.71}];
- const length1=Math.hypot((pts[1].x-pts[0].x)*.9,(pts[1].y-pts[0].y)*1.2);
- const length2=Math.hypot((pts[2].x-pts[1].x)*.9,(pts[2].y-pts[1].y)*1.2);
- const a=length1/(length1+length2);
- const pa=elapsed<=a?pts[0]:pts[1],pb=elapsed<=a?pts[1]:pts[2];
- const u=clamp(elapsed<=a?elapsed/a:(elapsed-a)/(1-a),0,1);
- return {x:pa.x+(pb.x-pa.x)*u,y:pa.y+(pb.y-pa.y)*u,
-  moving:elapsed<1,plate:true,table:o.tableId};
+ let table=null,u=0,returning=false,plate=false;
+ if(o){table=o.tableId;u=clamp((simTime-o.deliveryAt)/3,0,1);plate=true;}
+ else{
+  const e=(v?.events||[]).slice().reverse().find(x=>x.type==='waiter_return'&&simTime-x.t>=0&&simTime-x.t<2);
+  if(e){table=e.table;u=1-clamp((simTime-e.t)/2,0,1);returning=true;}
+ }
+ if(table==null)return {...home,moving:false,plate:false};
+ // Pass -> center aisle -> table (and back), never jump between unrelated
+ // tables or use one-frame teleports for the return journey.
+ const mid={x:.5,y:.54},dest=HERO_TABLES[table]||HERO_TABLES[0];
+ const seg=.35;const a=u<=seg?home:mid,b=u<=seg?mid:dest;
+ const portion=u<=seg?u/seg:(u-seg)/(1-seg);
+ return {x:a.x+(b.x-a.x)*portion,y:a.y+(b.y-a.y)*portion,
+  moving:true,plate,returning,table};
 }
