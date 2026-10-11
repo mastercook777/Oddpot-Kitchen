@@ -3,7 +3,7 @@
 // transform/keyframe races or duplicated emoji/sprite layers.
 const MOTION_DURATION={flip:1.15,toss:.88,gentle:1.35,reduce:1.55};
 const ACTION_LABEL={flip:'🍳 翻炒',toss:'↗ 颠勺',gentle:'🥄 轻搅',reduce:'💧 收汁'};
-const clamp=(x,a=0,b=1)=>Math.max(a,Math.min(b,x));
+const motionClamp=(x,a=0,b=1)=>Math.max(a,Math.min(b,x));
 const easeOut=p=>1-Math.pow(1-p,3);
 
 export function livePanMotion(cook,dimensions={width:310,height:190}){
@@ -13,12 +13,12 @@ export function livePanMotion(cook,dimensions={width:310,height:190}){
  // Actions are keyed to the recipe's actual elapsed clock, not wall-clock time.
  // This makes a re-render or saved-game resume unable to spawn duplicate effects.
  const active=actions.slice().reverse().find(a=>t>=a.t&&(t-a.t)<(MOTION_DURATION[a.type]||0));
- const p=active?clamp((t-active.t)/MOTION_DURATION[active.type]):1;
+ const p=active?motionClamp((t-active.t)/MOTION_DURATION[active.type]):1;
  const swing=active?Math.sin(Math.PI*p):0;
  const radiusX=Math.min(w*.205,h*.32),radiusY=Math.min(w*.12,h*.19);
  const latestReduction=actions.slice().reverse().find(a=>a.type==='reduce'&&t>=a.t);
  let panRotation=0,panLift=0,glow=0,ripple=0,
-     brothScale=latestReduction?1-.37*easeOut(clamp((t-latestReduction.t)/MOTION_DURATION.reduce)):1,steam=1;
+     brothScale=latestReduction?1-.37*easeOut(motionClamp((t-latestReduction.t)/MOTION_DURATION.reduce)):1,steam=1;
  if(active?.type==='toss'){panRotation=12*Math.sin(Math.PI*2*p)*Math.pow(1-p,.38);panLift=-7*swing;glow=.55*swing;steam=1+.75*swing;}
  if(active?.type==='flip'){panRotation=4.5*Math.sin(Math.PI*4*p)*(1-p);glow=.35*swing;steam=1+.2*swing;}
  if(active?.type==='gentle'){panRotation=1.6*Math.sin(Math.PI*2*p);ripple=.85*swing;steam=1+.16*swing;}
@@ -54,7 +54,7 @@ export function livePanMotion(cook,dimensions={width:310,height:190}){
    }
    // A single entry arc. No duplicate falling icon is ever drawn.
    if(age>=0&&age<.53){
-     const entry=1-easeOut(clamp(age/.53));
+     const entry=1-easeOut(motionClamp(age/.53));
      y-=Math.min(76,h*.48)*entry;
      scale*=.88+.12*(1-entry);
    }
