@@ -2417,7 +2417,7 @@ for(const st of ['WOK','POT']){const job=v.stations[st];if(job){v.congestion[st]
  const rate=v.walkable?(Number(assigned)+Number(!!hero)):1;
  job.left-=rate;
  if(job.left<=0){v.stations[st]=null;const o=v.orders.find(x=>x.id===job.orderId);if(o.status==='cooking')finishOrder(s,o,job.quality);else record(s,{type:'waste',order:job.orderId});}}}
-for(const o of v.orders){if((o.status==='queued'||o.status==='cooking'||(v.walkable&&['pickup','carried','delivering'].includes(o.status)))&&v.time-o.arrival>o.patience){o.status='left';o.leftAt=v.time;if(v.hero?.carryOrderId===o.id)v.hero.carryOrderId=null;s.reputation=Math.max(-20,s.reputation-1);v.queued=v.queued.filter(id=>id!==o.id);record(s,{type:'left',order:o.id,reason:'等待超时'});}}
+for(const o of v.orders){if((o.status==='queued'||o.status==='cooking'||(v.walkable&&['pickup','carried','delivering'].includes(o.status)))&&v.time-o.arrival>o.patience){if(v.walkable&&o.status==='delivering'){v.waiterBusyUntil=v.time+2;record(s,{type:'waiter_return',order:o.id,table:o.tableId});}o.status='left';o.leftAt=v.time;if(v.hero?.carryOrderId===o.id)v.hero.carryOrderId=null;s.reputation=Math.max(-20,s.reputation-1);v.queued=v.queued.filter(id=>id!==o.id);record(s,{type:'left',order:o.id,reason:'等待超时'});}}
 for(const st of ['WOK','POT']){if(v.stations[st])continue;let i=v.queued.findIndex(id=>{const o=v.orders.find(x=>x.id===id);return o&&RECIPES[o.recipeId].station===ensureKitchen(s).slots[st==='WOK'?0:1].type});if(i<0)continue;const id=v.queued.splice(i,1)[0];const o=v.orders.find(x=>x.id===id);const r=RECIPES[o.recipeId];if(o.manual){o.status='cooking';v.stations[st]={orderId:id,left:stationDuration(s,st,r,v),quality:o.manual.sellable&&o.manual.recipeId===o.recipeId?o.manual.quality:0};if(!o.manual.sellable||o.manual.recipeId!==o.recipeId){o.status='left';record(s,{type:'failed_cook',order:id})}continue;}
 const prepared=s.prepVariants?.[o.recipeId]||[];
 const match=prepared.findIndex(x=>x.variantId===(o.craft?.variantId||''));
@@ -3038,7 +3038,7 @@ function paintDinerStaff(c,s,v,t,w,h){
   // Small ICON only; no status words, no floating text balloon.
   const stateIcon=carried?'🍽️':cooking?'🍳':
     z==='PASS'&&v.orders.some(o=>o.status==='pickup')?'🍽️':
-    z?.startsWith('TABLE')?'💛':null;
+    z?.startsWith('TABLE')&&v.orders.some(o=>o.tableId===Number(z.slice(5))&&['queued','cooking','pickup','delivering'].includes(o.status))?'💛':null;
   if(stateIcon)text(c,stateIcon,hero.x*w,hero.y*h-29,'#ffdf99',13);
   return;
  }
@@ -3108,7 +3108,6 @@ function drawDiner(canvas,s,clock,simTime=s.service?.time??clock){
  for(const [x,y] of [[w*.12,h*.83],[w*.88,h*.82]]){rect(c,x-4,y+5,8,15,'#795436');circle(c,x,y,11,'#5d975d')}
  c.restore();
 }
-
 let game=load()||newGame();
 let flashUntil=0;
 let message='欢迎回到边境食堂！今天会有谁来吃饭呢？';
