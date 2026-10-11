@@ -53,6 +53,11 @@ test('finished dish lands and earns frozen crafted price once, not base price',(
  const sales=s.ledger.filter(x=>x.id==='sale-'+o.id);
  assert.equal(sales.length,1);assert.equal(sales[0].amount,o.craft.price);
  assert.equal(s.service.income,s.ledger.filter(x=>x.type==='sale').reduce((sum,x)=>sum+x.amount,0),'income tracks all diner landing sales, including additional arrivals');
+ for(let i=0;i<5&&o.status!=='served';i++)tick(s,1);
+ assert.equal(o.status,'served');
+ s.service.done=true;const report=closeService(s);
+ assert.ok(report.byCraft['mushroom_stir|test-mushroom_stir-aroma']);
+ assert.ok(report.byCraft['mushroom_stir|test-mushroom_stir-aroma'].revenue>=19);
 });
 test('real ingredients and style freeze when pre-cooking, even after recipe switch',()=>{
  const s=newGame();s.phase='prep';
