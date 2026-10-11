@@ -1,3 +1,13 @@
+## v0.7.4 可移动经营已经合并正式主线（2026-10-11）
+
+- **权威交接：** `docs/V0.7.4_MAINLINE_WALKABLE_MERGE.md`。与本文件较早的“v0.7 仅 Lab、未进入正式经营”描述不同，当前 `src/app.js` 新开业实际调用 `createService(game,{walkable:true})`，移动餐馆已进主线。旧存档如果正在进行一场 `walkable:false` 的营业，当前场保持旧规则，直到下一次新开业再切换。
+- **人物一致比例：** 主厨、阿火、小芽、顾客都沿用 `DINER_ACTOR_SCALE=1.13` 与 `pixelActor`。切勿再次额外放大主厨，或绘制旧固定主厨和新移动主厨两个人；工作状态头顶 indicator **仅小图标，不附带状态文字**。
+- **无瞬移：** `src/walkable_restaurant_v07.js` 负责世界坐标移动、桌椅/柜台碰撞、小芽 `PASS→通道→桌位→PASS` 串行送餐；地图现有 `drawDiner` 自带 translate/scale，不能把 CSS 屏幕坐标直接混入 Canvas 世界坐标。主角复用探索 `joystickVector`。
+- **账本唯一：** `src/engine.js` 负责真实厨房订单、备菜、加工原料、`pickup→carried/delivering→flying→eating` 交付。手动上菜和小芽自动送菜不能同时为同一 `orderId` 记收入；通过旧 `sale-orderId` 一次性记入。新 walkable 模式不绘制空中抛盘。
+- **精力按玩家意愿：** 正常站厨位做菜/移动/拿盘/上菜零精力，只有主动点击临时图标技能才会扣。端盘不分身做菜，无人负责的厨位停火，阿火只照看指定厨位。
+- 正式 H5 入口 `index.html`、可离线 `standalone.html`、生成脚本 `scripts/build-standalone.py` 均已加入新模块。测试 `tests/v074_mainline_walkable.test.js`，此外旧 `v07/v072/v073` Lab 为纯对照，不再是正式实现的唯一来源。
+- 仍需要玩家真机验收人流、帧率/触摸和首日经济节奏；主厨工作餐新 Buff 和装备未实施。
+
 ## v0.7.3 精力系统玩家自主权（2026-10-11，独立 Lab 已实装）
 
 - 现行 v0.7.3 独立实验 `experiments/v07-walkable-diner-lab.html`：**站着普通煮菜、移动、取盘和上菜全部自动且 0 精力**。旧 v0.7/v0.7.2 靠近厨位 0.6s 自动消耗 2 精力加速、靠近桌位自动消耗 1 精力安抚的规则 **已撤销**。
