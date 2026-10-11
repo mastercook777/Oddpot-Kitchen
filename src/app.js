@@ -3,7 +3,8 @@ import {ING,RECIPES,FORECAST,ROUTES,CUSTOMERS} from './data.js?v=0.6.3';
 import {LIVE_ACTIONS,LIVE_STYLES,LIVE_AFFINITY,liveRecipeId} from './cooking_v063.js?v=0.6.3';
 import {RECIPE_PROFILES} from './recipe_profiles_v063.js?v=0.6.3';
 import {livePanMotion} from './cook_motion_v063.js?v=0.6.3';
-import {PHASES,newGame,save,load,beginLiveResearch,dropLiveIngredient,performLiveAction,finishLiveResearch,stepLiveResearch,liveCookPreview,ensureRecipeVariants,activeRecipeVariant,chooseRecipeVariant,recipeCraftSnapshot,availableBento,prepareBento,today,serviceDayPlan,tableSeatState,enterField,settleField,discardFieldStack,skipField,purchase,startCook,moveTile,beat,finishCook,synergyFor,canMenu,prepDish,createService,tick,expedite,closeService,nextPhase,advanceDay,buyUpgrade,buyKitchenUpgrade,kitchenUpgradeCost,configureKitchenSlot,kitchenPreview,kitchenRefitCost,kitchenHasMenuCoverage,ensureKitchen,ensureCrew,CREW_ROLES,hireCrew,assignCrew,feedCrew,activeCrewMeal,crewEffects,buyBagUpgrade,bagUpgradePrice,canUse,setServicePaused,resumeBreak,breakPrep,setFlame,tossWok,previewHeat,moveExplorer,interactExplorer,sootheGuest,newRecipeLead,currentServiceEvent,chooseServiceEvent,swapBreakMenu,serviceGoalResult,serviceSupplyStatus} from './engine.js?v=0.5.5';
+import {walkServiceHero} from './walkable_restaurant_v07.js?v=0.7';
+import {PHASES,newGame,save,load,beginLiveResearch,dropLiveIngredient,performLiveAction,finishLiveResearch,stepLiveResearch,liveCookPreview,ensureRecipeVariants,activeRecipeVariant,chooseRecipeVariant,recipeCraftSnapshot,availableBento,prepareBento,today,serviceDayPlan,tableSeatState,enterField,settleField,discardFieldStack,skipField,purchase,startCook,moveTile,beat,finishCook,synergyFor,canMenu,prepDish,createService,tick,expedite,walkableSpecial,activateWalkableSpecial,closeService,nextPhase,advanceDay,buyUpgrade,buyKitchenUpgrade,kitchenUpgradeCost,configureKitchenSlot,kitchenPreview,kitchenRefitCost,kitchenHasMenuCoverage,ensureKitchen,ensureCrew,CREW_ROLES,hireCrew,assignCrew,feedCrew,activeCrewMeal,crewEffects,buyBagUpgrade,bagUpgradePrice,canUse,setServicePaused,resumeBreak,breakPrep,setFlame,tossWok,previewHeat,moveExplorer,interactExplorer,sootheGuest,newRecipeLead,currentServiceEvent,chooseServiceEvent,swapBreakMenu,serviceGoalResult,serviceSupplyStatus} from './engine.js?v=0.5.5';
 import {startActionField,stepActionField,useFieldSkill,resolveFieldEvent} from './field_v04.js?v=0.5.5';
 import {drawField,drawDiner} from './scenes_v04.js?v=0.5.5';
 
@@ -77,7 +78,7 @@ function restaurantView(interactive=false){
    </button>`;
  };
  const st=position=>{const job=v?.stations[position],slot=ensureKitchen(game).slots[position==='WOK'?0:1],r=job?RECIPES[v.orders.find(o=>o.id===job.orderId)?.recipeId]:null;return `<button class="diner-station" data-station="${position}" ${interactive?'':'disabled'}><span class="station-object">${slot.type==='WOK'?'🍳':'🍲'}</span><strong>${slot.type==='WOK'?'炒锅':'炖锅'} Lv.${slot.level}</strong><small>${r?`${r.emoji} ${job.left}s`:'待命'}</small></button>`};
- return `<div class="diner-world"><canvas id="diner-canvas" class="diner-canvas"></canvas><div class="diner-top"><div class="shop-sign">ODDPOT · 边境小食堂</div><div class="tiny-window">🌙</div></div><div class="diner-kitchen">${st('WOK')}<div class="cook-avatar"><span>👩‍🍳</span><small>主厨</small></div>${st('POT')}</div><div class="service-counter"><i></i>出餐柜台<i></i></div><div class="diner-tables">${table(0)}${table(1)}</div><div class="diner-floor"><span>🪴</span><span class="diner-entry">🚪<small>欢迎光临</small></span><span>🪴</span></div>${v?`<div class="scene-corner">已服务 ${v.orders.filter(o=>o.status==='served').length}/${v.orders.length}</div>`:''}</div>`;
+ return `<div class="diner-world"><canvas id="diner-canvas" class="diner-canvas"></canvas><div class="diner-top"><div class="shop-sign">ODDPOT · 边境小食堂</div><div class="tiny-window">🌙</div></div><div class="diner-kitchen">${st('WOK')}<div class="cook-avatar"><span>👩‍🍳</span><small>主厨</small></div>${st('POT')}</div><div class="service-counter"><i></i>出餐柜台<i></i></div><div class="diner-tables">${table(0)}${table(1)}</div><div class="diner-floor"><span>🪴</span><span class="diner-entry">🚪<small>欢迎光临</small></span><span>🪴</span></div>${v?`<div class="scene-corner">已服务 ${v.orders.filter(o=>o.status==='served').length}/${v.orders.length}</div>`:''}${interactive&&v?.walkable?`<div id="diner-stick" class="diner-float-stick" aria-hidden="true"><div id="diner-stick-knob" class="diner-float-knob"></div></div><button id="diner-special" data-act="hero-special" class="diner-special" type="button" hidden aria-label="主动使用主厨技能"></button>`:''}</div>`;
 }
 function sceneTag(title,sub=''){return `<div class="scene-tag"><strong>${title}</strong>${sub?`<small>${sub}</small>`:''}</div>`}
 function forecast(){const f=today(game),plan=serviceDayPlan(game);return [
@@ -208,7 +209,7 @@ function service(){const v=game.service;if(!v)return ['<div class="empty">餐厅
  return [`<div class="scene-bg diner-bg service-scene">${restaurantView(true)}<div class="service-mini-hud"><strong>第 ${Math.min(v.wave+1,3)}/3 波</strong><span>${v.time}s</span><span>上菜 ${served}/${v.orders.length}</span>${v.paused?'<b class="paused-chip">暂停</b>':''}</div>${operationalHud}${v.breakAt&&currentServiceEvent(game)&&servicePanel==='event'?`<div class="management-card"><strong>${currentServiceEvent(game).title}</strong><p>${currentServiceEvent(game).description}</p>${currentServiceEvent(game).choices.map(ch=>`<button data-choice="${ch.id}"><b>${ch.label}</b><small>${ch.detail}</small></button>`).join('')}</div>`:''}${v.breakAt&&servicePanel==='swap'?`<div class="management-card"><strong>换一道下一波招牌菜</strong><p>下一波到店客人才会按照新菜单点单，当前桌位不受影响。</p>${game.menu.map((id,i)=>`<div class="break-choice-line">${i+1}·${RECIPES[id].name} <select data-swap-slot="${i}">${Object.keys(game.recipes).map(r=>`<option value="${r}" ${r===id?'selected':''}>${RECIPES[r].name}</option>`).join('')}</select><button data-apply-swap="${i}">替换</button></div>`).join('')}</div>`:''}${v.breakAt&&servicePanel==='prep'?`<div class="management-card"><strong>补一份应急餐点</strong><p>现在扣除食材；下一波同款订单可直接上桌，卖不完会计入报损。</p>${game.menu.map(id=>`<button data-breakprep="${id}" ${!canUse(game,recipeCraftSnapshot(game,id).ingredientIds)?'disabled':''}>${RECIPES[id].name} · 预制 1 份</button>`).join('')}</div>`:''}</div>`,
  v.done?`<div class="dock-head"><span>✅ 今晚营业结束</span></div><div class="action-row">${b('close','📊 查看经营反馈','primary wide')}</div>`:
  v.breakAt?`<div class="dock-head"><span>第 ${v.breakAt} 波结束 · 本波只能选一项应急决策</span></div><div class="break-toolbar">${b('show-management','经营事件','primary',v.breakUsed)}${b('show-swap','临时换菜','secondary',v.breakUsed)}${b('show-prep','备菜','secondary',v.breakUsed)}${b('resume-break','继续迎客 ▶','primary')}</div>`:
- `<div class="dock-head"><span>${selected&&['queued','cooking'].includes(selected.status)?`${CUSTOMERS[selected.segment].name} · ${RECIPES[selected.recipeId]?.name||'挑选菜品'} · 剩余 ${Math.max(0,selected.patience-(v.time-selected.arrival))}s`:'点餐桌查看订单 · 厨房自动制作'}</span><span>招待 ${v.treatUsed?'已用':'1次'}</span></div><div class="action-row">${selected&&selected.status==='queued'?b(`priority:${selected.id}`,'↑ 优先出餐','secondary'):b('clear-table','选择客人','secondary')}${selected?b(`soothe:${selected.id}`,'💛 招待客人','secondary',v.treatUsed||game.coins<5):''}${b('toggle-service',v.paused?'▶ 继续营业':'Ⅱ 暂停','primary wide')}</div>`]
+ `<div class="dock-head"><span>${selected&&['queued','cooking'].includes(selected.status)?`${CUSTOMERS[selected.segment].name} · ${RECIPES[selected.recipeId]?.name||'挑选菜品'} · 剩余 ${Math.max(0,selected.patience-(v.time-selected.arrival))}s` :v.walkable?'靠近厨位自动烹饪 · 出餐台自动取菜':'点餐桌查看订单 · 厨房自动制作'}</span><span>${v.walkable?'⚡ '+(v.hero?.energy??6)+' / '+(v.hero?.maxEnergy??6):'招待 '+(v.treatUsed?'已用':'1次')}</span></div><div class="action-row">${selected&&selected.status==='queued'?b(`priority:${selected.id}`,'↑ 优先出餐','secondary'):b('clear-table','选择客人','secondary')}${selected&&!v.walkable?b(`soothe:${selected.id}`,'💛 招待客人','secondary',v.treatUsed||game.coins<5):''}${b('toggle-service',v.paused?'▶ 继续营业':'Ⅱ 暂停','primary wide')}</div>`]
 }
 function report(){const r=game.report;const lead=newRecipeLead(game);if(!r)return ['',''];return [`<div class="report-scene"><div class="report-header">${r.won?'🏆 击败爆炎厨王！':r.challenge?'🔥 爆炎厨王：挑战结束':'🌙 打烊啦，看看大家怎么说'}</div><div class="report-stats"><div><small>今晚收入</small><b>🪙 ${r.revenue}</b></div><div><small>贡献利润</small><b>${r.profit}</b></div><div><small>成功上菜</small><b>${r.served}/${r.totalOrders||7}</b></div><div><small>平均满意</small><b>${r.sat}</b></div></div>${r.kitchen?`<div class="kitchen-report"><strong>厨房复盘</strong>${r.kitchen.slots.map((slot,i)=>`<span>${i?'右':'左'} ${slot.type==='WOK'?'炒锅':'炖锅'} Lv.${slot.level} · ${r.kitchen.stats?.[i?'POT':'WOK']?.count||0} 单 · 节约 ${r.kitchen.stats?.[i?'POT':'WOK']?.secondsSaved||0} 秒</span>`).join('')}</div>`:''}${r.byCraft&&Object.keys(r.byCraft).length?`<div class="v063-craft-report"><strong>🥘 本晚工艺表现（实际销售）</strong>${Object.values(r.byCraft).map(x=>`<div class="v063-craft-row"><b>${esc(RECIPES[x.recipeId]?.name||'料理')} · ${esc(x.styleLabel)}</b><small>售出 ${x.count} 份 · 评价 ${Math.round(x.totalSat/x.count)} · 实收 ${x.revenue} 金币${x.revenue!==x.baseRevenue? '（相比基础 '+(x.revenue-x.baseRevenue>0?'+':'')+(x.revenue-x.baseRevenue)+'）':''}</small></div>`).join('')}</div>` :''}${r.staff?.crew&&(r.staff.crew.helper.hired||r.staff.crew.waiter.hired)?`<div class="staff-report"><b>员工今日贡献</b>${r.staff.crew.helper.hired?`<span>帮厨：参与 ${r.staff.stats.helperOrders} 单 · 实省 ${r.staff.stats.helperSeconds} 秒</span>`:''}${r.staff.crew.waiter.hired?`<span>跑堂：照顾 ${r.staff.stats.waiterOrders} 桌 · 额外耐心 ${r.staff.stats.waiterBonus} 秒 · 延误挽回 ${r.staff.stats.waiterSaved} 单</span>`:''}<small>员工餐食材成本 ${r.staff.foodCost} 金币（计入利润）</small></div>`:''}<div class="daily-goal-result"><b>今日任务：${r.goal?.label||'完成营业'}</b><span>${r.goal?`${r.goal.value}/${r.goal.target} · ${r.goal.success?'达成！口碑 +2':'未达成，下次再试'}`:'常规营业'}</span></div><div class="guest-verdict"><strong>💬 今日食客点评</strong><p>${r.suggested}</p></div>${r.guestReviews?.length?`<div class="guest-feedback-list"><strong>真实食客回访</strong>${r.guestReviews.slice(0,3).map(x=>`<div class="review-line"><span>${RECIPES[x.recipeId]?.name||'今日料理'}</span><span>“${esc(x.text)}” · ${x.sat}分</span></div>`).join('')}</div>`:''}${r.choices?.length?`<div class="v04-choices"><small>店长今日决策</small>${r.choices.map(c=>`<span>${c.type==='menu_swap'?`临时换菜：${RECIPES[c.before].name} → ${RECIPES[c.after].name}`:`第${c.wave}波：${({sign:'辣味招牌',kitchen:'整理后厨',steady:'稳定营业',soup:'温和推荐',assist:'临时帮厨',publicity:'试吃宣传'})[c.choice]||c.choice}`}</span>`).join('')}</div>`:''}${r.challenge?`<div class="boss-mini">厨王赛得分 <b>${r.challenge.score}</b> / 对手 70　${r.won?'🏆 获得猛火掌控':'未达标，下轮仍可挑战'}</div>`:''}<div class="recipe-lead"><small>🔎 顾客带来的研发灵感</small><strong>${lead?`“${lead.hint}”`:'目前的菜谱已经全部解锁！'}</strong>${lead?`<span>可尝试 ${lead.ingredients.map(id=>ING[id].emoji).join(' + ')}</span>`:''}</div></div>`,
  `<div class="action-row">${b('details','📊 账本','secondary')}${b('to-upgrade','🌅 结束本日 →','primary wide')}</div>`]}
@@ -228,7 +229,7 @@ function render(){
  const target=app.querySelector('.target-scroller');if(target)target.scrollLeft=prevTargetScroll;
  const sheet=app.querySelector('.sheet-body');if(sheet)sheet.scrollTop=prevSheetScroll;
  // Preserve the on-screen floating stick when a second finger uses the skill.
- if(stick.pointer!==null){const pad=app.querySelector('#field-stick'),knob=app.querySelector('#field-stick-knob');if(pad){pad.classList.add('active');pad.style.left=stick.originX+'px';pad.style.top=stick.originY+'px';}if(knob)knob.style.transform=`translate(${stick.x*54}px,${stick.y*54}px)`;}
+ if(stick.pointer!==null){const pad=app.querySelector('#field-stick, #diner-stick'),knob=app.querySelector('#field-stick-knob, #diner-stick-knob');if(pad){pad.classList.add('active');pad.style.left=stick.originX+'px';pad.style.top=stick.originY+'px';}if(knob)knob.style.transform=`translate(${stick.x*54}px,${stick.y*54}px)`;}
  save(game);
 }
 function note(txt){message=txt;flashUntil=performance.now()+1900;render()}
@@ -236,6 +237,7 @@ function stepMove(dx,dy){const result=moveExplorer(game,dx,dy);if(result.ok)mess
 function findPath(x,y){const f=game.field;if(!f)return [];const start=[f.x,f.y];const seen=new Set([start.join(',')]);let paths=[[...start,[]]];while(paths.length){const [cx,cy,path]=paths.shift();if(cx===x&&cy===y)return path;for(const [dx,dy] of [[0,-1],[1,0],[0,1],[-1,0]]){const nx=cx+dx,ny=cy+dy,key=`${nx},${ny}`;if(nx<0||ny<0||nx>=f.worldW||ny>=f.worldH||seen.has(key)||f.obstacles.some(o=>o.x===nx&&o.y===ny))continue;seen.add(key);paths.push([nx,ny,[...path,[dx,dy]]]);}}return []}
 function walkTo(x,y){if(walking)clearInterval(walking);const path=findPath(x,y);if(!path.length){note('点击可到达的地图格，或用方向键行走。');return}walking=setInterval(()=>{const step=path.shift();if(!step||game.phase!=='field'||!game.field||game.field.settled){clearInterval(walking);walking=null;return}const old=game.field.nodes.filter(n=>n.claimed).length;stepMove(...step);if(game.phase!=='field'||game.field.nodes.filter(n=>n.claimed).length>old||!path.length){clearInterval(walking);walking=null;}},130)}
 function action(act){
+ if(act==='hero-special'){if(activateWalkableSpecial(game)){message='主厨技能发动！';render()}return}
  if(act==='close-sheet'){overlay='';render();return}
  if(act==='crew'){overlay='crew';render();return}
  if(act.startsWith('hire:')){note(hireCrew(game,act.slice(5))?'伙伴加入食堂！':'金币不足或已经雇佣。');return}
@@ -261,8 +263,8 @@ function action(act){
  if(act==='to-prep'){if(canMenu(game)){nextPhase(game,'prep');note('想提前备餐吗？营业中已经不用你每单亲自下锅了。')}return}
  if(act.startsWith('kitchen:')){const [,i,type]=act.split(':');note(configureKitchenSlot(game,Number(i),type)?`设备已改为${type==='WOK'?'炒锅':'炖锅'}；订单将按新配置分流。`:'配置未更改，或改装金币不足。');return}
  if(act.startsWith('prep:')){note(prepDish(game,act.slice(5))?'备好一份餐点，稍后可直接上桌。':'食材不足，备餐失败。');return}
- if(act==='open'){if(!kitchenHasMenuCoverage(game)){note('菜单里的料理没有对应锅具，请先调整厨房。');return}nextPhase(game,'service');if(!createService(game)){game.phase='prep';note('厨房未就绪，暂不能开业');return}servicePanel='';selectedOrderId=null;note('开店！点击继续营业');return}
- if(act==='toggle-service'){setServicePaused(game,!game.service.paused);serviceTickAt=performance.now();note(game.service.paused?'已暂停营业。':'开始迎客！新菜会自动进厨房制作。');return}
+ if(act==='open'){if(!kitchenHasMenuCoverage(game)){note('菜单里的料理没有对应锅具，请先调整厨房。');return}nextPhase(game,'service');if(!createService(game,{walkable:true})){game.phase='prep';note('厨房未就绪，暂不能开业');return}servicePanel='';selectedOrderId=null;note('开店！点击继续营业，主厨用探索同款摇杆移动。');return}
+ if(act==='toggle-service'){setServicePaused(game,!game.service.paused);serviceTickAt=performance.now();note(game.service.paused?'已暂停营业。':'开始迎客！到厨位工作，出餐台取菜再送到桌边。');return}
  if(act==='resume-break'){servicePanel='';resumeBreak(game);serviceTickAt=performance.now();note('下一波开始，注意哪一口锅更忙。');return}
  if(act==='show-management'){servicePanel='event';render();return}
  if(act==='show-swap'){servicePanel='swap';render();return}
@@ -303,6 +305,13 @@ app.addEventListener('click',e=>{
  // Realtime field uses the thumb joystick; no grid click-to-walk.
  
 });
+// Mobile skills are explicitly tapped, even while the left thumb moves.
+app.addEventListener('pointerdown',e=>{
+ const btn=e.target.closest('#diner-special');
+ if(!btn||btn.disabled||game.phase!=='service'||!game.service?.walkable)return;
+ e.preventDefault();
+ if(activateWalkableSpecial(game)){message='主厨技能发动！';render()}
+},{passive:false});
 // Second-finger skill must work while the first finger owns the floating
 // joystick. Mobile browsers do not always synthesize a click for multitouch.
 app.addEventListener('pointerdown',e=>{const skill=e.target.closest('.field-skill');if(!skill||skill.disabled||game.phase!=='field'||!game.field?.action)return;
@@ -310,7 +319,7 @@ app.addEventListener('pointerdown',e=>{const skill=e.target.closest('.field-skil
 },{passive:false});
 app.addEventListener('pointerdown',e=>{const a=e.target.closest('[data-tile]');if(a&&game.cook&&game.cook.tiles[+a.dataset.tile])drag={i:+a.dataset.tile,x:e.clientX,y:e.clientY};},{passive:true});
 app.addEventListener('pointerup',e=>{if(!drag)return;const from=drag;drag=null;if(Math.hypot(e.clientX-from.x,e.clientY-from.y)<25)return;const to=document.elementFromPoint(e.clientX,e.clientY)?.closest('[data-tile]');if(to){tileSelected=null;note(moveTile(game,from.i,+to.dataset.tile)?'拖动翻炒成功。':'本拍只能换位一次。')}},{passive:true});
-document.addEventListener('keydown',e=>{if(game.phase==='field'&&game.field&&!overlay){const map={ArrowUp:[0,-1],ArrowDown:[0,1],ArrowLeft:[-1,0],ArrowRight:[1,0],w:[0,-1],s:[0,1],a:[-1,0],d:[1,0]};if(map[e.key]){e.preventDefault();keys.add(e.key)}}});
+document.addEventListener('keydown',e=>{if(((game.phase==='field'&&game.field)||(game.phase==='service'&&game.service?.walkable))&&!overlay){const map={ArrowUp:[0,-1],ArrowDown:[0,1],ArrowLeft:[-1,0],ArrowRight:[1,0],w:[0,-1],s:[0,1],a:[-1,0],d:[1,0]};if(map[e.key]){e.preventDefault();keys.add(e.key)}}});
 setInterval(()=>{if(document.hidden||overlay)return;if(game.phase==='service'&&game.service&&!game.service.paused&&!game.service.done&&!game.service.breakAt){tick(game,1);serviceTickAt=performance.now();if(game.service.done)message='今晚的顾客已经全部处理完毕，可以查看日报。';else if(game.service.breakAt){servicePanel='event';message='突发经营事件！请选择应对方案，或改菜单、备菜。';}render()}},750);
 document.addEventListener('keyup',e=>keys.delete(e.key));
 document.addEventListener('visibilitychange',()=>{if(document.hidden){if(walking){clearInterval(walking);walking=null}if(game.phase==='service'&&game.service&&!game.service.paused){game.service.paused=true;message='已自动暂停营业，返回后继续。'}save(game)}});
@@ -333,6 +342,18 @@ function frame(now){const delta=Math.min(.045,(now-(lastFrame||now))/1000);lastF
    const skill=app.querySelector('[data-act="skill"]');const cooldown=app.querySelector('#skill-cooldown');if(skill){skill.disabled=f.skillCd>0;skill.style.setProperty('--cooldown',(f.skillCd/6.5*100).toFixed(2)+'%');if(cooldown){cooldown.hidden=f.skillCd<=0;cooldown.textContent=f.skillCd>0?Math.ceil(f.skillCd)+'s':'';}}
    const fieldNote=app.querySelector('#field-action-notice');if(fieldNote){fieldNote.hidden=!(f.actionMessageTTL>0);if(!fieldNote.hidden)fieldNote.textContent=f.elapsed<2?'移动 · 自动采集 / 攻击':f.actionMessage.slice(0,22);};
   }
+ }
+ if(game.phase==='service'&&game.service?.walkable){
+   const v=game.service,h=v.hero;
+   const canMove=!document.hidden&&!overlay&&!v.paused&&!v.breakAt&&!v.done&&!game.cook;
+   if(canMove){const [dx,dy]=analogAxis();walkServiceHero(h,dx,dy,delta)}
+   else if(h)h.moving=false;
+   const skill=app.querySelector('#diner-special'),info=canMove?walkableSpecial(game):null;
+   if(skill){
+     skill.hidden=!info;
+     if(info){skill.textContent=info.icon+' ⚡'+info.energy;skill.disabled=!info.available;
+       skill.setAttribute('aria-label',info.kind==='burst'?'全力烹饪，消耗2点精力':'紧急安抚，消耗1点精力')}
+   }
  }
  if(game.cook?.mode==='v063-live'&&!document.hidden&&!overlay){
   const auto=stepLiveResearch(game,delta);
@@ -369,7 +390,7 @@ function frame(now){const delta=Math.min(.045,(now-(lastFrame||now))/1000);lastF
  const notice=app.querySelector('#ingame-notice');if(notice&&now>flashUntil)notice.hidden=true;
  const forest=app.querySelector('#forest-canvas');if(forest)drawField(forest,game,gameClock);
  const diner=app.querySelector('#diner-canvas');if(diner)drawDiner(diner,game,gameClock,restaurantSimTime(now));
- if(now-lastSave>1400&&(game.phase==='field'||game.cook?.mode==='v063-live')){save(game);lastSave=now}
+ if(now-lastSave>1400&&(game.phase==='field'||game.cook?.mode==='v063-live'||game.phase==='service'&&game.service?.walkable)){save(game);lastSave=now}
  requestAnimationFrame(frame);
 }
 requestAnimationFrame(frame);
@@ -377,21 +398,23 @@ requestAnimationFrame(frame);
 // Pointer capture stays on #app, which does not get replaced during scene updates.
 function releaseStick(){
  stick.pointer=null;stick.x=stick.y=0;
- const el=app.querySelector('#field-stick');if(el){el.classList.remove('active');el.style.left='-100px';el.style.top='-100px';}
- const knob=app.querySelector('#field-stick-knob');if(knob)knob.style.transform='translate(0px,0px)';
+ const el=app.querySelector('#field-stick, #diner-stick');if(el){el.classList.remove('active');el.style.left='-100px';el.style.top='-100px';}
+ const knob=app.querySelector('#field-stick-knob, #diner-stick-knob');if(knob)knob.style.transform='translate(0px,0px)';
 }
 function updateStick(e){
  const v=joystickVector(stick.originX,stick.originY,e.clientX,e.clientY,54,9);
  stick.x=v.x;stick.y=v.y;
- const knob=app.querySelector('#field-stick-knob');
+ const knob=app.querySelector('#field-stick-knob, #diner-stick-knob');
  if(knob)knob.style.transform=`translate(${v.knobX}px,${v.knobY}px)`;
 }
 app.addEventListener('pointerdown',e=>{
- if(game.phase!=='field'||!game.field?.action||game.field.finished||game.field.activeEvent||overlay||stick.pointer!==null)return;
+ const serviceReady=game.phase==='service'&&game.service?.walkable&&!game.service.paused&&!game.service.breakAt&&!game.service.done;
+ const fieldReady=game.phase==='field'&&game.field?.action&&!game.field.finished&&!game.field.activeEvent;
+ if(!(serviceReady||fieldReady)||overlay||stick.pointer!==null)return;
  // The scene is the input surface. Do not steal events from active buttons or dialogs.
- if(!e.target.closest('.action-forest')||e.target.closest('.field-event,button,select'))return;
+ if(!(serviceReady?e.target.closest('.diner-world'):e.target.closest('.action-forest'))||e.target.closest('.field-event,button,select,[data-seat],[data-station]'))return;
  e.preventDefault();stick.pointer=e.pointerId;stick.originX=e.clientX;stick.originY=e.clientY;
- const pad=app.querySelector('#field-stick');if(pad){pad.classList.add('active');pad.style.left=e.clientX+'px';pad.style.top=e.clientY+'px';}
+ const pad=app.querySelector('#field-stick, #diner-stick');if(pad){pad.classList.add('active');pad.style.left=e.clientX+'px';pad.style.top=e.clientY+'px';}
  try{app.setPointerCapture(e.pointerId)}catch{}
  updateStick(e);
 },{passive:false});
