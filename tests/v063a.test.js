@@ -24,7 +24,7 @@ test('v0.6.3-A app and all new modules have parseable ESM source',()=>{
 });
 test('regenerated standalone JS is syntactically valid and includes all v0.6.3-A systems',()=>{
  const html=readFileSync(new URL('../standalone.html',import.meta.url),'utf8');
- const inline=html.match(/<script>([\\s\\S]*?)<\\/script>/i)?.[1];
+ const inline=html.split('<script>')[1]?.split('</script>')[0];
  assert.ok(inline&&inline.includes('function evaluateLiveCook')&&inline.includes('function beginLiveResearch'));
  assert.doesNotThrow(()=>new Script(inline));
  assert.match(html,/v063-live-pan|v063-food-layer/);
