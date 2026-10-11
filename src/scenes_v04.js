@@ -371,6 +371,10 @@ function drawRestaurantV075(c,s,t,w,h){
     face:a.direction==='left'?-1:1,attack:!!a.working});
   if(a.plate)dish(c,X+14,Y-12,'WOK');
   if(a.id==='hero'){
+   const hero=v.hero,focus=hero.dwellZone;
+   if(focus&&hero.dwell>0){const required=focus.startsWith('serve:')?.48:.36;
+    c.beginPath();c.arc(X,Y+4,17,-Math.PI/2,-Math.PI/2+Math.PI*2*Math.min(1,hero.dwell/required));
+    c.lineWidth=3;c.strokeStyle='#ffe09d';c.stroke();}
    const icon=a.working?'🍳':a.stateIcon;
    if(icon)text(c,icon,X,Y-30,'#ffe8b9',13);
   }
