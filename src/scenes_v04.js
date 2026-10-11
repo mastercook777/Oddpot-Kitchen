@@ -233,7 +233,7 @@ function paintDinerStaff(c,s,v,t,w,h){
   // Small ICON only; no status words, no floating text balloon.
   const stateIcon=carried?'🍽️':cooking?'🍳':
     z==='PASS'&&v.orders.some(o=>o.status==='pickup')?'🍽️':
-    z?.startsWith('TABLE')?'💛':null;
+    z?.startsWith('TABLE')&&v.orders.some(o=>o.tableId===Number(z.slice(5))&&['queued','cooking','pickup','delivering'].includes(o.status))?'💛':null;
   if(stateIcon)text(c,stateIcon,hero.x*w,hero.y*h-29,'#ffdf99',13);
   return;
  }
