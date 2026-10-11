@@ -1,3 +1,10 @@
+## v0.7.3 精力系统玩家自主权（2026-10-11，独立 Lab 已实装）
+
+- 现行 v0.7.3 独立实验 `experiments/v07-walkable-diner-lab.html`：**站着普通煮菜、移动、取盘和上菜全部自动且 0 精力**。旧 v0.7/v0.7.2 靠近厨位 0.6s 自动消耗 2 精力加速、靠近桌位自动消耗 1 精力安抚的规则 **已撤销**。
+- 真正消耗精力的动作必须由玩家明确点击仅在条件合适时出现的 `#special` 情境按钮：`serviceSpecialAction` 只读判断，`activateServiceSpecial` 在点击时重新验证并一次性扣精力。厨位全力加速（2 精力、该单 -2s）；顾客剩余耐心 ≤12s 时紧急安抚（1 精力、+4s）。端盘状态不允许释放额外技能。
+- 恢复机制：工作/端菜时 12 秒恢复 1 精力；空闲时 7 秒恢复 1；上限 6，暂停不恢复，0 精力也能正常经营。当前只是实验数值，未同步 `src/engine.js` 正式主线。
+- 设计与测试：`docs/V0.7.3_EXPLICIT_STAMINA_ACTIONS.md`、`tests/v073_stamina_intent.test.js`，原 v07/v072 测试也已更新。今后**绝不可**靠站立持续时间推断玩家愿意消耗精力，避免玩家想正常烹饪却被迫“全力”。
+
 ## v0.7.2 独立餐厅实验：取餐、上菜优先、安抚救场（2026-10-11）
 
 - 正式经营主线 `src/engine.js` **未被 v0.7.2 实验改动**。只改了 `experiments/v07-service-lab-engine.js` 与 `experiments/v07-walkable-diner-lab.html`；设计细节：[v0.7.2 上菜和安抚双功能](docs/V0.7.2_SERVING_AND_COMFORT_DUAL_INTERACTION.md)。
