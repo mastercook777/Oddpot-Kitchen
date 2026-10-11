@@ -1,0 +1,43 @@
+/* v0.6.3-A - mainline continuous cooking mobile UI. */
+.stage.research{display:flex;flex-direction:column;min-height:0}
+.v063-setup,.v063-live-scene{height:100%;min-height:0;display:flex;flex-direction:column;padding:11px 12px 5px;gap:7px;overflow:hidden;
+ background:linear-gradient(165deg,#274132,#142920 85%);color:#fff0cf}
+.v063-setup-title{display:flex;flex-direction:column;gap:3px;flex:none}.v063-setup-title strong{font-size:18px;color:#ffe2ab}.v063-setup-title small{font-size:11px;color:#d6e5ca}
+.v063-vessels{display:grid;grid-template-columns:1fr 1fr;gap:8px;flex:none}
+.v063-vessel{border-radius:12px;background:#304f3a;border:1px solid #7c9974;min-height:52px;padding:5px;font-weight:850;color:#fff3d7;font-size:14px}
+.v063-vessel small{font-size:11px;color:#dfddbf}.v063-vessel.chosen{background:#765638;border-color:#ffca84;box-shadow:inset 0 0 0 1px #ffc982}
+.v063-label{font-size:12px;font-weight:900;color:#ffe0a2;flex:none}.v063-label small{font-weight:600;color:#becfbd}
+.v063-food-picker{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:6px;flex:none}
+.v063-food-picker button{border:1px solid #668366;background:#35503b;border-radius:10px;min-width:0;min-height:69px;padding:5px 1px;display:flex;flex-direction:column;justify-content:center;align-items:center;gap:1px}
+.v063-food-picker button.picked{background:#665039;border-color:#ffcd85;box-shadow:inset 0 0 0 1px #f4ba68}
+.v063-food-picker span{font-size:25px;line-height:1.1}.v063-food-picker b{font-size:10px;white-space:nowrap;letter-spacing:-.3px;color:#fff0d4}.v063-food-picker small{font-size:10px;color:#d7e4cb}
+.v063-recipe-clue{border:1px solid #6d8764;border-radius:11px;background:#20392d;padding:8px 10px;font-size:12px;line-height:1.3;flex:none}
+.v063-recipe-clue strong{color:#ffd397}.v063-recipe-clue small{display:block;font-size:11px;color:#c9d9c9;margin-top:3px}
+.v063-last-result{border:1px solid #54866a;background:#173e31;border-radius:10px;padding:8px;display:flex;flex-direction:column;gap:3px;font-size:12px;min-height:0;overflow:auto}
+.v063-last-result.fail{background:#54332b;border-color:#ac695a}.v063-last-result small{font-size:11px;color:#e2dcc6;line-height:1.35}
+.v063-live-scene{gap:5px}.v063-live-head{display:flex;align-items:center;justify-content:space-between;gap:5px;flex:none;font-size:12px;color:#fce0ae}
+#v063-clock{font-variant-numeric:tabular-nums;font-size:19px;font-weight:900}
+.v063-live-pan{flex:1;position:relative;min-height:98px;max-height:320px;overflow:hidden;border-radius:16px;border:1px solid #947a4f;
+ background:radial-gradient(ellipse,#49362e,#192f29 71%);touch-action:none;user-select:none}
+.v063-bowl{position:absolute;left:50%;top:54%;transform:translate(-50%,-50%);width:80%;height:75%;border-radius:50%;border:8px solid #87958f;box-shadow:0 0 0 2px #cda36c inset,0 10px 16px #050d0acc,inset 0 13px 28px #10100e;
+ background:radial-gradient(ellipse,#865234,#3b302b 56%,#142026 96%)}
+.v063-live-pan.pot .v063-bowl{border-color:#a5a497;background:radial-gradient(ellipse,#a58158,#574c3e 60%,#1c2c31)}
+.v063-food-layer{position:absolute;inset:0;pointer-events:none}.v063-food-icon{position:absolute;top:54%;left:50%;font-size:clamp(27px,9vw,42px);line-height:1;filter:drop-shadow(0 3px 3px #000b);
+ transform:translate(-50%,-50%);will-change:transform;backface-visibility:hidden}
+.v063-pan-hint{position:absolute;top:52%;left:0;right:0;text-align:center;font-size:12px;color:#e7d6aa}
+.v063-steam{position:absolute;top:3px;right:9px;font-size:19px;opacity:.55;pointer-events:none;animation:v063-steam 1.5s ease-in-out infinite alternate}
+@keyframes v063-steam{from{transform:translateY(2px);opacity:.25}to{transform:translateY(-5px);opacity:.6}}
+.v063-live-msg{flex:none;font-size:11px;text-align:center;color:#d9e5c9;min-height:19px}
+.v063-live-tray{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:7px;flex:none}
+.v063-drop{border:1px solid #b18d5c;background:#574537;border-radius:11px;padding:5px 2px;display:flex;align-items:center;justify-content:center;flex-direction:column;gap:2px;min-height:62px}
+.v063-drop span{font-size:22px}.v063-drop b{font-size:11px;white-space:nowrap}.v063-drop small{font-size:10px;color:#f6daa8}
+.v063-drop.added{background:#254432;border-color:#69936e}
+.v063-live-actions{display:flex;flex-direction:column;gap:6px}
+.v063-live-actions .action-row{margin:0;min-height:40px;display:flex;flex-wrap:nowrap}
+.v063-live-actions .action-row .game-btn{flex:1;min-height:44px}
+.v063-book-entry{background:#1d3a2e;border:1px solid #72936d;border-radius:12px;overflow:hidden;margin:6px 0}.v063-book-entry .book-item{border:0;border-radius:0;margin:0;width:100%}
+.v063-variant-list{padding:4px 7px 7px;display:flex;gap:6px;flex-wrap:wrap}
+.v063-variant-chip{border:1px solid #7c996f;border-radius:18px;padding:6px 9px;background:#31503a;font-size:11px;color:#ffefd2}
+.v063-variant-chip.active{border-color:#ffcd82;background:#715235}
+@media(max-height:700px){.v063-setup,.v063-live-scene{padding:6px 10px 3px;gap:5px}.v063-setup-title strong{font-size:15px}.v063-vessel{min-height:46px;font-size:12px}.v063-food-picker button{min-height:55px}.v063-food-picker span{font-size:21px}.v063-live-tray .v063-drop{min-height:53px}.v063-live-pan{min-height:76px}.v063-recipe-clue{padding:5px 8px}}
+@media(max-width:340px){.v063-food-picker b{font-size:9px}.v063-vessel small{font-size:10px}.v063-recipe-clue small{font-size:10px}}
