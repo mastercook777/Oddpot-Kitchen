@@ -1,6 +1,7 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import {readFileSync} from 'node:fs';
+import {spawnSync} from 'node:child_process';
 import {makeServiceLab,stepServiceLab,nearbyZone,kitchenBusy,carriedPlate,passOrder,serviceZoneIntent,snapshotLab} from '../experiments/v07-service-lab-engine.js';
 const sim=(s,duration,dx=0,dy=0)=>{for(let i=0;i<Math.ceil(duration/.05);i++)stepServiceLab(s,dx,dy,.05);return s};
 function prepareFinishedSolo(){
@@ -121,6 +122,10 @@ test('expired guest cancels carried plate, no late double delivery',()=>{
 });
 test('the experimental UI actually draws one carried plate, pass plates and staff route',()=>{
  const html=readFileSync(new URL('../experiments/v07-walkable-diner-lab.html',import.meta.url),'utf8');
+ const moduleCode=html.split('<script type="module">')[1]?.split('</script>')[0];
+ assert.ok(moduleCode,'laboratory must include its playable script');
+ const syntax=spawnSync(process.execPath,['--check','--input-type=module'],{input:moduleCode,encoding:'utf8'});
+ assert.equal(syntax.status,0,'lab HTML module syntax: '+syntax.stderr);
  assert.match(html,/LAB_PASS/);
  assert.match(html,/const carrying=carriedPlate\(state\)/);
  assert.match(html,/drawScene/);
