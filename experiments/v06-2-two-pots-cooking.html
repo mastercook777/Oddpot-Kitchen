@@ -145,7 +145,7 @@ function cookAmount(d,t,acts,v){
  return value;
 }
 function required(id,v){return ING[id].need*(v==='pot'?1.18:1)}
-function statusFor(d,t,acts,v){var ratio=cookAmount(d,t,acts,v)/required(d.id,v);if(ratio<.65)return '偏生';if(ratio<1)return '受热中';if(ratio>3.4&&['beef','chicken','potato'].includes(d.id))return '过火';if(ratio>5.5)return '焦糊';return '熟透'}
+function statusFor(d,t,acts,v){var ratio=cookAmount(d,t,acts,v)/required(d.id,v),age=Math.max(0,t-d.t);if(ratio<.65)return '偏生';if(ratio<1)return '受热中';if((ratio>3.4&&['beef','chicken','potato'].includes(d.id))||age>(['garlic','chili','onion'].includes(d.id)?14:16))return '焦糊';return '熟透'}
 function showCook(){
  el('in-count').textContent=state.dropped.length+' / '+state.selected.length+' 已下锅';
  el('trayfoods').innerHTML=state.selected.map(function(id){
@@ -181,7 +181,7 @@ function evaluate(ids,v,drops,acts,duration){
  var sum=0;
  arr.forEach(function(d){
   var ratio=cookAmount(d,duration,acts,v)/required(d.id,v);sum+=Math.min(1.2,ratio);
-  var label=ratio<.65?'夹生':ratio<1?'欠火':((ratio>3.4&&['beef','chicken','potato'].includes(d.id))||ratio>5.5)?'焦糊':'熟透';
+  var age=Math.max(0,duration-d.t),charred=(ratio>3.4&&['beef','chicken','potato'].includes(d.id))||age>(['garlic','chili','onion'].includes(d.id)?14:16);var label=ratio<.65?'夹生':ratio<1?'欠火':charred?'焦糊':'熟透';
   result.doneness.push({id:d.id,label:label,ratio:+ratio.toFixed(2)});
   if(label==='夹生')bad.push(ING[d.id].name);
   if(label==='欠火')weak.push(ING[d.id].name);
