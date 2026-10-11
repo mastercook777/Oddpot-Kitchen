@@ -20,8 +20,34 @@ export function startActionField(s){
 }
 function blocked(f,p,r=.20){return p.x<r||p.y<r||p.x>f.worldW-r||p.y>f.worldH-r||f.obstacles.some(o=>Math.abs(p.x-(o.x+.5))<.40+r&&Math.abs(p.y-(o.y+.5))<.40+r)}
 export function addBag(f,id,n){if(!ING[id]||!n)return 0;const old=f.bag[id]||0;const capacity=Math.max(6,Number(f.capacity)||6);if(old>=3||(!old&&Object.keys(f.bag).length>=capacity))return 0;const actual=Math.min(n,3-old);f.bag[id]=old+actual;return actual}
-function hurt(s,amount=1){const f=s.field;if(f.damageCd>0)return false;f.hp=Math.max(0,f.hp-amount);f.damageCd=1.15;f.hurtFx=.46;pushMsg(f,`受伤 -${amount}，可随时撤离保住收获。`);if(f.hp===0){f.finished=true;settleField(s,'faint')}return true}
-function gather(f,n){let gained=addBag(f,n.id,n.n);if(!gained){pushMsg(f,'背包或同类堆叠已满：可在背包中丢弃材料');return false}n.claimed=true;f.popFx??=[];f.popFx.push({x:n.x,y:n.y,text:`+${gained}`,ttl:.76,color:'#ffe8a3'});pushMsg(f,`采到 ${ING[n.id].name} ×${gained}${n.key==='target'?' · 今日目标已完成，可撤离！':''}`);return true}
+function hurt(s,amount=1,source='enemy'){
+ const f=s.field;if(f.damageCd>0)return false;
+ const b=f.bento;
+ let protectedHit=false;
+ if(b&&!b.used){
+  const enemyShield=b.kind==='first_enemy_hit'&&(source==='enemy'||(b.enhanced&&source==='pepper'));
+  const springShield=b.kind==='spring_shield'&&(source==='vent'||(b.enhanced&&source==='pepper'));
+  if(enemyShield||springShield){amount=Math.max(0,amount-1);b.used=true;protectedHit=true}
+ }
+ f.hp=Math.max(0,f.hp-amount);f.damageCd=1.15;f.hurtFx=.46;
+ pushMsg(f,protectedHit?'🍱 便当生效！这一次抵御了 1 点伤害。':`受伤 -${amount}，可随时撤离保住收获。`);
+ if(f.hp===0){f.finished=true;settleField(s,'faint')}return true;
+}
+function gather(f,n){
+ let gained=addBag(f,n.id,n.n);
+ if(!gained){pushMsg(f,'背包或同类堆叠已满：可在背包中丢弃材料');return false}
+ const b=f.bento;
+ let bonus=0;
+ if(b&&!b.used){
+  const mushroom=b.kind==='mushroom_gather'&&(n.id==='mushroom'||(b.enhanced&&n.id==='potato'));
+  const plant=b.kind==='first_plant_gather'&&(['cabbage','onion'].includes(n.id)||(b.enhanced&&n.id==='potato'));
+  if(mushroom||plant){bonus=addBag(f,n.id,1);if(bonus)b.used=true}
+ }
+ gained+=bonus;n.claimed=true;f.popFx??=[];
+ f.popFx.push({x:n.x,y:n.y,text:'+'+gained,ttl:.76,color:'#ffe8a3'});
+ pushMsg(f,(bonus?'🍱 便当采集加成！':'')+'采到 '+ING[n.id].name+' ×'+gained+(n.key==='target'?' · 今日目标已完成，可撤离！':''));
+ return true;
+}
 export function useFieldSkill(s){const f=s.field;if(s.phase!=='field'||!f?.action||f.skillCd>0||f.finished)return false;f.skillCd=6.5;f.skillFx=.42;let hits=0;for(const e of f.enemies){if(e.hp<=0||dist(f.pos,e)>1.85)continue; e.hp-=2;e.hurtFx=.4;f.popFx??=[];f.popFx.push({x:e.x,y:e.y,text:'-2',ttl:.72,color:'#ffeab4'});e.x=clamp(e.x+Math.sign(e.x-f.pos.x)*.65,.35,f.worldW-.35);e.y=clamp(e.y+Math.sign(e.y-f.pos.y)*.65,.35,f.worldH-.35);hits++;}pushMsg(f,hits?`锅铲震荡！击退 ${hits} 个食材怪`:'挥动锅铲，没有击中目标');return true}
 export function resolveFieldEvent(s,choice){const f=s.field;if(!f?.action||!f.activeEvent||f.finished)return false;const n=f.nodes.find(n=>n.key===f.activeEvent);if(!n||n.claimed)return false;let label='';if(choice==='trade'){
  if(!f.bag.mushroom){pushMsg(f,'没有采到蘑菇，无法交换');return false}
@@ -45,8 +71,11 @@ export function stepActionField(s,axisX,axisY,dt){
  f.moving=len>.08; if(f.moving)f.facing={x:dx,y:dy};
  // Hot springs vent on a visible, deterministic cycle. The warning pool can
  // be crossed safely if the player pays attention; forest has no vent pulse.
- if(f.region==='spring'&&f.hp>0){for(const vent of f.hazards){const phase=(f.elapsed+(vent.x%2)*1.7)%4.2;if(phase>3.45&&Math.hypot(f.pos.x-(vent.x+.5),f.pos.y-(vent.y+.5))<.55){hurt(s,1);break}}}
- const speed=2.8;
+ if(f.region==='spring'&&f.hp>0){for(const vent of f.hazards){const phase=(f.elapsed+(vent.x%2)*1.7)%4.2;if(phase>3.45&&Math.hypot(f.pos.x-(vent.x+.5),f.pos.y-(vent.y+.5))<.55){hurt(s,1,'vent');break}}}
+ const b=f.bento;
+ const risk=/risk/.test(f.route);
+ const boost=b&&((b.kind==='risk_move'&&risk)||(b.kind==='danger_speed'&&risk))?(b.enhanced?.07:.05):0;
+ const speed=2.8*(1+boost);
  if(len>.08){const px={x:f.pos.x+dx*speed*dt,y:f.pos.y};if(!blocked(f,px))f.pos.x=px.x;const py={x:f.pos.x,y:f.pos.y+dy*speed*dt};if(!blocked(f,py))f.pos.y=py.y;f.x=f.pos.x;f.y=f.pos.y;}
  let event=null;
  for(const e of f.enemies){
@@ -58,9 +87,9 @@ export function stepActionField(s,axisX,axisY,dt){
    if(e.kind==='chicken'){e.cooldown=1.6;e.warning=.45;}
    else {e.cooldown=2.5;e.warning=.55;e.aim={x:f.pos.x,y:f.pos.y}}
   }
-  if(e.warning>0){e.warning-=dt;if(e.warning<=0){if(e.kind==='chicken'){e.lungeFx=.22;if(dist(f.pos,e)<.95)hurt(s)}else {const a=e.aim||f.pos,rr=Math.hypot(a.x-e.x,a.y-e.y)||1;f.projectiles.push({x:e.x,y:e.y,vx:(a.x-e.x)/rr*2.8,vy:(a.y-e.y)/rr*2.8,life:3});}}}
+  if(e.warning>0){e.warning-=dt;if(e.warning<=0){if(e.kind==='chicken'){e.lungeFx=.22;if(dist(f.pos,e)<.95)hurt(s,1,'enemy')}else {const a=e.aim||f.pos,rr=Math.hypot(a.x-e.x,a.y-e.y)||1;f.projectiles.push({x:e.x,y:e.y,vx:(a.x-e.x)/rr*2.8,vy:(a.y-e.y)/rr*2.8,life:3});}}}
  }
- for(const p of f.projectiles){p.x+=p.vx*dt;p.y+=p.vy*dt;p.life-=dt;if(dist(f.pos,p)<.28){p.life=0;hurt(s)}}f.projectiles=f.projectiles.filter(p=>p.life>0&&!blocked(f,p,0));
+ for(const p of f.projectiles){p.x+=p.vx*dt;p.y+=p.vy*dt;p.life-=dt;if(dist(f.pos,p)<.28){p.life=0;hurt(s,1,'pepper')}}f.projectiles=f.projectiles.filter(p=>p.life>0&&!blocked(f,p,0));
  if(f.attackCd<=0){const target=f.enemies.filter(e=>e.hp>0&&dist(f.pos,e)<1.25).sort((a,b)=>dist(f.pos,a)-dist(f.pos,b))[0];if(target){f.attackCd=.72;f.attackFx={ttl:.33,duration:.33,dx:(target.x-f.pos.x)/Math.max(.001,dist(f.pos,target)),dy:(target.y-f.pos.y)/Math.max(.001,dist(f.pos,target))};f.facing={x:f.attackFx.dx,y:f.attackFx.dy};target.hp--;target.hurtFx=.31;f.popFx.push({x:target.x,y:target.y,text:'-1',ttl:.58,color:'#fef4bf'});if(target.hp<=0){target.deathFx=.27;}if(target.hp<=0){pushMsg(f,`击败${target.kind==='chicken'?'林地啄啄鸡':'香辛小精怪'}，附近可以取得新食材！`);if(target.kind==='pepper')f.nodes.push({key:'pepper-drop',x:target.x,y:target.y,id:'chili',n:1,type:'gather',claimed:false});else f.nodes.push({key:'chicken-drop',x:target.x,y:target.y,id:'chicken',n:1,type:'gather',claimed:false});event='enemy_defeated';}}}
  const nearby=f.nodes.find(n=>!n.claimed&&dist(f.pos,n)<.86&&n.type!=='combat');
  if(nearby){if(nearby.type==='event'){
