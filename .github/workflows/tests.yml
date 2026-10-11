@@ -11,5 +11,7 @@ jobs:
       - uses: actions/setup-node@v4
         with:
           node-version: '22'
-      - name: Run deterministic game rules tests
+      - name: Install frontend build tools
+        run: npm install --no-audit --no-fund
+      - name: Run deterministic game rules tests and check production bundle
         run: npm test
