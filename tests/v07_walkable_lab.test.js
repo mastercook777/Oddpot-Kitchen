@@ -1,7 +1,7 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import {readFileSync} from 'node:fs';
-import {makeServiceLab,stepServiceLab,nearbyZone,snapshotLab,kitchenBusy,laboratoryMode} from '../experiments/v07-service-lab-engine.js';
+import {makeServiceLab,stepServiceLab,nearbyZone,snapshotLab,kitchenBusy,laboratoryMode,serviceSpecialAction,activateServiceSpecial} from '../experiments/v07-service-lab-engine.js';
 const sim=(s,sec,dx=0,dy=0)=>{for(let i=0;i<Math.ceil(sec/.05);i++)stepServiceLab(s,dx,dy,.05);return s;};
 test('solo restaurant: no chef present means hot kitchen stops (no magical autoproduction)',()=>{
  const s=makeServiceLab();sim(s,5);
@@ -11,16 +11,22 @@ test('solo restaurant: no chef present means hot kitchen stops (no magical autop
  assert.equal(s.score.autoSeconds,0);
  assert.match(laboratoryMode(s),/主厨做菜、取餐、上菜/);
 });
-test('solo hero at wok station actively cooks, has one-time 2s boost and drains stamina',()=>{
+test('standing at a stove cooks normally forever without involuntary energy spending',()=>{
  const s=makeServiceLab();sim(s,2);
  s.hero.x=.25;s.hero.y=.37;
  const before=kitchenBusy(s,'WOK').left;
  sim(s,1.25);
- assert.ok(kitchenBusy(s,'WOK').left<before-1.5,'continuous manual cooking plus special assist');
- assert.equal(s.hero.assists,1);
- assert.equal(s.hero.energy,4);
+ assert.ok(kitchenBusy(s,'WOK').left<before,'standing starts ordinary cooking');
+ assert.equal(s.hero.assists,0,'no unrequested boost while standing');
+ assert.equal(s.hero.energy,6,'ordinary cooking never costs stamina');
+ assert.equal(serviceSpecialAction(s)?.kind,'burst');
+ const left=kitchenBusy(s,'WOK').left;
+ assert.equal(activateServiceSpecial(s),true,'explicit action needed to boost');
+ assert.equal(s.hero.assists,1);assert.equal(s.hero.energy,4);
+ assert.ok(kitchenBusy(s,'WOK').left<=left-2);
  sim(s,1.25);
- assert.equal(s.hero.assists,1,'cannot retrigger same order boost');
+ assert.equal(s.hero.assists,1,'cannot trigger same-order boost again');
+ assert.equal(activateServiceSpecial(s),false);
 });
 test('chef cannot cook a second station simultaneously if alone',()=>{
  const s=makeServiceLab();sim(s,7);
@@ -42,16 +48,23 @@ test('waiter alone improves front service but cannot magically cook dishes',()=>
  assert.equal(first.patience,35);
  assert.equal(s.score.autoSeconds,0);
 });
-test('near table: standing .6s provides one-time customer patience, drains energy',()=>{
+test('standing by a table does not auto-spend stamina; emergency comfort requires a tap',()=>{
  const s=makeServiceLab();sim(s,2);
- s.hero.x=.27;s.hero.y=.61;assert.equal(nearbyZone(s.hero),'TABLE0');
- const o=s.orders[0],old=o.patience;
- sim(s,.75);
- assert.equal(o.patience,old+4);assert.equal(s.hero.energy,5);
- assert.equal(o.comforted,true);
- sim(s,2);
- assert.equal(s.hero.comforts,1);
+ s.hero.x=.27;s.hero.y=.61;
+ const o=s.orders[0],initial=o.patience;
+ sim(s,.8);
+ assert.equal(o.patience,initial,'ordinary proximity does not grant paid comfort');
+ assert.equal(s.hero.energy,6);
+ assert.equal(serviceSpecialAction(s),null,'healthy patience does not need emergency action');
+ o.patience=s.time-o.arrive+10;
+ assert.equal(serviceSpecialAction(s)?.kind,'comfort');
+ const before=o.patience;
+ sim(s,.8);
+ assert.equal(o.patience,before,'even emergency cannot auto-consume');
+ assert.equal(activateServiceSpecial(s),true);
+ assert.equal(o.patience,before+4);assert.equal(s.hero.comforts,1);
  assert.equal(s.hero.energy,5);
+ assert.equal(activateServiceSpecial(s),false,'once per order');
 });
 test('staff combinations remain distinct; no payroll/menus/coins altered in prototype',()=>{
  const scenarios=['单人开店','阿火掌一口锅','小芽自动上菜','阿火帮厨、小芽自动上菜'];
