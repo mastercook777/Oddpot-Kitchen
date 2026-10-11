@@ -40,6 +40,15 @@ function overlayMarkup(){if(!overlay)return '';
   body=`<h2>🎒 食材仓库</h2><p class="sheet-lead">原料跨天保留 · 采购会扣除金币，研发和营业真正消耗库存</p><div class="stock-list">${Object.entries(ING).map(([id,ing])=>`<div class="stock-line"><span>${ing.emoji} ${ing.name}</span><b>×${game.inventory[id]||0}</b>${b(`buy:${id}`,'采购', 'small',game.coins<ing.cost||id==='beef')}</div>`).join('')}</div>`;
  }else if(overlay.startsWith('menu:')){
   const slot=Number(overlay.split(':')[1]);body=`<h2>更换第 ${slot+1} 道上架菜</h2><p class="sheet-lead">每晚三道菜，不是价格越高越好；两口锅的负载会影响等待。</p><div class="book-list">${Object.keys(game.recipes).map(id=>{const r=RECIPES[id];return `<button data-menu-pick="${slot}:${id}" class="book-item"><span class="book-icon">${r.emoji}</span><div><strong>${r.name} · ${r.station}</strong><small>${r.time}s · ${r.price}金币 · ${r.ids.map(onlyName).join(' + ')}</small></div><span>›</span></button>`}).join('')}</div>`;
+ }else if(overlay==='bento'){
+  const prepared=game.bento?.day===game.cycle+'-'+game.day;
+  const possibilities=availableBento(game);
+  body=`<h2>🍱 今日探索便当</h2><p class="sheet-lead">出发前制作一份便当，扣除真实食材。菜谱决定能力、合适工艺能强化；当天研发的新菜明天才能带出门。</p>
+  ${prepared?`<div class="detail-row">✅ 已准备 ${esc(RECIPES[game.bento.recipeId]?.name||'便当')} · ${esc(game.bento.styleLabel)}</div>`:
+  `<div class="book-list">${possibilities.map(item=>`<button class="book-item" data-bento="${item.recipeId}" ${item.canPrepare?'':'disabled'}>
+     <span class="book-icon">${RECIPES[item.recipeId].emoji}</span><div><strong>${esc(item.name)} · ${esc(item.craft?.styleLabel||'标准工艺')}</strong>
+     <small>${esc(item.description)}${item.enhanced?' · ✨ 工艺契合':''} · 食材 ${item.craft?.ingredientIds.map(x=>ING[x].emoji).join('')||''}</small></div>
+     <span>${item.canPrepare?'准备':'缺料'}</span></button>`).join('')||'<p class="sheet-lead">尚未掌握特色便当菜谱。可以先探索研发，次日再带上。</p>'}</div>`}
  }else if(overlay==='crew'){
    const crew=ensureCrew(game),eff=crewEffects(game);
    const row=role=>{const person=crew[role],def=CREW_ROLES[role],meal=activeCrewMeal(game,role);
