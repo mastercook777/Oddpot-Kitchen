@@ -348,7 +348,7 @@ app.addEventListener('pointerup',e=>{if(!drag)return;const from=drag;drag=null;i
 document.addEventListener('keydown',e=>{if(((game.phase==='field'&&game.field)||(game.phase==='service'&&game.service?.walkable))&&!overlay){const map={ArrowUp:[0,-1],ArrowDown:[0,1],ArrowLeft:[-1,0],ArrowRight:[1,0],w:[0,-1],s:[0,1],a:[-1,0],d:[1,0]};if(map[e.key]){e.preventDefault();keys.add(e.key)}}});
 setInterval(()=>{if(document.hidden||overlay)return;if(game.phase==='service'&&game.service&&!game.service.walkable&&!game.service.paused&&!game.service.done&&!game.service.breakAt){tick(game,1);serviceTickAt=performance.now();if(game.service.done)message='今晚的顾客已经全部处理完毕，可以查看日报。';else if(game.service.breakAt){servicePanel='event';message='突发经营事件！请选择应对方案，或改菜单、备菜。';}render()}},750);
 document.addEventListener('keyup',e=>keys.delete(e.key));
-document.addEventListener('visibilitychange',()=>{if(document.hidden){if(walking){clearInterval(walking);walking=null}if(game.phase==='service'&&game.service&&!game.service.paused){game.service.paused=true;message='已自动暂停营业，返回后继续。'}save(game)}});
+document.addEventListener('visibilitychange',()=>{if(document.hidden){if(walking){clearInterval(walking);walking=null}if(game.phase==='service'&&game.service&&!game.service.paused){game.service.paused=true;game.service.clockAccumulator=0;releaseStick();message='已自动暂停营业，返回后继续。'}save(game)}else if(game.phase==='service'&&game.service?.walkable){render()}});
 render();
 
 // The simulation and visual rendering are decoupled: canvas runs each frame,
