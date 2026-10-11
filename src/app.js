@@ -48,7 +48,7 @@ function overlayMarkup(){if(!overlay)return '';
   `<div class="book-list">${possibilities.map(item=>`<button class="book-item" data-bento="${item.recipeId}" ${item.canPrepare?'':'disabled'}>
      <span class="book-icon">${RECIPES[item.recipeId].emoji}</span><div><strong>${esc(item.name)} · ${esc(item.craft?.styleLabel||'标准工艺')}</strong>
      <small>${esc(item.description)}${item.enhanced?' · ✨ 工艺契合':''} · 食材 ${item.craft?.ingredientIds.map(x=>ING[x].emoji).join('')||''}</small></div>
-     <span>${item.canPrepare?'准备':'缺料'}</span></button>`).join('')||'<p class="sheet-lead">尚未掌握特色便当菜谱。可以先探索研发，次日再带上。</p>'}</div>`}
+     <span>${item.canPrepare?'准备':'缺料'}</span></button>`).join('')||'<p class="sheet-lead">尚未掌握特色便当菜谱。可以先探索研发，次日再带上。</p>'}</div>`}`;
  }else if(overlay==='crew'){
    const crew=ensureCrew(game),eff=crewEffects(game);
    const row=role=>{const person=crew[role],def=CREW_ROLES[role],meal=activeCrewMeal(game,role);
