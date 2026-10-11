@@ -2,6 +2,7 @@ import {pixelActor,pixelEnemy,pixelImpact} from './pixels_v041.js?v=0.5.5';
 // Lightweight procedural game graphics: original Canvas shapes, no art pack.
 import {ING,RECIPES,CUSTOMERS} from './data.js?v=0.5.5';
 import {heroZone,waiterDeliveryPose,HERO_PASS} from './walkable_restaurant_v07.js?v=0.7';
+import {DINER_FLOOR} from './restaurant_scene_v075.js?v=0.7.5';
 const color={ink:'#24382a',leaf:'#386b43',soil:'#806044',stone:'#a6b392',cream:'#f4dfb0',gold:'#dfb873'};
 function rect(c,x,y,w,h,fill){c.fillStyle=fill;c.fillRect(x,y,w,h)}
 function circle(c,x,y,r,fill){c.fillStyle=fill;c.beginPath();c.arc(x,y,r,0,Math.PI*2);c.fill()}
@@ -244,9 +245,149 @@ function paintDinerStaff(c,s,v,t,w,h){
  const recentThrow=(v?.events||[]).slice().reverse().find(e=>e.type==='throw'&&plateFlight(t,e.t,2).flying);
  pixelActor(c,'chef',w*.5,h*.34,DINER_ACTOR_SCALE,{attack:!!recentThrow,walk:jobs.WOK||jobs.POT?t:0});
 }
+// v0.7.5 official restaurant. One world; furniture, actors, services and
+// collision share DINER_FLOOR. The old DOM kitchen is NOT drawn here.
+function drawRestaurantV075(c,s,t,w,h){
+ const g=DINER_FLOOR,v=s.service,x=f=>f*w,y=f=>f*h;
+ const rr=(X,Y,W,H,R,color,stroke)=>{
+  c.beginPath();c.roundRect(X,Y,W,H,R);c.fillStyle=color;c.fill();
+  if(stroke){c.strokeStyle=stroke;c.lineWidth=2;c.stroke();}
+ };
+ rect(c,0,0,w,h,'#6f513b');
+ // Rich warm tile floor: one drawable scene rather than HTML furniture overlay.
+ for(let row=0;row<Math.ceil(h/28);row++){
+  rect(c,0,row*28,w,27,row%2?'#796045':'#72563e');
+  line(c,0,row*28,w,row*28,'#4b382ca0',1);
+  for(let column=0;column<Math.ceil(w/36);column++)
+    line(c,column*36+(row%2)*18,row*28,column*36+(row%2)*18,row*28+27,'#9d775022',1);
+ }
+ rect(c,0,0,w,h*.20,'#304f3e');rect(c,0,h*.20-7,w,9,'#b88c5c');
+ rr(w*.25,h*.092,w*.50,34,9,'#483a2a','#dfae67');
+ text(c,'ODDPOT  ·  怪味食堂',w*.50,h*.092+17,'#ffe6ab',Math.min(15,w*.042));
+ for(const xx of [.08,.92]){rr(x(xx)-13,h*.12,26,46,5,'#6e937e','#cfae7d');rect(c,x(xx)-8,h*.135,16,21,'#3e6e68')}
+ // Back wall and worktops. The service targets sit on the WALKABLE FLOOR
+ // in front of the stove units (rather than inside the illustrated kettles).
+ for(const [i,key] of ['WOK','POT'].entries()){
+  const body=i?g.stoveRight:g.stoveLeft,pt=i?g.right:g.left,slot=s.kitchen?.slots?.[i];
+  const type=slot?.type||(i?'POT':'WOK'),busy=v?.stations?.[key];
+  const X=x(body.x),Y=y(body.y),rw=Math.min(94,w*.26);
+  rr(X-rw/2,Y-41,rw,77,12,'#523f30','#cfaa76');
+  rr(X-rw*.43,Y-36,rw*.86,56,8,'#98744d','#e6bb79');
+  circle(c,X,Y-9,Math.min(31,w*.083),'#c8bca2');
+  circle(c,X,Y-9,Math.min(25,w*.070),type==='WOK'?'#354847':'#517078','#e6dac0');
+  if(type==='POT'){circle(c,X,Y-9,Math.min(17,w*.045),'#9c7651');rect(c,X-31,Y-13,62,7,'#d3c7a4')}
+  else{line(c,X+19,Y-12,X+43,Y-24,'#d5b47a',6)}
+  if(busy){for(let j=0;j<3;j++)circle(c,X-15+j*14,Y-33+Math.sin(t*4+j)*3,3.5,'#f2e9bcaa')}
+  text(c,(type==='WOK'?'🍳':'🍲')+' '+(slot?.level>1?'Ⅱ':''),X,Y-53,'#f9e3a7',16);
+  const cookProgress=busy?Math.max(0,Math.min(1,1-(busy.left/Math.max(1,RECIPES[v.orders.find(o=>o.id===busy.orderId)?.recipeId]?.time||10)))):0;
+  rr(X-rw*.36,Y+27,rw*.72,7,4,'#2b4136','#b18b64');
+  if(busy){rr(X-rw*.35,Y+28,Math.max(3,rw*.70*cookProgress),5,2,'#f6cc82');text(c,Math.ceil(busy.left)+'s',X,Y+46,'#ffe3a8',11);}
+  const zone=pt;const hero=v?.hero;
+  const near=heroZone(hero)===key;
+  c.beginPath();c.ellipse(x(zone.x),y(zone.y),w*.10,h*.032,0,0,Math.PI*2);
+  c.lineWidth=2;c.strokeStyle=near?'#ffe69f':'#c8b6857d';c.stroke();
+ }
+ // Service counter leaves the center circulation lane clear. The pass is a
+ // distinct low table in the opening, NOT a solid wall across the corridor.
+ for(const [from,to] of [[.08,.40],[.60,.92]]){
+  rr(x(from),y(.425),x(to-from),h*.053,5,'#5a3e2d','#d6ad77');
+  rect(c,x(from),y(.425),x(to-from),6,'#ba8b57');
+ }
+ rr(x(.43),y(.427),x(.14),h*.033,5,'#b18b5f','#e5bd86');
+ const pending=v?.orders?.filter(o=>o.status==='pickup')||[];
+ pending.slice(0,3).forEach((o,i)=>{dish(c,x(.50+(i-(Math.min(pending.length,3)-1)/2)*.046),y(.43),RECIPES[o.recipeId]?.station||'WOK')});
+ const target=v?.hero?.carryOrderId?v.orders.find(o=>o.id===v.hero.carryOrderId&&o.status==='carried'):null;
+ if(target){const p=g.tableWork[target.tableId];if(p){c.beginPath();c.ellipse(x(p.x),y(p.y),w*.13,h*.048,0,0,Math.PI*2);c.fillStyle='#ffe6a325';c.fill();c.lineWidth=2;c.strokeStyle='#f6d37d';c.stroke();}}
+ // Tables, chairs and actual world collision are all in DINER_FLOOR.
+ for(const [i,pt] of g.tables.entries()){
+  const X=x(pt.x),Y=y(pt.y),r=Math.min(w*.16,h*.085);
+  for(const side of [-1,1])rr(X+side*r*.73-10,Y-13,20,26,6,'#664732','#e2b27b');
+  circle(c,X,Y+6,r+6,'#433326a9');
+  circle(c,X,Y,r,'#5f422e','#daae79');
+  circle(c,X,Y-5,r-8,'#bc8956','#edc58c');
+  text(c,(i+1)+'',X,Y-5,'#714626',14);
+  if(v){
+   const waiting=v.orders.filter(o=>o.tableId===i&&['ordering','queued','cooking','pickup','carried','delivering'].includes(o.status));
+   if(waiting.length){
+    const patience=Math.min(...waiting.map(o=>o.patience-(t-o.arrival)));
+    const urgency=patience<=9?'#ff756e':patience<=16?'#ffc67c':'#a4daaa';
+    c.beginPath();c.arc(X,Y,r+11,-Math.PI/2,-Math.PI/2+Math.PI*2*Math.max(.06,Math.min(1,patience/35)));
+    c.strokeStyle=urgency;c.lineWidth=4;c.stroke();
+    const main=waiting[0];const icon=RECIPES[main.recipeId]?.emoji||'🍽️';
+    text(c,icon,X,Y+22,'#ffe4af',18);
+   }
+  }
+ }
+ // Entrance and dining-room plants.
+ rr(x(.43),y(.895),x(.14),h*.10,5,'#825d40','#e0bc85');
+ rr(x(.46),y(.91),x(.08),h*.07,4,'#294c3d');
+ for(const px of [.095,.905]){rr(x(px)-7,y(.84),14,20,3,'#66462d');circle(c,x(px),y(.838),13,'#54845b')}
+ // Actors are sorted by floor position. Same real sprite scale for everyone.
+ const actors=[];
+ if(v){
+  for(const o of v.orders){
+   if(o.tableId==null)continue;
+   const eligible=['entering','ordering','queued','cooking','pickup','carried','delivering','flying','eating','review'].includes(o.status)
+       ||(o.status==='served'&&t-(o.reviewedAt??o.served??t)<2.3)
+       ||(['left','rejected'].includes(o.status)&&Number.isFinite(o.leftAt)&&t-o.leftAt<2.6);
+   if(!eligible)continue;
+   const pt=g.tables[o.tableId],side=o.seatId===0?-1:1;
+   const seat={x:pt.x+side*.082,y:.653};
+   const entry={x:g.entrance.x,y:.96},hall={x:.5,y:.81},flank={x:seat.x,y:.80};
+   const age=t-(o.doorAt??o.arrival);
+   const leaving=o.status==='served'&&t-(o.reviewedAt??o.served??t)>.65||(['left','rejected'].includes(o.status)&&Number.isFinite(o.leftAt));
+   const progress=leaving?Math.max(0,1-(t-(o.status==='served'?(o.reviewedAt??o.served??t)+.65:o.leftAt))/2.2):
+       Math.max(0,Math.min(1,age/2.4));
+   if(leaving&&progress<=0)continue;
+   const seg=progress<.35?0:progress<.70?1:2;
+   const ptA=[entry,hall,flank][seg],ptB=[hall,flank,seat][seg];
+   const q=seg===0?progress/.35:seg===1?(progress-.35)/.35:(progress-.7)/.3;
+   const loc={x:ptA.x+(ptB.x-ptA.x)*q,y:ptA.y+(ptB.y-ptA.y)*q};
+   actors.push({id:o.id,x:loc.x,y:loc.y,kind:o.segment,walk:progress>0&&progress<1,order:o});
+  }
+  const crew=v.crew||s.crew;
+  if(crew?.helper?.hired){
+   const station=crew.helper.station===1?1:0,pt=g.helper[station];
+   actors.push({id:'helper',x:pt.x,y:pt.y,kind:'helper',walk:false,working:!!v.stations[station?'POT':'WOK']});
+  }
+  if(crew?.waiter?.hired){
+   const pos=waiterDeliveryPose(s,t);
+   actors.push({id:'waiter',x:pos.x,y:pos.y,kind:'waiter',walk:pos.moving,plate:pos.plate});
+  }
+  if(v.hero){
+   const hero=v.hero,zone=heroZone(hero);
+   const carried=v.orders.find(o=>o.id===hero.carryOrderId&&o.status==='carried');
+   actors.push({id:'hero',x:hero.x,y:hero.y,kind:'chef',walk:hero.moving,plate:!!carried,
+     working:!carried&&['WOK','POT'].includes(zone)&&!!v.stations[zone],direction:hero.direction,
+     stateIcon:carried?'🍽️':zone==='PASS'&&pending.length?'🍽️':
+      zone?.startsWith('TABLE')&&v.orders.some(o=>o.tableId===Number(zone.slice(5))&&['queued','cooking','pickup','delivering'].includes(o.status))?'💛':null});
+  }
+ }
+ actors.sort((a,b)=>a.y-b.y);
+ for(const a of actors){
+  const X=x(a.x),Y=y(a.y);
+  if(a.id==='hero')circle(c,X,Y+11,12,'#f6df9e2d');
+  pixelActor(c,a.kind,X,Y,DINER_ACTOR_SCALE,{walk:a.walk?t*2:0,
+    face:a.direction==='left'?-1:1,attack:!!a.working});
+  if(a.plate)dish(c,X+14,Y-12,'WOK');
+  if(a.id==='hero'){
+   const icon=a.working?'🍳':a.stateIcon;
+   if(icon)text(c,icon,X,Y-30,'#ffe8b9',13);
+  }
+  if(a.order){
+   const o=a.order;
+   if(['queued','cooking','pickup','carried','delivering'].includes(o.status))
+    text(c,RECIPES[o.recipeId]?.emoji||'🍽️',X,Y-34,'#fff2c9',12);
+   if(o.status==='review'||(o.status==='served'&&t-(o.reviewedAt??0)<1.1))
+    text(c,o.sat>=70?'💚':'💬',X,Y-34,'#ffe6bd',15);
+  }
+ }
+}
+
 export function drawDiner(canvas,s,clock,simTime=s.service?.time??clock){
  const size=setCanvas(canvas);if(!size)return;
  const {c,w,h}=size,v=s.service,t=v?simTime:clock;
+ if(v?.walkable||!v){drawRestaurantV075(c,s,t,w,h);return;}
  rect(c,0,0,w,h,'#66523e');
  for(let y=0;y<h;y+=24){rect(c,0,y,w,22,y%48===0?'#765d46':'#71563f');line(c,0,y,w,y,'#674b34',1)}
  // A little wider than v0.5B, but without stretching character proportions.
