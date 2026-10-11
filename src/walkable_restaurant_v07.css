@@ -1,0 +1,30 @@
+/* v0.7.4 primary restaurant: shared joystick, normal actor scale.
+   Hero work indicator stays in Canvas and is ICON ONLY. */
+.service-scene .diner-world{touch-action:none}
+.service-scene .diner-canvas{touch-action:none}
+.diner-float-stick{
+ position:fixed;z-index:19;left:-110px;top:-110px;
+ width:92px;height:92px;margin:-46px 0 0 -46px;border-radius:50%;
+ border:2px solid #fff5cb75;background:#b8d1ba25;
+ box-shadow:inset 0 0 16px #d1e9ba28;
+ opacity:0;pointer-events:none;transition:none!important;
+}
+.diner-float-stick.active{opacity:1}
+.diner-float-knob{position:absolute;left:calc(50% - 18px);top:calc(50% - 18px);
+ width:36px;height:36px;border:2px solid #fff6c9;border-radius:50%;
+ background:#f0d59db8;box-shadow:0 2px 8px #0f2418aa;will-change:transform}
+.diner-special{
+ position:absolute;right:12px;bottom:64px;z-index:15;
+ min-width:58px;min-height:49px;padding:8px 10px;
+ border:2px solid #ffdda4;border-radius:14px;
+ font-size:16px;font-weight:850;color:#fff4d9;
+ background:#78503de9;box-shadow:0 4px 12px #16251ad9;
+ touch-action:manipulation
+}
+.diner-special[hidden]{display:none!important}
+.diner-special:disabled{opacity:.46;filter:grayscale(.5)}
+/* Canvas is authoritative for the unique chef, waiter, and helper.
+   Hit-map stays on top solely for optional order selection. */
+.service-scene #diner-canvas{z-index:0}
+.service-scene .diner-float-stick{pointer-events:none}
+@media(max-height:670px){.diner-special{bottom:45px;right:8px;min-width:48px;min-height:45px}}
