@@ -1,0 +1,285 @@
+<!doctype html>
+<html lang="zh-CN"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover,user-scalable=no">
+<meta name="theme-color" content="#162328"><title>怪味食堂 v0.6.2 · 双锅实时料理实验室</title>
+<style>
+:root{color-scheme:dark;--text:#f7ead7;--muted:#b7c5bf;--border:#516662;--accent:#ffcd82}
+*{box-sizing:border-box}body{margin:0;background:#091114;color:var(--text);font-family:-apple-system,BlinkMacSystemFont,"PingFang SC","Microsoft YaHei",sans-serif}
+button{font:inherit;color:inherit;cursor:pointer;touch-action:manipulation}button:disabled{opacity:.44;cursor:default}button:focus-visible{outline:2px solid #ffdba4}
+#app{height:100dvh;height:100svh;max-width:500px;margin:auto;display:flex;flex-direction:column;background:linear-gradient(150deg,#2a3d40,#16242b 73%);overflow:hidden}
+header{flex:none;height:52px;display:flex;justify-content:space-between;align-items:center;padding:8px 13px;border-bottom:1px solid #ffffff22}
+.brand{font-size:15px;font-weight:850}.brand small{display:block;color:#ffbe7e;font-size:10px;letter-spacing:1.3px}.version{font-size:10px;border:1px solid #c39457;border-radius:13px;padding:6px 8px;color:#ffd7a1}
+.page{display:none;flex:1;min-height:0;flex-direction:column}.page.active{display:flex}.scroll{flex:1;min-height:0;overflow-y:auto;overscroll-behavior:contain;padding:14px 14px 20px}
+.kicker{font-size:11px;color:#ffc27b;font-weight:850;letter-spacing:1px}h1{font-size:24px;margin:7px 0 8px;line-height:1.2}h2{font-size:14px;margin:0 0 8px}.hint{font-size:12px;color:var(--muted);line-height:1.5;margin:0}.section{font-size:13px;font-weight:850;margin:15px 0 8px}
+.vessels{display:grid;grid-template-columns:1fr 1fr;gap:8px}.vessel{min-height:78px;background:#2c4144;border:1px solid var(--border);border-radius:12px;padding:9px;text-align:left}.vessel.selected{background:#544332;border-color:#ffbd73;box-shadow:inset 0 0 0 1px #e0a45c}.vessel b{font-size:15px;display:block}.vessel small{font-size:11px;color:#cfcfc4;display:block;line-height:1.5;margin-top:5px}
+.foodgrid{display:grid;grid-template-columns:repeat(4,1fr);gap:6px}.food{background:#293d40;border:1px solid var(--border);min-height:77px;border-radius:11px;padding:5px 2px;display:flex;align-items:center;justify-content:center;flex-direction:column;gap:4px}.food.selected{background:#5a4332;border-color:#eebc79}.food strong{font-size:10px;white-space:nowrap}.food span{font-size:25px}
+.note{border:1px solid #607067;background:#1c2e31;border-radius:12px;margin-top:11px;padding:10px 11px;font-size:12px;line-height:1.7}.note strong{color:#ffdda4}.examples{display:flex;flex-wrap:wrap;gap:5px}.examples span{border:1px solid #607568;background:#283d3b;border-radius:14px;padding:5px 7px;font-size:10px}
+footer{flex:none;padding:8px 13px max(10px,env(safe-area-inset-bottom));background:#1b2c30;border-top:1px solid #ffffff20}.primary{border:0;background:linear-gradient(120deg,#ffdf9e,#ffaa4d);color:#382718;font-size:15px;font-weight:900;border-radius:11px;min-height:45px;width:100%}.secondary{background:#2a3f42;border:1px solid #6d8078;border-radius:11px;padding:8px;font-weight:850;min-height:45px}.minor{font-size:10px;color:#a9bab6;text-align:center;margin-top:6px}
+.cookhead{flex:none;padding:8px 12px 4px;display:flex;align-items:center;justify-content:space-between;gap:8px}.cookhead h1{font-size:17px;margin:2px 0}.timer{font-size:22px;color:#ffe0a9;font-variant-numeric:tabular-nums;font-weight:900}.timer small{font-size:10px;color:#bcc4ba}
+.pan-area{flex:1;min-height:130px;position:relative;margin:6px 11px 2px;border:1px solid #8e7458;border-radius:16px;overflow:hidden;background:radial-gradient(ellipse at center,#67463477,#192b31 65%)}
+canvas{display:block;width:100%;height:100%;touch-action:none}.pancap{position:absolute;top:8px;left:8px;right:8px;pointer-events:none;text-align:center}.pancap span{background:#111d20c9;border:1px solid #ae8f686e;padding:5px 9px;border-radius:20px;color:#ffe0b2;font-size:11px}
+.reaction{flex:none;min-height:43px;text-align:center;padding:4px 12px}.reaction b{display:block;font-size:13px;color:#ffd38a}.reaction small{display:block;font-size:11px;color:#adbfbd;margin-top:3px}
+.tray{flex:none;padding:4px 12px 8px}.traytitle{display:flex;justify-content:space-between;font-size:11px;color:#bccdc6;margin-bottom:6px}
+.trayfoods{display:grid;grid-template-columns:repeat(3,1fr);gap:7px}.drop{min-height:54px;display:flex;justify-content:center;align-items:center;gap:6px;border-radius:11px;border:1px solid #aa8c68;background:#493b31;padding:3px}.drop span{font-size:22px}.drop b{font-size:11px}.drop.done{background:#2b433a;border-color:#567a64}.actions,.finalrow{display:grid;grid-template-columns:1fr 1fr;gap:8px}.actions{margin-bottom:8px}.action{border:1px solid #ab805c;background:#493831;border-radius:11px;min-height:46px;font-weight:850}.action.used{background:#2b4037}.finalrow{grid-template-columns:.8fr 1.2fr}
+.resulthead{text-align:center}.resulthead .emoji{font-size:54px}.status{font-weight:850;font-size:13px;color:#cde5b9;margin:7px}.status.fail{color:#ffb8a9}.tags{display:flex;gap:6px;justify-content:center;flex-wrap:wrap;margin:9px auto}.tag{font-size:11px;font-weight:850;border-radius:20px;background:#57432f;border:1px solid #ac855b;padding:5px 8px}.tag.primarytag{background:#98613b}
+.box{border:1px solid #516865;background:#203337;border-radius:12px;padding:11px 12px;margin-top:10px}.box h2{color:#ffdeb1}.box p{font-size:12px;line-height:1.6;color:#d2dcd2;margin:0}.doneness{display:flex;gap:6px;flex-wrap:wrap}.doneness span{font-size:11px;padding:5px 8px;border-radius:14px;border:1px solid #657e6e}.doneness .bad{border-color:#ab6258;color:#ffc1ae}
+.record{display:flex;justify-content:space-between;gap:8px;padding:7px 0;border-bottom:1px solid #ffffff13;font-size:11px}.record b{color:#ffdaa5;white-space:nowrap}
+@media(max-height:680px){header{height:45px}.cookhead{padding-top:4px}.pan-area{min-height:112px;margin-top:2px}.reaction{min-height:37px}.drop{min-height:44px}.actions{margin-bottom:5px}.action{min-height:41px}.tray{padding-bottom:5px}footer{padding-top:6px;padding-bottom:max(6px,env(safe-area-inset-bottom))}}
+@media(max-width:345px){.brand{font-size:13px}.food strong{font-size:9px}.drop{gap:2px}.drop b{font-size:10px}}
+</style></head><body><main id="app">
+<header><div class="brand"><small>ODDPOT KITCHEN</small>🍳 怪味食堂 · 料理实验室</div><div class="version">v0.6.2</div></header>
+<section id="setup" class="page active"><div class="scroll">
+<div class="kicker">自由下料 · 双厨具 · 真实熟度</div><h1>同样的食材，不同的火候与手法。</h1>
+<p class="hint">只选食材与厨具。开火后亲手投料，什么时候翻炒、颠勺、轻搅、收汁，全由你决定。夹生或严重焦糊的菜不能加入菜单。</p>
+<div class="section">选择厨具</div>
+<div class="vessels"><button id="v-wok" class="vessel selected" data-v="wok"><b>🍳 炒锅</b><small>翻炒 · 颠勺<br>快火，爆香，锅气</small></button><button id="v-pot" class="vessel" data-v="pot"><b>🍲 深锅</b><small>轻搅 · 收汁<br>慢炖，融合，浓香</small></button></div>
+<div class="section">选 2–3 种食材 <span id="count" class="hint"></span></div><div id="foodgrid" class="foodgrid"></div>
+<div class="note"><strong>本次食材：</strong><span id="selected"></span><div id="recipe-hint"></div></div>
+<div class="section">更多菜谱 · <span id="coverage" class="hint"></span></div><div class="examples" id="examples"></div>
+<div class="note">🔍 比较建议：同样选择「🥩 野牛肉 + 🧅 琥珀洋葱」。炒锅中尝试自然出锅、及时颠勺；换深锅尝试轻搅、煮久一点再收汁。**不需要踩精准节拍。**</div>
+</div><footer><button id="start" class="primary">🔥 开锅！我来决定下料时机</button><div class="minor">独立实验版 · 不消耗主线食材，也不改变 v0.5E.1 存档</div></footer></section>
+<section id="cook" class="page">
+<div class="cookhead"><div><div class="kicker">REAL-TIME COOKING</div><h1 id="cook-title">自由下料</h1></div><div id="timer" class="timer">待下锅 <small>/ 19s</small></div></div>
+<div class="pan-area"><canvas id="pan" aria-label="锅内实时烹饪区，可使用翻炒、颠勺、轻搅、收汁手势"></canvas><div class="pancap"><span id="pan-caption">点击任意食材，开始烹饪</span></div></div>
+<div class="reaction"><b id="reaction-title">第一份食材将启动计时</b><small id="reaction-text">厨具和实际下锅间隔都会影响最终结果。</small></div>
+<div class="tray"><div class="traytitle"><b>点击食材直接下锅</b><span id="in-count">0 / 2 已下锅</span></div><div id="trayfoods" class="trayfoods"></div></div>
+<footer><div class="actions"><button id="action1" class="action" disabled>🍳 翻炒</button><button id="action2" class="action" disabled>↗ 颠勺</button></div>
+<div class="finalrow"><button id="retry" class="secondary">↶ 重来</button><button id="finish" class="primary" disabled>🍽 起锅鉴定</button></div>
+<div class="minor">看到“熟透”再出锅更稳妥；过早起锅会夹生，但仍可直接重试。</div></footer></section>
+<section id="result" class="page"><div class="scroll">
+<div class="resulthead"><div class="kicker">烹饪鉴定</div><div class="emoji" id="res-icon"></div><h1 id="res-name"></h1><p id="res-sub" class="hint"></p><div class="status" id="res-status"></div><div class="tags" id="res-tags"></div></div>
+<div class="box"><h2>每样食材的熟度</h2><div class="doneness" id="res-doneness"></div></div>
+<div class="box"><h2>本锅为什么得到这些词条？</h2><p id="res-explain"></p></div>
+<div class="box"><h2>未来的经营价值（尚未接入主线）</h2><p id="res-effect"></p></div>
+<div class="box"><h2>已经成功发现的本菜工艺</h2><div id="records"></div></div>
+<div class="minor">本实验失败不会写入图鉴；真实材料消耗及自动生产的接入将在正式验证后实施。</div>
+</div><footer><div class="finalrow"><button id="change" class="secondary">← 换食材/厨具</button><button id="again" class="primary">再来一锅 ↗</button></div></footer></section>
+</main><script>
+(function(){
+'use strict';
+var ING={
+ beef:{name:'野牛肉',short:'牛肉',icon:'🥩',need:5.4},chicken:{name:'林地鸡肉',short:'鸡肉',icon:'🍗',need:6.1},
+ chili:{name:'火椒',short:'火椒',icon:'🌶️',need:1.3},garlic:{name:'蒜瓣',short:'蒜香',icon:'🧄',need:1.3},
+ mushroom:{name:'幽光蘑菇',short:'菌菇',icon:'🍄',need:2.9},cabbage:{name:'卷心菜',short:'包菜',icon:'🥬',need:2.5},
+ onion:{name:'琥珀洋葱',short:'洋葱',icon:'🧅',need:2.8},potato:{name:'地精土豆',short:'土豆',icon:'🥔',need:6.2}
+};
+var VESSEL={
+ wok:{name:'炒锅',icon:'🍳',rate:1.10,actions:[['flip','翻炒','🍳'],['toss','颠勺','↗']]},
+ pot:{name:'深锅',icon:'🍲',rate:.92,actions:[['gentle','轻搅','🥄'],['reduce','收汁','💧']]}
+};
+var NAMED={
+ 'wok:beef,chili':'辣椒炒肉','wok:chicken,chili':'辣椒炒肉','wok:garlic,mushroom':'菌香小炒',
+ 'pot:chicken,mushroom':'蘑菇焖鸡','wok:cabbage,mushroom':'清炒双蔬','wok:beef,chili,garlic':'爆炎牛肉',
+ 'wok:beef,garlic':'焦香蒜牛','wok:chili,mushroom':'火山菌菇','pot:chicken,onion':'洋葱烩鸡',
+ 'pot:onion,potato':'地精土豆煲','wok:chili,potato':'爆辣脆薯','pot:mushroom,potato':'森林浓汤',
+ 'wok:cabbage,onion,potato':'丰收三拼',
+ 'wok:beef,onion':'葱爆牛肉','pot:beef,onion':'洋葱炖牛肉',
+ 'wok:chicken,onion':'洋葱炒鸡','pot:beef,potato':'牛肉土豆煲',
+ 'wok:beef,potato':'牛肉煎薯','wok:beef,mushroom':'菌香牛肉','pot:beef,mushroom':'菌香炖牛肉',
+ 'pot:beef,chili':'火椒炖牛','pot:beef,garlic':'蒜香炖牛','wok:cabbage,garlic':'蒜香包菜',
+ 'pot:cabbage,garlic':'蒜香菜汤','wok:cabbage,onion':'洋葱包菜',
+ 'pot:cabbage,onion':'甜洋葱菜煲','wok:cabbage,potato':'锅煎双蔬',
+ 'pot:cabbage,potato':'田园双蔬汤','wok:chicken,garlic':'蒜香炒鸡',
+ 'pot:chicken,garlic':'蒜香焖鸡','wok:chicken,mushroom':'山菌炒鸡',
+ 'pot:chicken,potato':'鸡肉土豆煲','wok:chicken,potato':'鸡肉脆薯',
+ 'pot:chili,potato':'火椒土豆煲','wok:garlic,potato':'蒜香脆薯',
+ 'pot:garlic,potato':'蒜香土豆浓汤','wok:mushroom,onion':'甜香菌菇',
+ 'pot:mushroom,onion':'洋葱菌菇汤','wok:mushroom,potato':'煎菌菇土豆',
+ 'wok:chili,garlic':'爆香辣蒜','pot:chili,garlic':'火椒蒜香汁',
+ 'wok:chili,onion':'辣炒洋葱','pot:chili,onion':'香辣洋葱汤',
+ 'wok:garlic,onion':'双香煸锅','pot:garlic,onion':'双香浓汤',
+ 'wok:beef,cabbage':'牛肉炒包菜','pot:beef,cabbage':'牛肉菜煲',
+ 'wok:cabbage,chili':'火椒炝包菜','pot:cabbage,chili':'火椒蔬菜汤',
+ 'wok:beef,chicken':'双肉锅气炒','pot:beef,chicken':'双肉滋补锅',
+ 'wok:beef,chili,onion':'火椒葱爆牛肉','pot:beef,chili,onion':'香辣洋葱牛肉煲',
+ 'wok:beef,garlic,onion':'双香爆牛','pot:beef,garlic,onion':'双香焖牛',
+ 'wok:chicken,garlic,mushroom':'蒜香菌菇炒鸡','pot:chicken,garlic,mushroom':'菌菇蒜香鸡汤',
+ 'wok:chicken,chili,onion':'辛香炒鸡','pot:chicken,chili,onion':'香辣洋葱焖鸡',
+ 'wok:cabbage,garlic,mushroom':'菌香蒜炒双蔬','pot:cabbage,garlic,mushroom':'蒜香菌菇蔬菜汤',
+ 'wok:beef,mushroom,onion':'菌菇葱爆牛肉','pot:beef,mushroom,onion':'菌香洋葱炖牛肉',
+ 'wok:beef,onion,potato':'牛肉薯片葱爆','pot:beef,onion,potato':'洋葱土豆炖牛肉',
+ 'wok:chili,mushroom,potato':'火椒菌菇煎薯','pot:chili,mushroom,potato':'火山菌薯汤',
+ 'wok:cabbage,chili,garlic':'蒜香火椒包菜','pot:cabbage,chili,garlic':'辣蒜蔬菜汤'
+};
+var KEY='oddpot-cooking-lab-v062';
+var state={vessel:'wok',selected:['beef','onion'],dropped:[],actions:[],elapsed:0,live:false,last:0,frame:0,screen:'setup',visual:[],burst:0,records:[],result:null};
+try{var store=JSON.parse(localStorage.getItem(KEY)||'{}');if(Array.isArray(store.records))state.records=store.records.slice(0,60)}catch(e){}
+function el(id){return document.getElementById(id)}
+function key(ids,v){return v+':'+ids.slice().sort().join(',')}
+function recipe(ids,v){
+ v=v||state.vessel;var id=key(ids,v),name=NAMED[id];
+ if(!name){
+  var main=['beef','chicken','potato','mushroom','cabbage'].find(function(k){return ids.includes(k)})||ids[0];
+  var other=ids.filter(function(k){return k!==main}).sort().map(function(k){return ING[k].short}).join('');
+  name=(v==='wok'?'秘制炒':'秘制炖')+other+ING[main].short;
+ }
+ return {id:id,name:name,icon:VESSEL[v].icon,curated:!!NAMED[id]};
+}
+function screen(k){state.screen=k;['setup','cook','result'].forEach(function(n){el(n).classList.toggle('active',n===k)})}
+function say(a,b){el('reaction-title').textContent=a;el('reaction-text').textContent=b}
+function totalCombos(){var n=Object.keys(ING).length;return n*(n-1)/2+n*(n-1)*(n-2)/6}
+function showSetup(){
+ el('v-wok').classList.toggle('selected',state.vessel==='wok');
+ el('v-pot').classList.toggle('selected',state.vessel==='pot');
+ el('count').textContent='('+state.selected.length+'/3)';
+ el('foodgrid').innerHTML=Object.keys(ING).map(function(id){var x=ING[id];return '<button data-food="'+id+'" class="food '+(state.selected.includes(id)?'selected':'')+'"><span>'+x.icon+'</span><strong>'+x.name+'</strong></button>'}).join('');
+ el('selected').textContent=state.selected.map(function(k){return ING[k].icon+' '+ING[k].name}).join(' · ')||'未选';
+ el('recipe-hint').textContent=state.selected.length>=2?'对应菜品：'+recipe(state.selected).name+'（出锅手法会决定词条）':'至少选择两种食材';
+ el('coverage').textContent=totalCombos()+' 组食材 × 2 种厨具';
+ var presets=state.vessel==='wok'?[['beef','onion'],['beef','chili','garlic'],['chicken','chili'],['cabbage','garlic'],['mushroom','onion']]:[['beef','onion'],['chicken','mushroom'],['mushroom','potato'],['beef','potato'],['garlic','onion']];
+ el('examples').innerHTML=presets.map(function(ids){return '<span>'+recipe(ids).name+'</span>'}).join('');
+ el('start').disabled=state.selected.length<2;
+}
+function start(){
+ if(state.selected.length<2)return;
+ state.dropped=[];state.actions=[];state.elapsed=0;state.live=false;state.last=0;state.visual=[];state.burst=0;
+ el('cook-title').textContent=VESSEL[state.vessel].icon+' '+recipe(state.selected).name;
+ var a=VESSEL[state.vessel].actions;
+ el('action1').textContent=a[0][2]+' '+a[0][1];el('action2').textContent=a[1][2]+' '+a[1][1];
+ el('pan-caption').textContent=VESSEL[state.vessel].name+'已热，轻点食材下锅';
+ say('锅已准备好','第一份食材入锅后开始连续计时，之后随时下料或掌勺。');
+ screen('cook');showCook();cancelAnimationFrame(state.frame);state.frame=requestAnimationFrame(loop);
+}
+function cookAmount(d,t,acts,v){
+ var value=Math.max(0,t-d.t)*VESSEL[v].rate;
+ acts.forEach(function(a){if(!a.with.includes(d.id))return;value+=({flip:.9,toss:.45,gentle:.75,reduce:.35}[a.type]||0)});
+ return value;
+}
+function required(id,v){return ING[id].need*(v==='pot'?1.18:1)}
+function statusFor(d,t,acts,v){var ratio=cookAmount(d,t,acts,v)/required(d.id,v);if(ratio<.65)return '偏生';if(ratio<1)return '受热中';if(ratio>3.4&&['beef','chicken','potato'].includes(d.id))return '过火';if(ratio>5.5)return '焦糊';return '熟透'}
+function showCook(){
+ el('in-count').textContent=state.dropped.length+' / '+state.selected.length+' 已下锅';
+ el('trayfoods').innerHTML=state.selected.map(function(id){
+  var d=state.dropped.find(function(x){return x.id===id});var status=d?statusFor(d,state.elapsed,state.actions,state.vessel):'下锅';
+  return '<button class="drop '+(d?'done':'')+'" data-drop="'+id+'" '+(d?'disabled':'')+'><span>'+ING[id].icon+'</span><b>'+status+'</b></button>';
+ }).join('');
+ var a=VESSEL[state.vessel].actions;
+ [el('action1'),el('action2')].forEach(function(b,i){b.disabled=!state.dropped.length||state.actions.some(function(x){return x.type===a[i][0]});b.classList.toggle('used',!b.disabled&&false||state.actions.some(function(x){return x.type===a[i][0]}))});
+ el('finish').disabled=!state.dropped.length||state.elapsed<1.2;
+ el('timer').innerHTML=(state.live?state.elapsed.toFixed(1)+'s':'待下锅')+' <small>/ 19s</small>';
+}
+function drop(id){
+ if(state.screen!=='cook'||!state.selected.includes(id)||state.dropped.some(function(d){return d.id===id}))return;
+ if(!state.live){state.live=true;state.last=performance.now()}
+ state.dropped.push({id:id,t:+state.elapsed.toFixed(2),index:state.dropped.length});
+ state.visual.push({id:id,offset:Math.random()*6});
+ state.burst=.7;
+ say(ING[id].name+'入锅！',state.dropped.length===1?'这道菜的底味开始形成。':'它会和已经在锅里的食材产生反应。');
+ el('pan-caption').textContent=state.dropped.length===state.selected.length?'食材齐了，观察熟度决定何时起锅':'持续加热中，随时可以投下一个食材';
+ showCook();
+}
+function act(type){
+ if(state.screen!=='cook'||!state.dropped.length||!VESSEL[state.vessel].actions.some(function(a){return a[0]===type})||state.actions.some(function(a){return a.type===type}))return;
+ state.actions.push({type:type,t:+state.elapsed.toFixed(2),with:state.dropped.map(function(d){return d.id})});state.burst=1.2;
+ var speech={flip:['翻炒！','食材受热更加均匀，有利于提升品质。'],toss:['颠勺！锅气升腾','主料和香料同锅时，会更容易触发爆炒。'],gentle:['轻搅！','深锅内香气慢慢融合，受热更均匀。'],reduce:['收汁！','过早收汁会变淡；熬出味道后再收汁更浓厚。']};
+ say(speech[type][0],speech[type][1]);el('pan-caption').textContent=speech[type][0];
+ showCook();
+}
+function evaluate(ids,v,drops,acts,duration){
+ var arr=drops.slice().sort(function(a,b){return a.t-b.t||a.index-b.index}),r=recipe(ids,v);
+ var result={recipeId:r.id,recipeName:r.name,icon:r.icon,vessel:v,curated:r.curated,duration:+duration.toFixed(2),sellable:true,status:'研发成功',quality:68,style:'',tags:[],doneness:[],explain:[],business:'',events:arr,actions:acts.slice()};
+ var missing=ids.filter(function(id){return !arr.some(function(d){return d.id===id})}),bad=[],weak=[],burnt=[];
+ var sum=0;
+ arr.forEach(function(d){
+  var ratio=cookAmount(d,duration,acts,v)/required(d.id,v);sum+=Math.min(1.2,ratio);
+  var label=ratio<.65?'夹生':ratio<1?'欠火':((ratio>3.4&&['beef','chicken','potato'].includes(d.id))||ratio>5.5)?'焦糊':'熟透';
+  result.doneness.push({id:d.id,label:label,ratio:+ratio.toFixed(2)});
+  if(label==='夹生')bad.push(ING[d.id].name);
+  if(label==='欠火')weak.push(ING[d.id].name);
+  if(label==='焦糊')burnt.push(ING[d.id].name);
+ });
+ if(missing.length){result.sellable=false;result.status='漏下料';result.explain.push('还未加入 '+missing.map(function(x){return ING[x].name}).join('、')+'，食材不全。')}
+ if(bad.length){result.sellable=false;result.status='夹生失败';result.explain.push(bad.join('、')+'尚未熟透，过早起锅会失败。')}
+ if(burnt.length){result.sellable=false;result.status='焦糊失败';result.explain.push(burnt.join('、')+'已严重过火。')}
+ if(weak.length){result.quality-=18;result.explain.push(weak.join('、')+'稍欠火；可以吃，但品质受到影响。')}
+ var meat=arr.find(function(x){return ['beef','chicken','potato'].includes(x.id)});
+ var aroma=arr.filter(function(x){return ['garlic','onion','chili'].includes(x.id)});
+ var aromafirst=!!(meat&&aroma.some(function(x){return x.t<meat.t-1.1}));
+ var toss=acts.find(function(a){return a.type==='toss'}),flip=acts.find(function(a){return a.type==='flip'});
+ var gentle=acts.find(function(a){return a.type==='gentle'}),reduce=acts.find(function(a){return a.type==='reduce'});
+ var burst=!!(toss&&meat&&toss.t>=meat.t&&toss.t-meat.t<=3.8&&toss.with.length>=2);
+ var reduction=!!(reduce&&reduce.t>=4&&reduce.with.length>=2);
+ result.style=v==='wok'?(burst?'爆炒':aromafirst&&(flip||toss)?'香味十足':'家常'):(reduction?'浓香收汁':aromafirst&&gentle?'香味十足':gentle?'清润慢炖':'家常炖煮');
+ result.quality+=Math.round((sum/Math.max(1,arr.length)-.85)*22);
+ if(aromafirst){result.tags.push('香气底味');result.explain.push('香料先入锅，主料随后加入，香气在锅中累积。');result.quality+=4}
+ if(flip){result.tags.push('均匀翻炒');result.explain.push('翻炒使已入锅的食材受热均匀。');result.quality+=7}
+ if(toss){result.tags.push(burst?'锅气':'焦香');result.explain.push(burst?'主料和配料同时在锅内时颠勺，激发了锅气。':'颠勺增加焦香，但没形成爆炒。');result.quality+=burst?8:3}
+ if(gentle){result.tags.push('柔和融合');result.explain.push('轻搅帮助深锅中的味道融合。');result.quality+=7}
+ if(reduce){result.tags.push(reduction?'浓厚酱汁':'薄汤');result.explain.push(reduction?'熬煮充分后收汁，汤汁明显变浓。':'收汁偏早，味道尚未形成，品质下降。');result.quality+=reduction?8:-10}
+ if(!acts.length){result.tags.push('自然烹制');result.explain.push('没使用特殊动作，呈现家常基调。')}
+ result.quality=Math.max(0,Math.min(100,result.quality));
+ if(result.sellable){result.tags.unshift(result.style);if(weak.length)result.tags.push('欠火');if(result.quality<58)result.status='勉强可售'}
+ result.tags=[...new Set(result.tags)].slice(0,5);
+ result.business=result.sellable?(result.style==='爆炒'?'锅气型：面向喜欢刺激风味的顾客，未来可以影响炒锅出餐效率。':result.style==='浓香收汁'?'浓郁型：偏向深锅招牌菜，适合喜爱热汤和醇厚口味的客人。':result.style==='香味十足'?'香气型：强化香气偏好，未来可延伸到员工餐的特殊强化。':'家常型：稳定可靠，适合大众客群与日常自动出餐。'):'失败料理不能保存为可上架菜谱；本实验可以不耗费正式库存直接重试。';
+ return result;
+}
+function finish(){
+ if(state.screen!=='cook'||!state.dropped.length)return false;
+ var r=evaluate(state.selected,state.vessel,state.dropped,state.actions,state.elapsed);state.result=r;
+ if(r.sellable){
+  var sig=r.recipeId+'|'+r.tags.join('|'),idx=state.records.findIndex(function(x){return x.sig===sig});
+  if(idx>=0)state.records.splice(idx,1);
+  state.records.unshift({sig:sig,recipeId:r.recipeId,tags:r.tags,quality:r.quality,time:Date.now()});
+  state.records=state.records.slice(0,60);
+  try{localStorage.setItem(KEY,JSON.stringify({records:state.records}))}catch(e){}
+ }
+ cancelAnimationFrame(state.frame);screen('result');
+ el('res-icon').textContent=r.sellable?r.icon:'💀';
+ el('res-name').textContent=r.sellable?r.recipeName:'研发失败 · '+r.status;
+ el('res-sub').textContent=r.sellable?'同一道菜可以研发不同的工艺词条。':'失败的料理不能加入菜单，也不会记入工艺图鉴。';
+ el('res-status').textContent=r.sellable?'✓ '+r.status+' · 品质 '+r.quality:'✗ '+r.status+' · 不可上架';
+ el('res-status').classList.toggle('fail',!r.sellable);
+ el('res-tags').innerHTML=r.tags.map(function(t,i){return '<span class="tag '+(i===0?'primarytag':'')+'">'+t+'</span>'}).join('');
+ var absent=state.selected.filter(function(id){return !r.events.some(function(d){return d.id===id})});
+ el('res-doneness').innerHTML=r.doneness.map(function(d){return '<span class="'+(d.label==='熟透'?'':'bad')+'">'+ING[d.id].icon+' '+ING[d.id].name+' · '+d.label+'</span>'}).concat(absent.map(function(id){return '<span class="bad">'+ING[id].name+' · 未下锅</span>'})).join('');
+ el('res-explain').textContent=r.explain.join(' ');
+ el('res-effect').textContent=r.business;
+ var list=state.records.filter(function(x){return x.recipeId===r.recipeId}).slice(0,9);
+ el('records').innerHTML=list.length?list.map(function(x){return '<div class="record"><span>'+x.tags.join(' · ')+'</span><b>品质 '+x.quality+'</b></div>'}).join(''):'<p class="hint">尚未成功研发这道菜。</p>';
+ return true;
+}
+function loop(now){
+ if(state.screen!=='cook')return;
+ if(!state.last)state.last=now;
+ var dt=Math.max(0,Math.min(.07,(now-state.last)/1000));state.last=now;
+ if(state.live){state.elapsed+=dt;if(state.elapsed>=19){state.elapsed=19;finish();return}}
+ state.burst=Math.max(0,state.burst-dt);draw(now/1000);
+ if(state.live&&Math.floor(state.elapsed*3)!==Math.floor((state.elapsed-dt)*3))showCook();
+ state.frame=requestAnimationFrame(loop);
+}
+function draw(now){
+ var node=el('pan'),rect=node.getBoundingClientRect(),dpr=Math.min(2,window.devicePixelRatio||1),pw=Math.max(200,Math.round(rect.width*dpr)),ph=Math.max(120,Math.round(rect.height*dpr));
+ if(node.width!==pw||node.height!==ph){node.width=pw;node.height=ph}
+ var c=node.getContext('2d');c.setTransform(dpr,0,0,dpr,0,0);
+ var w=pw/dpr,h=ph/dpr,x=w/2,y=h*.56,rx=Math.min(w*.36,h*.41),ry=Math.min(w*.25,h*.32);
+ c.clearRect(0,0,w,h);var g=c.createRadialGradient(x,y,8,x,y,rx*1.55);g.addColorStop(0,state.vessel==='wok'?'#69422b':'#77624c');g.addColorStop(.65,state.vessel==='wok'?'#22292c':'#394b51');g.addColorStop(1,'#152229');
+ c.fillStyle=g;c.beginPath();c.ellipse(x,y,rx*1.18,ry*1.23,0,0,7);c.fill();c.lineWidth=10;c.strokeStyle=state.vessel==='wok'?'#798689':'#88877f';c.stroke();
+ c.lineWidth=2;c.strokeStyle='#d2a773';c.beginPath();c.ellipse(x,y,rx*1.06,ry*1.1,0,0,7);c.stroke();
+ state.visual.forEach(function(v,i){var a=now*(state.vessel==='wok'?.95:.48)+i*2.2+v.offset,xx=x+Math.cos(a)*rx*.34,yy=y+Math.sin(a)*ry*.4;if(state.burst>0&&state.vessel==='wok')yy-=13*Math.sin((1.2-state.burst)*8);c.font='28px sans-serif';c.textAlign='center';c.textBaseline='middle';c.fillText(ING[v.id].icon,xx,yy)});
+ if(!state.visual.length){c.font='13px sans-serif';c.textAlign='center';c.fillStyle='#e9d1a6';c.fillText('点击下方食材，亲手投到锅里',x,y)}
+ if(state.live){for(var i=0;i<3;i++){var yy=y-ry*.67-12-((now*16+i*20)%47);c.fillStyle='rgba(231,239,222,.09)';c.beginPath();c.arc(x+(i-1)*26+Math.sin(now+i)*8,yy,9,0,7);c.fill()}}
+}
+el('v-wok').addEventListener('click',function(){state.vessel='wok';showSetup()});
+el('v-pot').addEventListener('click',function(){state.vessel='pot';showSetup()});
+el('foodgrid').addEventListener('click',function(e){var b=e.target.closest('[data-food]');if(!b)return;var id=b.dataset.food,i=state.selected.indexOf(id);if(i>=0)state.selected.splice(i,1);else if(state.selected.length<3)state.selected.push(id);showSetup()});
+el('start').addEventListener('click',start);
+el('trayfoods').addEventListener('click',function(e){var b=e.target.closest('[data-drop]');if(b)drop(b.dataset.drop)});
+el('action1').addEventListener('click',function(){act(VESSEL[state.vessel].actions[0][0])});
+el('action2').addEventListener('click',function(){act(VESSEL[state.vessel].actions[1][0])});
+el('retry').addEventListener('click',start);el('finish').addEventListener('click',finish);el('again').addEventListener('click',start);
+el('change').addEventListener('click',function(){screen('setup');showSetup()});
+var path=[],pointer=null;
+el('pan').addEventListener('pointerdown',function(e){pointer=e.pointerId;path=[[e.clientX,e.clientY]];el('pan').setPointerCapture(pointer)});
+el('pan').addEventListener('pointermove',function(e){if(pointer===e.pointerId){path.push([e.clientX,e.clientY]);if(path.length>80)path.shift()}});
+el('pan').addEventListener('pointerup',function(e){
+ if(pointer!==e.pointerId)return;pointer=null;if(path.length<2)return;
+ var dx=e.clientX-path[0][0],dy=e.clientY-path[0][1],travel=0;
+ for(var i=1;i<path.length;i++)travel+=Math.hypot(path[i][0]-path[i-1][0],path[i][1]-path[i-1][1]);
+ if(state.vessel==='wok'){if(dy<-40&&Math.abs(dx)<150)act('toss');else if(travel>85)act('flip')}
+ else{if(travel>100&&Math.hypot(dx,dy)<75)act('gentle');else if(dy>50)act('reduce')}
+ path=[];
+});
+document.addEventListener('visibilitychange',function(){if(document.hidden)state.last=0;else if(state.screen==='cook')state.last=performance.now()});
+window.__oddpotLab={state:state,ING:ING,VESSEL:VESSEL,NAMED:NAMED,recipe:recipe,evaluate:evaluate,required:required,cookAmount:cookAmount,totalCombos:totalCombos,drop:drop,act:act,finish:finish,start:start};
+showSetup();
+})();
+</script></body></html>
