@@ -2,7 +2,7 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import {readFileSync} from 'node:fs';
 import {spawnSync} from 'node:child_process';
-import {makeServiceLab,stepServiceLab,nearbyZone,kitchenBusy,carriedPlate,passOrder,serviceZoneIntent,snapshotLab} from '../experiments/v07-service-lab-engine.js';
+import {makeServiceLab,stepServiceLab,nearbyZone,kitchenBusy,carriedPlate,passOrder,serviceZoneIntent,snapshotLab,serviceSpecialAction,activateServiceSpecial} from '../experiments/v07-service-lab-engine.js';
 const sim=(s,duration,dx=0,dy=0)=>{for(let i=0;i<Math.ceil(duration/.05);i++)stepServiceLab(s,dx,dy,.05);return s};
 function prepareFinishedSolo(){
  const s=makeServiceLab();sim(s,1.15);
@@ -53,15 +53,22 @@ test('table has TWO automatic functions with serving priority: wrong table canno
  deliver(s,0);
  assert.equal(o.status,'served');
 });
-test('table without carried ready plate offers automatic comfort, once per actual order',()=>{
+test('table offers separate comfort action, but never consumes energy until the player taps',()=>{
  const s=makeServiceLab();sim(s,2);
  s.hero.x=.27;s.hero.y=.61;
- const o=s.orders[0],initial=o.patience,energy=s.hero.energy;
+ const o=s.orders[0],energy=s.hero.energy;
  assert.equal(serviceZoneIntent(s).action,'comfort');
  sim(s,.9);
- assert.equal(o.patience,initial+4);assert.equal(s.hero.comforts,1);
+ assert.equal(s.hero.comforts,0);
+ assert.equal(s.hero.energy,energy);
+ assert.equal(serviceSpecialAction(s),null,'customer not yet in danger');
+ o.patience=s.time-o.arrive+8;
+ const before=o.patience;
+ assert.equal(serviceSpecialAction(s)?.kind,'comfort');
+ assert.equal(activateServiceSpecial(s),true);
+ assert.equal(o.patience,before+4);assert.equal(s.hero.comforts,1);
  assert.equal(s.hero.energy,energy-1);
- sim(s,2);assert.equal(s.hero.comforts,1);
+ assert.equal(activateServiceSpecial(s),false);
 });
 test('a completed plate on pass cannot teleport to table: must be collected first',()=>{
  const {s,o}=prepareFinishedSolo();
@@ -69,7 +76,7 @@ test('a completed plate on pass cannot teleport to table: must be collected firs
  sim(s,.8);
  assert.equal(o.status,'pickup');
  assert.equal(s.score.served,0);
- assert.equal(o.comforted,true,'can still reassure while food waits at pass');
+ assert.equal(o.comforted,false,'no emergency comfort without intentional tap');
 });
 test('waiter handles unattended dish automatically, no chef needed to deliver',()=>{
  const s=makeServiceLab({helper:true,waiter:true});s.hero.x=.50;s.hero.y=.80;
