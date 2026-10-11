@@ -34,6 +34,24 @@ button{font:inherit;color:inherit;cursor:pointer;touch-action:manipulation}butto
 .toast{position:absolute;top:60px;left:15px;right:15px;pointer-events:none;text-align:center;z-index:10;opacity:0;transition:opacity .18s}.toast.visible{opacity:1}.toast span{background:#ffe2a9;color:#31251b;border-radius:10px;padding:9px 12px;font-size:12px;font-weight:800;display:inline-block}
 @media(max-height:690px){.header{height:48px}.brand-icon{height:32px;width:32px}.cook-head{padding-top:6px}.cook-head h1{font-size:16px}.wokwrap{margin-top:5px;min-height:120px}.reaction{min-height:39px}.drop{min-height:48px}.action{min-height:45px}.tray{padding-bottom:5px}.footer{padding-top:6px;padding-bottom:max(8px,env(safe-area-inset-bottom))}.help{margin-top:5px}}
 @media(max-width:345px){.brand{font-size:13px}.food .name{font-size:9px}.drop{gap:1px}.drop span{font-size:22px}.drop b{font-size:10px}}
+
+/* Canvas-free, persistent visual layer: prevents invisible wok and mobile emoji trails. */
+.pan-dom-surface{position:absolute;inset:0;pointer-events:none;z-index:0;overflow:hidden}
+.pan-dom-bowl{position:absolute;left:50%;top:56%;transform:translate(-50%,-50%);
+  width:76%;height:74%;max-width:360px;max-height:260px;border-radius:50%;
+  background:radial-gradient(ellipse at 48% 42%,#755033 0%,#3d2b2a 43%,#212b30 75%,#101d23 100%);
+  border:9px solid #8e9290;box-shadow:0 0 0 3px #c5a578 inset,0 12px 25px #0009,inset 0 12px 30px #03080b75}
+.pan-dom-surface.pot .pan-dom-bowl{background:radial-gradient(ellipse at 50% 43%,#a37c53 0%,#645845 44%,#374448 78%,#18272e 100%);border-color:#aba695}
+.pan-dom-flare{position:absolute;inset:12% 15%;border-radius:50%;opacity:0;pointer-events:none;
+  background:radial-gradient(ellipse,#ffc5798c 5%,#ff813d44 35%,transparent 70%);transition:opacity .08s}
+.pan-dom-food{position:absolute;inset:0;pointer-events:none}
+.pan-dom-food .pan-ingredient{position:absolute;left:50%;top:56%;line-height:1;white-space:nowrap;
+  font-size:clamp(25px,8vw,39px);filter:drop-shadow(0 3px 3px #000a);
+  transform-origin:center;will-change:transform;backface-visibility:hidden;user-select:none}
+#pan,#wok{position:absolute;inset:0;z-index:2;opacity:0;width:100%;height:100%;touch-action:none;cursor:grab}
+.pancap,.wokcaption{z-index:3}
+@media(max-height:680px){.pan-dom-bowl{border-width:7px}.pan-dom-food .pan-ingredient{font-size:28px}}
+
 </style>
 </head>
 <body><main class="app">
@@ -53,7 +71,7 @@ button{font:inherit;color:inherit;cursor:pointer;touch-action:manipulation}butto
 </section>
 <section class="screen" id="cook">
 <div class="cook-head"><div><div class="kicker">REAL-TIME / FREE DROP</div><h1 id="cook-title">开始自由下料</h1></div><div class="timer" id="timer">待投料 <small>/ 16s</small></div></div>
-<div class="wokwrap"><canvas id="wok" aria-label="实时炒锅，向上滑动颠勺，画圈搅拌"></canvas><div class="wokcaption"><span id="pan-caption">锅已经热了，先加入任意食材</span></div></div>
+<div class="wokwrap"><div class="pan-dom-surface" id="pan-dom-surface" aria-hidden="true"><div class="pan-dom-bowl"></div><div id="pan-flare" class="pan-dom-flare"></div><div class="pan-dom-food" id="pan-food-layer"></div></div><canvas id="wok" aria-label="实时炒锅，向上滑动颠勺，画圈搅拌"></canvas><div class="wokcaption"><span id="pan-caption">锅已经热了，先加入任意食材</span></div></div>
 <div class="reaction" aria-live="polite"><strong id="reaction-title">第一个食材将启动烹饪</strong><small id="reaction-text">每次点击食材，都会记录它真正入锅的时间。</small></div>
 <div class="tray"><div class="trayheading"><strong>轻点食材投入锅中</strong><span id="in-count">0 / 2 已下锅</span></div><div class="trayfoods" id="trayfoods"></div></div>
 <div class="footer"><div class="actionrow"><button id="toss" class="action" disabled><span class="icon">↗</span>颠勺</button><button id="stir" class="action" disabled><span class="icon">🥄</span>搅拌</button></div><div class="bottomrow"><button id="retry" class="secondary">↶ 重来</button><button id="finish" class="primary" disabled>🍽️ 起锅鉴定</button></div><div class="help">实时连续烹饪；每种动作至多一次，无需踩精准时间点。全部下锅后可提前起锅。</div></div>
@@ -192,19 +210,25 @@ function loop(now){
  s.frame=requestAnimationFrame(loop);
 }
 function draw(now){
- var canvas=el('wok'),rect=canvas.getBoundingClientRect(),dpr=Math.min(2,window.devicePixelRatio||1),w=Math.max(200,Math.round(rect.width*dpr)),h=Math.max(120,Math.round(rect.height*dpr));
- if(canvas.width!==w||canvas.height!==h){canvas.width=w;canvas.height=h}
- var c=canvas.getContext('2d');c.setTransform(dpr,0,0,dpr,0,0);var W=w/dpr,H=h/dpr,cx=W/2,cy=H*.57,rx=Math.min(W*.36,H*.41),ry=Math.min(W*.25,H*.33);
- c.clearRect(0,0,W,H);var heat=s.live?1:0.4;
- var grad=c.createRadialGradient(cx,cy,5,cx,cy,rx*1.5);grad.addColorStop(0,s.flash?'#ad613d':'#51382b');grad.addColorStop(.67,'#21282c');grad.addColorStop(1,'#111e24');
- c.fillStyle=grad;c.beginPath();c.ellipse(cx,cy,rx*1.2,ry*1.25,0,0,7);c.fill();
- c.lineWidth=10;c.strokeStyle='#788184';c.beginPath();c.ellipse(cx,cy,rx*1.19,ry*1.23,0,0,7);c.stroke();
- c.lineWidth=3;c.strokeStyle='#c49968';c.beginPath();c.ellipse(cx,cy,rx*1.09,ry*1.14,0,0,7);c.stroke();
- for(var j=0;j<5;j++){var a=now*1.25+j*1.26;c.fillStyle='rgba(255,200,126,'+(0.09+0.08*Math.sin(now*3+j))+')';c.beginPath();c.ellipse(cx+Math.cos(a)*rx*.62,cy+Math.sin(a)*ry*.63,15+heat*10,7,0,0,7);c.fill()}
- for(var i=0;i<s.visual.length;i++){var v=s.visual[i],a=now*.9+i*2.5+v.offset,dist=rx*(.22+.13*Math.sin(now*2+i)),x=cx+Math.cos(a)*dist,y=cy+Math.sin(a)*ry*.45; if(s.spark>0){y-=14*Math.sin((1.4-s.spark)*8)}c.font=''+Math.max(23,Math.min(34,Math.floor(ry*.52)))+'px sans-serif';c.textAlign='center';c.textBaseline='middle';c.fillText(ING[v.id][1],x,y)}
- if(s.flash>0){c.strokeStyle='rgba(255,195,99,'+(s.flash*.7)+')';c.lineWidth=4;for(var k=0;k<5;k++){var ang=k*1.25+now;c.beginPath();c.moveTo(cx+Math.cos(ang)*rx*.87,cy+Math.sin(ang)*ry*.9);c.lineTo(cx+Math.cos(ang)*rx*1.17,cy+Math.sin(ang)*ry*1.3);c.stroke()}}
- if(!s.visual.length){c.fillStyle='#ecd5a0';c.font='13px sans-serif';c.fillText('点击下方任意食材投入锅中',cx,cy)}
- if(s.live){for(var n=0;n<3;n++){var sy=cy-ry*.7-18-((now*19+n*23)%42);c.fillStyle='rgba(231,237,214,'+(0.07+Math.sin(now+n)*.025)+')';c.beginPath();c.arc(cx+(n-1)*28+Math.sin(now+n)*7,sy,8,0,7);c.fill()}}
+ // Food sprites are one persistent DOM element per ingredient. Their transforms
+ // are updated in-place; there are no accumulated translucent Canvas frames.
+ var layer=el('pan-food-layer'),items=s.visual,identity=items.map(function(x){return x.id}).join(',');
+ if(layer.dataset.ingredients!==identity||layer.children.length!==items.length){
+  var nodes=items.map(function(x){var node=document.createElement('span');node.className='pan-ingredient';node.textContent=ING[x.id][1];return node});
+  layer.replaceChildren.apply(layer,nodes);layer.dataset.ingredients=identity;
+ }
+ var box=el('wok').getBoundingClientRect();
+ var radiusX=Math.max(18,Math.min((box.width||320)*.245,(box.height||200)*.26));
+ var radiusY=Math.max(12,Math.min((box.width||320)*.155,(box.height||200)*.20));
+ for(var i=0;i<items.length;i++){
+  var a=items[i],phase=now*(0.96)+i*2.37+a.offset;
+  var bob=(s.spark>0?Math.sin((1.4-s.spark)*7)*12:0);
+  var dx=Math.cos(phase)*radiusX,dy=Math.sin(phase)*radiusY-bob;
+  layer.children[i].style.transform='translate(-50%,-50%) translate('+dx.toFixed(2)+'px,'+dy.toFixed(2)+'px) rotate('+(Math.sin(phase)*9).toFixed(1)+'deg)';
+ }
+ var flare=el('pan-flare');flare.style.opacity=String(Math.max(0,Math.min(.75,(s.flash)*.53)));
+ var surface=el('pan-dom-surface');
+ 
 }
 el('foodgrid').addEventListener('click',function(e){var b=e.target.closest('[data-pick]');if(!b)return;var id=b.dataset.pick,i=s.selected.indexOf(id);if(i>=0)s.selected.splice(i,1);else if(s.selected.length<3)s.selected.push(id);else{toast('一锅最多三种食材');return}setupRender()});
 el('start').addEventListener('click',start);
@@ -219,7 +243,7 @@ var path=[],pointer=null;el('wok').addEventListener('pointerdown',function(e){if
 el('wok').addEventListener('pointermove',function(e){if(pointer===e.pointerId){path.push([e.clientX,e.clientY]);if(path.length>80)path.shift()}});
 el('wok').addEventListener('pointerup',function(e){if(pointer!==e.pointerId)return;pointer=null;if(path.length<2)return;var dx=e.clientX-path[0][0],dy=e.clientY-path[0][1],travel=0;for(var i=1;i<path.length;i++){travel+=Math.hypot(path[i][0]-path[i-1][0],path[i][1]-path[i-1][1])}if(dy<-40&&Math.abs(dx)<150)act('toss');else if(travel>100&&Math.hypot(dx,dy)<75)act('stir');path=[]});
 document.addEventListener('visibilitychange',function(){if(!document.hidden&&s.screen==='cook')s.last=performance.now();else if(document.hidden)s.last=0});
-window.__oddpotLab={score:score,state:s,drop:drop,action:act,finish:finish,start:start};
+window.__oddpotLab={draw:draw,score:score,state:s,drop:drop,action:act,finish:finish,start:start};
 setupRender();
 })();
 </script></body></html>
