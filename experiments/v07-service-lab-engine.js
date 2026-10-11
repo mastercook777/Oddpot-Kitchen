@@ -27,7 +27,7 @@ export function makeServiceLab(staff={helper:false,waiter:false}){
  return {
   time:0,limit:72,paused:false,done:false,
   staff:{helper:!!staff.helper,waiter:!!staff.waiter},
-  hero:{x:.50,y:.37,facing:'down',energy:6,maxEnergy:6,recharge:0,zone:null,dwell:0,assists:0,comforts:0,carryOrderId:null,handServed:0},
+  hero:{x:.50,y:.28,facing:'down',energy:6,maxEnergy:6,recharge:0,zone:null,dwell:0,assists:0,comforts:0,carryOrderId:null,handServed:0},
   kitchen:{WOK:null,POT:null},orders:[],nextOrder:0,
   events:[],message:'移动主厨，靠近厨位自动工作。',messageT:4,
   score:{served:0,lost:0,chefSeconds:0,autoSeconds:0,comfortSaves:0,manualServed:0,waiterServed:0,selfPicked:0}
