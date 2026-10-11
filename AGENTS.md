@@ -1,3 +1,12 @@
+## v0.7 服务实验与单人值守设计（2026-10-11，尚未改正式餐馆）
+
+- 已提交 `experiments/v07-walkable-diner-lab.html` 和纯逻辑 `experiments/v07-service-lab-engine.js`。使用与野外探索相同的 `src/controls_v041.js` 动态摇杆计算和 `src/pixels_v041.js` 角色资源，移动到真实厨位/餐桌附近停留 0.6 秒自动交互。对照四种配置：仅主角、阿火、小芽、全员。
+- **重要变更：** 单人开店时主角必须实际值守厨位才做饭；离开后厨去安抚餐桌时，无员工负责的厨位没有“幽灵做菜”。阿火自动料理左锅（右锅只有实验性的缓慢余温），小芽负责前厅等待/上菜效率。这让招聘带来岗位卸载而非单纯数值 Buff。
+- 当前实验采用固定同批 8 单的简化客流，**没有连接正式金币、真实订单账本、员工购买、存档或正式厨房引擎**。不要误以为 v0.7-A 已发布到正式营业。回归测试：`tests/v07_walkable_lab.test.js`。
+- 最新设计权威文档：`docs/V0.7.1_STAFFING_AND_SOLO_OPERATION.md`。旧 `docs/V0.7_WALKABLE_RESTAURANT_DESIGN_v0.1.md` 中“即使只有主角也全自动两锅”的假设已废止。
+- 将来接正式主线时，`src/engine.js tick()` 应成为唯一订单进度/扣款权威；现有 `src/scenes_v04.js paintDinerStaff` 旧固定主厨必须替换成移动主角，不能绘制双主角；注意既有餐厅 Canvas 的 translate/scale 与碰撞坐标对齐；旧存档不能无提示地从全自动切成无员工即停工。
+- 主厨工作餐强化和装备保持后续阶段，不要将标签做成全菜通用收益；真正效果须有菜谱×工艺配对。手机 Safari 真机移动/帧率/安全区需要人工验收。
+
 ## v0.6.3-C 正式研发四动作动效已实装 / v0.7 可移动餐馆仅设计（2026-10-11）
 
 - 炒锅翻炒、颠勺；深锅轻搅、收汁，已在 `src/cook_motion_v063.js` 和 `src/app.js` 使用「**同一真实食材元素 × 模拟时钟确定性运动**」实现，不要通过复制 emoji/DOM 贴图或 CSS transform 动画叠加重影；详见 `docs/V0.6.3C_COOK_ANIMATION_HANDOFF.md`。
