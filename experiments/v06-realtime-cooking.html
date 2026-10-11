@@ -1,0 +1,199 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover,user-scalable=no">
+<meta name="theme-color" content="#151c20">
+<title>怪味食堂 · v0.6 实时烹饪实验室</title>
+<style>
+:root{color-scheme:dark;--bg:#131b20;--surface:#202b2f;--panel:#253136;--ink:#f7eee0;--muted:#adb9b6;--line:#43504e;--accent:#ffb85c;--red:#fa7869;--green:#b3dc9b}
+*{box-sizing:border-box}body{margin:0;min-height:100dvh;background:#090f13;color:var(--ink);font-family:-apple-system,BlinkMacSystemFont,"PingFang SC","Microsoft YaHei",sans-serif;-webkit-tap-highlight-color:transparent}
+button{font:inherit;color:inherit;cursor:pointer}button:focus-visible{outline:3px solid #ffce7f;outline-offset:2px}button:disabled{opacity:.44;cursor:not-allowed}
+.app{position:relative;margin:auto;width:100%;max-width:530px;height:100dvh;height:100svh;min-height:420px;display:flex;flex-direction:column;overflow:hidden;background:linear-gradient(165deg,#223033 0%,#141e23 50%,#161d21 100%);box-shadow:0 0 80px #0009}
+.app:before{content:"";position:absolute;left:-30%;top:-200px;width:150%;height:380px;background:radial-gradient(ellipse,#b96b2b22,transparent 67%);pointer-events:none}
+.topbar{flex:0 0 auto;display:flex;align-items:center;justify-content:space-between;gap:10px;padding:13px max(16px,env(safe-area-inset-left));border-bottom:1px solid #ffffff13;position:relative;z-index:2}.top-left{display:flex;gap:10px;align-items:center}.logo{width:38px;height:38px;border-radius:12px;display:grid;place-items:center;background:#3c382c;border:1px solid #8b7047;font-size:22px}.eyebrow{font-size:10px;letter-spacing:2px;color:var(--accent);font-weight:800}.brand{font-size:16px;font-weight:850;letter-spacing:.5px;margin-top:2px}.lab-badge{border:1px solid #b58347;color:#fbc27a;font-weight:800;padding:7px 9px;border-radius:100px;background:#55392255;font-size:10px;letter-spacing:1px}
+.view{display:none;flex:1;min-height:0;flex-direction:column;position:relative}.view.active{display:flex}.scroll{flex:1;overflow-y:auto;overscroll-behavior:contain;padding:12px 15px 16px;scrollbar-width:thin}.foot{position:relative;flex:0 0 auto;padding:11px 15px max(15px,env(safe-area-inset-bottom));border-top:1px solid #ffffff17;background:linear-gradient(180deg,#202a2ee8,#1b2529);z-index:3}
+.kicker{font-size:11px;font-weight:850;letter-spacing:2px;color:var(--accent)}h1{font-size:25px;line-height:1.2;margin:6px 0 7px;font-weight:900;letter-spacing:-.5px}h2{font-size:14px;margin:0;font-weight:800}.sub{font-size:12px;line-height:1.6;color:var(--muted);margin:0}.section-title{display:flex;justify-content:space-between;align-items:center;gap:10px;margin:15px 0 8px}.mini{font-size:11px;color:var(--muted)}
+.preset-row{display:flex;gap:7px;overflow-x:auto;scrollbar-width:none;padding-bottom:2px}.preset{flex:0 0 auto;padding:9px 11px;border:1px solid #4e5d56;border-radius:10px;background:#2e3a38;font-weight:750;font-size:12px}.preset.active{border-color:var(--accent);color:#ffd59a;background:#573e2d}
+.methods{display:grid;grid-template-columns:1fr 1fr;gap:7px}.method{padding:10px;border:1px solid var(--line);border-radius:12px;background:var(--surface);font-size:13px;font-weight:800;text-align:center}.method.active{border-color:var(--accent);background:#533b2a;color:#ffcf90}
+.ingredients{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:7px}.ingredient{position:relative;min-width:0;min-height:69px;border-radius:12px;border:1px solid #4a5953;background:#28363a;display:flex;flex-direction:column;justify-content:center;align-items:center;gap:2px}.ingredient .emoji{font-size:25px;line-height:1.2}.ingredient .name{font-size:10px;white-space:nowrap}.ingredient.selected{border-color:#ffd09a;background:#56412f;box-shadow:inset 0 0 0 1px #f5b96b}.ingredient.used:not(.selected){opacity:.62}.ingredient .dot{position:absolute;top:5px;right:5px;width:7px;height:7px;border-radius:50%;background:#e6b96f}
+.stage-list{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:7px}.stage-card{min-height:113px;position:relative;min-width:0;border:1px dashed #65746b;background:#273435;border-radius:13px;padding:10px 6px 9px;text-align:center}.stage-card.highlight{border-color:#ffbf75;background:#4c3d30}.stage-num{color:#ebb983;font-size:10px;font-weight:900;letter-spacing:1px}.stage-name{font-size:14px;font-weight:850;margin-top:2px}.stage-foods{display:flex;justify-content:center;flex-wrap:wrap;gap:2px;margin:8px 0 4px;min-height:25px}.stage-food{position:relative;border:0;background:#374746;border-radius:9px;min-width:29px;height:28px;font-size:19px;padding:1px 3px}.stage-food:after{content:'×';position:absolute;right:-2px;top:-7px;color:#ffe2c3;font-size:12px;font-weight:900;text-shadow:0 1px 3px #000}.stage-placeholder{font-size:18px;color:#aeb7a9}.stage-hint{font-size:10px;color:#afbcb6}
+.hint-panel{margin-top:11px;border-radius:12px;background:#f4bb6720;border:1px solid #b28a4b55;padding:9px 10px;font-size:11px;line-height:1.55;color:#e8d5b9}
+.primary{width:100%;border:0;border-radius:14px;padding:14px 12px;min-height:49px;color:#322012;background:linear-gradient(160deg,#ffcd78,#ffa94e);font-weight:900;font-size:15px;box-shadow:0 4px 0 #a4602a}.primary:active{transform:translateY(2px);box-shadow:0 2px 0 #a4602a}.secondary{border:1px solid #65756c;background:#2a383a;border-radius:12px;padding:10px 12px;font-weight:800}.foot-small{text-align:center;color:#aeb8ae;font-size:10px;line-height:1.5;margin:8px 0 0}
+.cook-head{padding:16px 17px 4px;text-align:center;flex:0 0 auto}.cook-head h1{font-size:21px;margin:5px 0}.stage-progress{display:grid;grid-template-columns:repeat(3,1fr);gap:6px;margin:11px 15px 5px}.segment{display:flex;flex-direction:column;gap:4px}.segment-label{font-size:11px;text-align:center;color:#a5b2ae;font-weight:800}.segment-track{height:5px;border-radius:9px;overflow:hidden;background:#4c5753}.segment-fill{height:100%;width:0;background:linear-gradient(90deg,#ec834f,#ffc67c);border-radius:9px}.segment.now .segment-label{color:#ffcb81}
+.wok-stage{flex:1;min-height:155px;position:relative;overflow:hidden;margin:5px 10px 6px;border-radius:19px;border:1px solid #5a54436b;background:radial-gradient(circle at 50% 62%,#79452b55,transparent 61%),linear-gradient(180deg,#25343b,#18242a)}#wok{width:100%;height:100%;display:block;touch-action:none}.wok-top{position:absolute;top:10px;left:0;width:100%;pointer-events:none;display:flex;justify-content:center}.heat-label{background:#151e20cf;border:1px solid #bc845c88;border-radius:30px;padding:7px 11px;font-size:11px;font-weight:800;max-width:90%;text-align:center;color:#ffe0ae}
+.reaction{height:62px;flex:0 0 auto;text-align:center;padding:7px 17px 4px}.reaction strong{display:block;font-size:14px;color:#ffcd87}.reaction p{margin:5px auto 0;font-size:12px;color:#b8c6bc;max-width:360px;line-height:1.4}.tip-row{display:flex;justify-content:center;gap:8px;padding:4px 15px 10px}.chip{font-size:11px;padding:5px 9px;border-radius:40px;color:#ead6bb;border:1px solid #695b47;background:#322e27}
+.action-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px}.action{border:1px solid #db9055;background:linear-gradient(175deg,#593d30,#3e3030);border-radius:14px;min-height:73px;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:5px;color:#ffd6a0}.action .big{font-size:23px;line-height:1}.action b{font-size:14px}.action small{font-size:10px;color:#e5bda4}.action:active{transform:scale(.98)}.action:disabled{filter:saturate(.4);opacity:.46}
+.cook-status{text-align:center;font-size:10px;color:#aec0ba;margin-top:10px}.light-line{height:4px;background:#293a3e;margin-top:8px;border-radius:6px;overflow:hidden}.light-fill{height:100%;width:0;background:#b7dd9c;transition:width .12s}
+.result-scroll{padding:22px 18px 16px;display:flex;flex-direction:column;gap:11px}.result-head{text-align:center}.dish-icon{font-size:64px;line-height:1;margin:8px auto}.result-head h1{font-size:25px;margin:6px 0}.pill-row{display:flex;justify-content:center;flex-wrap:wrap;gap:7px;margin-top:11px}.pill{border:1px solid #ad8650;background:#694a2c75;border-radius:40px;padding:6px 10px;font-size:12px;color:#ffdc9f;font-weight:700}.result-card{background:#283638;border:1px solid #50625a;border-radius:15px;padding:12px}.result-card h2{margin-bottom:8px;color:#ffd199}.result-rows{display:grid;grid-template-columns:1fr 1fr;gap:9px}.result-stat{background:#1c292d;border-radius:10px;padding:11px}.result-stat .val{font-size:19px;font-weight:900;color:#f8d598}.result-stat .key{font-size:11px;color:#aec0ba;margin-top:3px}.result-note{color:#aebcb5;font-size:12px;line-height:1.55}.history{display:flex;flex-direction:column;gap:7px}.history-item{padding:9px 11px;border-radius:9px;background:#1c2a2d;border:1px solid #3d514b;display:flex;justify-content:space-between;gap:5px;align-items:center;font-size:11px}.history-item b{color:#ffca86}.result-foot{display:grid;grid-template-columns:1fr 1.4fr;gap:9px}.toast{position:absolute;top:60px;left:14px;right:14px;text-align:center;z-index:20;pointer-events:none;opacity:0;transform:translateY(-5px);transition:opacity .18s,transform .18s}.toast.on{opacity:1;transform:translateY(0)}.toast span{display:inline-block;padding:9px 13px;background:#ffe0a5;color:#382619;border-radius:11px;font-size:12px;font-weight:850;box-shadow:0 6px 15px #0006}
+@media(max-height:720px){.topbar{padding-top:8px;padding-bottom:8px}.logo{width:32px;height:32px;font-size:18px}.brand{font-size:14px}.cook-head{padding-top:8px}.cook-head h1{font-size:18px}.stage-progress{margin-top:5px}.reaction{height:52px;padding-top:1px}.tip-row{padding:0 15px 6px}.action{min-height:59px}.foot{padding-top:7px}.cook-status{margin-top:5px}}
+@media(max-height:580px){.cook-head .sub,.tip-row{display:none}.wok-stage{min-height:110px}.reaction{height:45px}.reaction p{font-size:10px}.stage-progress{margin-top:2px}.action{min-height:52px}.action .big{font-size:19px}.action small{display:none}}
+@media(min-width:540px){.app{border-left:1px solid #546056;border-right:1px solid #546056}}
+@media(prefers-reduced-motion:reduce){*{scroll-behavior:auto!important;transition:none!important}}
+</style>
+</head>
+<body>
+<div class="app" id="app">
+<header class="topbar"><div class="top-left"><div class="logo">🍳</div><div><div class="eyebrow">ODDPOT KITCHEN</div><div class="brand">实时烹饪实验室</div></div></div><div class="lab-badge">V0.6 · LAB</div></header>
+<section class="view active" id="setup-view">
+ <div class="scroll">
+  <div class="kicker">不分回合 · 连续做菜</div><h1>先排下料顺序，再亲手掌勺。</h1><p class="sub">开火后自动连续烹饪约 12 秒。关键操作随时可用；没有精准判定与失败惩罚。</p>
+  <div class="section-title"><h2>快速体验</h2><span class="mini">也可以自由搭配</span></div><div class="preset-row" id="presets"></div>
+  <div class="section-title"><h2>烹饪方法</h2></div><div class="methods" id="methods"></div>
+  <div class="section-title"><h2>1 · 选择食材</h2><span class="mini" id="selected-count">0 / 3</span></div><div class="ingredients" id="ingredients"></div>
+  <div class="section-title"><h2>2 · 安排入锅时序</h2><span class="mini">先点食材，再点阶段</span></div><div class="stage-list" id="stages"></div>
+  <div class="hint-panel" id="setup-hint">点击食材再放入一个阶段；点阶段内的食材可撤回。提前放香料可能形成底味，后下料会更鲜明。</div>
+ </div>
+ <div class="foot"><button class="primary" id="start-btn">🔥 开火！开始实时烹饪</button><div class="foot-small">独立实验，不扣主游戏食材，也不改 v0.5E.1 存档</div></div>
+</section>
+<section class="view" id="cook-view">
+ <div class="cook-head"><div class="kicker">REAL-TIME COOKING</div><h1 id="cook-title">食材即将入锅</h1><p class="sub">锅在持续烹饪。观察反应，选择一次掌勺。</p></div>
+ <div class="stage-progress" id="stage-progress"></div>
+ <div class="wok-stage"><canvas id="wok" aria-label="实时烹饪锅内画面：向上滑动可颠勺，画圈可搅拌"></canvas><div class="wok-top"><span class="heat-label" id="heat-label">油温正在升高…</span></div></div>
+ <div class="reaction" aria-live="polite"><strong id="reaction-title">锅开始热起来了</strong><p id="reaction-body">食材会按预设顺序自动入锅。</p></div>
+ <div class="tip-row"><span class="chip">向上滑动：颠勺</span><span class="chip">画圈：搅拌</span></div>
+ <div class="foot"><div class="action-grid"><button class="action" id="toss-btn"><span class="big">↗️</span><b>颠勺</b><small>爆香 · 锅气</small></button><button class="action" id="stir-btn"><span class="big">🥄</span><b>搅拌</b><small>融合 · 入味</small></button></div><div class="cook-status" id="cook-status">只需选择一次；也可以不操作，自然出锅</div><div class="light-line"><div class="light-fill" id="cook-total-progress"></div></div></div>
+</section>
+<section class="view" id="result-view"><div class="scroll result-scroll">
+ <div class="result-head"><div class="kicker">COOKING COMPLETE</div><div class="dish-icon" id="dish-icon">🍽️</div><h1 id="dish-name">料理完成</h1><p class="sub" id="dish-subtitle"></p><div class="pill-row" id="result-pills"></div></div>
+ <div class="result-rows"><div class="result-stat"><div class="val" id="result-quality">—</div><div class="key">研发品质（试验值）</div></div><div class="result-stat"><div class="val" id="result-time">—</div><div class="key">预估自动出餐时间</div></div></div>
+ <div class="result-card"><h2>这锅为什么变成这样？</h2><div class="result-note" id="result-explain"></div></div>
+ <div class="result-card"><h2>如果用于当前食堂</h2><div class="result-note" id="result-business"></div></div>
+ <div class="section-title"><h2>已保存的实验工艺</h2><span class="mini" id="saved-count">0 种</span></div><div class="history" id="saved-list"></div>
+ <p class="sub">※ 工艺标签、品质和经营影响仅用于 v0.6 手感验证；尚未接入 v0.5E.1 正式结算。</p>
+ </div><div class="foot"><div class="result-foot"><button class="secondary" id="edit-btn">← 调整构筑</button><button class="primary" id="again-btn">再炒一锅 ↗</button></div><div class="foot-small" id="save-message">实验结果会保存在本页独立记录中</div></div></section>
+<div class="toast" id="toast"><span id="toast-msg"></span></div>
+</div>
+<script>
+(()=>{'use strict';
+const ING={beef:['野牛肉','🥩'],chicken:['林地鸡肉','🍗'],chili:['火椒','🌶️'],garlic:['蒜瓣','🧄'],mushroom:['幽光蘑菇','🍄'],cabbage:['卷心菜','🥬'],onion:['琥珀洋葱','🧅'],potato:['地精土豆','🥔']};
+const RECIPES=[
+ {id:'chili_meat',name:'辣椒炒肉',icon:'🌶️',method:'stir',sets:[['chicken','chili'],['beef','chili']],time:8,tags:['辣','肉','鲜']},
+ {id:'mushroom_stir',name:'菌香小炒',icon:'🍄',method:'stir',sets:[['mushroom','garlic']],time:6,tags:['菌香','鲜','香']},
+ {id:'chicken_stew',name:'蘑菇焖鸡',icon:'🍲',method:'stew',sets:[['chicken','mushroom']],time:12,tags:['温和','菌香','鲜']},
+ {id:'veg_stir',name:'清炒双蔬',icon:'🥬',method:'stir',sets:[['cabbage','mushroom']],time:6,tags:['清爽','菌香']},
+ {id:'flame_beef',name:'爆炎牛肉',icon:'🔥',method:'stir',sets:[['beef','chili','garlic']],time:10,tags:['辣','肉','香','爆香']},
+ {id:'garlic_beef',name:'焦香蒜牛',icon:'🥩',method:'stir',sets:[['beef','garlic']],time:9,tags:['肉','香','鲜']},
+ {id:'spicy_mushroom',name:'火山菌菇',icon:'🍄',method:'stir',sets:[['chili','mushroom']],time:7,tags:['辣','菌香']},
+ {id:'onion_chicken',name:'洋葱烩鸡',icon:'🍗',method:'stew',sets:[['chicken','onion']],time:11,tags:['温和','肉','甜香']},
+ {id:'potato_stew',name:'地精土豆煲',icon:'🥔',method:'stew',sets:[['potato','onion']],time:11,tags:['饱腹','温和']},
+ {id:'chili_potato',name:'爆辣脆薯',icon:'🍟',method:'stir',sets:[['potato','chili']],time:7,tags:['辣','饱腹']},
+ {id:'woodland_pot',name:'森林浓汤',icon:'🥣',method:'stew',sets:[['mushroom','potato']],time:13,tags:['菌香','温和','饱腹']},
+ {id:'harvest_stir',name:'丰收三拼',icon:'🥘',method:'stir',sets:[['cabbage','onion','potato']],time:10,tags:['清爽','温和','饱腹']}
+];
+const PRESETS=[{label:'🔥 爆炎牛肉',method:'stir',stages:[['garlic'],['beef'],['chili']]},{label:'🍄 菌香小炒',method:'stir',stages:[['garlic'],['mushroom'],[]]},{label:'🍲 蘑菇焖鸡',method:'stew',stages:[['mushroom'],['chicken'],[]]},{label:'🌶️ 辣椒炒肉',method:'stir',stages:[['chili'],['chicken'],[]]}];
+const SAVE_KEY='oddpot-cooking-lab-v06';
+const $=id=>document.getElementById(id);const state={method:'stir',stages:[['garlic'],['beef'],['chili']],selected:null,preset:0,screen:'setup',elapsed:0,phase:-1,action:null,actionPhase:null,actionAt:null,paused:false,visual:[],sparks:[],frame:0,lastAt:0,result:null,records:[],seenNew:[],toastTimer:0};
+try{const o=JSON.parse(localStorage.getItem(SAVE_KEY)||'{}');if(Array.isArray(o.records))state.records=o.records.slice(0,18);if(Array.isArray(o.seenNew))state.seenNew=o.seenNew;}catch{}
+const stageNames=()=>state.method==='stir'?['爆香','主烹','收味']:['起香','慢炖','调味'];
+const ids=()=>state.stages.flat();const uniq=arr=>[...new Set(arr)];const has=(id)=>ids().includes(id);
+const recipeMatch=(list,method)=>{const key=list.slice().sort().join('|');return RECIPES.find(r=>r.method===method&&r.sets.some(set=>set.slice().sort().join('|')===key))||null};
+function toast(msg){$('toast-msg').textContent=msg;$('toast').classList.add('on');clearTimeout(state.toastTimer);state.toastTimer=setTimeout(()=>$('toast').classList.remove('on'),1700)}
+function stageText(){return state.stages.map((a,i)=>`${stageNames()[i]}：${a.map(id=>ING[id][0]).join('、')||'空'}`).join(' → ')}
+function renderSetup(){
+ $('presets').innerHTML=PRESETS.map((p,i)=>`<button class="preset ${state.preset===i?'active':''}" data-preset="${i}">${p.label}</button>`).join('');
+ $('methods').innerHTML=['stir','stew'].map((m,i)=>`<button class="method ${state.method===m?'active':''}" data-method="${m}">${i===0?'🔥 爆炒':'🍲 焖煮'}</button>`).join('');
+ $('selected-count').textContent=`${ids().length} / 3`;
+ $('ingredients').innerHTML=Object.entries(ING).map(([id,v])=>`<button class="ingredient ${state.selected===id?'selected':''} ${has(id)?'used':''}" data-ingredient="${id}" ${has(id)&&state.selected!==id?'disabled':''}><span class="emoji">${v[1]}</span><span class="name">${v[0]}</span>${has(id)?'<i class="dot"></i>':''}</button>`).join('');
+ $('stages').innerHTML=state.stages.map((a,i)=>`<div class="stage-card ${state.selected?'highlight':''}" data-stage="${i}"><div class="stage-num">0${i+1}</div><div class="stage-name">${stageNames()[i]}</div><div class="stage-foods">${a.length?a.map(id=>`<button class="stage-food" data-remove="${id}" aria-label="移除${ING[id][0]}">${ING[id][1]}</button>`).join(''):'<span class="stage-placeholder">＋</span>'}</div><div class="stage-hint">${state.selected?'点此下料':a.length?'点 × 移除':'可留空'}</div></div>`).join('');
+ const ready=ids().length>=2&&ids().length<=3;
+ $('start-btn').disabled=!ready;
+ $('setup-hint').textContent=state.selected?`已拿起「${ING[state.selected][0]}」：点击爆香、主烹或收味任一阶段下料。`:ready?`当前时序：${stageText()}。开火后时间连续流动，没有按拍次停顿。`:'请至少安排 2 种食材。点击食材，然后点击任一阶段放入。';
+}
+function applyPreset(i){const p=PRESETS[i];state.preset=i;state.method=p.method;state.stages=p.stages.map(a=>a.slice());state.selected=null;renderSetup()}
+function view(next){state.screen=next;for(const n of ['setup','cook','result'])$(n+'-view').classList.toggle('active',n===next)}
+function begin(){if(ids().length<2)return;state.selected=null;state.elapsed=0;state.phase=-1;state.action=null;state.actionPhase=null;state.actionAt=null;state.frame=0;state.lastAt=0;state.paused=false;state.sparks=[];state.visual=[];state.result=null;
+ $('cook-title').textContent=recipeMatch(ids(),state.method)?.name||'神秘料理实验';
+ $('stage-progress').innerHTML=stageNames().map(name=>`<div class="segment"><span class="segment-label">${name}</span><div class="segment-track"><div class="segment-fill"></div></div></div>`).join('');
+ $('cook-status').textContent='只需选择一次；也可以不操作，自然出锅';$('toss-btn').disabled=false;$('stir-btn').disabled=false;$('cook-total-progress').style.width='0%';view('cook');state.frame=requestAnimationFrame(frame);
+}
+const TOTAL=12.5;const PHASE_TIMES=[0,3.9,8.3,12.5];
+function stageIndex(t){return t<PHASE_TIMES[1]?0:t<PHASE_TIMES[2]?1:2}
+const reactInfo=(i)=>{const a=state.stages[i],other=state.stages.slice(0,i).flat(),next=state.stages.slice(i+1).flat();
+ if(!a.length)return {title:['香气正在酝酿','锅中滋滋作响','料理接近完成'][i],text:'当前没有新食材入锅，但锅里仍在连续加热。'};
+ const names=a.map(id=>ING[id][0]).join('和');
+ if(i===0)return {title:`${names}入锅！`,text:a.includes('garlic')?'蒜瓣正释放底香；等主料下锅时，也许能激发锅气。':a.includes('chili')?'火椒把辛香融入锅底。':'食材的第一层风味正在形成。'};
+ if(i===1)return {title:`${names}加入主烹`,text:other.includes('garlic')?'主料遇上蒜香底味，颠勺或搅拌会带来不同的变化。':other.includes('chili')?'辣味已铺底。翻炒会更奔放，搅拌会更浓厚。':'香气与主料正在融合，随时可以选择掌勺方式。'};
+ return {title:`${names}点亮最后一味`,text:next.length?'':'尾段加入的食材保留鲜明风味。现在操作仍能改变这锅菜的个性。'};
+};
+function enterStage(i){state.phase=i;const m=reactInfo(i);$('reaction-title').textContent=m.title;$('reaction-body').textContent=m.text;
+ const a=state.stages[i];a.forEach((id,k)=>state.visual.push({id,x:(k-(a.length-1)/2)*65+((i%2)*12),y:0,start:state.elapsed,spin:Math.random()*6.3}));
+ const num=a.length?10:4;for(let k=0;k<num;k++)addSpark((Math.random()-.5)*130,(Math.random()-.5)*75,'#ffd58a');
+}
+function addSpark(x,y,color){state.sparks.push({x,y,vx:(Math.random()-.5)*90,vy:-30-Math.random()*90,life:.45+Math.random()*.45,color})}
+function operate(type){if(state.screen!=='cook'||state.action)return;
+ state.action=type;state.actionPhase=stageIndex(state.elapsed);state.actionAt=state.elapsed;
+ $('toss-btn').disabled=$('stir-btn').disabled=true;
+ const text=type==='toss'?'↗ 颠勺成功！锅气爆发':'◎ 搅拌完成！香气融合';$('cook-status').textContent='已完成一次关键操作 · 等待自然出锅';$('reaction-title').textContent=text;
+ $('reaction-body').textContent=type==='toss'?'食材跃起、火焰升腾，正在形成更鲜明的焦香。':'汤汁和油香旋转在一起，味道变得更加柔和、浓郁。';
+ for(let i=0;i<32;i++)addSpark((Math.random()-.5)*150,(Math.random()-.5)*85,type==='toss'?'#ff9f57':'#d7edbd');toast(text);
+}
+function frame(now){if(state.screen!=='cook')return;const delta=state.lastAt?Math.max(0,Math.min((now-state.lastAt)/1000,.08)):0;state.lastAt=now;
+ if(!state.paused){state.elapsed+=delta;const idx=stageIndex(Math.min(state.elapsed,TOTAL-.01));if(idx!==state.phase)enterStage(idx);
+ const segments=$('stage-progress').children;for(let i=0;i<3;i++){const p=Math.max(0,Math.min(1,(state.elapsed-PHASE_TIMES[i])/(PHASE_TIMES[i+1]-PHASE_TIMES[i])));segments[i].querySelector('.segment-fill').style.width=`${p*100}%`;segments[i].classList.toggle('now',i===idx)}
+ $('cook-total-progress').style.width=`${Math.min(100,state.elapsed/TOTAL*100)}%`;
+ $('heat-label').textContent=state.action==='toss'?'🔥 锅气翻腾 · 香味迸发':state.action==='stir'?'🍲 风味融合 · 浓香升腾':state.elapsed<3.9?'♨️ 起锅生香 · 连续烹饪':state.elapsed<8.3?'🔥 主料翻滚 · 可以掌勺':'✨ 收味时刻 · 即将出锅';
+ if(state.elapsed>=TOTAL){finish();return;}}
+ paint(now/1000,delta);state.frame=requestAnimationFrame(frame);
+}
+function paint(t,dt){const canvas=$('wok'),rect=canvas.getBoundingClientRect(),dpr=Math.min(2,devicePixelRatio||1),w=rect.width,h=rect.height;if(!w||!h)return;if(canvas.width!==Math.round(w*dpr)||canvas.height!==Math.round(h*dpr)){canvas.width=Math.round(w*dpr);canvas.height=Math.round(h*dpr)}
+ const g=canvas.getContext('2d');g.setTransform(dpr,0,0,dpr,0,0);g.clearRect(0,0,w,h);const x=w/2,y=h*.55,R=Math.min(w*.39,h*.43,152);
+ let halo=g.createRadialGradient(x,y,R*.25,x,y,R*1.6);halo.addColorStop(0,'#d77d3270');halo.addColorStop(.55,'#c85c2628');halo.addColorStop(1,'transparent');g.fillStyle=halo;g.fillRect(0,0,w,h);
+ g.save();g.translate(x,y);g.rotate(Math.sin(t*1.4)*.016);
+ g.fillStyle='#101a20';g.beginPath();g.ellipse(R*.9,R*.35,R*.44,R*.11,.25,0,Math.PI*2);g.fill();
+ g.fillStyle='#75818a';g.beginPath();g.ellipse(0,0,R+9,R*.77,0,0,Math.PI*2);g.fill();
+ const steel=g.createRadialGradient(-R*.2,-R*.4,R*.08,0,0,R);steel.addColorStop(0,'#52413a');steel.addColorStop(.58,'#272c31');steel.addColorStop(1,'#121b23');g.fillStyle=steel;g.beginPath();g.ellipse(0,4,R,R*.69,0,0,Math.PI*2);g.fill();
+ g.strokeStyle='#e0a265';g.lineWidth=3;g.beginPath();g.ellipse(0,1,R*.97,R*.67,0,0,Math.PI*2);g.stroke();
+ g.fillStyle='#e68b3e40';g.beginPath();g.ellipse(0,8,R*.80,R*.49,0,0,Math.PI*2);g.fill();
+ g.save();g.beginPath();g.ellipse(0,0,R*.84,R*.53,0,0,Math.PI*2);g.clip();
+ state.visual.forEach((f,i)=>{const age=Math.max(0,state.elapsed-f.start),bounce=state.action==='toss'&&state.actionAt!==null?Math.max(0,1-(state.elapsed-state.actionAt)/1.4):0;
+ const stir=state.action==='stir'&&state.actionAt!==null?Math.max(0,1-(state.elapsed-state.actionAt)/1.8):0;
+ const theta=t*(.6+stir*3)+f.spin+i*2.399;const rr=Math.min(R*.58,(R*.22+i*13)%Math.max(35,R*.6));
+ const fx=Math.cos(theta)*rr+Math.sin(t*2.7+i)*7,fy=Math.sin(theta)*rr*.64+Math.cos(t*2+i)*6;
+ const lift=Math.sin(Math.min(1,(state.elapsed-state.actionAt)/1.2)*Math.PI)*bounce*R*.6;
+ g.save();g.translate(fx,fy-lift);g.rotate(Math.sin(t*2+i)*.1);g.shadowColor='#000a';g.shadowBlur=8;g.font=`${Math.max(21,Math.min(40,R*.29))}px sans-serif`;g.textAlign='center';g.textBaseline='middle';g.fillText(ING[f.id][1],0,0);g.restore();
+ });g.restore();
+ for(let k=0;k<7;k++){const px=Math.sin(t*(.9+k*.17)+k*2)*R*.64;const py=Math.cos(t*(.8+k*.21)+k)*R*.25;g.strokeStyle=`rgba(247,196,124,${.16+.11*Math.sin(t*2+k)})`;g.lineWidth=3;g.beginPath();g.moveTo(px,py);g.quadraticCurveTo(px+8,py-19,px+4+Math.sin(t+k)*7,py-30);g.stroke();}
+ g.restore();
+ state.sparks.forEach(p=>{p.x+=p.vx*dt;p.y+=p.vy*dt;p.vy+=70*dt;p.life-=dt;g.globalAlpha=Math.max(0,Math.min(1,p.life));g.fillStyle=p.color;g.beginPath();g.arc(x+p.x,y+p.y,2.2,0,Math.PI*2);g.fill()});g.globalAlpha=1;state.sparks=state.sparks.filter(p=>p.life>0);
+}
+function derive(){const list=ids(),recipe=recipeMatch(list,state.method),early=state.stages[0],middle=state.stages[1],late=state.stages[2];let tags=[];const reasons=[];
+ if(early.includes('garlic')){tags.push('蒜香底味');reasons.push('蒜瓣提前入锅，先释放了一层香气。')}
+ if(early.includes('chili')){tags.push('浓辣底味');reasons.push('火椒先入锅，辣味融入锅底。')}
+ if(early.includes('mushroom')){tags.push('菌香汤底');reasons.push('蘑菇先下锅，鲜味成为料理底色。')}
+ if(middle.some(x=>['beef','chicken'].includes(x))){tags.push('主料鲜嫩');reasons.push('肉类在主烹阶段入锅，更突出主体口感。')}
+ if(late.includes('chili')){tags.push('鲜辣收尾');reasons.push('火椒留到收味，辣味更加鲜明。')}
+ if(late.includes('garlic')){tags.push('尾段蒜香');reasons.push('蒜瓣最后下锅，保留清晰的蒜香。')}
+ if(late.includes('mushroom')){tags.push('鲜菌口感');reasons.push('蘑菇后下锅，食材个性更加明显。')}
+ if(state.action==='toss'){tags.push(state.method==='stir'?'锅气':'翻锅香');reasons.push(`在${stageNames()[state.actionPhase]}阶段颠勺，让食材跃起，形成更鲜明的香气。`)}
+ else if(state.action==='stir'){tags.push('浓鲜融合');reasons.push(`在${stageNames()[state.actionPhase]}阶段搅拌，让已有味道更加融合。`)}
+ else{tags.push('家常稳定');reasons.push('没有额外掌勺，食材顺序仍然决定基本风味。')}
+ if(!tags.length)tags=['家常'];tags=uniq(tags).slice(0,4);
+ const focus=state.action==='toss'?'锅气爆香型':state.action==='stir'?'浓香融合型':'自然家常型';
+ const startsAt=state.stages.findIndex(a=>a.length>0);
+ let quality=75+(recipe?5:0)+(early.includes('garlic')?2:0)+(middle.some(x=>['beef','chicken','mushroom'].includes(x))?3:0)+(state.action==='stir'?5:state.action==='toss'?3:0)+(startsAt===0?2:0);quality=Math.min(95,quality);
+ const autoTime=Math.max(4,(recipe?.time||10)+(state.action==='toss'&&state.method==='stir'?-2:state.action==='stir'?2:0));
+ const visitor=tags.some(x=>x.includes('辣')||x.includes('锅气'))?'冒险者 / 辛辣爱好者':tags.some(x=>x.includes('鲜')||x.includes('菌'))?'街坊 / 家庭食客':'一般食客';
+ const staff=tags.some(x=>x.includes('辣')||x.includes('锅气'))?'可能适合帮厨阿火':tags.some(x=>x.includes('鲜')||x.includes('菌'))?'可能适合跑堂小芽':'偏向常规员工餐';
+ const hash=`${state.method}|${state.stages.map(a=>a.join('+')).join('/')}/${state.action||'natural'}@${state.actionPhase??'-'}`;
+ return {key:hash,recipeId:recipe?.id||null,name:recipe?.name||'自由试做 · '+list.slice(0,2).map(id=>ING[id][0].slice(-2)).join(''),icon:recipe?.icon||'🥘',focus,quality,autoTime,tags,reasons,visitor,staff,method:state.method,stages:state.stages.map(a=>a.slice()),action:state.action};
+}
+function finish(){state.result=derive();state.frame=0;view('result');showResult();}
+function saveResult(){const r=state.result;if(!r)return;state.records=[r,...state.records.filter(v=>v.key!==r.key)].slice(0,18);try{localStorage.setItem(SAVE_KEY,JSON.stringify({records:state.records,seenNew:state.seenNew}))}catch{};showHistory();$('save-message').textContent='本次工艺已写入实验记录（不影响主游戏存档）';}
+function showHistory(){ $('saved-count').textContent=`${state.records.length} 种`;$('saved-list').innerHTML=state.records.length?state.records.slice(0,5).map(r=>`<div class="history-item"><span>${r.icon} ${r.name}<br><span style="color:#a9b8b1">${r.focus} · ${r.tags.slice(0,2).join('、')}</span></span><b>${r.autoTime}s · ${r.quality}分</b></div>`).join(''):'<div class="result-note">暂无记录，出锅后会自动保存本次工艺。</div>';}
+function showResult(){const r=state.result;$('dish-icon').textContent=r.icon;$('dish-name').textContent=r.name;$('dish-subtitle').textContent=r.focus+' · '+stageText();$('result-pills').innerHTML=r.tags.map(x=>`<span class="pill">${x}</span>`).join('');$('result-quality').textContent=r.quality;$('result-time').textContent=r.autoTime+'s';$('result-explain').textContent=r.reasons.join(' ')||'食材按计划自然入锅，完成了一次稳定烹饪。';$('result-business').textContent=`假设以后接入经营：推荐客群为 ${r.visitor}；${r.staff}。当前仅展示差异方向，并未更改订单评分或员工餐规则。`;saveResult();}
+$('presets').addEventListener('click',e=>{const b=e.target.closest('[data-preset]');if(b)applyPreset(+b.dataset.preset)});
+$('methods').addEventListener('click',e=>{const b=e.target.closest('[data-method]');if(b){state.method=b.dataset.method;state.preset=-1;renderSetup()}});
+$('ingredients').addEventListener('click',e=>{const b=e.target.closest('[data-ingredient]');if(!b)return;const id=b.dataset.ingredient;if(has(id)){toast('这份食材已经下料；先从阶段里移除才能重新放置');return;}state.selected=state.selected===id?null:id;renderSetup()});
+$('stages').addEventListener('click',e=>{const rem=e.target.closest('[data-remove]');if(rem){const id=rem.dataset.remove;state.stages.forEach(a=>{const idx=a.indexOf(id);if(idx>=0)a.splice(idx,1)});state.preset=-1;state.selected=id;renderSetup();return;}const b=e.target.closest('[data-stage]');if(!b||!state.selected)return;if(ids().length>=3){toast('一锅最多三种食材');return;}state.stages[+b.dataset.stage].push(state.selected);state.selected=null;state.preset=-1;renderSetup()});
+$('start-btn').addEventListener('click',begin);$('toss-btn').addEventListener('click',()=>operate('toss'));$('stir-btn').addEventListener('click',()=>operate('stir'));$('edit-btn').addEventListener('click',()=>{view('setup');renderSetup()});$('again-btn').addEventListener('click',begin);
+const canvas=$('wok');let gesture=null;
+canvas.addEventListener('pointerdown',e=>{if(state.screen!=='cook'||state.action)return;canvas.setPointerCapture(e.pointerId);const rect=canvas.getBoundingClientRect();gesture={id:e.pointerId,x:e.clientX,y:e.clientY,last:Math.atan2(e.clientY-rect.top-rect.height*.55,e.clientX-rect.left-rect.width/2),turn:0};});
+canvas.addEventListener('pointermove',e=>{if(!gesture||gesture.id!==e.pointerId)return;const rect=canvas.getBoundingClientRect(),a=Math.atan2(e.clientY-rect.top-rect.height*.55,e.clientX-rect.left-rect.width/2);let diff=a-gesture.last;while(diff>Math.PI)diff-=2*Math.PI;while(diff<-Math.PI)diff+=2*Math.PI;gesture.turn+=diff;gesture.last=a});
+canvas.addEventListener('pointerup',e=>{if(!gesture||gesture.id!==e.pointerId)return;const dy=e.clientY-gesture.y;if(Math.abs(gesture.turn)>4.2)operate('stir');else if(dy< -48)operate('toss');else toast('往上滑是颠勺，画圈是搅拌；也可点下方按钮');gesture=null;});canvas.addEventListener('pointercancel',()=>gesture=null);
+document.addEventListener('visibilitychange',()=>{if(state.screen==='cook'){state.paused=document.hidden;state.lastAt=0;if(!state.paused)toast('已恢复烹饪')}});
+renderSetup();
+})();
+</script>
+</body>
+</html>
