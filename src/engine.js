@@ -138,7 +138,7 @@ export function save(s){try{localStorage.setItem(SAVE_KEY,JSON.stringify(s))}cat
 export function load(){try{
 const s=JSON.parse(localStorage.getItem(SAVE_KEY));
 if(s?.version!==4||!PHASES.includes(s.phase))return null;
-if(s.service){s.service.walkable??=false;s.service.paused ??= true;s.service.breakAt ??= 0;s.service.breakUsed ??= false;s.service.breakSeen ??= [];s.service.events ??= [];s.service.treatUsed ??= false;
+if(s.service){s.service.walkable??=false;if(s.service.walkable)s.service.hero??=newServiceHero();s.service.paused ??= true;s.service.breakAt ??= 0;s.service.breakUsed ??= false;s.service.breakSeen ??= [];s.service.events ??= [];s.service.treatUsed ??= false;
  s.service.kitchenSnapshot ??= structuredClone(ensureKitchen(s).slots);
  s.service.stationStats ??= {WOK:{count:0,secondsSaved:0},POT:{count:0,secondsSaved:0}};
  s.service.judgeOrderId ??= s.day===3?s.service.orders.at(-1)?.id:null;
