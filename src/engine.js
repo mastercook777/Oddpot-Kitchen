@@ -1,7 +1,7 @@
 import {ING,RECIPES,CUSTOMERS,FORECAST,DEFAULT_INVENTORY} from './data.js?v=0.6.3';
 import {LIVE_ACTIONS,evaluateLiveCook,liveIngredientState,legacyVariant,makeLiveVariant,resolveTechnique} from './cooking_v063.js?v=0.6.3';
 import {RECIPE_PROFILES} from './recipe_profiles_v063.js?v=0.6.3';
-import {newServiceHero,heroZone} from './walkable_restaurant_v07.js?v=0.7';
+import {newServiceHero,heroZone} from './walkable_restaurant_v07.js?v=0.7.5';
 export const PHASES=['forecast','field','research','menu','prep','service','report','upgrade'];
 export const SAVE_KEY='oddpot-prototype-v04'; // v0.2 兼容先前试玩存档
 const clone=x=>structuredClone(x);
