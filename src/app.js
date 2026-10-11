@@ -106,7 +106,44 @@ function field(){
 }
 
 function forestBackdrop(){return `<div class="forest-cloud c1">🌲</div><div class="forest-cloud c2">🌲</div><div class="forest-cloud c3">🍄</div><div class="forest-cloud c4">🌿</div><div class="forest-cloud c5">🦬</div>`}
+function researchReceipt(){
+ const result=game.lastCook,ok=!!result?.sellable;
+ const profile=RECIPE_PROFILES[result?.recipeId];
+ const record=game.recipeVariants?.[result?.recipeId]?.find(v=>v.variantId===result?.variantId);
+ const craft=ok?recipeCraftSnapshot(game,result.recipeId,record):null;
+ const recipe=RECIPES[result?.recipeId];
+ const opNames={flip:'翻炒',toss:'颠勺',gentle:'轻搅',reduce:'收汁'};
+ const guests=craft?Object.entries(craft.guestFitDelta).filter(([,n])=>n!==0).map(([id,n])=>`${CUSTOMERS[id]?.name||id} ${n>0?'+':''}${n}`).join(' · '):'';
+ const crew=profile?.crewSpecific?.style===result.style?`${profile.crewSpecific.role==='helper'?'阿火':'小芽'}专项适配（受岗位及原有上限限制）`:'使用菜品原有员工餐风味收益';
+ const bento=profile?.bentoSpecific?`可制作「${esc(recipe?.name)}」探索便当${profile.bentoSpecific.preferredStyle===result.style?' · 本工艺特别契合':''}；次日出发前制作`:'当前无专属探索便当';
+ return [`<div class="v063-receipt ${ok?'pass':'failed'}">
+    <div class="v063-receipt-head"><span>${ok?recipe?.emoji||'🍽️':'🍲'}</span>
+      <div class="v063-receipt-kicker">${ok?'✨ 料理研发成功':'⚠ 本次研发失败'}</div>
+      <h2>${esc(ok?result.recipeName:result.status)}</h2>
+      <small>${ok?(result.firstDiscovery?'🎉 全新菜谱首次发现':result.newTechnique?'📖 新工艺已写入图鉴':'已有工艺再次尝试'):'本锅无法加入菜单或收藏'}</small>
+    </div>
+    <div class="v063-receipt-scroll">
+      ${ok?`<div class="v063-receipt-tags"><b>${esc(result.styleLabel)}</b><span>${esc(result.secondaryTrait||'自然烹制')}</span><span>${esc(result.affinityLabel)}</span></div>
+      <div class="v063-receipt-metrics"><div><small>完成品质</small><b>${result.quality}</b></div><div><small>自动制作</small><b>${recipe.time+(craft?.timeDelta||0)}s</b></div><div><small>售卖价格</small><b>${craft.price} 🪙</b></div></div>`:''}
+      <section><strong>🥘 本锅烹饪记录</strong><p>${esc(result.ids.map(id=>ING[id].emoji+' '+ING[id].name).join(' + '))} · ${result.vessel==='WOK'?'炒锅':'深锅'} · ${result.duration.toFixed(1)} 秒</p>
+       <div class="v063-receipt-line">${result.events.map(d=>`<span>${d.t.toFixed(1)}s 下 ${esc(ING[d.id].name)}</span>`).join('')}</div>
+       <div class="v063-receipt-line">${result.actions.length?result.actions.map(a=>`<span>${a.t.toFixed(1)}s ${opNames[a.type]||a.type}</span>`).join(''):'<span>自然烹饪，未使用特别动作</span>'}</div>
+      </section>
+      <section><strong>🌡 熟度与结果</strong><div class="v063-receipt-line">${result.doneness.map(d=>`<span>${ING[d.id].emoji} ${esc(d.label)}</span>`).join('')}</div>
+        <p>${esc(result.reason)} · 食材估值 ${result.ingredientCost||0} 金币（已消耗真实库存）</p></section>
+      ${ok?`<section><strong>📋 这次工艺的实际用途</strong>
+        <p>🍽️ 营业：${guests?`客群匹配 ${esc(guests)}`:'采用菜谱的基础客群匹配'}；${craft.timeDelta!==0?`工序 ${craft.timeDelta>0?'+':''}${craft.timeDelta}s`:'不额外改变制作时间'}；${craft.price!==recipe.price?`价格由 ${recipe.price} 调整为 ${craft.price} 金币`:'保持菜谱原价'}。</p>
+        <p>👩‍🍳 员工餐：${esc(crew)}。</p><p>🍱 探索：${esc(bento)}。</p>
+        <small>工艺永久掌握，但每次做成实物仍需实际原料。</small></section>`:
+        `<section class="v063-receipt-warning"><strong>为什么不能上架？</strong><p>${esc(result.reason)}。本锅原料已消耗；尝试晚一些起锅或调整下料顺序，不必追求精准 QTE。</p></section>`}
+    </div>
+ </div>`,
+ `<div class="v063-receipt-dock"><div class="action-row">${b('receipt-retry','↶ 再试一道','secondary') }${b('receipt-finish','📖 回研发','primary wide')}</div>
+    <div class="action-row">${ok?b('book','查看工艺图鉴','secondary'):''}${b('receipt-menu','去经营上架 →','secondary')}</div></div>`]
+}
+
 function research(){const c=game.cook;
+ if(!c&&game.researchReceipt&&game.lastCook?.events)return researchReceipt();
  if(!c||c.mode==='v063-live'){
   if(c){
    const p=liveCookPreview(game),acts=LIVE_ACTIONS[c.vessel],order=c.dropped.map(d=>d.id),icons=c.dropped.map(d=>`<span class="v063-food-icon" data-live-icon="${d.id}">${ING[d.id].emoji}</span>`).join('');
@@ -204,6 +241,8 @@ function action(act){
  if(act==='skill'){if(useFieldSkill(game)){message=game.field.actionMessage;render()}return}
  if(act==='retreat'){releaseStick();if(walking){clearInterval(walking);walking=null}const result=settleField(game);note(result?'已带着背包回店，收获已入库！':'本次探索已结算。');return}
  if(act.startsWith('method:')){selectedMethod=act.slice(7);render();return}
+ if(act==='receipt-retry'||act==='receipt-finish'){if(act==='receipt-retry'&&game.lastCook?.ids){selectedIngredients=[...game.lastCook.ids];selectedMethod=game.lastCook.vessel==='POT'?'stew':'stir';}game.researchReceipt=false;note(act==='receipt-retry'?'保留食材组合，再来一锅。':'研发成果已收好，可以继续研究。');return}
+ if(act==='receipt-menu'){game.researchReceipt=false;nextPhase(game,'menu');note('将研发出的工艺用于今晚的餐馆经营。');return}
  if(act==='start-research'){note(beginLiveResearch(game,selectedIngredients,selectedMethod==='stir'?'WOK':'POT')?'开锅！轻点食材投入锅中，再按自己的时机掌勺。':'请选择 2–3 种有库存的食材。');return}
  if(act.startsWith('live-action:')){note(performLiveAction(game,act.slice(12))?'掌勺成功，锅内风味正在变化。':'这个动作本锅已用过，或尚未下料。');return}
  if(act==='live-finish'){const r=finishLiveResearch(game);note(r?.sellable?'🎉 '+r.recipeName+' · '+r.styleLabel+' · '+r.affinityLabel+' · 品质 '+r.quality+'！已加入工艺图鉴。':'🍲 '+(r?.reason||'锅还没热起来')+'。本次失败不能上架。');return}
