@@ -76,10 +76,9 @@ test('hero pickup is not a sale, delivery lands once through original real trans
  assert.equal(s.coins,initial);
  s.service.hero.x=HERO_TABLES[0].x;s.service.hero.y=HERO_TABLES[0].y;
  for(let i=0;i<11;i++)advanceWalkableInteraction(s,.05);
- tick(s,1);
  assert.equal(o.status,'flying');assert.equal(o.deliveryMode,'hero');
  assert.equal(s.service.hero.carryOrderId,null);
- assert.equal(s.coins,initial);
+ assert.equal(s.coins,initial,'pickup and handoff do not create a sale before landing');
  tick(s,1);assert.equal(o.status,'eating');
  assert.equal(s.coins,initial+o.craft.price);
  tick(s,1);assert.equal(s.coins,initial+o.craft.price);
