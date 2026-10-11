@@ -1,11 +1,12 @@
-import {ING,RECIPES,CUSTOMERS,FORECAST,DEFAULT_INVENTORY} from './data.js?v=0.5.4';
+import {ING,RECIPES,CUSTOMERS,FORECAST,DEFAULT_INVENTORY} from './data.js?v=0.6.3';
+import {LIVE_ACTIONS,evaluateLiveCook,liveIngredientState,legacyVariant,makeLiveVariant} from './cooking_v063.js?v=0.6.3';
 export const PHASES=['forecast','field','research','menu','prep','service','report','upgrade'];
 export const SAVE_KEY='oddpot-prototype-v04'; // v0.2 兼容先前试玩存档
 const clone=x=>structuredClone(x);
 export const clamp=(n,a,b)=>Math.min(b,Math.max(a,n));
 export function rand(seed){return (Math.imul(1664525,seed>>>0)+1013904223)>>>0}
 export function uniqueAdd(ledger,id,type,extra={}){if(ledger.some(x=>x.id===id))return false;ledger.push({id,type,...extra});return true}
-export function newGame(seed=20261009){return {version:4,seed,cycle:1,day:1,phase:'forecast',coins:120,reputation:0,inventory:{...DEFAULT_INVENTORY},recipes:{chicken_stew:76,mushroom_stir:76,veg_stir:72},learned:{},tech:false,upgrade:false,crew:{helper:{hired:false,station:0,meals:0,feed:null},waiter:{hired:false,meals:0,feed:null}},staffFoodCost:0,kitchen:{slots:[{type:'WOK',level:1},{type:'POT',level:1}],refitDay:null,freeRefitUsed:false,extraRefits:0},bagSlots:6,selectedTarget:'chili',route:null,field:null,cook:null,menu:['chicken_stew','mushroom_stir','veg_stir'],prep:{},prepCost:0,manualCost:0,service:null,report:null,lastCook:null,ledger:[],logs:[],result:null,step:0};}
+export function newGame(seed=20261009){return {version:4,seed,cycle:1,day:1,phase:'forecast',coins:120,reputation:0,inventory:{...DEFAULT_INVENTORY},recipes:{chicken_stew:76,mushroom_stir:76,veg_stir:72},learned:{},recipeVariants:{},activeVariantIds:{},tech:false,upgrade:false,crew:{helper:{hired:false,station:0,meals:0,feed:null},waiter:{hired:false,meals:0,feed:null}},staffFoodCost:0,kitchen:{slots:[{type:'WOK',level:1},{type:'POT',level:1}],refitDay:null,freeRefitUsed:false,extraRefits:0},bagSlots:6,selectedTarget:'chili',route:null,field:null,cook:null,menu:['chicken_stew','mushroom_stir','veg_stir'],prep:{},prepCost:0,manualCost:0,service:null,report:null,lastCook:null,ledger:[],logs:[],result:null,step:0};}
 // Kitchen station IDs remain WOK/POT for compatibility with 0.4 saves,
 // but now denote PHYSICAL positions (left/right), not stove types.
 export const KITCHEN_POSITIONS=['WOK','POT'];
@@ -126,7 +127,7 @@ if(s.service){s.service.paused ??= true;s.service.breakAt ??= 0;s.service.breakU
  const taken=new Set(active.map(o=>o.tableId).filter(x=>x!==undefined));
  for(const o of active){if(o.tableId==null){const n=[0,1].find(i=>!taken.has(i));if(n!==undefined){o.tableId=n;taken.add(n)}}o.seatId??=0;}
  }
-ensureKitchen(s);ensureCrew(s);
+ensureKitchen(s);ensureCrew(s);ensureRecipeVariants(s);
 s.bagSlots ??= 6;
 if(s.field)s.field.capacity ??= s.bagSlots;
 if(s.cook)s.cook.flame ??= 0;
@@ -559,4 +560,101 @@ export function newRecipeLead(s){
  const candidates=Object.entries(RECIPES).filter(([id,r])=>!s.recipes[id]&&!r.hidden);
  const match=candidates.find(([id,r])=>r.tags.some(t=>CUSTOMERS[customer].likes.includes(t)))||candidates[0];
  return match?{id:match[0],hint:match[1].hint,ingredients:match[1].ids}:null;
+}
+
+// v0.6.3-A production research path. Legacy 3x3 helpers above are retained
+// for old tests and manual service until the v0.6.3-B economic integration.
+export function ensureRecipeVariants(s){
+ s.recipeVariants??={};s.activeVariantIds??={};
+ for(const [id,quality] of Object.entries(s.recipes||{})){
+  if(!RECIPES[id]||!(quality>0))continue;
+  let variants=s.recipeVariants[id];
+  if(!Array.isArray(variants))variants=s.recipeVariants[id]=[];
+  if(!variants.length){
+   const old=legacyVariant(id,quality);if(old)variants.push(old);
+  }
+  if(!variants.some(x=>x.variantId===s.activeVariantIds[id]))
+   s.activeVariantIds[id]=variants[0]?.variantId||null;
+ }
+ return s.recipeVariants;
+}
+export function activeRecipeVariant(s,id){
+ ensureRecipeVariants(s);
+ return (s.recipeVariants[id]||[]).find(v=>v.variantId===s.activeVariantIds[id])||
+   (s.recipeVariants[id]||[])[0]||null;
+}
+export function chooseRecipeVariant(s,id,variantId){
+ if(!s.recipes?.[id]||!Array.isArray(s.recipeVariants?.[id])||
+    !s.recipeVariants[id].some(v=>v.valid&&v.variantId===variantId))return false;
+ s.activeVariantIds[id]=variantId;return true;
+}
+export function beginLiveResearch(s,ids,vessel='WOK'){
+ if(s.phase!=='research'||s.cook||!['WOK','POT'].includes(vessel)||
+  !Array.isArray(ids)||ids.length<2||ids.length>3||new Set(ids).size!==ids.length||
+  ids.some(id=>!ING[id])||!canUse(s,ids))return false;
+ ensureRecipeVariants(s);
+ const txn='live-research-'+s.cycle+'-'+s.day+'-'+s.step++;
+ s.cook={mode:'v063-live',context:'research',vessel,ids:[...ids],
+   dropped:[],actions:[],elapsed:0,live:false,txn};
+ s.lastCook=null;return true;
+}
+export function dropLiveIngredient(s,id){
+ const c=s.cook;
+ if(c?.mode!=='v063-live'||!c.ids.includes(id)||c.dropped.some(x=>x.id===id)||
+    c.elapsed>=19)return false;
+ c.dropped.push({id,t:+c.elapsed.toFixed(3),index:c.dropped.length});
+ c.live=true;return true;
+}
+export function performLiveAction(s,type){
+ const c=s.cook;
+ if(c?.mode!=='v063-live'||!c.dropped.length||c.elapsed>=19||
+  !LIVE_ACTIONS[c.vessel].some(a=>a.id===type)||
+  c.actions.some(a=>a.type===type))return false;
+ c.actions.push({type,t:+c.elapsed.toFixed(3),with:c.dropped.map(x=>x.id)});
+ return true;
+}
+export function liveCookPreview(s){
+ const c=s.cook;if(c?.mode!=='v063-live')return null;
+ const indicators=c.ids.map(id=>{
+  const d=c.dropped.find(x=>x.id===id);
+  return {id,state:liveIngredientState(d,c.elapsed,c.actions,c.vessel),
+    dropped:!!d};
+ });
+ return {indicators,elapsed:c.elapsed,actions:c.actions};
+}
+export function finishLiveResearch(s){
+ const c=s.cook;
+ if(c?.mode!=='v063-live'||!c.live||c.elapsed<1.2)return false;
+ const result=evaluateLiveCook(c.ids,c.vessel,c.dropped,c.actions,c.elapsed);
+ // Every attempted cook uses real resources, including failed recipes.
+ if(!consume(s,c.ids,c.txn))return false;
+ s.cook=null;s.lastCook=result;
+ if(result.sellable){
+  const id=result.recipeId;
+  s.recipes[id]=Math.max(s.recipes[id]||0,result.quality);
+  s.learned[id]=true;
+  ensureRecipeVariants(s);
+  const variant=makeLiveVariant(result);
+  const list=s.recipeVariants[id]||(s.recipeVariants[id]=[]);
+  const existing=list.findIndex(v=>v.variantId===variant.variantId);
+  if(existing>=0){
+   if((list[existing].quality||0)<=variant.quality)list[existing]=variant;
+  }else{list.push(variant)}
+  // Eight versions incl legacy are ample; keep all distinctive styles first.
+  if(list.length>8){
+   const legacy=list.filter(x=>x.legacy);
+   const modern=list.filter(x=>!x.legacy).sort((a,b)=>b.quality-a.quality);
+   s.recipeVariants[id]=[...legacy,...modern].slice(0,8);
+  }
+  if(!s.activeVariantIds[id]||s.activeVariantIds[id].startsWith('legacy-'))
+   s.activeVariantIds[id]=variant.variantId;
+ }
+ return result;
+}
+export function stepLiveResearch(s,seconds=0){
+ const c=s.cook;
+ if(c?.mode!=='v063-live'||!c.live)return null;
+ c.elapsed=Math.min(19,c.elapsed+Math.max(0,Math.min(.1,Number(seconds)||0)));
+ if(c.elapsed>=19)return finishLiveResearch(s);
+ return null;
 }
