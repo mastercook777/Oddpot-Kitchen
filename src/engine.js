@@ -138,7 +138,7 @@ export function save(s){try{localStorage.setItem(SAVE_KEY,JSON.stringify(s))}cat
 export function load(){try{
 const s=JSON.parse(localStorage.getItem(SAVE_KEY));
 if(s?.version!==4||!PHASES.includes(s.phase))return null;
-if(s.service){s.service.walkable??=false;if(s.service.walkable)s.service.hero??=newServiceHero();s.service.paused ??= true;s.service.breakAt ??= 0;s.service.breakUsed ??= false;s.service.breakSeen ??= [];s.service.events ??= [];s.service.treatUsed ??= false;
+if(s.service){s.service.walkable??=false;if(s.service.walkable){s.service.hero??=newServiceHero();s.service.hero.dwell??=0;s.service.hero.dwellZone??=null;}s.service.paused ??= true;s.service.breakAt ??= 0;s.service.breakUsed ??= false;s.service.breakSeen ??= [];s.service.events ??= [];s.service.treatUsed ??= false;
  s.service.kitchenSnapshot ??= structuredClone(ensureKitchen(s).slots);
  s.service.stationStats ??= {WOK:{count:0,secondsSaved:0},POT:{count:0,secondsSaved:0}};
  s.service.judgeOrderId ??= s.day===3?s.service.orders.at(-1)?.id:null;
@@ -310,7 +310,7 @@ export function serviceSupplyStatus(s){
   arrived:v.orders.filter(o=>o.status!=='waiting').length,shortages,lastProblem};
 }
 export function tableSeatState(v,table){
- return [0,1].map(seat=>v?.orders?.find(o=>o.tableId===table&&o.seatId===seat&&['entering','ordering','queued','cooking','flying','eating','review'].includes(o.status))||null);
+ return [0,1].map(seat=>v?.orders?.find(o=>o.tableId===table&&o.seatId===seat&&['entering','ordering','queued','cooking','pickup','carried','delivering','flying','eating','review'].includes(o.status))||null);
 }
 export function serviceGoalResult(v){
  const goal=v?.goal;if(!goal)return null;
@@ -486,20 +486,40 @@ export function activateWalkableSpecial(s){
  }else return false;
  return true;
 }
+// Single authority for proximity actions: RAF drives movement+dwell with the
+// SAME real-time delta as the 1s production clock. No second sale system.
+export function advanceWalkableInteraction(s,dt){
+ const v=s.service,h=v?.hero;
+ if(s.phase!=='service'||!v?.walkable||!h||v.paused||v.breakAt||v.done||s.cook)return false;
+ dt=Math.max(0,Math.min(.06,Number(dt)||0));
+ const zone=heroZone(h),carry=v.orders.find(o=>o.id===h.carryOrderId&&o.status==='carried');
+ const pending=zone==='PASS'&&!carry?v.orders.find(o=>o.status==='pickup'):null;
+ const delivery=zone?.startsWith('TABLE')&&carry&&carry.tableId===Number(zone.slice(5))?carry:null;
+ const focus=delivery?'serve:'+delivery.id:pending?'pickup:'+pending.id:null;
+ if(h.dwellZone!==focus){h.dwellZone=focus;h.dwell=0}
+ if(!focus)return false;
+ h.dwell+=dt;
+ if(h.dwell<(delivery?.48:.36))return false;
+ if(delivery){
+  if(!deliverWalkableOrder(s,delivery,'hero'))return false;
+  h.delivered++;h.dwell=0;h.dwellZone=null;
+  return true;
+ }
+ if(pending?.status==='pickup'&&!h.carryOrderId){
+  pending.status='carried';h.carryOrderId=pending.id;
+  record(s,{type:'hero_pickup',order:pending.id});
+  h.dwell=0;h.dwellZone=null;
+  return true;
+ }
+ return false;
+}
 function stepWalkableShift(s){
  const v=s.service,h=v.hero;
  if(!h||!v.walkable)return;
  const zone=heroZone(h);
  if(h.carryOrderId&&!v.orders.some(o=>o.id===h.carryOrderId&&o.status==='carried'))h.carryOrderId=null;
- if(zone==='PASS'&&!h.carryOrderId){
-  const food=v.orders.find(o=>o.status==='pickup');
-  if(food){food.status='carried';h.carryOrderId=food.id;record(s,{type:'hero_pickup',order:food.id});}
- }else if(zone?.startsWith('TABLE')&&h.carryOrderId){
-  const food=v.orders.find(o=>o.id===h.carryOrderId&&o.status==='carried');
-  if(food?.tableId===Number(zone.slice(5))){
-   if(deliverWalkableOrder(s,food,'hero'))h.delivered++;
-  }
- }
+ // Player food handling is controlled by advanceWalkableInteraction() with
+ // short physical dwell, NEVER teleported at the next whole-second tick.
  // Kitchenless orders sit on the pass. Helpers deliver without player travel,
  // but always via the same delivery/landing path used by the original ledger.
  for(const o of v.orders){
