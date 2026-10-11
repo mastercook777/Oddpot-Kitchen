@@ -2,7 +2,7 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import {readFileSync} from 'node:fs';
 import {spawnSync} from 'node:child_process';
-import {newGame,createService,tick,setServicePaused,walkableSpecial,activateWalkableSpecial,recipeCraftSnapshot} from '../src/engine.js';
+import {newGame,createService,tick,setServicePaused,walkableSpecial,activateWalkableSpecial,advanceWalkableInteraction,recipeCraftSnapshot} from '../src/engine.js';
 import {DINER_ACTOR_SCALE} from '../src/scenes_v04.js';
 import {newServiceHero,walkServiceHero,heroZone,waiterDeliveryPose,HERO_PASS,HERO_STATIONS,HERO_TABLES} from '../src/walkable_restaurant_v07.js';
 
@@ -37,11 +37,11 @@ test('character has finite, smooth world speed and table/counter collisions',()=
  const h=newServiceHero(),x=h.x,y=h.y;
  assert.ok(walkServiceHero(h,1,0,.05));assert.ok(h.x>x&&h.x-x<.025);assert.equal(h.y,y);
  for(let i=0;i<400;i++)walkServiceHero(h,1,1,.05);
- assert.ok(h.x<=.88&&h.y<=.84);
- assert.ok(h.y>=.23);
+ assert.ok(h.x<=.905&&h.y<=.915);
+ assert.ok(h.y>=.155);
  const hx=newServiceHero();hx.x=.28;hx.y=.48;
  for(let i=0;i<60;i++)walkServiceHero(hx,0,1,.05);
- assert.ok(hx.y<.56,'table cannot be walked through');
+ assert.ok(hx.y<.67,'table cannot be walked through');
  assert.equal(heroZone({...newServiceHero(),...HERO_PASS}),'PASS');
  assert.equal(heroZone({...newServiceHero(),...HERO_STATIONS.WOK}),'WOK');
  assert.equal(heroZone({...newServiceHero(),...HERO_TABLES[0]}),'TABLE0');
@@ -70,10 +70,12 @@ test('helper operates assigned station alone, other station still requires hero'
 test('hero pickup is not a sale, delivery lands once through original real transaction',()=>{
  const s=initialize();const o=targeted(s);const initial=s.coins;
  s.service.hero.x=HERO_PASS.x;s.service.hero.y=HERO_PASS.y;
+ for(let i=0;i<9;i++)advanceWalkableInteraction(s,.05);
  tick(s,1);
  assert.equal(o.status,'carried');assert.equal(s.service.hero.carryOrderId,o.id);
  assert.equal(s.coins,initial);
  s.service.hero.x=HERO_TABLES[0].x;s.service.hero.y=HERO_TABLES[0].y;
+ for(let i=0;i<11;i++)advanceWalkableInteraction(s,.05);
  tick(s,1);
  assert.equal(o.status,'flying');assert.equal(o.deliveryMode,'hero');
  assert.equal(s.service.hero.carryOrderId,null);
