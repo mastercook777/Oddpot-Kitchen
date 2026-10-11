@@ -1,3 +1,14 @@
+## v0.6.3-A 已实施（2026-10-11）：连续实时烹饪 + 料理工艺图鉴
+
+- 主线 `index.html` 已改用 `src/cooking_v063.js` 的自由下料实时研发，而不是 3×3/三拍热量研发；后者保留是为了旧存档及旧测试兼容，不应重新将它接回研发 UI。
+- `src/data.js` 保留原先 12 道菜的 recipeId 并扩展 168 种厨具×组合签名（167 个唯一菜 ID，`chili_meat` 含替代食材）；人工配置 18 道重点菜见 `src/recipe_profiles_v063.js`。通用组合兜底有菜名，不代表 168 道人工平衡完成。
+- 玩法：开火前只选 2–3 种食材及炒锅/深锅，玩家实时亲手投料；炒锅翻炒/颠勺，深锅轻搅/收汁；夹生/漏料/严重焦糊失败且扣材料，成功建立工艺版本。
+- `s.recipeVariants` 与 `s.activeVariantIds` 通过 `ensureRecipeVariants` 做非破坏式老存档迁移。`s.recipes` 仍是旧经营依赖的数字品质，保存键 `oddpot-prototype-v04`、版本 4 不变。
+- **v0.6.3-A 仅工艺识别/收藏，不对营业修改售价、生产时间、顾客适配、员工餐或探索便当。** 将来这几类收益由具体 `recipeId×variant.style` 配对决定，严禁 Universal「爆炒-1秒／收汁+2金币」规则。
+- 重要债务：`chili_meat` 研究可用牛肉或鸡肉，但旧营业原料表仍可能固定扣鸡肉；v0.6.3-B 必须在订单快照/生产扣料中使用变体真实 `ingredientIds`。
+- 同步更新 `standalone.html` 和 `scripts/build-standalone.py`；验证 `npm test` 会运行实际 Vite 构建及离线 H5 语法检查。视觉画面要在真实 iPhone 上人工验收。
+- 交接文档：`docs/V0.6.3A_MAINLINE_IMPLEMENTATION.md`；配对方案：`docs/V0.6.3A_RECIPE_TECHNIQUE_MATRIX_v0.1.md`；后续设计：`docs/V0.6.3_RECIPE_VARIANTS_CLOSED_LOOP_PROPOSAL.md`。
+
 ## v0.5A 最新实现边界
 - 双物理厨位的字段位于 `s.kitchen.slots[0/1]`（类型 WOK/POT，等级 1/2）；`s.service.stations.WOK/POT` 仍作为**左/右物理槽的历史键**，不要把键名当成当前锅具类型。
 - 调度需调用 `kitchenHasMenuCoverage`、`stationDuration`、`ensureKitchen`，不得绕开库存账本、波次或双工位互斥。
