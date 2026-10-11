@@ -4,7 +4,7 @@
 export const HERO_STATIONS={WOK:{x:.21,y:.35},POT:{x:.79,y:.35}};
 export const HERO_PASS={x:.50,y:.46};
 export const HERO_TABLES=[{x:.28,y:.71},{x:.72,y:.71}];
-const clamp=(x,min,max)=>Math.max(min,Math.min(max,x));
+const walkClamp=(x,min,max)=>Math.max(min,Math.min(max,x));
 const at=(p,q,rx=.12,ry=.09)=>Math.hypot((p.x-q.x)/rx,(p.y-q.y)/ry)<1;
 export function newServiceHero(){
  return {x:.5,y:.34,direction:'down',moving:false,energy:6,maxEnergy:6,recovery:0,
@@ -29,14 +29,14 @@ function blocked(x,y){
 }
 export function walkServiceHero(hero,dx,dy,dt){
  if(!hero||!Number.isFinite(dx)||!Number.isFinite(dy)||!Number.isFinite(dt))return false;
- dt=clamp(dt,0,.06);
+ dt=walkClamp(dt,0,.06);
  const length=Math.hypot(dx,dy);
  if(length<.10||dt===0){hero.moving=false;return false}
  dx/=Math.max(1,length);dy/=Math.max(1,length);
  // Pixel velocity is matched in world units, so up/down does not zoom actors.
  const vx=dx*.40*dt,vy=dy*.32*dt;
  const oldX=hero.x,oldY=hero.y;
- let nx=clamp(hero.x+vx,.12,.88),ny=clamp(hero.y+vy,.23,.84);
+ let nx=walkClamp(hero.x+vx,.12,.88),ny=walkClamp(hero.y+vy,.23,.84);
  // Split-axis sliding avoids sticky corners and sudden teleports.
  if(!blocked(nx,hero.y))hero.x=nx;
  if(!blocked(hero.x,ny))hero.y=ny;
@@ -48,10 +48,10 @@ export function waiterDeliveryPose(s,simTime){
  const v=s?.service,home={x:HERO_PASS.x,y:HERO_PASS.y};
  const o=v?.orders.find(x=>x.status==='delivering'&&Number.isFinite(x.deliveryAt));
  let table=null,u=0,returning=false,plate=false;
- if(o){table=o.tableId;u=clamp((simTime-o.deliveryAt)/3,0,1);plate=true;}
+ if(o){table=o.tableId;u=walkClamp((simTime-o.deliveryAt)/3,0,1);plate=true;}
  else{
   const e=(v?.events||[]).slice().reverse().find(x=>x.type==='waiter_return'&&simTime-x.t>=0&&simTime-x.t<2);
-  if(e){table=e.table;u=1-clamp((simTime-e.t)/2,0,1);returning=true;}
+  if(e){table=e.table;u=1-walkClamp((simTime-e.t)/2,0,1);returning=true;}
  }
  if(table==null)return {...home,moving:false,plate:false};
  // Pass -> center aisle -> table (and back), never jump between unrelated
