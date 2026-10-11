@@ -1,6 +1,7 @@
 import {ING,RECIPES,CUSTOMERS,FORECAST,DEFAULT_INVENTORY} from './data.js?v=0.6.3';
 import {LIVE_ACTIONS,evaluateLiveCook,liveIngredientState,legacyVariant,makeLiveVariant,resolveTechnique} from './cooking_v063.js?v=0.6.3';
 import {RECIPE_PROFILES} from './recipe_profiles_v063.js?v=0.6.3';
+import {newServiceHero,heroZone} from './walkable_restaurant_v07.js?v=0.7';
 export const PHASES=['forecast','field','research','menu','prep','service','report','upgrade'];
 export const SAVE_KEY='oddpot-prototype-v04'; // v0.2 兼容先前试玩存档
 const clone=x=>structuredClone(x);
@@ -137,7 +138,7 @@ export function save(s){try{localStorage.setItem(SAVE_KEY,JSON.stringify(s))}cat
 export function load(){try{
 const s=JSON.parse(localStorage.getItem(SAVE_KEY));
 if(s?.version!==4||!PHASES.includes(s.phase))return null;
-if(s.service){s.service.paused ??= true;s.service.breakAt ??= 0;s.service.breakUsed ??= false;s.service.breakSeen ??= [];s.service.events ??= [];s.service.treatUsed ??= false;
+if(s.service){s.service.walkable??=false;s.service.paused ??= true;s.service.breakAt ??= 0;s.service.breakUsed ??= false;s.service.breakSeen ??= [];s.service.events ??= [];s.service.treatUsed ??= false;
  s.service.kitchenSnapshot ??= structuredClone(ensureKitchen(s).slots);
  s.service.stationStats ??= {WOK:{count:0,secondsSaved:0},POT:{count:0,secondsSaved:0}};
  s.service.judgeOrderId ??= s.day===3?s.service.orders.at(-1)?.id:null;
@@ -286,7 +287,7 @@ export function serviceDayPlan(s){
 // This prevents a newly seated diner overlapping an exiting actor.
 export function seatOccupiedAt(o,t){
  if(o.tableId===null||o.tableId===undefined)return false;
- if(['entering','ordering','queued','cooking','flying','eating','review'].includes(o.status))return true;
+ if(['entering','ordering','queued','cooking','pickup','carried','delivering','flying','eating','review'].includes(o.status))return true;
  if(o.status==='served'&&Number.isFinite(o.reviewedAt))return t-o.reviewedAt<2.2;
  if(o.status==='served'&&Number.isFinite(o.served))return t-o.served<3.85;
  if(['left','rejected'].includes(o.status)&&Number.isFinite(o.leftAt))return t-o.leftAt<2.6;
@@ -320,7 +321,7 @@ export function serviceGoalResult(v){
   served.filter(o=>RECIPES[o.recipeId]?.tags?.includes('辣')).length;
  return {kind:goal.kind,label:goal.label,value,target:goal.target,success:value>=goal.target};
 }
-export function createService(s){if(s.phase!=='service'||s.service||!kitchenHasMenuCoverage(s))return false;
+export function createService(s,options={}){if(s.phase!=='service'||s.service||!kitchenHasMenuCoverage(s))return false;
  const plan=serviceDayPlan(s),size=plan.count;
  const orders=plan.guests.map((segment,i)=>{
   const wave=Math.min(2,Math.floor(i*3/size));
@@ -342,7 +343,8 @@ export function createService(s){if(s.phase!=='service'||s.service||!kitchenHasM
   stations:{WOK:null,POT:null},kitchenSnapshot:clone(ensureKitchen(s).slots),stationStats:{WOK:{count:0,secondsSaved:0},POT:{count:0,secondsSaved:0}},
   queued:[],wave:0,done:false,events:[],income:0,cost:0,congestion:{WOK:0,POT:0},initialInventory:clone(s.inventory),
   reportBuilt:false,manualUsed:0,treatUsed:false,paused:true,breakAt:0,breakSeen:[],breakUsed:false,eventChoiceMade:[],
-  eventEffects:{WOK:0,POT:0},eventExpense:0,guestMood:0};
+  eventEffects:{WOK:0,POT:0},eventExpense:0,guestMood:0,
+  walkable:options.walkable===true,hero:options.walkable===true?newServiceHero():null};
  spawnArrivals(s);return true;
 }
 
@@ -430,8 +432,87 @@ export const DINER_TIMING={enter:2,order:1,flight:2,eat:3,review:2,exit:2.2};
 function finishOrder(s,o,quality){
  const v=s.service;
  if(o.status==='left'||o.status==='rejected')return;
- o.status='flying';o.quality=quality;o.flightAt=v.time;
+ o.quality=quality;
+ if(v.walkable){
+  o.status='pickup';o.pickupAt=v.time;
+  record(s,{type:'plate_ready',order:o.id,recipeId:o.recipeId});
+  return;
+ }
+ o.status='flying';o.flightAt=v.time;
  record(s,{type:'throw',order:o.id,recipeId:o.recipeId,quality});
+}
+function deliverWalkableOrder(s,o,by){
+ const v=s.service;
+ if(!v.walkable||!['pickup','carried','delivering'].includes(o.status))return false;
+ if(o.status==='carried'&&by!=='hero')return false;
+ if(o.status==='delivering'&&by!=='waiter')return false;
+ if(o.status==='pickup'&&by!=='self')return false;
+ if(v.hero?.carryOrderId===o.id)v.hero.carryOrderId=null;
+ o.status='flying';o.deliveryMode=by;
+ // The physical delivery is already complete. A one-tick landing closes
+ // the same existing sale transaction, without an additional throw animation.
+ o.flightAt=v.time-(DINER_TIMING.flight-1);
+ record(s,{type:'delivered',order:o.id,recipeId:o.recipeId,by});
+ return true;
+}
+export function walkableSpecial(s){
+ const v=s.service,h=v?.hero;if(s.phase!=='service'||!v?.walkable||!h||v.paused||v.done||v.breakAt||s.cook||h.carryOrderId)return null;
+ const zone=heroZone(h);
+ if(zone==='WOK'||zone==='POT'){
+  const job=v.stations[zone],o=v.orders.find(x=>x.id===job?.orderId);
+  if(!job||!o||o.status!=='cooking'||job.left<=2.2||h.assistIds.includes(o.id))return null;
+  return {kind:'burst',zone,orderId:o.id,energy:2,available:h.energy>=2,icon:'🔥'};
+ }
+ if(zone?.startsWith('TABLE')){
+  const table=Number(zone.slice(5));
+  const o=v.orders.find(x=>x.tableId===table&&['queued','cooking','pickup','delivering'].includes(x.status)&&!h.comfortIds.includes(x.id));
+  if(!o||o.patience-(v.time-o.arrival)>12||o.patience-(v.time-o.arrival)<=0)return null;
+  return {kind:'comfort',zone,orderId:o.id,energy:1,available:h.energy>=1,icon:'💛'};
+ }
+ return null;
+}
+export function activateWalkableSpecial(s){
+ const action=walkableSpecial(s);if(!action||!action.available)return false;
+ const v=s.service,h=v.hero,o=v.orders.find(x=>x.id===action.orderId);
+ if(!o)return false;
+ if(action.kind==='burst'){
+  const job=v.stations[action.zone];if(!job||job.orderId!==o.id)return false;
+  job.left=Math.max(.8,job.left-2);h.energy-=2;h.assistIds.push(o.id);h.assists++;
+  record(s,{type:'hero_boost',order:o.id,seconds:2});
+ }else if(action.kind==='comfort'){
+  if(!['queued','cooking','pickup','delivering'].includes(o.status))return false;
+  o.patience+=4;h.energy-=1;h.comfortIds.push(o.id);h.comforts++;
+  record(s,{type:'hero_comfort',order:o.id,seconds:4});
+ }else return false;
+ return true;
+}
+function stepWalkableShift(s){
+ const v=s.service,h=v.hero;
+ if(!h||!v.walkable)return;
+ const zone=heroZone(h);
+ if(h.carryOrderId&&!v.orders.some(o=>o.id===h.carryOrderId&&o.status==='carried'))h.carryOrderId=null;
+ if(zone==='PASS'&&!h.carryOrderId){
+  const food=v.orders.find(o=>o.status==='pickup');
+  if(food){food.status='carried';h.carryOrderId=food.id;record(s,{type:'hero_pickup',order:food.id});}
+ }else if(zone?.startsWith('TABLE')&&h.carryOrderId){
+  const food=v.orders.find(o=>o.id===h.carryOrderId&&o.status==='carried');
+  if(food?.tableId===Number(zone.slice(5))){
+   if(deliverWalkableOrder(s,food,'hero'))h.delivered++;
+  }
+ }
+ // Kitchenless orders sit on the pass. Helpers deliver without player travel,
+ // but always via the same delivery/landing path used by the original ledger.
+ for(const o of v.orders){
+  if(o.status==='pickup'&&v.time-o.pickupAt>=(v.crew.waiter.hired?2:9)){
+   if(v.crew.waiter.hired){o.status='delivering';o.deliveryAt=v.time;record(s,{type:'waiter_pickup',order:o.id});}
+   else deliverWalkableOrder(s,o,'self');
+  }
+  if(o.status==='delivering'&&v.time-o.deliveryAt>=3)deliverWalkableOrder(s,o,'waiter');
+ }
+ const active=!!h.carryOrderId||((zone==='WOK'||zone==='POT')&&!!v.stations[zone]);
+ h.recovery+=1/(active?12:7);
+ if(h.recovery>=1){const n=Math.floor(h.recovery);h.recovery-=n;h.energy=Math.min(h.maxEnergy,h.energy+n);}
+ if(h.energy>=h.maxEnergy)h.recovery=0;
 }
 export function guestReview(o){
  const wait=Math.max(0,(o.landedAt??o.served??0)-(o.arrival||0));
@@ -516,8 +597,14 @@ if((v.time===20||v.time===41)&&!v.breakSeen.includes(v.time)){
 spawnArrivals(s);
 advanceGuestOrders(s);
 advanceGuestMeals(s);
-for(const st of ['WOK','POT']){const job=v.stations[st];if(job){v.congestion[st]++;job.left--;if(job.left<=0){v.stations[st]=null;const o=v.orders.find(x=>x.id===job.orderId);if(o.status==='cooking')finishOrder(s,o,job.quality);else record(s,{type:'waste',order:job.orderId});}}}
-for(const o of v.orders){if((o.status==='queued'||o.status==='cooking')&&v.time-o.arrival>o.patience){o.status='left';o.leftAt=v.time;s.reputation=Math.max(-20,s.reputation-1);v.queued=v.queued.filter(id=>id!==o.id);record(s,{type:'left',order:o.id,reason:'等待超时'});}}
+if(v.walkable)stepWalkableShift(s);
+for(const st of ['WOK','POT']){const job=v.stations[st];if(job){v.congestion[st]++;
+ const assigned=v.crew?.helper?.hired&&v.crew.helper.station===(st==='WOK'?0:1);
+ const hero=v.walkable&&v.hero&&!v.hero.carryOrderId&&heroZone(v.hero)===st;
+ const rate=v.walkable?(Number(assigned)+Number(!!hero)):1;
+ job.left-=rate;
+ if(job.left<=0){v.stations[st]=null;const o=v.orders.find(x=>x.id===job.orderId);if(o.status==='cooking')finishOrder(s,o,job.quality);else record(s,{type:'waste',order:job.orderId});}}}
+for(const o of v.orders){if((o.status==='queued'||o.status==='cooking'||(v.walkable&&['pickup','carried','delivering'].includes(o.status)))&&v.time-o.arrival>o.patience){o.status='left';o.leftAt=v.time;if(v.hero?.carryOrderId===o.id)v.hero.carryOrderId=null;s.reputation=Math.max(-20,s.reputation-1);v.queued=v.queued.filter(id=>id!==o.id);record(s,{type:'left',order:o.id,reason:'等待超时'});}}
 for(const st of ['WOK','POT']){if(v.stations[st])continue;let i=v.queued.findIndex(id=>{const o=v.orders.find(x=>x.id===id);return o&&RECIPES[o.recipeId].station===ensureKitchen(s).slots[st==='WOK'?0:1].type});if(i<0)continue;const id=v.queued.splice(i,1)[0];const o=v.orders.find(x=>x.id===id);const r=RECIPES[o.recipeId];if(o.manual){o.status='cooking';v.stations[st]={orderId:id,left:stationDuration(s,st,r,v),quality:o.manual.sellable&&o.manual.recipeId===o.recipeId?o.manual.quality:0};if(!o.manual.sellable||o.manual.recipeId!==o.recipeId){o.status='left';record(s,{type:'failed_cook',order:id})}continue;}
 const prepared=s.prepVariants?.[o.recipeId]||[];
 const match=prepared.findIndex(x=>x.variantId===(o.craft?.variantId||''));
