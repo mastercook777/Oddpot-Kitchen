@@ -1,12 +1,13 @@
 import {ING,RECIPES,CUSTOMERS,FORECAST,DEFAULT_INVENTORY} from './data.js?v=0.6.3';
-import {LIVE_ACTIONS,evaluateLiveCook,liveIngredientState,legacyVariant,makeLiveVariant} from './cooking_v063.js?v=0.6.3';
+import {LIVE_ACTIONS,evaluateLiveCook,liveIngredientState,legacyVariant,makeLiveVariant,resolveTechnique} from './cooking_v063.js?v=0.6.3';
+import {RECIPE_PROFILES} from './recipe_profiles_v063.js?v=0.6.3';
 export const PHASES=['forecast','field','research','menu','prep','service','report','upgrade'];
 export const SAVE_KEY='oddpot-prototype-v04'; // v0.2 兼容先前试玩存档
 const clone=x=>structuredClone(x);
 export const clamp=(n,a,b)=>Math.min(b,Math.max(a,n));
 export function rand(seed){return (Math.imul(1664525,seed>>>0)+1013904223)>>>0}
 export function uniqueAdd(ledger,id,type,extra={}){if(ledger.some(x=>x.id===id))return false;ledger.push({id,type,...extra});return true}
-export function newGame(seed=20261009){return {version:4,seed,cycle:1,day:1,phase:'forecast',coins:120,reputation:0,inventory:{...DEFAULT_INVENTORY},recipes:{chicken_stew:76,mushroom_stir:76,veg_stir:72},learned:{},recipeVariants:{},activeVariantIds:{},tech:false,upgrade:false,crew:{helper:{hired:false,station:0,meals:0,feed:null},waiter:{hired:false,meals:0,feed:null}},staffFoodCost:0,kitchen:{slots:[{type:'WOK',level:1},{type:'POT',level:1}],refitDay:null,freeRefitUsed:false,extraRefits:0},bagSlots:6,selectedTarget:'chili',route:null,field:null,cook:null,menu:['chicken_stew','mushroom_stir','veg_stir'],prep:{},prepCost:0,manualCost:0,service:null,report:null,lastCook:null,ledger:[],logs:[],result:null,step:0};}
+export function newGame(seed=20261009){return {version:4,seed,cycle:1,day:1,phase:'forecast',coins:120,reputation:0,inventory:{...DEFAULT_INVENTORY},recipes:{chicken_stew:76,mushroom_stir:76,veg_stir:72},learned:{},recipeVariants:{},activeVariantIds:{},tech:false,upgrade:false,crew:{helper:{hired:false,station:0,meals:0,feed:null},waiter:{hired:false,meals:0,feed:null}},staffFoodCost:0,kitchen:{slots:[{type:'WOK',level:1},{type:'POT',level:1}],refitDay:null,freeRefitUsed:false,extraRefits:0},bagSlots:6,selectedTarget:'chili',route:null,field:null,cook:null,menu:['chicken_stew','mushroom_stir','veg_stir'],prep:{},prepVariants:{},prepCost:0,manualCost:0,service:null,report:null,lastCook:null,ledger:[],logs:[],result:null,step:0};}
 // Kitchen station IDs remain WOK/POT for compatibility with 0.4 saves,
 // but now denote PHYSICAL positions (left/right), not stove types.
 export const KITCHEN_POSITIONS=['WOK','POT'];
@@ -58,12 +59,30 @@ export function buyKitchenUpgrade(s,index){
  if(!transact(s,key,'upgrade',{},-cost))return false;
  k.slots[index].level=2;if(index===0)s.upgrade=true;return true;
 }
-export function stationDuration(s,position,recipe,v){
+// v0.6.3-B: recipe identity + selected *actual* craft determines its own
+// benefits. Never attach economic effects to style labels globally.
+export function recipeCraftSnapshot(s,recipeId,variant=null){
+ const r=RECIPES[recipeId];if(!r)return null;
+ const v=variant||activeRecipeVariant(s,recipeId);
+ const pair=v&&!v.legacy?resolveTechnique(recipeId,v.style):null;
+ const ids=v?.ingredientIds?.length?v.ingredientIds:r.ids;
+ return {recipeId,variantId:v?.variantId||'standard-'+recipeId,
+   style:v?.style||'legacy',styleLabel:v?.styleLabel||'标准工艺',
+   affinity:pair?.affinity||'ordinary',quality:v?.quality||s.recipes?.[recipeId]||72,
+   ingredientIds:[...ids],price:r.price+(pair?.priceDeltaCoins||0),
+   baseTime:r.time,timeDelta:pair?.timeDeltaSeconds||0,
+   guestFitDelta:{...(pair?.guestFitDelta||{})},
+   secondaryTrait:v?.secondaryTrait||null,
+   recipeTags:[...r.tags]};
+}
+export function stationDuration(s,position,recipe,v,order=null){
  const k=ensureKitchen(s),i=position==='WOK'?0:1,slot=k.slots[i];
  const bonus=(slot.level-1)*2;
  const staff=v?.crew?.helper;const crewBonus=staff?.hired&&staff.station===i?staff.seconds:0;
- return Math.max(1,recipe.time-bonus-crewBonus-(v?.eventEffects?.[slot.type]||0));
+ const delta=order?.craft?.timeDelta||0;
+ return Math.max(1,recipe.time+delta-bonus-crewBonus-(v?.eventEffects?.[slot.type]||0));
 }
+
 // A two-person restaurant team. Feed uses real standard-recipe ingredients;
 // meals grant one service-day buff plus a tiny, capped long-term familiarity.
 export const CREW_ROLES={helper:{name:'阿火',job:'帮厨',hireCost:40},waiter:{name:'小芽',job:'跑堂',hireCost:35}};
@@ -97,19 +116,21 @@ export function crewEffects(s){
  const f=activeCrewMeal(s,'helper'),w=activeCrewMeal(s,'waiter');
  const hr=f?.recipeId?RECIPES[f.recipeId]:null,wr=w?.recipeId?RECIPES[w.recipeId]:null;
  const helperBase=helper.hired?1+(helper.meals>=3?1:0):0;
- const helperMeal=hr?(hr.tags.includes('辣')&&ensureKitchen(s).slots[helper.station].type==='WOK'?2:hr.tags.includes('菌香')?1:0)+(f.quality>=85?1:0):0;
+ const helperMeal=hr?(hr.tags.includes('辣')&&ensureKitchen(s).slots[helper.station].type==='WOK'?2:hr.tags.includes('菌香')?1:0)+(f.quality>=85?1:0)+(f.craftBonus?.role==='helper'&&ensureKitchen(s).slots[helper.station].type==='WOK'?Math.min(1,f.craftBonus.bonus):0):0;
  const waiterBase=waiter.hired?3+(waiter.meals>=3?1:0):0;
- const waiterMeal=wr?(wr.tags.includes('温和')?6:wr.tags.includes('菌香')?4:2)+(w.quality>=85?2:0):0;
+ const waiterMeal=wr?(wr.tags.includes('温和')?6:wr.tags.includes('菌香')?4:2)+(w.quality>=85?2:0)+(w.craftBonus?.role==='waiter'?Math.min(1,w.craftBonus.bonus):0):0;
  return {helper:{hired:helper.hired,station:helper.station,seconds:Math.min(4,helperBase+helperMeal),fed:!!f,recipeId:f?.recipeId||null,meals:helper.meals},waiter:{hired:waiter.hired,patience:Math.min(12,waiterBase+waiterMeal),fed:!!w,recipeId:w?.recipeId||null,meals:waiter.meals}};
 }
 export function feedCrew(s,role,recipeId){
  if(s.phase!=='prep'||!CREW_ROLES[role]||!s.recipes[recipeId]||!RECIPES[recipeId])return false;
- const c=ensureCrew(s)[role],r=RECIPES[recipeId];
- if(!c.hired||activeCrewMeal(s,role)||!canUse(s,r.ids))return false;
+ const c=ensureCrew(s)[role],r=RECIPES[recipeId],craft=recipeCraftSnapshot(s,recipeId);
+ if(!craft||!c.hired||activeCrewMeal(s,role)||!canUse(s,craft.ingredientIds))return false;
  const txn=`crew-meal-${kitchenDayKey(s)}-${role}`;
- if(!consume(s,r.ids,txn))return false;
- c.feed={day:kitchenDayKey(s),recipeId,quality:s.recipes[recipeId]};c.meals=Math.min(3,c.meals+1);
- s.staffFoodCost+=r.ids.reduce((sum,id)=>sum+ING[id].cost,0);
+ if(!consume(s,craft.ingredientIds,txn))return false;
+ const specific=RECIPE_PROFILES[recipeId]?.crewSpecific;
+ const craftBonus=specific&&specific.style===craft.style&&specific.role===role?{role,bonus:Math.min(1,Number(specific.bonus)||0)}:null;
+ c.feed={day:kitchenDayKey(s),recipeId,quality:craft.quality,variantId:craft.variantId,craftBonus,ingredients:[...craft.ingredientIds]};c.meals=Math.min(3,c.meals+1);
+ s.staffFoodCost+=craft.ingredientIds.reduce((sum,id)=>sum+ING[id].cost,0);
  return true;
 }
 export function save(s){try{localStorage.setItem(SAVE_KEY,JSON.stringify(s))}catch{}}
@@ -127,7 +148,7 @@ if(s.service){s.service.paused ??= true;s.service.breakAt ??= 0;s.service.breakU
  const taken=new Set(active.map(o=>o.tableId).filter(x=>x!==undefined));
  for(const o of active){if(o.tableId==null){const n=[0,1].find(i=>!taken.has(i));if(n!==undefined){o.tableId=n;taken.add(n)}}o.seatId??=0;}
  }
-ensureKitchen(s);ensureCrew(s);ensureRecipeVariants(s);
+ensureKitchen(s);ensureCrew(s);ensureRecipeVariants(s);s.prepVariants??={};
 s.bagSlots ??= 6;
 if(s.field)s.field.capacity ??= s.bagSlots;
 if(s.cook)s.cook.flame ??= 0;
@@ -185,14 +206,21 @@ let synergy=effects.length>=2?25:effects.length?18:10;let technique=id?15:0;let 
 export function finishCook(s){const c=s.cook;if(!c||c.beats!==3)return false;const r=cookOutcome(c,s.tech);const fee=c.context==='research';const ok=consume(s,r.ids,c.txn);if(!ok)return false;s.lastCook=r;s.cook=null;if(fee&&r.sellable){s.recipes[r.recipeId]=Math.max(s.recipes[r.recipeId]||0,Math.min(r.quality,90));s.learned[r.recipeId]=true;}if(!fee&&s.service){s.manualCost+=materialCost(r.ids);const order=s.service.orders.find(o=>o.id===c.orderId);if(order&&order.status==='queued'){order.manual={quality:r.quality,sellable:r.sellable,recipeId:r.recipeId};order.manualMaterialsConsumed=true;order.manualTimePaid=false;}}return r;}
 export function synergyFor(menu){const rs=[...new Set(menu)].map(id=>RECIPES[id]).filter(Boolean);if(rs.some(r=>r.tags.includes('辣')&&r.tags.includes('肉'))&&rs.some(r=>r.station==='POT'))return '辛香暖胃';if(rs.filter(r=>r.tags.includes('菌香')).length>=2)return '菌香组合';return null}
 export function canMenu(s){return s.menu.length===3&&s.menu.every(id=>s.recipes[id]&&RECIPES[id]);}
-export function prepDish(s,id){if(s.phase!=='prep'||!s.menu.includes(id)||!s.recipes[id]||!canUse(s,RECIPES[id].ids))return false;if(!consume(s,RECIPES[id].ids,`prep-${s.cycle}-${s.day}-${s.step++}`))return false;s.prep[id]=(s.prep[id]||0)+1;s.prepCost+=materialCost(RECIPES[id].ids);return true}
-function customerFit(r,customerId,syn){const customer=CUSTOMERS[customerId];let fit=clamp(50+r.tags.filter(t=>customer.likes.includes(t)).length*20-Math.max(0,r.price-customer.budget)*4,0,100);if(syn==='辛香暖胃'&&customerId==='adventurer'&&r.tags.includes('辣'))fit+=10;if(syn==='菌香组合'&&(customerId==='family'||customerId==='critic')&&r.tags.includes('菌香'))fit+=10;return clamp(fit,0,100)}
+export function prepDish(s,id){
+ if(s.phase!=='prep'||!s.menu.includes(id)||!s.recipes[id])return false;
+ const craft=recipeCraftSnapshot(s,id);if(!craft||!canUse(s,craft.ingredientIds))return false;
+ if(!consume(s,craft.ingredientIds,'prep-'+s.cycle+'-'+s.day+'-'+s.step++))return false;
+ s.prep[id]=(s.prep[id]||0)+1;
+ s.prepVariants??={};(s.prepVariants[id]??=[]).push(clone(craft));
+ s.prepCost+=materialCost(craft.ingredientIds);return true;
+}
+function customerFit(r,customerId,syn,craft=null){const customer=CUSTOMERS[customerId];let fit=clamp(50+r.tags.filter(t=>customer.likes.includes(t)).length*20-Math.max(0,(craft?.price??r.price)-customer.budget)*4,0,100);if(syn==='辛香暖胃'&&customerId==='adventurer'&&r.tags.includes('辣'))fit+=10;if(syn==='菌香组合'&&(customerId==='family'||customerId==='critic')&&r.tags.includes('菌香'))fit+=10;return clamp(fit+(craft?.guestFitDelta?.[customerId]||0),0,100)}
 export function selectArrivalDish(s,o){
  // Only select food when the customer reaches the door: changing a menu at
  // intermission affects future orders, never rewrites an already seated order.
- const syn=synergyFor(s.menu),options=s.menu.filter(id=>s.recipes[id]&&RECIPES[id]).map(id=>({id,score:customerFit(RECIPES[id],o.segment,syn),price:RECIPES[id].price})).sort((a,b)=>b.score-a.score||a.price-b.price);
+ const syn=synergyFor(s.menu),options=s.menu.filter(id=>s.recipes[id]&&RECIPES[id]).map(id=>{const craft=recipeCraftSnapshot(s,id);return {id,craft,score:customerFit(RECIPES[id],o.segment,syn,craft),price:craft.price}}).sort((a,b)=>b.score-a.score||a.price-b.price);
  const themed=s.day===3&&o.id===(s.service?.judgeOrderId||s.service?.orders?.[6]?.id)?options.filter(x=>RECIPES[x.id].tags.some(t=>['辣','爆香'].includes(t))):[];
- const best=themed[0]||options[0];o.recipeId=best?.id||null;o.fit=best?.score||0;
+ const best=themed[0]||options[0];o.recipeId=best?.id||null;o.fit=best?.score||0;o.craft=best?.craft?clone(best.craft):null;
  return best;
 }
 // v0.5C: seeded nightly scenarios. Save/restore does not reroll guests or goals.
@@ -304,11 +332,11 @@ export function resumeBreak(s){
  v.breakAt=0;v.paused=false;return true;
 }
 export function breakPrep(s,recipeId){
- const v=s.service,recipe=RECIPES[recipeId];
- if(s.phase!=='service'||!v||!v.breakAt||v.breakUsed||!recipe||!s.menu.includes(recipeId)||!s.recipes[recipeId]||!canUse(s,recipe.ids))return false;
- if(!consume(s,recipe.ids,`emergency-prep-${s.cycle}-${s.day}-${v.breakAt}`))return false;
- s.prep[recipeId]=(s.prep[recipeId]||0)+1;
- v.cost+=materialCost(recipe.ids);v.breakUsed=true;v.decisionFlash=`应急预制：${recipe.name}`;v.decisionAt=v.time;
+ const v=s.service,recipe=RECIPES[recipeId],craft=recipeCraftSnapshot(s,recipeId);
+ if(s.phase!=='service'||!v||!v.breakAt||v.breakUsed||!recipe||!s.menu.includes(recipeId)||!s.recipes[recipeId]||!craft||!canUse(s,craft.ingredientIds))return false;
+ if(!consume(s,craft.ingredientIds,`emergency-prep-${s.cycle}-${s.day}-${v.breakAt}`))return false;
+ s.prep[recipeId]=(s.prep[recipeId]||0)+1;s.prepVariants??={};(s.prepVariants[recipeId]??=[]).push(clone(craft));
+ v.cost+=materialCost(craft.ingredientIds);v.breakUsed=true;v.decisionFlash=`应急预制：${recipe.name}`;v.decisionAt=v.time;
  record(s,{type:'emergency_prep',recipeId});return true;
 }
 export const SERVICE_EVENTS={
@@ -394,7 +422,7 @@ function advanceGuestMeals(s){
  for(const o of v.orders){
   if(o.status==='flying'&&v.time-o.flightAt>=DINER_TIMING.flight){
    o.status='eating';o.landedAt=v.time;o.served=v.time;
-   const price=RECIPES[o.recipeId]?.price||0;
+   const price=o.craft?.price??RECIPES[o.recipeId]?.price??0;
    if(transact(s,`sale-${o.id}`,'sale',{},price))v.income+=price;
    record(s,{type:'landed',order:o.id,recipeId:o.recipeId});
   }
