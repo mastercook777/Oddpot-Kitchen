@@ -1,0 +1,70 @@
+/* v0.7.5 full-service redesign: a SINGLE drawn restaurant world. */
+.v075-game-shell .day-strip{display:none}
+.v075-game-shell .hud{height:calc(48px + env(safe-area-inset-top));min-height:0}
+.v075-game-shell .brand strong{font-size:17px}
+.v075-game-shell .brand small{font-size:10px}
+.v075-game-shell .hud .logo{font-size:23px}
+.v075-game-shell .stage.service{flex:1;min-height:0}
+.v075-service{height:100%;overflow:hidden;touch-action:none}
+.v075-world{position:absolute;inset:0;overflow:hidden;background:#745540;touch-action:none}
+.v075-world:before{display:none!important}
+.v075-world .diner-canvas{display:block;position:absolute;inset:0;width:100%;height:100%;z-index:0;touch-action:none}
+.v075-service .diner-float-stick{pointer-events:none}
+.v075-status{position:absolute;z-index:8;top:8px;left:8px;right:8px;
+ display:flex;align-items:center;justify-content:space-between;gap:3px;
+ min-height:40px;padding:3px 6px;background:#19382edf;
+ color:#fff0cc;border:1px solid #d6a971;border-radius:12px;
+ box-shadow:0 3px 9px #0c201c80;pointer-events:none;
+ font-size:11px;font-weight:850;white-space:nowrap}
+.v075-status>*{flex:0 1 auto;min-width:0}
+.v075-status button{flex:0 0 35px;min-width:35px;min-height:33px;border-radius:9px;
+ border:1px solid #e0b77b;background:#4b674b;color:#ffe9ba;font-size:17px;pointer-events:auto}
+.v075-status button:disabled{opacity:.5}
+.v075-goal{position:absolute;z-index:6;top:55px;left:10px;right:10px;max-width:100%;
+ color:#fce4ae;background:#223d31db;padding:4px 8px;border-radius:8px;
+ font-size:10px;font-weight:750;border:1px solid #93a58270;pointer-events:none;
+ overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.v075-notification{position:absolute;z-index:10;top:84px;left:9%;right:9%;
+ font-size:11px;padding:6px;border-radius:9px;color:#fff5d1;
+ background:#8b4036ef;border:1px solid #e6ba90;text-align:center;pointer-events:none}
+.v075-notification[hidden]{display:none}
+.v075-service .diner-special{z-index:9;right:12px;bottom:18px}
+.v075-event-shade{position:absolute;inset:0;z-index:25;display:flex;align-items:center;justify-content:center;
+ padding:16px;background:#10201cd1;touch-action:manipulation}
+.v075-event-card{width:min(100%,355px);background:linear-gradient(#375744,#243e33);
+ border:2px solid #d2aa73;border-radius:16px;padding:17px 15px 15px;
+ box-shadow:0 13px 30px #071610cf;color:#f9e9c9}
+.v075-event-kicker{font-weight:800;color:#ffcc87;font-size:11px}
+.v075-event-card h2{margin:7px 0;font-size:19px;line-height:1.3}
+.v075-event-card p{margin:6px 0 13px;color:#dbe4cc;font-size:12px;line-height:1.55}
+.v075-event-options{display:flex;flex-direction:column;gap:8px}
+.v075-event-choice{display:flex;flex-direction:column;text-align:left;gap:4px;
+ width:100%;padding:11px 12px;background:#476c4f;border:1px solid #adbd82;
+ color:#fff1cd;border-radius:11px;font:inherit;touch-action:manipulation}
+.v075-event-choice strong{font-size:13px}
+.v075-event-choice small{font-size:11px;color:#dce8c7;line-height:1.35}
+.v075-event-choice:disabled{opacity:.42;filter:grayscale(1)}
+.v075-event-card>small{display:block;text-align:center;font-size:10px;color:#d6dec5;margin-top:10px}
+.v075-pause-screen,.v075-finish{position:absolute;inset:0;display:flex;z-index:22;
+ align-items:center;justify-content:center;flex-direction:column;gap:14px;
+ background:#152b25d5;color:#fff0d0;text-align:center}
+.v075-pause-screen strong{font-size:24px}
+.v075-finish h2{font-size:23px;margin:0}
+.v075-finish p{font-size:13px}
+.v075-pause-screen button,.v075-finish button{padding:12px 24px;background:#d6a469;
+ border:2px solid #f3d6a0;color:#2c3527;border-radius:12px;font-weight:850;font-size:15px}
+@media(max-width:350px){
+ .v075-status{font-size:10px;left:5px;right:5px;gap:2px}
+ .v075-goal{font-size:9px;top:51px}
+ .v075-game-shell .hud{padding-left:6px;padding-right:6px}
+ .v075-game-shell .hud-meta span{font-size:10px}
+}
+@media(max-height:640px){
+ .v075-game-shell .hud{height:calc(42px + env(safe-area-inset-top))}
+ .v075-status{top:5px;min-height:34px}
+ .v075-status button{min-height:28px}
+ .v075-goal{top:45px}
+ .v075-event-card{padding:10px 12px}
+ .v075-event-card h2{font-size:16px}
+ .v075-event-choice{padding:8px 11px}
+}
