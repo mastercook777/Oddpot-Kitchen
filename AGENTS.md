@@ -1,3 +1,10 @@
+## v0.6.3-C 正式研发四动作动效已实装 / v0.7 可移动餐馆仅设计（2026-10-11）
+
+- 炒锅翻炒、颠勺；深锅轻搅、收汁，已在 `src/cook_motion_v063.js` 和 `src/app.js` 使用「**同一真实食材元素 × 模拟时钟确定性运动**」实现，不要通过复制 emoji/DOM 贴图或 CSS transform 动画叠加重影；详见 `docs/V0.6.3C_COOK_ANIMATION_HANDOFF.md`。
+- `src/cooking_v063.css` 只保留锅体、汤水、水纹、光效等常驻层。动作反馈不修改真实料理品质、经济收益或订单规则。
+- 下一阶段可移动主厨与 active-idle 经营 **尚未开发**；仅有 `docs/V0.7_WALKABLE_RESTAURANT_DESIGN_v0.1.md` 草案。核心约束是不移动仍可自动营业；优先围绕现有两厨位、两张桌子设计四个近身自动互动点，主角体力与料理强化/装备后置，维持现有顾客、工时、库存与账本唯一结算。
+- 新动效覆盖 `tests/v063c_motion.test.js`，正式/离线 H5 均须包含 motion helper；手机 Safari 真机仍待人工试玩。
+
 ## v0.6.3-B 已实施：菜谱工艺→经营/员工/探索 + 研发结算（2026-10-11）
 
 - 正式主线开发文件与已通过自动测试详见 `docs/V0.6.3B_FULL_LOOP_AND_RESEARCH_RECEIPT.md`。**后续勿再声称工艺只收藏不生效**；已研发工艺会通过 `recipeCraftSnapshot` 确实改变顾客适配、具体菜工时、菜价、真实消耗的原料及品质，但**仅对匹配的菜谱×工艺配对**生效，通用词条不拥有 Universal Buff。
