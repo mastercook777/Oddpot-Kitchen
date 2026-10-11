@@ -1,0 +1,85 @@
+import test from 'node:test';
+import assert from 'node:assert/strict';
+import {readFileSync} from 'node:fs';
+import {spawnSync} from 'node:child_process';
+import {makeServiceLab,stepServiceLab,kitchenBusy,serviceSpecialAction,activateServiceSpecial,carriedPlate,passOrder} from '../experiments/v07-service-lab-engine.js';
+const step=(s,n)=>{for(let i=0;i<Math.ceil(n/.05);i++)stepServiceLab(s,0,0,.05);};
+test('30 seconds of continuous kitchen work and multiple orders never implicitly spends energy',()=>{
+ const s=makeServiceLab();step(s,1.1);
+ s.hero.x=.25;s.hero.y=.37;
+ step(s,30);
+ assert.ok(s.score.chefSeconds>20,'chef actually works multiple consecutive dishes');
+ assert.equal(s.hero.assists,0,'staying at station must never boost automatically');
+ assert.equal(s.hero.energy,6,'staying at station must not deplete stamina');
+ assert.equal(s.score.manualServed,0,'cooking itself does not deliver plates');
+});
+test('explicit burst requires being near the matching hot, busy station and paying exactly once',()=>{
+ const s=makeServiceLab();step(s,1.5);
+ assert.equal(serviceSpecialAction(s),null,'center of kitchen must not show stove skill');
+ assert.equal(activateServiceSpecial(s),false);
+ s.hero.x=.25;s.hero.y=.37;
+ const job=kitchenBusy(s,'WOK');assert.ok(job);
+ assert.equal(serviceSpecialAction(s)?.kind,'burst');
+ const before=job.left;
+ assert.equal(activateServiceSpecial(s),true);
+ assert.equal(job.left,Math.max(.8,before-2));
+ assert.equal(s.hero.energy,4);
+ assert.equal(activateServiceSpecial(s),false,'no duplicate same-order action');
+ assert.equal(job.boosted,true);
+});
+test('zero energy never blocks ordinary cooking; contextual button signals disabled',()=>{
+ const s=makeServiceLab();step(s,1.3);
+ s.hero.x=.25;s.hero.y=.37;s.hero.energy=0;
+ const job=kitchenBusy(s,'WOK');const before=job.left;
+ assert.equal(serviceSpecialAction(s)?.canUse,false);
+ assert.equal(activateServiceSpecial(s),false);
+ step(s,1.1);
+ assert.ok(job.left<before-.9,'normal work continues at zero stamina');
+ assert.equal(job.boosted,false);
+});
+test('rest recovers sooner than active cooking, but pause recovers neither',()=>{
+ const rest=makeServiceLab();rest.hero.energy=0;step(rest,7.5);
+ assert.equal(rest.hero.energy,1);
+ const active=makeServiceLab();step(active,1.1);
+ active.hero.energy=0;active.hero.x=.25;active.hero.y=.37;
+ kitchenBusy(active,'WOK').left=100;
+ step(active,7.5);assert.equal(active.hero.energy,0);
+ step(active,4.7);assert.equal(active.hero.energy,1);
+ active.paused=true;const t=active.time,energy=active.hero.energy;
+ step(active,20);
+ assert.equal(active.time,t);assert.equal(active.hero.energy,energy);
+});
+test('emergency comfort needs low patience AND explicit action, with one-time effect',()=>{
+ const s=makeServiceLab();step(s,2);
+ s.hero.x=.27;s.hero.y=.61;
+ const o=s.orders[0];
+ step(s,1.1);assert.equal(s.hero.energy,6);assert.equal(o.comforted,false);
+ assert.equal(serviceSpecialAction(s),null);
+ o.patience=s.time-o.arrive+8;
+ assert.equal(serviceSpecialAction(s)?.kind,'comfort');
+ assert.equal(activateServiceSpecial(s),true);
+ assert.equal(s.hero.comforts,1);assert.equal(s.hero.energy,5);
+ assert.equal(activateServiceSpecial(s),false);
+});
+test('carrying a plate suppresses both special actions and kitchen labor',()=>{
+ const s=makeServiceLab();step(s,1.1);
+ const first=s.orders[0];
+ s.hero.x=.25;s.hero.y=.37;first.left=.2;
+ step(s,.25);assert.equal(first.status,'pickup');
+ s.hero.x=.5;s.hero.y=.47;step(s,.52);
+ assert.equal(carriedPlate(s)?.id,first.id);
+ s.hero.x=.25;s.hero.y=.37;
+ assert.equal(serviceSpecialAction(s),null);
+ s.hero.x=.27;s.hero.y=.61;
+ assert.equal(serviceSpecialAction(s),null);
+});
+test('mobile lab only reveals contextual tap button; joystick movement never triggers energy spend',()=>{
+ const html=readFileSync(new URL('../experiments/v07-walkable-diner-lab.html',import.meta.url),'utf8');
+ assert.match(html,/id="special" type="button" hidden/);
+ assert.match(html,/activateServiceSpecial\(state\)/);
+ assert.match(html,/special\.hidden/);
+ assert.match(html,/e\.target\.closest\('button'\)/);
+ const js=html.split('<script type="module">')[1]?.split('</script>')[0];
+ const p=spawnSync(process.execPath,['--check','--input-type=module'],{input:js,encoding:'utf8'});
+ assert.equal(p.status,0,p.stderr);
+});
