@@ -71,3 +71,10 @@
 .v063-receipt-dock .action-row{margin:0;display:flex;flex-wrap:nowrap}
 .v063-receipt-dock .game-btn{flex:1;min-height:36px}
 @media(max-height:690px){.v063-receipt{padding:5px 9px;gap:2px}.v063-receipt-head>span{font-size:32px}.v063-receipt-head h2{font-size:17px}.v063-receipt-scroll section{padding:6px 9px}.v063-receipt-metrics{margin:4px 0}}
+
+
+.v063-craft-report{border:1px solid #719679;background:#234638;padding:9px 11px;border-radius:12px;margin:8px 12px;max-height:160px;overflow-y:auto}
+.v063-craft-report>strong{color:#ffe0ad;font-size:13px;display:block;margin-bottom:5px}
+.v063-craft-row{display:flex;flex-direction:column;gap:2px;border-bottom:1px solid #ffffff21;padding:5px 0}
+.v063-craft-row b{font-size:12px;color:#ffecd2}
+.v063-craft-row small{font-size:10px;color:#d4e8d8;line-height:1.4}
