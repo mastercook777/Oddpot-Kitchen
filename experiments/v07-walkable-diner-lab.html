@@ -4,7 +4,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover">
 <meta name="theme-color" content="#192d26">
-<title>怪味食堂 · v0.7.2 取餐上菜实验</title>
+<title>怪味食堂 · v0.7.3 主厨主动爆发实验</title>
 <style>
 :root{color-scheme:dark;font-family:system-ui,-apple-system,BlinkMacSystemFont,"PingFang SC",sans-serif}
 *{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
@@ -29,6 +29,9 @@ canvas{display:block;width:100%;height:100%;touch-action:none;user-select:none}
 .scene-hud{position:absolute;left:8px;top:8px;z-index:4;display:flex;gap:5px;max-width:96%;pointer-events:none}
 .scene-hud span{font-size:10px;font-weight:700;background:#172e26e9;color:#ffe7bd;border:1px solid #d6a56a6b;padding:5px 7px;border-radius:9px}
 #toast{position:absolute;left:8%;right:8%;bottom:8px;background:#213c30ed;border:1px solid #dbb8788c;border-radius:9px;pointer-events:none;text-align:center;font-size:11px;min-height:35px;padding:9px 6px;color:#fff0c9;line-height:1.3}
+button#special{position:absolute;z-index:7;right:10px;bottom:58px;min-height:46px;max-width:55%;padding:8px 13px;border-radius:13px;background:#8c5538;border:2px solid #ffd397;box-shadow:0 5px 14px #0a1a18aa;color:#fff1cf;font-size:13px;font-weight:850;text-shadow:0 1px 2px #3a2a25;touch-action:manipulation}
+button#special[hidden]{display:none}
+button#special:disabled{opacity:.56;filter:grayscale(.6)}
 .joystick{position:absolute;z-index:5;left:-120px;top:-120px;width:90px;height:90px;margin:-45px 0 0 -45px;border:2px solid #fff6d169;background:#b8d1ba28;box-shadow:inset 0 0 15px #c8e5b92c;border-radius:50%;pointer-events:none;opacity:0}
 .joystick.active{opacity:1}
 .knob{position:absolute;width:39px;height:39px;left:24px;top:24px;border-radius:50%;background:#f6dfa6c9;border:2px solid #fff8d8;box-shadow:0 3px 7px #0006}
@@ -43,7 +46,7 @@ canvas{display:block;width:100%;height:100%;touch-action:none;user-select:none}
 <body>
 <main>
  <header>
-  <h1>🍜 怪味食堂 · 可移动经营实验<small>v0.7.2 Lab · 取餐 → 上菜 / 安抚 → 员工分工</small></h1>
+  <h1>🍜 怪味食堂 · 可移动经营实验<small>v0.7.3 Lab · 普通工作自动 / 精力由玩家决定</small></h1>
   <button id="restart" type="button">↻ 重开本局</button>
  </header>
  <div class="mode-label">试试不同人员配置（切换会重置相同客流）</div>
@@ -64,17 +67,18 @@ canvas{display:block;width:100%;height:100%;touch-action:none;user-select:none}
   <canvas id="canvas" aria-label="可移动的餐厅，拖动屏幕移动主厨"></canvas>
   <div class="scene-hud"><span id="zone">📍 厨房通道</span><span id="work">🍳 找到有订单的厨位</span></div>
   <div id="joystick" class="joystick" aria-hidden="true"><div id="knob" class="knob"></div></div>
-  <div id="toast" role="status">厨位做菜 → 出餐台端盘 → 对应餐桌自动上菜。无菜可上时安抚顾客。</div>
+  <button id="special" type="button" hidden aria-label="主动使用精力技能"></button>
+  <div id="toast" role="status">厨位做菜 → 出餐台端盘 → 对应餐桌自动上菜。靠近自动工作；紧急加速和安抚需要主动点击技能。</div>
  </div>
  <div class="tip">
-  <div class="grow"><b>👆 和探索使用同一套动态摇杆。</b> 厨房制作 → 出餐台取菜 → 目标桌自动上菜；无菜时可安抚。取餐与上菜不耗精力；精力仅用于加速/安抚。</div>
+  <div class="grow"><b>👆 和探索使用同一套动态摇杆。</b> 厨房制作 → 出餐台取菜 → 目标桌自动上菜；无菜时可安抚。取餐与上菜不耗精力；额外加速或紧急安抚只在你主动点技能按钮时扣精力。</div>
   <button id="pause" type="button">Ⅱ 暂停</button>
  </div>
 </main>
 <script type="module">
 import {joystickVector} from '../src/controls_v041.js?v=0.5.5';
 import {pixelActor} from '../src/pixels_v041.js?v=0.5.5';
-import {makeServiceLab,stepServiceLab,snapshotLab,kitchenBusy,nearbyZone,serviceZoneIntent,carriedPlate,LAB_PASS,LAB_TABLES,LAB_STATIONS} from './v07-service-lab-engine.js';
+import {makeServiceLab,stepServiceLab,snapshotLab,kitchenBusy,nearbyZone,serviceZoneIntent,carriedPlate,activateServiceSpecial,LAB_PASS,LAB_TABLES,LAB_STATIONS} from './v07-service-lab-engine.js';
 const $=id=>document.getElementById(id);
 const canvas=$('canvas'),scene=$('scene'),ctx=canvas.getContext('2d');
 const modes={solo:{helper:false,waiter:false},helper:{helper:true,waiter:false},waiter:{helper:false,waiter:true},both:{helper:true,waiter:true}};
@@ -87,6 +91,7 @@ function reset(mode=activeMode){
 }
 document.querySelectorAll('[data-mode]').forEach(b=>b.addEventListener('click',()=>reset(b.dataset.mode)));
 $('restart').addEventListener('click',()=>reset());
+$('special').addEventListener('click',()=>{if(activateServiceSpecial(state)){display()}else{display()}});
 $('pause').addEventListener('click',()=>{state.paused=!state.paused;$('pause').textContent=state.paused?'▶ 继续':'Ⅱ 暂停';});
 document.addEventListener('visibilitychange',()=>{if(document.hidden){state.paused=true;$('pause').textContent='▶ 继续';release()}last=performance.now()});
 function release(){
@@ -188,7 +193,7 @@ function drawScene(t){
  if(carrying){circle(hero.x*w+15,hero.y*h-10,10,'#f6e9c7','#b78550');circle(hero.x*w+15,hero.y*h-10,5,'#b87946');label((carrying.table+1)+'号桌',hero.x*w,hero.y*h-37,10,'#fff3cb')}
  if(hero.zone){
   const intent=serviceZoneIntent(state),y=hero.y*h-30;
-  const captions={collect:'🍽️ 取菜中',serve:'🍽️ 上菜中',comfort:'💛 安抚中',cook:'🍳 工作中','wrong-table':'↪ 请去目标桌',carrying:'🍽️ 端着菜',wait:'等待料理'};
+  const captions={collect:'🍽️ 取菜中',serve:'🍽️ 上菜中',comfort:'🪑 陪伴顾客',cook:'🍳 正常烹饪','wrong-table':'↪ 请去目标桌',carrying:'🍽️ 端着菜',wait:'等待料理'};
   round(hero.x*w-47,y,94,16,7,'#264533','#f5ca78');label(captions[intent.action]||'移动中',hero.x*w,y+8,10)
  }
  if(state.done){rect(0,0,w,h,'#101d19bd');round(25,176,310,143,15,'#264934','#e5b579');label('🌙 营业实验完成',180,204,18);label('成功送达 '+state.score.served+' / 8',180,237,18,'#ffe3ac');
@@ -200,7 +205,12 @@ function display(){
  $('served').textContent=v.served+' / 8';
  $('lost').textContent=String(v.lost);
  $('energy').textContent=v.energy+' / '+v.maxEnergy;
- $('toast').textContent=state.messageT>0?v.message:(state.paused?'⏸ 已暂停，点击继续营业':v.finished?'可以切换员工组合再次试玩':v.carry?'将 '+v.carry.name+' 送往 '+(v.carry.table+1)+'号桌':'做菜 → 出餐台端菜 → 送到餐桌；没有菜时可安抚');
+ const special=$('special');
+ if(v.special){special.hidden=false;special.disabled=!v.special.canUse;special.textContent=v.special.label+' · ⚡'+v.special.cost;
+ special.title=v.special.details;special.setAttribute('aria-label',v.special.label+'，消耗'+v.special.cost+'点精力，'+v.special.details);}
+ else {special.hidden=true;special.disabled=false;special.textContent='';}
+
+ $('toast').textContent=state.messageT>0?v.message:(state.paused?'⏸ 已暂停，点击继续营业':v.finished?'可以切换员工组合再次试玩':v.carry?'将 '+v.carry.name+' 送往 '+(v.carry.table+1)+'号桌':'靠近自动做菜、取餐、上菜；需要精力技能时请主动点击');
  const z=v.zone;$('zone').textContent=z?(z.startsWith('TABLE')?'🪑 '+(Number(z.slice(5))+1)+'号桌':z==='PASS'?'🍽️ 出餐台':'🍳 '+(z==='WOK'?'炒锅':'深锅')):'📍 走到互动区域';
  const left=v.kitchen.WOK,right=v.kitchen.POT;
  const kitchenAlert=!state.staff.helper&&z!=='WOK'&&z!=='POT'&&state.orders.some(o=>o.status==='cooking');
