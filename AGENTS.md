@@ -1,3 +1,12 @@
+## v0.7.5 主线经营体验重构已提交（2026-10-11）
+
+- 最新实现交接：docs/V0.7.5_MAINLINE_IMPLEMENTATION.md。此前 v0.7.4 被用户拒收，新 v0.7.5 是对应的重绘/简化版，**仍须真机玩家体验验收**；下方较旧段落仅保留历史，不应据此恢复原交互。
+- 角色、桌椅、厨房灶台和交互点必须共用 src/restaurant_scene_v075.js 中 DINER_FLOOR；src/walkable_restaurant_v07.js 仅为兼容适配器。src/scenes_v04.js 统一绘制新移动经营 Canvas 场景，不能再叠加旧 DOM 锅、固定主厨或透明桌位按钮。
+- 新版经营 UI 在 src/app.js 的 service()，旧 serviceLegacy() 只服务旧存档兼容。新 UI **没有**“选择顾客 / 优先出餐 / 经营事件 / 继续迎客”底部按钮。事件自动出现并一次有效选择后直接 resumeBreak()；点击开门直接开始。
+- 主角、阿火、小芽与顾客必须使用相同 DINER_ACTOR_SCALE=1.13；人物工作状态仅图标。人物沿真实通道连续移动；取盘和上菜须有短暂读条，不能立即瞬移订单。
+- 仅 src/engine.js 管理真实 orderId、顾客耐心、制作进度和唯一 sale-orderId 事务。新营业由 RAF 单时钟驱动移动、交互与整数生产 tick；不得恢复旧 750ms 模拟时钟驱动新移动经营。
+- **游戏内版本号必须与浏览器标题/package 一致**，当前 v0.7.5；变动时记得调整 index.html 的 app.js 缓存参数，避免发布代码但用户仍加载旧脚本。
+- 回归测试包含 tests/v075_restaurant_refactor.test.js；仍需 iPhone 真机测试单人首日晚餐、员工路径、双人桌、事件流程、存档以及 320×568 小屏。
 ## v0.7.4 经营升级验收不通过；以 v0.7.5 重构审查为准（2026-10-11）
 
 - **最高优先级：** `docs/V0.7.5_RESTAURANT_REDESIGN_AUDIT_v0.1.md`（用户明确拒收正式 v0.7.4）；已合并到代码不等于体验通过。禁止继续在旧选顾客/优先级/波次三按钮底栏上打零散补丁。
