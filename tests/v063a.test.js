@@ -9,6 +9,10 @@ import {newGame,ensureRecipeVariants,activeRecipeVariant,chooseRecipeVariant,
 
 const BEEF_ONION=['beef','onion'];
 const run=(s,t)=>{let remaining=t;while(remaining>0){const n=Math.min(.07,remaining);stepLiveResearch(s,n);remaining-=n}};
+test('v0.6.3-A mainline Vite bundle builds with live cooking UI',()=>{
+ const build=spawnSync('npm',['run','build'],{cwd:new URL('..',import.meta.url).pathname,encoding:'utf8'});
+ assert.equal(build.status,0,build.stdout+'\n'+build.stderr);
+});
 test('v0.6.3-A app and all new modules have parseable ESM source',()=>{
  for(const name of ['app.js','data.js','recipe_profiles_v063.js','cooking_v063.js','engine.js']){
   const p=new URL('../src/'+name,import.meta.url).pathname;
