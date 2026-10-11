@@ -631,11 +631,13 @@ export function finishLiveResearch(s){
  s.cook=null;s.lastCook=result;
  if(result.sellable){
   const id=result.recipeId;
-  s.recipes[id]=Math.max(s.recipes[id]||0,result.quality);
-  s.learned[id]=true;
-  ensureRecipeVariants(s);
+  // The recipe did not exist before this cook: avoid inventing a fake
+  // legacy-standard variant from the brand-new quality just recorded.
+  const wasKnown=!!s.recipes[id];
   const variant=makeLiveVariant(result);
   const list=s.recipeVariants[id]||(s.recipeVariants[id]=[]);
+  s.recipes[id]=Math.max(s.recipes[id]||0,result.quality);
+  s.learned[id]=true;
   const existing=list.findIndex(v=>v.variantId===variant.variantId);
   if(existing>=0){
    if((list[existing].quality||0)<=variant.quality)list[existing]=variant;
@@ -646,7 +648,7 @@ export function finishLiveResearch(s){
    const modern=list.filter(x=>!x.legacy).sort((a,b)=>b.quality-a.quality);
    s.recipeVariants[id]=[...legacy,...modern].slice(0,8);
   }
-  if(!s.activeVariantIds[id]||s.activeVariantIds[id].startsWith('legacy-'))
+  if(!s.activeVariantIds[id]||!wasKnown||s.activeVariantIds[id].startsWith('legacy-'))
    s.activeVariantIds[id]=variant.variantId;
  }
  return result;
