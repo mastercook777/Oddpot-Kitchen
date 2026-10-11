@@ -1,6 +1,7 @@
 import {pixelActor,pixelEnemy,pixelImpact} from './pixels_v041.js?v=0.5.5';
 // Lightweight procedural game graphics: original Canvas shapes, no art pack.
 import {ING,RECIPES,CUSTOMERS} from './data.js?v=0.5.5';
+import {heroZone,waiterDeliveryPose,HERO_PASS} from './walkable_restaurant_v07.js?v=0.7';
 const color={ink:'#24382a',leaf:'#386b43',soil:'#806044',stone:'#a6b392',cream:'#f4dfb0',gold:'#dfb873'};
 function rect(c,x,y,w,h,fill){c.fillStyle=fill;c.fillRect(x,y,w,h)}
 function circle(c,x,y,r,fill){c.fillStyle=fill;c.beginPath();c.arc(x,y,r,0,Math.PI*2);c.fill()}
@@ -209,23 +210,38 @@ export function waiterStagePosition(v,t,w,h){
  return {x:lerp(home.x,target.x,p),y:lerp(home.y,target.y,p),moving:p>.01&&p<.99,action:job.type};
 }
 function paintDinerStaff(c,s,v,t,w,h){
- const staff=v?.crew||s.crew||{};
- const jobs=v?.stations||{};
- const recentThrow=(v?.events||[]).slice().reverse().find(e=>e.type==='throw'&&plateFlight(t,e.t,2).flying);
+ const staff=v?.crew||s.crew||{},jobs=v?.stations||{};
  for(let i=0;i<2;i++){
-  const x=w*(i===0?.21:.79),active=!!jobs[i===0?'WOK':'POT'];
+  const x=w*(i===0?.21:.79),busy=!!jobs[i===0?'WOK':'POT'];
   if(staff.helper?.hired&&staff.helper.station===i){
-   pixelActor(c,'helper',x+(i===0?35:-35),h*.345,DINER_ACTOR_SCALE,{walk:active?t:0,attack:active});
+   pixelActor(c,'helper',x+(i===0?35:-35),h*.345,DINER_ACTOR_SCALE,{walk:busy?t:0,attack:busy});
   }
  }
- // A deterministic, home-anchored patrol prevents the waiter teleporting
- // between guests and keeps them outside the chair collision zone.
+ if(v?.walkable&&v.hero){
+  if(staff.waiter?.hired){
+   const pos=waiterDeliveryPose(s,t);
+   pixelActor(c,'waiter',pos.x*w,pos.y*h,DINER_ACTOR_SCALE,{walk:pos.moving?t:0});
+   if(pos.plate)dish(c,pos.x*w+15,pos.y*h-13,'WOK');
+  }
+  // One authoritative movable chef. EXACT SAME scale as helper, waiter and guests.
+  const hero=v.hero,carried=v.orders.find(o=>o.id===hero.carryOrderId&&o.status==='carried');
+  const z=heroZone(hero);
+  const cooking=!carried&&(z==='WOK'||z==='POT')&&!!jobs[z];
+  pixelActor(c,'chef',hero.x*w,hero.y*h,DINER_ACTOR_SCALE,
+    {walk:hero.moving?t:0,face:hero.direction==='left'?-1:1,attack:cooking});
+  if(carried)dish(c,hero.x*w+15,hero.y*h-14,RECIPES[carried.recipeId]?.station||'WOK');
+  // Small ICON only; no status words, no floating text balloon.
+  const stateIcon=carried?'🍽️':cooking?'🍳':
+    z==='PASS'&&v.orders.some(o=>o.status==='pickup')?'🍽️':
+    z?.startsWith('TABLE')?'💛':null;
+  if(stateIcon)text(c,stateIcon,hero.x*w,hero.y*h-29,'#ffdf99',13);
+  return;
+ }
  if(staff.waiter?.hired){
   const pos=waiterStagePosition(v,t,w,h);
   pixelActor(c,'waiter',pos.x,pos.y,DINER_ACTOR_SCALE,{walk:pos.moving?t:0});
  }
- // Chef remains the same scale as all staff and guests. Throw animation
- // belongs to a specific serve event, never a looping idle gesture.
+ const recentThrow=(v?.events||[]).slice().reverse().find(e=>e.type==='throw'&&plateFlight(t,e.t,2).flying);
  pixelActor(c,'chef',w*.5,h*.34,DINER_ACTOR_SCALE,{attack:!!recentThrow,walk:jobs.WOK||jobs.POT?t:0});
 }
 export function drawDiner(canvas,s,clock,simTime=s.service?.time??clock){
@@ -258,6 +274,15 @@ export function drawDiner(canvas,s,clock,simTime=s.service?.time??clock){
  }
  // Serving is one transaction but a visible plate enters only after landing.
  const serveEvents=(v?.events||[]).filter(e=>e.type==='throw');
+ if(v?.walkable){
+  const waiting=v.orders.filter(o=>o.status==='pickup');
+  waiting.forEach((o,i)=>dish(c,w*(.5+(i-(waiting.length-1)/2)*.035),h*.425,RECIPES[o.recipeId]?.station||'WOK'));
+  // Plates delivered by feet are placed at their destination, never re-thrown.
+  for(const o of v.orders){if(!o.deliveryMode||o.tableId==null||!['flying','eating','review','served'].includes(o.status))continue;
+   const x=w*(o.tableId===0?.28:.72)+(o.seatId===0?-13:13),y=h*.60-9;
+   if(o.status!=='served'||t-(o.reviewedAt??o.served)<1.5)dish(c,x,y,RECIPES[o.recipeId]?.station||'WOK');
+  }
+ }
  for(const e of serveEvents){const o=v.orders.find(order=>order.id===e.order);if(!o||o.tableId==null)continue;
   const progress=plateFlight(t,e.t,2);if(t-e.t>8)continue;
   const center=w*(o.tableId===0?.28:.72),tx=center+(o.seatId===0?-13:13),ty=h*.60-9;
@@ -269,7 +294,7 @@ export function drawDiner(canvas,s,clock,simTime=s.service?.time??clock){
  }
  // Characters are drawn in separate chair slots after table/plate geometry.
  if(v){const occupants=v.orders.filter(o=>o.tableId!=null&&(
-   ['entering','ordering','queued','cooking','flying','eating','review'].includes(o.status)||(o.status==='served'&&t-(o.reviewedAt??o.served)<2.2)||(['left','rejected'].includes(o.status)&&Number.isFinite(o.leftAt)&&t-o.leftAt<2.5)));
+   ['entering','ordering','queued','cooking','pickup','carried','delivering','flying','eating','review'].includes(o.status)||(o.status==='served'&&t-(o.reviewedAt??o.served)<2.2)||(['left','rejected'].includes(o.status)&&Number.isFinite(o.leftAt)&&t-o.leftAt<2.5)));
   for(const o of occupants)walkGuest(c,o,v,t,w,h);
   paintDinerStaff(c,s,v,t,w,h);
   for(const bubble of dinerBubbleLayout(occupants,t,w,h))drawReviewBubble(c,bubble);
