@@ -2,6 +2,7 @@ import {joystickVector} from './controls_v041.js?v=0.5.5';
 import {ING,RECIPES,FORECAST,ROUTES,CUSTOMERS} from './data.js?v=0.6.3';
 import {LIVE_ACTIONS,LIVE_STYLES,LIVE_AFFINITY,liveRecipeId} from './cooking_v063.js?v=0.6.3';
 import {RECIPE_PROFILES} from './recipe_profiles_v063.js?v=0.6.3';
+import {livePanMotion} from './cook_motion_v063.js?v=0.6.3';
 import {PHASES,newGame,save,load,beginLiveResearch,dropLiveIngredient,performLiveAction,finishLiveResearch,stepLiveResearch,liveCookPreview,ensureRecipeVariants,activeRecipeVariant,chooseRecipeVariant,recipeCraftSnapshot,availableBento,prepareBento,today,serviceDayPlan,tableSeatState,enterField,settleField,discardFieldStack,skipField,purchase,startCook,moveTile,beat,finishCook,synergyFor,canMenu,prepDish,createService,tick,expedite,closeService,nextPhase,advanceDay,buyUpgrade,buyKitchenUpgrade,kitchenUpgradeCost,configureKitchenSlot,kitchenPreview,kitchenRefitCost,kitchenHasMenuCoverage,ensureKitchen,ensureCrew,CREW_ROLES,hireCrew,assignCrew,feedCrew,activeCrewMeal,crewEffects,buyBagUpgrade,bagUpgradePrice,canUse,setServicePaused,resumeBreak,breakPrep,setFlame,tossWok,previewHeat,moveExplorer,interactExplorer,sootheGuest,newRecipeLead,currentServiceEvent,chooseServiceEvent,swapBreakMenu,serviceGoalResult,serviceSupplyStatus} from './engine.js?v=0.5.5';
 import {startActionField,stepActionField,useFieldSkill,resolveFieldEvent} from './field_v04.js?v=0.5.5';
 import {drawField,drawDiner} from './scenes_v04.js?v=0.5.5';
@@ -149,7 +150,13 @@ function research(){const c=game.cook;
    const p=liveCookPreview(game),acts=LIVE_ACTIONS[c.vessel],order=c.dropped.map(d=>d.id),icons=c.dropped.map(d=>`<span class="v063-food-icon" data-live-icon="${d.id}">${ING[d.id].emoji}</span>`).join('');
    return [`<div class="v063-live-scene">
      <div class="v063-live-head"><b>${c.vessel==='WOK'?'🍳 炒锅 · 连续实时':'🍲 深锅 · 连续实时'}</b><span id="v063-clock">${p.elapsed.toFixed(1)}s / 19s</span></div>
-     <div class="v063-live-pan ${c.vessel==='POT'?'pot':''}" data-live-pan="true"><div class="v063-bowl"></div><div class="v063-food-layer">${icons||'<span class="v063-pan-hint">轻点下方食材下锅</span>'}</div><div class="v063-steam">♨</div></div>
+     <div class="v063-live-pan ${c.vessel==='POT'?'pot':''}" data-live-pan="true">
+       <div class="v063-bowl">${c.vessel==='POT'?'<div class="v063-broth"></div>':''}</div>
+       <div class="v063-pan-glow" aria-hidden="true"></div>
+       <div class="v063-pan-ripple" aria-hidden="true"></div>
+       <div class="v063-food-layer">${icons||'<span class="v063-pan-hint">轻点下方食材下锅</span>'}</div>
+       <div class="v063-action-indicator" aria-live="off"></div>
+       <div class="v063-steam">♨</div></div>
      <div class="v063-live-msg" id="v063-live-msg">${!c.live?'先下第一份食材，之后锅会持续加热。':`已下 ${order.length}/${c.ids.length} 种食材 · ${c.dropped.length===c.ids.length?'看看熟度，决定何时起锅':'继续按感觉下料'}`}</div>
      <div class="v063-live-tray">${c.ids.map(id=>{const d=p.indicators.find(x=>x.id===id);return `<button class="v063-drop ${d.dropped?'added':''}" data-live-drop="${id}" ${d.dropped?'disabled':''}><span>${ING[id].emoji}</span><b>${ING[id].name}</b><small data-live-status="${id}">${d.state}</small></button>`}).join('')}</div>
    </div>`,
@@ -336,11 +343,26 @@ function frame(now){const delta=Math.min(.045,(now-(lastFrame||now))/1000);lastF
    const indicators=liveCookPreview(game)?.indicators||[];
    for(const item of indicators){const node=app.querySelector('[data-live-status="'+item.id+'"]');if(node)node.textContent=item.state}
    const pan=app.querySelector('.v063-live-pan');
-   if(pan){const w=pan.clientWidth||310,h=pan.clientHeight||180;
-     for(let i=0;i<c.dropped.length;i++){const d=c.dropped[i],node=pan.querySelector('[data-live-icon="'+d.id+'"]');if(!node)continue;
-      const angle=now*.001*(c.vessel==='WOK'?1.4:.7)+i*2.43,dx=Math.cos(angle)*Math.min(w*.21,h*.25),dy=Math.sin(angle)*Math.min(w*.14,h*.19);
-      node.style.transform='translate(-50%,-50%) translate('+dx.toFixed(1)+'px,'+dy.toFixed(1)+'px)';
+   if(pan){
+     const motion=livePanMotion(c,{width:pan.clientWidth||310,height:pan.clientHeight||180});
+     const bowl=pan.querySelector('.v063-bowl');
+     if(bowl)bowl.style.transform='translate(-50%,-50%) translateY('+motion.panLift.toFixed(1)+'px) rotate('+motion.panRotation.toFixed(1)+'deg)';
+     // One authoritative motion pose per real dropped ingredient:
+     // never append animated clones, duplicate sprites or trailing frames.
+     for(const food of motion.items){
+       const node=pan.querySelector('[data-live-icon="'+food.id+'"]');if(!node)continue;
+       node.style.transform='translate(-50%,-50%) translate('+food.x.toFixed(1)+'px,'+food.y.toFixed(1)+'px) rotate('+food.rotation.toFixed(1)+'deg) scale('+food.scale.toFixed(3)+')';
      }
+     const glow=pan.querySelector('.v063-pan-glow');
+     if(glow)glow.style.opacity=motion.glow.toFixed(3);
+     const ripple=pan.querySelector('.v063-pan-ripple');
+     if(ripple){ripple.style.opacity=motion.ripple.toFixed(3);ripple.style.transform='translate(-50%,-50%) scale('+(1+motion.ripple*.36).toFixed(3)+')';}
+     const broth=pan.querySelector('.v063-broth');
+     if(broth)broth.style.transform='scale('+motion.brothScale.toFixed(3)+')';
+     const steam=pan.querySelector('.v063-steam');
+     if(steam)steam.style.transform='translateY(-'+((motion.steam-1)*12).toFixed(1)+'px) scale('+motion.steam.toFixed(2)+')';
+     const label=pan.querySelector('.v063-action-indicator');
+     if(label){label.textContent=motion.actionLabel||'';label.style.opacity=motion.actionOpacity.toFixed(3);}
    }
   }
  }
