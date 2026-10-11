@@ -54,7 +54,7 @@ for(const page of ['v06-1-freefire-cooking.html','v06-2-two-pots-cooking.html'])
   assert.equal(layer.children[1],originals[1]);
   layer.children.forEach(node=>assert.match(node.style.transform,/translate\(-50%,-50%\) translate\(/));
   // A cook animation or stir action doesn't create a second copy.
-  lab.action(page.includes('two-pots')?'flip':'stir');
+  if(page.includes('two-pots'))lab.act('flip');else lab.action('stir');
   lab.draw(7);
   assert.equal(layer.children.length,2);
   assert.equal(layer.children[0],originals[0]);
@@ -67,7 +67,7 @@ for(const page of ['v06-1-freefire-cooking.html','v06-2-two-pots-cooking.html'])
 test('v0.6.2 pot still renders both foods after stirring and reducing',()=>{
  const {lab,nodes}=openLab('v06-2-two-pots-cooking.html');
  lab.state.vessel='pot';lab.start();lab.drop('onion');lab.drop('beef');
- lab.action('gentle');lab.action('reduce');
+ lab.act('gentle');lab.act('reduce');
  for(let i=0;i<20;i++)lab.draw(2+i*.1);
  assert.equal(nodes.get('pan-food-layer').children.length,2);
  assert.equal(nodes.get('pan-dom-surface').classList.contains('pot'),true);
