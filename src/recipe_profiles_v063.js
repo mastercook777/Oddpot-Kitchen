@@ -1,5 +1,5 @@
-// v0.6.3-A: curated recipe × technique metadata. Design-only payoffs until v0.6.3-B.
-// Keep engine time, price and guest fit unchanged; metadata powers the cookbook.
+// v0.6.3-A: curated recipe × technique metadata. Curated benefits now resolved per recipe/technique in v0.6.3-B.
+// The engine applies these per-recipe overrides at order snapshot, never as universal style buffs.
 export const RECIPE_PROFILES = {
   "chili_meat": {
     "id": "chili_meat",
