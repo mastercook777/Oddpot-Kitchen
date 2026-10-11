@@ -1,0 +1,1014 @@
+{
+  "schemaVersion": "v0.6.3-a-design-v0.1",
+  "status": "design_only_not_imported_by_game",
+  "authoredAt": "2026-10-11",
+  "sources": {
+    "existing": "src/data.js (12 baseline records)",
+    "prototype": "experiments/v06-2-two-pots-cooking.html"
+  },
+  "styleLabels": {
+    "home": "家常",
+    "burst": "爆炒",
+    "aroma": "香味十足",
+    "pot_home": "家常炖煮",
+    "gentle": "清润慢炖",
+    "reduced": "浓香收汁",
+    "home_even": "家常·均匀翻炒"
+  },
+  "affinityLevels": {
+    "signature": "招牌",
+    "viable": "适合",
+    "ordinary": "普通",
+    "off": "不契合"
+  },
+  "notes": [
+    "Guest deltas apply at most once after base recipe fit; price can affect budget fit.",
+    "Only ingredient events produce styles; techniqueProfile influences payoff not tag generation.",
+    "Existing material cost is derived from actual ING.cost and ingredient signature.",
+    "Business/crew/bento integration has NOT been implemented."
+  ],
+  "profiles": [
+    {
+      "id": "chili_meat",
+      "name": "辣椒炒肉",
+      "origin": "existing",
+      "ingredients": [
+        "chicken",
+        "chili"
+      ],
+      "vessel": "WOK",
+      "baseTimeSeconds": 8,
+      "basePriceCoins": 28,
+      "baseTasteTags": [
+        "辣",
+        "肉",
+        "鲜"
+      ],
+      "personality": "靠火椒与肉的辛香锅气取胜；可用牛肉替代鸡肉，但出餐真实扣料必须跟研发版本一致。",
+      "styles": [
+        {
+          "code": "burst",
+          "affinity": "signature",
+          "guestFitDelta": {
+            "adventurer": 7,
+            "critic": 6
+          },
+          "timeDeltaSeconds": 0,
+          "priceDeltaCoins": 0,
+          "culinaryReason": "辛香与锅气结合，冒险者和评论家更容易认可，不因爆炒而自动加速。",
+          "playerCue": "肉与火椒同锅后颠勺，肉仍必须熟透。"
+        },
+        {
+          "code": "home",
+          "affinity": "viable",
+          "guestFitDelta": {
+            "family": 3,
+            "adventurer": 1
+          },
+          "timeDeltaSeconds": 0,
+          "priceDeltaCoins": 0,
+          "culinaryReason": "保留温和的肉香，适合不追求强烈锅气的客人。",
+          "playerCue": "稳妥翻炒并充分熟制，可以不颠勺。"
+        },
+        {
+          "code": "aroma",
+          "affinity": "viable",
+          "guestFitDelta": {
+            "critic": 5,
+            "regular": 2
+          },
+          "timeDeltaSeconds": 1,
+          "priceDeltaCoins": 0,
+          "culinaryReason": "提前释出火椒香气，增加香味但多一道慢煸工序。",
+          "playerCue": "火椒先入锅形成底香，后下肉并翻炒。"
+        }
+      ],
+      "crewSpecific": null,
+      "bentoSpecific": {
+        "type": "spring_shield",
+        "base": "首次热泉喷气环境伤害 -1；仅一次。",
+        "preferredStyle": "burst",
+        "enhance": "爆炒辣椒炒肉把保护范围扩展至首次火椒怪弹丸；两者共享一次触发，不叠加。"
+      },
+      "caution": "鸡肉+火椒与牛肉+火椒属于同菜不同原料变体，不能错误固定扣鸡肉。"
+    },
+    {
+      "id": "mushroom_stir",
+      "name": "菌香小炒",
+      "origin": "existing",
+      "ingredients": [
+        "mushroom",
+        "garlic"
+      ],
+      "vessel": "WOK",
+      "baseTimeSeconds": 6,
+      "basePriceCoins": 18,
+      "baseTasteTags": [
+        "菌香",
+        "鲜",
+        "香"
+      ],
+      "personality": "蒜香衬托菌菇鲜味，重视起香而非强行锅气。",
+      "styles": [
+        {
+          "code": "aroma",
+          "affinity": "signature",
+          "guestFitDelta": {
+            "regular": 7,
+            "critic": 5
+          },
+          "timeDeltaSeconds": 0,
+          "priceDeltaCoins": 1,
+          "culinaryReason": "蒜瓣先入锅煸香，菌菇吸附香味；可形成小幅招牌溢价。",
+          "playerCue": "蒜先下，菌菇后入，翻炒促进香气融合。"
+        },
+        {
+          "code": "home",
+          "affinity": "viable",
+          "guestFitDelta": {
+            "family": 4,
+            "regular": 4
+          },
+          "timeDeltaSeconds": 0,
+          "priceDeltaCoins": 0,
+          "culinaryReason": "保留菌菇本味，普通客群更易接受。",
+          "playerCue": "菌菇先入，蒜后加，不必强行追求浓香。"
+        }
+      ],
+      "crewSpecific": {
+        "role": "helper",
+        "style": "aroma",
+        "bonus": 1,
+        "reason": "阿火在对应炒锅岗位受此菜蒜香工艺启发；受现有 4s 总上限限制。"
+      },
+      "bentoSpecific": {
+        "type": "mushroom_gather",
+        "base": "首次有效采集幽光蘑菇 +1，必须遵守背包与单堆上限。",
+        "preferredStyle": "aroma",
+        "enhance": "不追加数量，只改善该菜与采菇效果的呈现反馈。"
+      },
+      "caution": "v0.6.2 的香味识别当前偏肉类，必须让蒜+菌菇也能合理识别香味路线。"
+    },
+    {
+      "id": "chicken_stew",
+      "name": "蘑菇焖鸡",
+      "origin": "existing",
+      "ingredients": [
+        "chicken",
+        "mushroom"
+      ],
+      "vessel": "POT",
+      "baseTimeSeconds": 12,
+      "basePriceCoins": 24,
+      "baseTasteTags": [
+        "温和",
+        "菌香",
+        "鲜"
+      ],
+      "personality": "重视柔和菌汤与鸡肉熟度，慢炖招牌不等于每道深锅菜都偏清润。",
+      "styles": [
+        {
+          "code": "gentle",
+          "affinity": "signature",
+          "guestFitDelta": {
+            "family": 7,
+            "regular": 4
+          },
+          "timeDeltaSeconds": 0,
+          "priceDeltaCoins": 0,
+          "culinaryReason": "轻搅保持鸡肉温和与菌汤层次，是本菜招牌味型。",
+          "playerCue": "鸡与菌菇尽早同锅，轻搅并待鸡肉熟透。"
+        },
+        {
+          "code": "reduced",
+          "affinity": "viable",
+          "guestFitDelta": {
+            "family": 2,
+            "critic": 4
+          },
+          "timeDeltaSeconds": 1,
+          "priceDeltaCoins": 1,
+          "culinaryReason": "收汁走浓香路线，稍增工序并允许有限溢价，家庭偏好反而不及清润。",
+          "playerCue": "先充分慢炖，后收汁，避免过早收汁。"
+        }
+      ],
+      "crewSpecific": {
+        "role": "waiter",
+        "style": "gentle",
+        "bonus": 1,
+        "reason": "小芽在已有温和菜基础上增加最多 1s 耐心，但总计不得超过 12s。"
+      },
+      "bentoSpecific": {
+        "type": "first_enemy_hit",
+        "base": "首次真正受到敌人造成的伤害时抵消 1 点；仅一次。",
+        "preferredStyle": "gentle",
+        "enhance": "清润慢炖版本可同时适用于远程和近战的第一下敌人伤害；其他工艺仅适用近战。"
+      },
+      "caution": "不因深锅慢炖而默认提高售价。"
+    },
+    {
+      "id": "veg_stir",
+      "name": "清炒双蔬",
+      "origin": "existing",
+      "ingredients": [
+        "cabbage",
+        "mushroom"
+      ],
+      "vessel": "WOK",
+      "baseTimeSeconds": 6,
+      "basePriceCoins": 16,
+      "baseTasteTags": [
+        "清爽",
+        "菌香"
+      ],
+      "personality": "清爽爽脆是卖点，过度颠勺未必增益。",
+      "styles": [
+        {
+          "code": "home",
+          "affinity": "signature",
+          "guestFitDelta": {
+            "regular": 7,
+            "family": 4
+          },
+          "timeDeltaSeconds": 0,
+          "priceDeltaCoins": 0,
+          "culinaryReason": "保留卷心菜与菌菇的口感和原味，适合街坊。",
+          "playerCue": "合理错开下料，避免卷心菜过久受热。"
+        },
+        {
+          "code": "home_even",
+          "affinity": "viable",
+          "guestFitDelta": {
+            "regular": 4,
+            "adventurer": 2
+          },
+          "timeDeltaSeconds": -1,
+          "priceDeltaCoins": 0,
+          "culinaryReason": "反复合理翻动的工艺能减少这道快炒菜的自动制作工序；不代表所有家常都加速。",
+          "playerCue": "两菜同锅后使用翻炒，控制成熟度。"
+        }
+      ],
+      "crewSpecific": {
+        "role": "waiter",
+        "style": "home",
+        "bonus": 1,
+        "reason": "清爽家常版本让小芽额外增加少量接待耐心，保留 12s 上限。"
+      },
+      "bentoSpecific": null,
+      "caution": "家常+均匀翻炒需作为复合工艺变体识别，不能只凭主词条家常覆盖掉不同操作。"
+    },
+    {
+      "id": "flame_beef",
+      "name": "爆炎牛肉",
+      "origin": "existing",
+      "ingredients": [
+        "beef",
+        "chili",
+        "garlic"
+      ],
+      "vessel": "WOK",
+      "baseTimeSeconds": 10,
+      "basePriceCoins": 34,
+      "baseTasteTags": [
+        "辣",
+        "肉",
+        "香",
+        "爆香"
+      ],
+      "personality": "隐藏招牌菜：火椒、蒜、牛肉构成高风险高回报的猛烈香气。",
+      "styles": [
+        {
+          "code": "burst",
+          "affinity": "signature",
+          "guestFitDelta": {
+            "adventurer": 8,
+            "critic": 8
+          },
+          "timeDeltaSeconds": 0,
+          "priceDeltaCoins": 1,
+          "culinaryReason": "完整锅气才能体现爆炎招牌，允许有限溢价，受预算约束。",
+          "playerCue": "火椒/蒜形成底香，牛肉熟度足够且同锅及时颠勺。"
+        },
+        {
+          "code": "aroma",
+          "affinity": "viable",
+          "guestFitDelta": {
+            "critic": 6,
+            "regular": 3
+          },
+          "timeDeltaSeconds": 1,
+          "priceDeltaCoins": 0,
+          "culinaryReason": "强化蒜辣香味，操作更温和但需要多一步煸香。",
+          "playerCue": "蒜或火椒先入，后加牛肉翻炒。"
+        },
+        {
+          "code": "home",
+          "affinity": "ordinary",
+          "guestFitDelta": {
+            "family": 1
+          },
+          "timeDeltaSeconds": 0,
+          "priceDeltaCoins": 0,
+          "culinaryReason": "依然可以做出普通可售版本，无法享有完整招牌特征。",
+          "playerCue": "正常熟制且不触发专门锅气反应。"
+        }
+      ],
+      "crewSpecific": null,
+      "bentoSpecific": {
+        "type": "danger_speed",
+        "base": "野牛草场等风险线的移动速度 +5%（整个探索仅一次快照，不叠乘）。",
+        "preferredStyle": "burst",
+        "enhance": "爆炒招牌工艺可提高到 +7%，不是所有爆炒菜都加速。"
+      },
+      "caution": "原主线本菜是 hidden，整合后应以招牌工艺首发现或额外线索保留惊喜，不能悄悄变成普通列表初始全亮。"
+    },
+    {
+      "id": "garlic_beef",
+      "name": "焦香蒜牛",
+      "origin": "existing",
+      "ingredients": [
+        "beef",
+        "garlic"
+      ],
+      "vessel": "WOK",
+      "baseTimeSeconds": 9,
+      "basePriceCoins": 32,
+      "baseTasteTags": [
+        "肉",
+        "香",
+        "鲜"
+      ],
+      "personality": "牛肉的焦香和蒜香都有独立价值，不宜只有一条唯一解。",
+      "styles": [
+        {
+          "code": "aroma",
+          "affinity": "signature",
+          "guestFitDelta": {
+            "critic": 7,
+            "regular": 3
+          },
+          "timeDeltaSeconds": 0,
+          "priceDeltaCoins": 0,
+          "culinaryReason": "蒜香更突出，对关注香气的食评家适配更高。",
+          "playerCue": "蒜先入锅，牛肉后下并翻炒。"
+        },
+        {
+          "code": "burst",
+          "affinity": "signature",
+          "guestFitDelta": {
+            "adventurer": 6,
+            "critic": 3
+          },
+          "timeDeltaSeconds": -1,
+          "priceDeltaCoins": 0,
+          "culinaryReason": "牛肉直接爆炒形成焦边，这道菜的快炒工艺确实可节省一道工序。",
+          "playerCue": "两样同锅时颠勺并保留肉的熟度。"
+        },
+        {
+          "code": "home",
+          "affinity": "viable",
+          "guestFitDelta": {
+            "family": 2,
+            "adventurer": 2
+          },
+          "timeDeltaSeconds": 0,
+          "priceDeltaCoins": 0,
+          "culinaryReason": "吃肉本味的可靠家常版本，不必追求华丽效果。",
+          "playerCue": "正常熟制、不一定要求动作。"
+        }
+      ],
+      "crewSpecific": {
+        "role": "helper",
+        "style": "aroma",
+        "bonus": 1,
+        "reason": "阿火仅在投喂该菜的蒜香型且未封顶时额外节省 1s。"
+      },
+      "bentoSpecific": null,
+      "caution": "本菜双招牌是刻意设计的多最优场景，前者偏香气，后者偏工序。"
+    },
+    {
+      "id": "spicy_mushroom",
+      "name": "火山菌菇",
+      "origin": "existing",
+      "ingredients": [
+        "chili",
+        "mushroom"
+      ],
+      "vessel": "WOK",
+      "baseTimeSeconds": 7,
+      "basePriceCoins": 21,
+      "baseTasteTags": [
+        "辣",
+        "菌香"
+      ],
+      "personality": "菌菇吸辣，香气层次高于极限锅气。",
+      "styles": [
+        {
+          "code": "aroma",
+          "affinity": "signature",
+          "guestFitDelta": {
+            "critic": 7,
+            "regular": 3
+          },
+          "timeDeltaSeconds": 0,
+          "priceDeltaCoins": 0,
+          "culinaryReason": "火椒先出香再融入菌菇，形成辛香菌味。",
+          "playerCue": "火椒先入、菌菇后入，再翻炒。"
+        },
+        {
+          "code": "home",
+          "affinity": "viable",
+          "guestFitDelta": {
+            "regular": 6,
+            "family": 2
+          },
+          "timeDeltaSeconds": 0,
+          "priceDeltaCoins": 0,
+          "culinaryReason": "减少猛辣表达，保留菌菇鲜味。",
+          "playerCue": "菌菇先入，最后加入火椒，及时起锅。"
+        }
+      ],
+      "crewSpecific": null,
+      "bentoSpecific": null,
+      "caution": "需要允许素菜搭配通过香料早入锅识别「香味十足」，现有 v0.6.2 不能稳定识别。"
+    },
+    {
+      "id": "onion_chicken",
+      "name": "洋葱烩鸡",
+      "origin": "existing",
+      "ingredients": [
+        "chicken",
+        "onion"
+      ],
+      "vessel": "POT",
+      "baseTimeSeconds": 11,
+      "basePriceCoins": 26,
+      "baseTasteTags": [
+        "温和",
+        "肉",
+        "甜香"
+      ],
+      "personality": "鸡肉熟透与洋葱甜味融合，更宜家庭餐。",
+      "styles": [
+        {
+          "code": "gentle",
+          "affinity": "signature",
+          "guestFitDelta": {
+            "family": 7,
+            "regular": 3
+          },
+          "timeDeltaSeconds": 0,
+          "priceDeltaCoins": 0,
+          "culinaryReason": "轻搅保留温和甜香。",
+          "playerCue": "洋葱先下、鸡肉随后入锅，轻搅。"
+        },
+        {
+          "code": "reduced",
+          "affinity": "viable",
+          "guestFitDelta": {
+            "family": 3,
+            "adventurer": 3
+          },
+          "timeDeltaSeconds": 1,
+          "priceDeltaCoins": 1,
+          "culinaryReason": "浓汁更下饭但稍减轻盈感；适合愿意等待的客人。",
+          "playerCue": "鸡肉已熟后收汁，避免过早收汁。"
+        }
+      ],
+      "crewSpecific": null,
+      "bentoSpecific": null,
+      "caution": "售价调整会被家庭顾客 28 金币预算约束，不是每做浓香都能赚更多。"
+    },
+    {
+      "id": "potato_stew",
+      "name": "地精土豆煲",
+      "origin": "existing",
+      "ingredients": [
+        "potato",
+        "onion"
+      ],
+      "vessel": "POT",
+      "baseTimeSeconds": 11,
+      "basePriceCoins": 20,
+      "baseTasteTags": [
+        "饱腹",
+        "温和"
+      ],
+      "personality": "绵软、饱腹、温润的家常根茎料理。",
+      "styles": [
+        {
+          "code": "pot_home",
+          "affinity": "signature",
+          "guestFitDelta": {
+            "family": 6,
+            "adventurer": 3
+          },
+          "timeDeltaSeconds": 0,
+          "priceDeltaCoins": 0,
+          "culinaryReason": "家常土豆煲的核心是软糯与稳定感。",
+          "playerCue": "先下土豆再用洋葱提味，慢煮至熟透。"
+        },
+        {
+          "code": "reduced",
+          "affinity": "viable",
+          "guestFitDelta": {
+            "adventurer": 6,
+            "family": 2
+          },
+          "timeDeltaSeconds": 1,
+          "priceDeltaCoins": 1,
+          "culinaryReason": "更厚实的浓汁适合饱腹诉求，延长收汁工序。",
+          "playerCue": "土豆充分熟透后再收汁。"
+        }
+      ],
+      "crewSpecific": null,
+      "bentoSpecific": null,
+      "caution": "土豆熟度需要真实达到阈值，轻易提前起锅不能只因触发招牌而免罚。"
+    },
+    {
+      "id": "chili_potato",
+      "name": "爆辣脆薯",
+      "origin": "existing",
+      "ingredients": [
+        "potato",
+        "chili"
+      ],
+      "vessel": "WOK",
+      "baseTimeSeconds": 7,
+      "basePriceCoins": 23,
+      "baseTasteTags": [
+        "辣",
+        "饱腹"
+      ],
+      "personality": "外脆内熟，快速颠勺只对这道菜合理地提升工序效率。",
+      "styles": [
+        {
+          "code": "burst",
+          "affinity": "signature",
+          "guestFitDelta": {
+            "adventurer": 7,
+            "critic": 4
+          },
+          "timeDeltaSeconds": -1,
+          "priceDeltaCoins": 0,
+          "culinaryReason": "土豆与火椒共同爆香、形成干爽脆薯，省去慢收工序。",
+          "playerCue": "土豆充分熟制后，火椒与薯块同锅颠勺。"
+        },
+        {
+          "code": "home",
+          "affinity": "viable",
+          "guestFitDelta": {
+            "family": 2,
+            "adventurer": 3
+          },
+          "timeDeltaSeconds": 0,
+          "priceDeltaCoins": 0,
+          "culinaryReason": "更柔和的家常薯块，仍是可售料理。",
+          "playerCue": "土豆先下至熟，火椒最后提味。"
+        }
+      ],
+      "crewSpecific": null,
+      "bentoSpecific": null,
+      "caution": "爆炒并不豁免土豆的熟度检查。"
+    },
+    {
+      "id": "woodland_pot",
+      "name": "森林浓汤",
+      "origin": "existing",
+      "ingredients": [
+        "mushroom",
+        "potato"
+      ],
+      "vessel": "POT",
+      "baseTimeSeconds": 13,
+      "basePriceCoins": 23,
+      "baseTasteTags": [
+        "菌香",
+        "温和",
+        "饱腹"
+      ],
+      "personality": "浓稠与菌香是本菜独特记忆点，收汁才是招牌。",
+      "styles": [
+        {
+          "code": "reduced",
+          "affinity": "signature",
+          "guestFitDelta": {
+            "family": 6,
+            "regular": 6
+          },
+          "timeDeltaSeconds": 1,
+          "priceDeltaCoins": 1,
+          "culinaryReason": "足够炖煮后收汁，让浓厚菌汤体现特色，有限增价。",
+          "playerCue": "两食材充分熟制后进行收汁。"
+        },
+        {
+          "code": "gentle",
+          "affinity": "viable",
+          "guestFitDelta": {
+            "family": 5,
+            "regular": 4
+          },
+          "timeDeltaSeconds": 0,
+          "priceDeltaCoins": 0,
+          "culinaryReason": "轻盈菌汤，价格更亲民而不追求浓稠。",
+          "playerCue": "保持微沸、及时轻搅后起锅。"
+        }
+      ],
+      "crewSpecific": null,
+      "bentoSpecific": {
+        "type": "mushroom_gather",
+        "base": "首次有效采集幽光蘑菇 +1，遵守背包单堆容量。",
+        "preferredStyle": "reduced",
+        "enhance": "浓香收汁版本可把第一次菌菇或土豆采集中的一次 +1 作为目标，不叠加第二份奖励。"
+      },
+      "caution": "浓香不等于所有菜都可卖更贵，仅本菜定义了招牌溢价。"
+    },
+    {
+      "id": "harvest_stir",
+      "name": "丰收三拼",
+      "origin": "existing",
+      "ingredients": [
+        "cabbage",
+        "onion",
+        "potato"
+      ],
+      "vessel": "WOK",
+      "baseTimeSeconds": 10,
+      "basePriceCoins": 29,
+      "baseTasteTags": [
+        "清爽",
+        "温和",
+        "饱腹"
+      ],
+      "personality": "分批照顾土豆和叶菜熟度，是时序下料教学菜。",
+      "styles": [
+        {
+          "code": "home",
+          "affinity": "signature",
+          "guestFitDelta": {
+            "family": 6,
+            "regular": 4
+          },
+          "timeDeltaSeconds": 0,
+          "priceDeltaCoins": 0,
+          "culinaryReason": "兼顾绵软土豆与爽脆叶菜，是稳健家常的代表。",
+          "playerCue": "土豆先下锅，洋葱和包菜稍后加入。"
+        },
+        {
+          "code": "home_even",
+          "affinity": "viable",
+          "guestFitDelta": {
+            "regular": 6,
+            "adventurer": 2
+          },
+          "timeDeltaSeconds": -1,
+          "priceDeltaCoins": 0,
+          "culinaryReason": "熟练翻炒使三种食材受热更均匀、自动出餐略快。",
+          "playerCue": "不同时间投料，三菜同锅后翻炒。"
+        }
+      ],
+      "crewSpecific": null,
+      "bentoSpecific": {
+        "type": "first_plant_gather",
+        "base": "首次采集卷心菜或洋葱 +1（只取一次，受容量限制）。",
+        "preferredStyle": "home",
+        "enhance": "家常工艺可将土豆作为同一次奖励的允许目标，但不增加次数。"
+      },
+      "caution": "三食材很容易有时间差，不能要求三样同时达到理想火候才算成功。"
+    },
+    {
+      "id": "wok_beef_onion",
+      "name": "葱爆牛肉",
+      "origin": "new",
+      "ingredients": [
+        "beef",
+        "onion"
+      ],
+      "vessel": "WOK",
+      "baseTimeSeconds": 9,
+      "basePriceCoins": 30,
+      "baseTasteTags": [
+        "肉",
+        "鲜",
+        "甜香"
+      ],
+      "personality": "洋葱爆香突出牛肉锅气，招牌与柔和做法有不同客群。",
+      "styles": [
+        {
+          "code": "burst",
+          "affinity": "signature",
+          "guestFitDelta": {
+            "adventurer": 7,
+            "critic": 4
+          },
+          "timeDeltaSeconds": -1,
+          "priceDeltaCoins": 0,
+          "culinaryReason": "这道菜的爆炒路线确有快炒工序优势，偏爱肉类和锅气者更喜欢。",
+          "playerCue": "洋葱先下并充分出香，牛肉跟入后颠勺。"
+        },
+        {
+          "code": "aroma",
+          "affinity": "viable",
+          "guestFitDelta": {
+            "critic": 7,
+            "family": 2
+          },
+          "timeDeltaSeconds": 0,
+          "priceDeltaCoins": 0,
+          "culinaryReason": "甜香更突出，迎合关注香气的客群。",
+          "playerCue": "洋葱提前入锅，主烹后翻炒但不必颠勺。"
+        },
+        {
+          "code": "home",
+          "affinity": "ordinary",
+          "guestFitDelta": {
+            "adventurer": 2
+          },
+          "timeDeltaSeconds": 0,
+          "priceDeltaCoins": 0,
+          "culinaryReason": "家常做法可售且未必低品质，但缺乏招牌风味。",
+          "playerCue": "牛肉先下，随后加入洋葱并熟制。"
+        }
+      ],
+      "crewSpecific": {
+        "role": "helper",
+        "style": "burst",
+        "bonus": 1,
+        "reason": "阿火在炒锅岗位吃此特定葱爆牛肉可得到最多额外 1s 效率，受总上限限制。"
+      },
+      "bentoSpecific": {
+        "type": "risk_move",
+        "base": "本次危险路线移动速度 +5%，不影响安全线。",
+        "preferredStyle": "burst",
+        "enhance": "本菜的招牌爆炒工艺可提高到 +7%，不叠乘其它速度源。"
+      },
+      "caution": "新菜，售价/工时为策划候选，不得写作主线已有定值。"
+    },
+    {
+      "id": "pot_beef_onion",
+      "name": "洋葱炖牛肉",
+      "origin": "new",
+      "ingredients": [
+        "beef",
+        "onion"
+      ],
+      "vessel": "POT",
+      "baseTimeSeconds": 13,
+      "basePriceCoins": 28,
+      "baseTasteTags": [
+        "肉",
+        "甜香",
+        "温和"
+      ],
+      "personality": "温润口味和浓汁饱腹是两条有意义的方向。",
+      "styles": [
+        {
+          "code": "gentle",
+          "affinity": "signature",
+          "guestFitDelta": {
+            "family": 8,
+            "regular": 2
+          },
+          "timeDeltaSeconds": 0,
+          "priceDeltaCoins": 0,
+          "culinaryReason": "适合家庭预算内的温润牛肉洋葱汤。",
+          "playerCue": "洋葱与牛肉在锅内相互融合，轻搅后充分熟制。"
+        },
+        {
+          "code": "reduced",
+          "affinity": "signature",
+          "guestFitDelta": {
+            "adventurer": 5,
+            "family": 3
+          },
+          "timeDeltaSeconds": 1,
+          "priceDeltaCoins": 1,
+          "culinaryReason": "更浓更下饭但多一步收汁，并使售价超过家庭预算 28，引入真实经营取舍。",
+          "playerCue": "牛肉熟透后才收汁。"
+        },
+        {
+          "code": "pot_home",
+          "affinity": "ordinary",
+          "guestFitDelta": {
+            "family": 2
+          },
+          "timeDeltaSeconds": 0,
+          "priceDeltaCoins": 0,
+          "culinaryReason": "简朴可靠的家庭炖牛，少一些特色。",
+          "playerCue": "自然慢煮且保证熟度。"
+        }
+      ],
+      "crewSpecific": null,
+      "bentoSpecific": null,
+      "caution": "家常与浓厚是双招牌，并非浓香总胜。"
+    },
+    {
+      "id": "wok_garlic_cabbage",
+      "name": "蒜香包菜",
+      "origin": "new",
+      "ingredients": [
+        "cabbage",
+        "garlic"
+      ],
+      "vessel": "WOK",
+      "baseTimeSeconds": 6,
+      "basePriceCoins": 17,
+      "baseTasteTags": [
+        "清爽",
+        "香"
+      ],
+      "personality": "蒜香衬托包菜清爽，不应将猛烈爆炒当成默认最优。",
+      "styles": [
+        {
+          "code": "aroma",
+          "affinity": "signature",
+          "guestFitDelta": {
+            "regular": 7,
+            "critic": 5
+          },
+          "timeDeltaSeconds": 0,
+          "priceDeltaCoins": 0,
+          "culinaryReason": "蒜瓣起香后加入包菜，突出香味而不破坏清爽。",
+          "playerCue": "蒜先入锅，包菜稍后加入并翻炒。"
+        },
+        {
+          "code": "home",
+          "affinity": "viable",
+          "guestFitDelta": {
+            "family": 5,
+            "regular": 3
+          },
+          "timeDeltaSeconds": 0,
+          "priceDeltaCoins": 0,
+          "culinaryReason": "包菜自然清甜，家庭客更好接受。",
+          "playerCue": "包菜先入，蒜后下，合理熟制。"
+        },
+        {
+          "code": "home_even",
+          "affinity": "viable",
+          "guestFitDelta": {
+            "regular": 5
+          },
+          "timeDeltaSeconds": -1,
+          "priceDeltaCoins": 0,
+          "culinaryReason": "均匀翻炒成为一个快速清炒版本。",
+          "playerCue": "两样下锅后翻炒一次。"
+        }
+      ],
+      "crewSpecific": null,
+      "bentoSpecific": null,
+      "caution": "不应因家常包菜没有爆炒而固定给负面品质。"
+    },
+    {
+      "id": "pot_beef_potato",
+      "name": "牛肉土豆煲",
+      "origin": "new",
+      "ingredients": [
+        "beef",
+        "potato"
+      ],
+      "vessel": "POT",
+      "baseTimeSeconds": 13,
+      "basePriceCoins": 29,
+      "baseTasteTags": [
+        "肉",
+        "饱腹",
+        "温和"
+      ],
+      "personality": "大份饱腹，突出牛肉与土豆的炖煮层次。",
+      "styles": [
+        {
+          "code": "reduced",
+          "affinity": "signature",
+          "guestFitDelta": {
+            "adventurer": 7,
+            "family": 1
+          },
+          "timeDeltaSeconds": 1,
+          "priceDeltaCoins": 1,
+          "culinaryReason": "浓汁下饭，增加工序与售价，家庭预算可能限制点单。",
+          "playerCue": "土豆和牛肉熟透后才收汁。"
+        },
+        {
+          "code": "gentle",
+          "affinity": "viable",
+          "guestFitDelta": {
+            "family": 7,
+            "regular": 2
+          },
+          "timeDeltaSeconds": 0,
+          "priceDeltaCoins": 0,
+          "culinaryReason": "轻搅慢炖更温和，适合家庭客。",
+          "playerCue": "肉与土豆同锅轻搅，待完全熟制。"
+        }
+      ],
+      "crewSpecific": null,
+      "bentoSpecific": {
+        "type": "first_enemy_hit",
+        "base": "首次敌人接触类伤害 -1；仅一次。",
+        "preferredStyle": "reduced",
+        "enhance": "该菜浓厚工艺可使一次防护作用于第一发远程攻击（仍只触发一次）。"
+      },
+      "caution": "此菜因售价 29 已超过家庭预算 28，经营时要看预算造成的适配衰减。"
+    },
+    {
+      "id": "wok_chicken_mushroom",
+      "name": "山菌炒鸡",
+      "origin": "new",
+      "ingredients": [
+        "chicken",
+        "mushroom"
+      ],
+      "vessel": "WOK",
+      "baseTimeSeconds": 8,
+      "basePriceCoins": 24,
+      "baseTasteTags": [
+        "肉",
+        "鲜",
+        "菌香"
+      ],
+      "personality": "鸡肉与蘑菇共同鲜味，不必添加蒜也能形成锅内香气。",
+      "styles": [
+        {
+          "code": "aroma",
+          "affinity": "signature",
+          "guestFitDelta": {
+            "regular": 7,
+            "family": 4
+          },
+          "timeDeltaSeconds": 0,
+          "priceDeltaCoins": 0,
+          "culinaryReason": "蘑菇提前起鲜，鸡肉随后融入香气，是本菜招牌。",
+          "playerCue": "蘑菇先下锅，鸡肉后入并翻炒。"
+        },
+        {
+          "code": "burst",
+          "affinity": "viable",
+          "guestFitDelta": {
+            "adventurer": 6,
+            "critic": 2
+          },
+          "timeDeltaSeconds": -1,
+          "priceDeltaCoins": 0,
+          "culinaryReason": "鸡肉表面焦香的快炒路线，可满足更重口味的客人。",
+          "playerCue": "鸡肉与菌菇同锅后颠勺，确保鸡肉熟透。"
+        }
+      ],
+      "crewSpecific": null,
+      "bentoSpecific": null,
+      "caution": "现有实验将「蘑菇先下、鸡肉后下」不识别为香味先行，须先修识别器。"
+    },
+    {
+      "id": "pot_mushroom_onion",
+      "name": "洋葱菌菇汤",
+      "origin": "new",
+      "ingredients": [
+        "mushroom",
+        "onion"
+      ],
+      "vessel": "POT",
+      "baseTimeSeconds": 10,
+      "basePriceCoins": 19,
+      "baseTasteTags": [
+        "菌香",
+        "温和",
+        "甜香"
+      ],
+      "personality": "甜香菌汤以清润与浓醇两条方向区分。",
+      "styles": [
+        {
+          "code": "gentle",
+          "affinity": "signature",
+          "guestFitDelta": {
+            "family": 7,
+            "regular": 5
+          },
+          "timeDeltaSeconds": 0,
+          "priceDeltaCoins": 0,
+          "culinaryReason": "轻搅保持清甜菌香，日常汤品路线。",
+          "playerCue": "两样入锅后轻搅并适度慢炖。"
+        },
+        {
+          "code": "reduced",
+          "affinity": "viable",
+          "guestFitDelta": {
+            "regular": 7,
+            "critic": 3
+          },
+          "timeDeltaSeconds": 1,
+          "priceDeltaCoins": 1,
+          "culinaryReason": "菌香更浓醇，多一道收汁工序，适合追求浓味的街坊。",
+          "playerCue": "充分慢煮后收汁，不能提前煮干。"
+        }
+      ],
+      "crewSpecific": {
+        "role": "waiter",
+        "style": "gentle",
+        "bonus": 1,
+        "reason": "小芽吃这道清润菌汤时可额外提升少量耐心，继承原上限。"
+      },
+      "bentoSpecific": null,
+      "caution": "新菜，需验证菌香/甜香两种口味与客群体验。"
+    }
+  ]
+}
