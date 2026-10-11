@@ -16,11 +16,13 @@ export function livePanMotion(cook,dimensions={width:310,height:190}){
  const p=active?clamp((t-active.t)/MOTION_DURATION[active.type]):1;
  const swing=active?Math.sin(Math.PI*p):0;
  const radiusX=Math.min(w*.205,h*.32),radiusY=Math.min(w*.12,h*.19);
- let panRotation=0,panLift=0,glow=0,ripple=0,brothScale=1,steam=1;
+ const latestReduction=actions.slice().reverse().find(a=>a.type==='reduce'&&t>=a.t);
+ let panRotation=0,panLift=0,glow=0,ripple=0,
+     brothScale=latestReduction?1-.37*easeOut(clamp((t-latestReduction.t)/MOTION_DURATION.reduce)):1,steam=1;
  if(active?.type==='toss'){panRotation=12*Math.sin(Math.PI*2*p)*Math.pow(1-p,.38);panLift=-7*swing;glow=.55*swing;steam=1+.75*swing;}
  if(active?.type==='flip'){panRotation=4.5*Math.sin(Math.PI*4*p)*(1-p);glow=.35*swing;steam=1+.2*swing;}
  if(active?.type==='gentle'){panRotation=1.6*Math.sin(Math.PI*2*p);ripple=.85*swing;steam=1+.16*swing;}
- if(active?.type==='reduce'){brothScale=1-.37*easeOut(p);ripple=.55*swing;glow=.35*swing;steam=1+1.4*swing;}
+ if(active?.type==='reduce'){ripple=.55*swing;glow=.35*swing;steam=1+1.4*swing;}
  const items=drops.map((d,i)=>{
    // Base simmer movement uses elapsed cooking time, not frame count.
    // Individual action motion applies only to ingredients already in the pot.
