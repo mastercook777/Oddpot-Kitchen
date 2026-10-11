@@ -28,3 +28,16 @@
 .service-scene #diner-canvas{z-index:0}
 .service-scene .diner-float-stick{pointer-events:none}
 @media(max-height:670px){.diner-special{bottom:45px;right:8px;min-width:48px;min-height:45px}}
+
+
+/* Mobile thumb movement starts even when the user touches a drawing of a
+   stove or table. Legacy transparent hit-map buttons must not steal drags.
+   Desktop mouse retains the old optional seat/station inspect interactions. */
+@media(pointer:coarse){
+ .service-scene .diner-world:has(#diner-stick) .diner-station,
+ .service-scene .diner-world:has(#diner-stick) .diner-table,
+ .service-scene .diner-world:has(#diner-stick) .diner-kitchen,
+ .service-scene .diner-world:has(#diner-stick) .diner-tables{
+   pointer-events:none!important;
+ }
+}
