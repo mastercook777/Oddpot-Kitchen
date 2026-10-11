@@ -9,7 +9,7 @@ test('solo restaurant: no chef present means hot kitchen stops (no magical autop
  assert.ok(order,'first customer has an actual wok order');
  assert.equal(order.left,order.time,'the dish cannot cook itself without a chef');
  assert.equal(s.score.autoSeconds,0);
- assert.match(laboratoryMode(s),/主厨负责后厨/);
+ assert.match(laboratoryMode(s),/主厨做菜、取餐、上菜/);
 });
 test('solo hero at wok station actively cooks, has one-time 2s boost and drains stamina',()=>{
  const s=makeServiceLab();sim(s,2);
@@ -54,7 +54,7 @@ test('near table: standing .6s provides one-time customer patience, drains energ
  assert.equal(s.hero.energy,5);
 });
 test('staff combinations remain distinct; no payroll/menus/coins altered in prototype',()=>{
- const scenarios=['单人开店','阿火掌一口锅','小芽照顾前厅','阿火帮厨、小芽跑堂'];
+ const scenarios=['单人开店','阿火掌一口锅','小芽自动上菜','阿火帮厨、小芽自动上菜'];
  for(const [i,staff] of [{},{helper:true},{waiter:true},{helper:true,waiter:true}].entries()){
   const s=makeServiceLab(staff);assert.ok(laboratoryMode(s).includes(scenarios[i]));
   assert.equal(s.score.served,0);assert.equal(s.orders.length,0);
