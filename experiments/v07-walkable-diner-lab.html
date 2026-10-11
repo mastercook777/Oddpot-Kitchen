@@ -1,0 +1,196 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover">
+<meta name="theme-color" content="#192d26">
+<title>怪味食堂 · v0.7 可移动营业实验</title>
+<style>
+:root{color-scheme:dark;font-family:system-ui,-apple-system,BlinkMacSystemFont,"PingFang SC",sans-serif}
+*{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+html,body{margin:0;height:100%;background:#14231f;color:#ffefd6;overflow:hidden}
+button{font:inherit;cursor:pointer;touch-action:manipulation}
+main{height:100dvh;max-height:1100px;max-width:490px;margin:auto;padding:calc(env(safe-area-inset-top) + 7px) 10px calc(env(safe-area-inset-bottom) + 7px);display:flex;flex-direction:column;gap:6px;overflow:hidden;background:linear-gradient(#274b38,#182e29)}
+header{display:flex;align-items:center;justify-content:space-between;gap:8px;flex:none}
+h1{margin:0;color:#ffe0a8;font-size:17px;line-height:1.15;letter-spacing:.2px}
+h1 small{display:block;font-size:10px;font-weight:500;color:#bcd3c2;margin-top:2px}
+#restart{background:#304c3c;border:1px solid #86a487;color:#fcebd1;border-radius:9px;padding:7px;font-size:12px;flex:none}
+.mode-label{font-size:11px;color:#d9e0c2;font-weight:700}
+.modes{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:5px;flex:none}
+.modes button{border:1px solid #648c73;border-radius:8px;min-height:34px;padding:6px 2px;background:#2e4d3c;color:#f9edca;font-size:11px;line-height:1.25;font-weight:750}
+.modes button.active{background:#805e36;border-color:#f8c57a;color:#fff5d9;box-shadow:inset 0 0 0 1px #f9d18a}
+#mode-detail{font-size:11px;color:#d3e2cd;background:#254335;border:1px solid #4b7560;padding:6px 8px;border-radius:9px;line-height:1.25;min-height:26px}
+.score{display:grid;grid-template-columns:repeat(4,1fr);gap:5px;flex:none}
+.score>div{background:#1d392f;border:1px solid #426b59;border-radius:9px;min-height:39px;text-align:center;padding:3px 2px}
+.score small{display:block;color:#aaceb1;font-size:9px}
+.score b{font-size:15px;font-variant-numeric:tabular-nums;color:#ffda94}
+.scene-shell{position:relative;border:2px solid #97794e;border-radius:15px;background:#715039;flex:1;min-height:145px;max-height:655px;overflow:hidden;touch-action:none}
+canvas{display:block;width:100%;height:100%;touch-action:none;user-select:none}
+.scene-hud{position:absolute;left:8px;top:8px;z-index:4;display:flex;gap:5px;max-width:96%;pointer-events:none}
+.scene-hud span{font-size:10px;font-weight:700;background:#172e26e9;color:#ffe7bd;border:1px solid #d6a56a6b;padding:5px 7px;border-radius:9px}
+#toast{position:absolute;left:8%;right:8%;bottom:8px;background:#213c30ed;border:1px solid #dbb8788c;border-radius:9px;pointer-events:none;text-align:center;font-size:11px;min-height:35px;padding:9px 6px;color:#fff0c9;line-height:1.3}
+.joystick{position:absolute;z-index:5;left:-120px;top:-120px;width:90px;height:90px;margin:-45px 0 0 -45px;border:2px solid #fff6d169;background:#b8d1ba28;box-shadow:inset 0 0 15px #c8e5b92c;border-radius:50%;pointer-events:none;opacity:0}
+.joystick.active{opacity:1}
+.knob{position:absolute;width:39px;height:39px;left:24px;top:24px;border-radius:50%;background:#f6dfa6c9;border:2px solid #fff8d8;box-shadow:0 3px 7px #0006}
+.tip{flex:none;display:flex;gap:8px;align-items:center;justify-content:space-between;color:#d2dabb;font-size:10px;line-height:1.35}
+.tip .grow{flex:1}
+.tip b{color:#fff0cf}
+.tip button{background:#715136;border:1px solid #d6ad78;border-radius:8px;color:#fff0d9;min-width:57px;font-size:11px;padding:8px 9px}
+@media(max-height:720px){main{gap:4px}h1{font-size:15px}.modes button{min-height:29px;font-size:10px}.score>div{min-height:33px}.tip{font-size:9px}#mode-detail{font-size:10px;padding:4px 7px}}
+@media(max-width:355px){main{padding-left:5px;padding-right:5px}.modes button{font-size:10px}header h1{font-size:14px}}
+</style>
+</head>
+<body>
+<main>
+ <header>
+  <h1>🍜 怪味食堂 · 可移动经营实验<small>v0.7 Lab · 主厨单人值守与员工解放</small></h1>
+  <button id="restart" type="button">↻ 重开本局</button>
+ </header>
+ <div class="mode-label">试试不同人员配置（切换会重置相同客流）</div>
+ <div class="modes" aria-label="人员配置">
+  <button data-mode="solo" class="active">👩‍🍳 单人</button>
+  <button data-mode="helper">🍳 +阿火</button>
+  <button data-mode="waiter">🪑 +小芽</button>
+  <button data-mode="both">👥 都雇佣</button>
+ </div>
+ <div id="mode-detail">主角负责后厨，顾客在柜台自取；离开锅位，料理停止制作。</div>
+ <div class="score" aria-label="当日营业状态">
+  <div><small>时间</small><b id="clock">0s</b></div>
+  <div><small>已出餐</small><b id="served">0 / 8</b></div>
+  <div><small>流失</small><b id="lost">0</b></div>
+  <div><small>主厨精力</small><b id="energy">6 / 6</b></div>
+ </div>
+ <div class="scene-shell" id="scene">
+  <canvas id="canvas" aria-label="可移动的餐厅，拖动屏幕移动主厨"></canvas>
+  <div class="scene-hud"><span id="zone">📍 厨房通道</span><span id="work">🍳 找到有订单的厨位</span></div>
+  <div id="joystick" class="joystick" aria-hidden="true"><div id="knob" class="knob"></div></div>
+  <div id="toast" role="status">在场景里按住拖动，靠近厨位自动烹饪。</div>
+ </div>
+ <div class="tip">
+  <div class="grow"><b>👆 和探索使用同一套动态摇杆。</b> 在位置附近停留 0.6 秒自动互动；主角没精力也能正常煮菜，只是不能额外提速。</div>
+  <button id="pause" type="button">Ⅱ 暂停</button>
+ </div>
+</main>
+<script type="module">
+import {joystickVector} from '../src/controls_v041.js?v=0.5.5';
+import {pixelActor} from '../src/pixels_v041.js?v=0.5.5';
+import {makeServiceLab,stepServiceLab,snapshotLab,kitchenBusy,nearbyZone,LAB_TABLES,LAB_STATIONS} from './v07-service-lab-engine.js';
+const $=id=>document.getElementById(id);
+const canvas=$('canvas'),scene=$('scene'),ctx=canvas.getContext('2d');
+const modes={solo:{helper:false,waiter:false},helper:{helper:true,waiter:false},waiter:{helper:false,waiter:true},both:{helper:true,waiter:true}};
+let state=makeServiceLab(modes.solo),activeMode='solo',last=performance.now(),pointer=null,origin={x:0,y:0},axis={x:0,y:0},uiAccum=0,renderTime=0;
+function reset(mode=activeMode){
+ activeMode=mode;state=makeServiceLab(modes[mode]);pointer=null;axis={x:0,y:0};
+ document.querySelectorAll('[data-mode]').forEach(button=>button.classList.toggle('active',button.dataset.mode===mode));
+ $('pause').textContent='Ⅱ 暂停';$('mode-detail').textContent=snapshotLab(state).mode;
+ release();display();
+}
+document.querySelectorAll('[data-mode]').forEach(b=>b.addEventListener('click',()=>reset(b.dataset.mode)));
+$('restart').addEventListener('click',()=>reset());
+$('pause').addEventListener('click',()=>{state.paused=!state.paused;$('pause').textContent=state.paused?'▶ 继续':'Ⅱ 暂停';});
+document.addEventListener('visibilitychange',()=>{if(document.hidden){state.paused=true;$('pause').textContent='▶ 继续';release()}last=performance.now()});
+function release(){
+ pointer=null;axis={x:0,y:0};$('joystick').classList.remove('active');$('joystick').style.left='-120px';$('joystick').style.top='-120px';$('knob').style.transform='translate(0,0)';
+}
+function move(e){
+ if(pointer!==e.pointerId)return;
+ const p=joystickVector(origin.x,origin.y,e.clientX,e.clientY,54,9);
+ axis={x:p.x,y:p.y};$('knob').style.transform='translate('+p.knobX+'px,'+p.knobY+'px)';
+}
+scene.addEventListener('pointerdown',e=>{
+ if(pointer!==null||e.target.closest('button'))return;
+ e.preventDefault();pointer=e.pointerId;origin={x:e.clientX,y:e.clientY};
+ try{scene.setPointerCapture(pointer)}catch{}
+ const rect=scene.getBoundingClientRect();$('joystick').style.left=e.clientX-rect.left+'px';$('joystick').style.top=e.clientY-rect.top+'px';
+ $('joystick').classList.add('active');move(e);
+},{passive:false});
+scene.addEventListener('pointermove',e=>{if(pointer===e.pointerId){e.preventDefault();move(e)}},{passive:false});
+for(const n of ['pointerup','pointercancel','lostpointercapture'])scene.addEventListener(n,e=>{if(e.pointerId===pointer)release()});
+window.addEventListener('blur',()=>{release();state.paused=true;$('pause').textContent='▶ 继续'});
+const ground='#776049',wall='#335444';
+function rect(x,y,w,h,color){ctx.fillStyle=color;ctx.fillRect(x,y,w,h)}
+function round(x,y,w,h,r,fill,stroke){
+ ctx.beginPath();ctx.roundRect(x,y,w,h,r);if(fill){ctx.fillStyle=fill;ctx.fill()}if(stroke){ctx.strokeStyle=stroke;ctx.lineWidth=2;ctx.stroke()}
+}
+function circle(x,y,r,fill,stroke){
+ ctx.beginPath();ctx.arc(x,y,r,0,Math.PI*2);if(fill){ctx.fillStyle=fill;ctx.fill()}if(stroke){ctx.strokeStyle=stroke;ctx.lineWidth=2;ctx.stroke()}
+}
+function label(str,x,y,size=12,color='#ffe9c5',align='center'){
+ ctx.font='700 '+size+'px system-ui,"PingFang SC",sans-serif';ctx.textAlign=align;ctx.textBaseline='middle';
+ ctx.fillStyle='#18261b';ctx.fillText(str,x+1,y+1);ctx.fillStyle=color;ctx.fillText(str,x,y)
+}
+function drawScene(t){
+ const w=360,h=520,dpr=Math.min(window.devicePixelRatio||1,2);
+ const rectBounds=canvas.getBoundingClientRect();
+ if(!rectBounds.width||!rectBounds.height)return;
+ const pw=Math.floor(rectBounds.width*dpr),ph=Math.floor(rectBounds.height*dpr);
+ if(canvas.width!==pw||canvas.height!==ph){canvas.width=pw;canvas.height=ph}
+ ctx.setTransform(canvas.width/w,0,0,canvas.height/h,0,0);ctx.clearRect(0,0,w,h);
+ rect(0,0,w,h,ground);
+ for(let y=0;y<h;y+=34)rect(0,y,w,1,'#816850');
+ for(let x=0;x<w;x+=37)rect(x,0,1,h,'#8c725750');
+ rect(0,0,w,73,wall);
+ round(16,42,328,38,10,'#4d7155','#ba9364');
+ label('ODDPOT • 怪味食堂',180,60,15);
+ // Two hot stations; no third phantom station.
+ for(const [key,p] of Object.entries(LAB_STATIONS)){
+  const x=p.x*w,y=p.y*h,job=kitchenBusy(state,key),helper=state.staff.helper&&key==='WOK';
+  round(x-48,y-34,96,65,12,'#a37950','#e4bc7f');
+  circle(x,y-7,25,key==='WOK'?'#4c5f5e':'#6c8c95','#d8c5a2');
+  circle(x,y-7,17,key==='WOK'?'#293b3b':'#3e5050');
+  if(job){const fill=Math.max(0,1-job.left/job.time);rect(x-32,y+20,64,5,'#2d4b3c');rect(x-32,y+20,64*fill,5,'#f9ca7c')}
+  const hot=nearbyZone(state.hero)===key;
+  ctx.save();ctx.setLineDash([5,5]);circle(x,y+47,18,hot?'#fff1ab3a':'#ffe9a019',hot?'#ffe78b':'#c6ac7566');ctx.restore();
+  label(key==='WOK'?'🍳 炒锅':'🍲 深锅',x,y-45,13);
+  label(job?Math.max(0,Math.ceil(job.left))+'s':'待订单',x,y+35,12,job?'#ffeeb8':'#dbcaa9');
+  if(helper){pixelActor(ctx,'helper',x+39,y+12,1.3,{walk:t});label('阿火',x+39,y+41,9)}
+ }
+ // Kitchen / dining divider, central crossing only.
+ rect(0,243,139,15,'#573e2b');rect(221,243,139,15,'#573e2b');
+ rect(0,243,139,5,'#ce9b62');rect(221,243,139,5,'#ce9b62');
+ label('自取出餐口',180,245,12,'#ffe3a5');
+ label('后厨 · 主厨值守',180,225,11,'#e7d9b4');
+ // Table sprites and order/patience status.
+ for(let i=0;i<2;i++){
+  const p=LAB_TABLES[i],x=p.x*w,y=p.y*h;
+  circle(x,y,52,'#573b2a','#b9956b');
+  circle(x,y,44,'#b17f50','#e0ab6c');
+  round(x-24,y-11,48,27,9,'#cb9562','#e0b477');
+  const pending=state.orders.find(o=>o.table===i&&['queued','cooking','pickup'].includes(o.status));
+  if(pending){label(pending.name,x,y-69,11,'#fff0cb');
+   label('耐心 '+Math.max(0,Math.ceil(pending.patience-(state.time-pending.arrive)))+'s',x,y-54,11,pending.comforted?'#bdf5c5':'#ffe0af')}
+  else label(i===0?'1号桌':'2号桌',x,y-66,12);
+  const active=nearbyZone(state.hero)==='TABLE'+i;
+  ctx.save();ctx.setLineDash([5,6]);circle(x,y-65,21,active?'#ffffb522':'#ffffff0d',active?'#ffe98d':'#d3b3847f');ctx.restore();
+ }
+ if(state.staff.waiter){pixelActor(ctx,'waiter',183+Math.sin(t*1.7)*19,340,1.35,{walk:t});label('小芽',182,376,10,'#ffe9b2')}
+ // Player sprite drawn as a single sprite, shared original art family.
+ const hero=state.hero;
+ circle(hero.x*w,hero.y*h+18,14,'#14231f66');
+ pixelActor(ctx,'chef',hero.x*w,hero.y*h,1.52,{walk:Math.hypot(axis.x,axis.y)>.09?t*2:0,face:hero.facing==='left'?-1:1,attack:!!hero.zone&&hero.dwell>.65});
+ if(hero.zone){const y=hero.y*h-30;round(hero.x*w-39,y,78,16,7,'#264533','#f5ca78');label(hero.zone.startsWith('TABLE')?'💛 招待中':'🍳 工作中',hero.x*w,y+8,10)}
+ if(state.done){rect(0,0,w,h,'#101d19bd');round(25,176,310,143,15,'#264934','#e5b579');label('🌙 营业实验完成',180,204,18);label('成功出餐 '+state.score.served+' / 8',180,242,18,'#ffe3ac');label('顾客流失 '+state.score.lost+' 单',180,267,14);label('切换员工配置可以比较差异',180,298,12)}
+}
+function display(){
+ const v=snapshotLab(state);
+ $('clock').textContent=Math.floor(state.time)+'s';
+ $('served').textContent=v.served+' / 8';
+ $('lost').textContent=String(v.lost);
+ $('energy').textContent=v.energy+' / '+v.maxEnergy;
+ $('toast').textContent=state.messageT>0?v.message:(state.paused?'⏸ 已暂停，点击继续营业':v.finished?'可以切换员工组合再次试玩':'靠近厨位自动工作；靠近等待中的客人可安抚');
+ const z=v.zone;$('zone').textContent=z?z.startsWith('TABLE')?'🪑 '+(Number(z.slice(5))+1)+'号桌':'🍳 '+(z==='WOK'?'炒锅':'深锅'):'📍 走到互动区域';
+ const left=v.kitchen.WOK,right=v.kitchen.POT;
+ const kitchenAlert=!state.staff.helper&&!z&&state.orders.some(o=>o.status==='cooking');
+ $('work').textContent=kitchenAlert?'⚠ 后厨没人做菜':left||right?'待完成 '+[left?.left,right?.left].filter(Boolean).map(x=>Math.ceil(x)+'s').join('/'):'等待客人点餐';
+}
+function frame(now){
+ const dt=Math.max(0,Math.min(.05,(now-last)/1000));last=now;renderTime+=dt;
+ stepServiceLab(state,axis.x,axis.y,dt);
+ drawScene(renderTime);uiAccum+=dt;
+ if(uiAccum>.12){uiAccum=0;display()}
+ requestAnimationFrame(frame);
+}
+reset();requestAnimationFrame(frame);
+</script>
+</body>
+</html>
