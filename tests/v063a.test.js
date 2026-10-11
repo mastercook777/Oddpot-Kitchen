@@ -1,6 +1,8 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import {spawnSync} from 'node:child_process';
+import {readFileSync} from 'node:fs';
+import {Script} from 'node:vm';
 import {RECIPES,RECIPE_INDEX,ING,recipeSignature} from '../src/data.js';
 import {LIVE_ACTIONS,liveRecipeId,evaluateLiveCook,resolveTechnique} from '../src/cooking_v063.js';
 import {newGame,ensureRecipeVariants,activeRecipeVariant,chooseRecipeVariant,
@@ -19,6 +21,13 @@ test('v0.6.3-A app and all new modules have parseable ESM source',()=>{
   const x=spawnSync(process.execPath,['--check',p],{encoding:'utf8'});
   assert.equal(x.status,0,name+': '+x.stderr);
  }
+});
+test('regenerated standalone JS is syntactically valid and includes all v0.6.3-A systems',()=>{
+ const html=readFileSync(new URL('../standalone.html',import.meta.url),'utf8');
+ const inline=html.match(/<script>([\\s\\S]*?)<\\/script>/i)?.[1];
+ assert.ok(inline&&inline.includes('function evaluateLiveCook')&&inline.includes('function beginLiveResearch'));
+ assert.doesNotThrow(()=>new Script(inline));
+ assert.match(html,/v063-live-pan|v063-food-layer/);
 });
 test('full catalog has 84 pairs/triples for each vessel, and retains legacy 12 plus six curated recipes',()=>{
  assert.equal(Object.keys(ING).length,8);
