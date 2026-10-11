@@ -7,7 +7,7 @@ const clone=x=>structuredClone(x);
 export const clamp=(n,a,b)=>Math.min(b,Math.max(a,n));
 export function rand(seed){return (Math.imul(1664525,seed>>>0)+1013904223)>>>0}
 export function uniqueAdd(ledger,id,type,extra={}){if(ledger.some(x=>x.id===id))return false;ledger.push({id,type,...extra});return true}
-export function newGame(seed=20261009){return {version:4,seed,cycle:1,day:1,phase:'forecast',coins:120,reputation:0,inventory:{...DEFAULT_INVENTORY},recipes:{chicken_stew:76,mushroom_stir:76,veg_stir:72},learned:{},recipeVariants:{},activeVariantIds:{},tech:false,upgrade:false,crew:{helper:{hired:false,station:0,meals:0,feed:null},waiter:{hired:false,meals:0,feed:null}},staffFoodCost:0,kitchen:{slots:[{type:'WOK',level:1},{type:'POT',level:1}],refitDay:null,freeRefitUsed:false,extraRefits:0},bagSlots:6,selectedTarget:'chili',route:null,field:null,cook:null,menu:['chicken_stew','mushroom_stir','veg_stir'],prep:{},prepVariants:{},prepCost:0,manualCost:0,service:null,report:null,lastCook:null,ledger:[],logs:[],result:null,step:0};}
+export function newGame(seed=20261009){return {version:4,seed,cycle:1,day:1,phase:'forecast',coins:120,reputation:0,inventory:{...DEFAULT_INVENTORY},recipes:{chicken_stew:76,mushroom_stir:76,veg_stir:72},learned:{},recipeVariants:{},activeVariantIds:{},tech:false,upgrade:false,crew:{helper:{hired:false,station:0,meals:0,feed:null},waiter:{hired:false,meals:0,feed:null}},staffFoodCost:0,kitchen:{slots:[{type:'WOK',level:1},{type:'POT',level:1}],refitDay:null,freeRefitUsed:false,extraRefits:0},bagSlots:6,bento:null,selectedTarget:'chili',route:null,field:null,cook:null,menu:['chicken_stew','mushroom_stir','veg_stir'],prep:{},prepVariants:{},prepCost:0,manualCost:0,service:null,report:null,lastCook:null,ledger:[],logs:[],result:null,step:0};}
 // Kitchen station IDs remain WOK/POT for compatibility with 0.4 saves,
 // but now denote PHYSICAL positions (left/right), not stove types.
 export const KITCHEN_POSITIONS=['WOK','POT'];
@@ -160,7 +160,33 @@ export function canUse(s,ids){return Object.entries(countIds(ids)).every(([id,n]
 export function countIds(ids){const o={};for(const id of ids)o[id]=(o[id]||0)+1;return o}
 export function consume(s,ids,txn){if(!canUse(s,ids))return false;return transact(s,txn,'consume',Object.fromEntries(Object.entries(countIds(ids)).map(([id,n])=>[id,-n]))) }
 export function nextPhase(s,phase){s.phase=phase;s.step++;return s}
-export function enterField(s,route){if(s.phase!=='field'||s.field)return false;const target=s.selectedTarget;const isRisk=route==='risk'||route==='spring_risk';if(!['safe','risk','spring_safe','spring_risk'].includes(route))return false;s.route=route;const sequence=isRisk?[{type:'gather',id:target,n:2,label:'定向采集'},{type:'danger',id:'beef',n:2,label:'野牛领地'},{type:'event',id:'mushroom',n:2,label:'菌菇奇遇'}]:[{type:'gather',id:target,n:2,label:'目标采集'},{type:'gather',id:s.day===2?'chili':'mushroom',n:3,label:'林间采集'},{type:'event',id:'chicken',n:2,label:'流浪农夫'}];s.field={route,hp:3,node:0,bag:{},capacity:s.bagSlots||6,sequence,finished:false,...buildFieldMap(s,route,target)};return true}
+export function availableBento(s){
+ ensureRecipeVariants(s);
+ return Object.keys(s.recipes||{}).filter(id=>RECIPE_PROFILES[id]?.bentoSpecific).map(id=>{
+  const craft=recipeCraftSnapshot(s,id),profile=RECIPE_PROFILES[id].bentoSpecific;
+  return {recipeId:id,name:RECIPES[id].name,craft,
+   description:profile.base,
+   enhanced:craft?.style===profile.preferredStyle,
+   canPrepare:craft&&canUse(s,craft.ingredientIds)};
+ });
+}
+// Bento is one purchased meal per day and is locked before departure.
+// Its buff is recipe-specific; a shared cooking word never grants global power.
+export function prepareBento(s,recipeId){
+ if(!['forecast','field'].includes(s.phase)||s.field||s.bento?.day===kitchenDayKey(s))return false;
+ const p=RECIPE_PROFILES[recipeId]?.bentoSpecific;
+ if(!s.recipes?.[recipeId]||!p)return false;
+ const craft=recipeCraftSnapshot(s,recipeId);
+ if(!craft||!canUse(s,craft.ingredientIds))return false;
+ const txn='bento-'+kitchenDayKey(s);
+ if(!consume(s,craft.ingredientIds,txn))return false;
+ s.bento={day:kitchenDayKey(s),recipeId,variantId:craft.variantId,
+  styleLabel:craft.styleLabel,kind:p.type,
+  enhanced:craft.style===p.preferredStyle,
+  ingredients:[...craft.ingredientIds],used:false};
+ return true;
+}
+export function enterField(s,route){if(s.phase!=='field'||s.field)return false;const target=s.selectedTarget;const isRisk=route==='risk'||route==='spring_risk';if(!['safe','risk','spring_safe','spring_risk'].includes(route))return false;s.route=route;const sequence=isRisk?[{type:'gather',id:target,n:2,label:'定向采集'},{type:'danger',id:'beef',n:2,label:'野牛领地'},{type:'event',id:'mushroom',n:2,label:'菌菇奇遇'}]:[{type:'gather',id:target,n:2,label:'目标采集'},{type:'gather',id:s.day===2?'chili':'mushroom',n:3,label:'林间采集'},{type:'event',id:'chicken',n:2,label:'流浪农夫'}];s.field={route,hp:3,node:0,bag:{},capacity:s.bagSlots||6,sequence,finished:false,...buildFieldMap(s,route,target),bento:s.bento?.day===kitchenDayKey(s)?clone(s.bento):null};return true}
 export function bagCount(bag){return Object.values(bag).reduce((a,n)=>a+n,0)}
 export function collectNode(s,choice='collect'){const f=s.field;if(!f||f.finished||f.node>=f.sequence.length)return {ok:false,message:'探索已结束'};const n=f.sequence[f.node];if(choice==='skip'){f.node++;return {ok:true,message:'绕过当前节点'};}if(n.type==='danger'){const hit=rand(s.seed+s.cycle*100+s.day*10+f.node)%3===0?2:1;f.hp-=hit;if(f.hp<=0){f.finished=true;return settleField(s,'faint')} }
 if(f.bag[n.id]>=3)return {ok:false,message:'单格堆叠已满，先撤离'};
@@ -525,7 +551,7 @@ const challenge=s.day===3?challengeScore(v):null;const won=!!challenge&&challeng
 if(won&&!s.tech){s.tech=true;uniqueAdd(s.ledger,'first-boss-reward','unlock',{tech:'heat-mastery'})}
 const goal=serviceGoalResult(v);if(goal?.success&&uniqueAdd(s.ledger,`goal-${s.cycle}-${s.day}`,'goal_reward',{goal:goal.kind})){s.reputation+=2;}
 s.report={day:s.day,goal,scenario:v.scenario||'常规晚餐',totalOrders:v.orders.length,revenue,cost,profit:revenue-cost-hospitalityCost-eventExpense,hospitalityCost,eventExpense,choices:v.events.filter(e=>e.type==='management_choice'||e.type==='menu_swap'),served:served.length,left:left.length,rejected:rej.length,sat:Math.round(served.reduce((a,o)=>a+o.sat,0)/Math.max(1,served.length)),byDish,byCraft,guestReviews:v.events.filter(e=>e.type==='reviewed').map(e=>({recipeId:e.recipeId,sat:e.sat,text:e.text,reason:e.reason})),congestion:v.congestion,kitchen:{slots:clone(v.kitchenSnapshot||ensureKitchen(s).slots),stats:clone(v.stationStats||{})},staff:{crew:clone(v.crew||{}),stats:clone(v.staffStats||{}),foodCost:staffFoodCost},synergy:synergyFor(s.menu),suggested,challenge,won};s.result=won?'win':challenge?'loss':null;nextPhase(s,'report');return s.report}
-export function advanceDay(s){if(s.phase!=='upgrade')return false;const day=s.day;s.day=day===3?1:day+1;if(day===3)s.cycle++;s.phase='forecast';s.route=null;s.field=null;s.cook=null;s.report=null;s.lastCook=null;s.prep={};s.prepVariants={};s.prepCost=0;s.manualCost=0;s.service=null;s.step++;return true}
+export function advanceDay(s){if(s.phase!=='upgrade')return false;const day=s.day;s.day=day===3?1:day+1;if(day===3)s.cycle++;s.phase='forecast';s.route=null;s.field=null;s.bento=null;s.cook=null;s.report=null;s.lastCook=null;s.prep={};s.prepVariants={};s.prepCost=0;s.manualCost=0;s.service=null;s.step++;return true}
 export function buyUpgrade(s){return buyKitchenUpgrade(s,0)}
 export function bagUpgradePrice(s){return (s.bagSlots||6)>=8?null:(s.bagSlots||6)===6?45:75}
 export function buyBagUpgrade(s){const price=bagUpgradePrice(s);if(s.phase!=='upgrade'||price===null||s.coins<price)return false;const next=(s.bagSlots||6)+1;if(!transact(s,`bag-upgrade-${next}`,'upgrade',{},-price))return false;s.bagSlots=next;return true}
