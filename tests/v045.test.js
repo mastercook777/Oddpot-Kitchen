@@ -8,11 +8,11 @@ test('6 / 7 / 8 slot backpacks can collect exactly their upgraded capacity',()=>
  const ids=Object.keys(ING);assert.ok(ids.length>=8);
  for(const capacity of [6,7,8]){const f={bag:{},capacity};ids.forEach((id,i)=>assert.equal(addBag(f,id,1),i<capacity?1:0));assert.equal(Object.keys(f.bag).length,capacity);}
 });
-test('ingredient stacks cap at 3 and unknown items cannot be inserted',()=>{
+test('ingredient stacks roll over to a new slot and unknown items cannot be inserted',()=>{
  const f={bag:{},capacity:8};
- assert.equal(addBag(f,'mushroom',2),2);assert.equal(addBag(f,'mushroom',2),1);
- assert.equal(addBag(f,'mushroom',1),0);assert.equal(addBag(f,'unknown_material',1),0);
- assert.equal(Object.keys(f.bag).length,1);
+ assert.equal(addBag(f,'mushroom',2),2);assert.equal(addBag(f,'mushroom',2),2);
+ assert.equal(addBag(f,'mushroom',1),1);assert.equal(addBag(f,'unknown_material',1),0);
+ assert.equal(Object.keys(f.bag).length,1);assert.equal(f.bag.mushroom,5);assert.equal(f.bagStacks.length,2);
 });
 test('collect resources when within 0.78 cells for 0.82s and never collect twice',()=>{
  const s=newGame();nextPhase(s,'field');assert.equal(enterField(s,'safe'),true);assert.equal(startActionField(s),true);
