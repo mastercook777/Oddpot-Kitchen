@@ -90,7 +90,7 @@ test('bento is daily-only, consumes exactly one recipe and is preserved in field
  assert.equal(s.ledger.filter(x=>x.id==='bento-1-1').length,1);
 });
 test('enemy protection bento reduces one actual enemy hit, not an infinite shield',()=>{
- const s=newGame();prepareBento(s,'chicken_stew');s.phase='field';enterField(s,'risk');startActionField(s);
+ const s=newGame();prepareBento(s,'chicken_stew');s.phase='field';s.selectedWeaponSlot=1;enterField(s,'risk');startActionField(s);
  const f=s.field;
  f.enemies=[{id:'enemy',kind:'chicken',x:f.pos.x+.6,y:f.pos.y,hp:80,maxHp:80,cooldown:0,phase:0,warning:0}];
  for(let i=0;i<30;i++)stepActionField(s,0,0,.06);
