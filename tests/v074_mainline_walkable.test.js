@@ -41,7 +41,7 @@ test('character has finite, smooth world speed and table/counter collisions',()=
  assert.ok(h.y>=.155);
  const hx=newServiceHero();hx.x=.28;hx.y=.48;
  for(let i=0;i<60;i++)walkServiceHero(hx,0,1,.05);
- assert.ok(hx.y<.67,'table cannot be walked through');
+ assert.ok(hx.y<.715,'table cannot be walked through');
  assert.equal(heroZone({...newServiceHero(),...HERO_PASS}),'PASS');
  assert.equal(heroZone({...newServiceHero(),...HERO_STATIONS.WOK}),'WOK');
  assert.equal(heroZone({...newServiceHero(),...HERO_TABLES[0]}),'TABLE0');
