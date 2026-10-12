@@ -278,7 +278,7 @@ export function chooseFieldBranch(s,choiceId){
  f.segmentIndex++;f.zoneId=branch.id;f.segmentStatus='active';f.choices=[];
  f.route=f.region==='spring'?(f.dangerCommitment?'spring_risk':'spring_safe'):(f.dangerCommitment?'risk':'safe');
  const segmentSeed=(f.segmentIndex*1307+branch.id.split('').reduce((n,c)=>n+c.charCodeAt(0),0)*17);
- const map=buildFieldMap({...s,seed:s.seed+segmentSeed},f.route,branch.target);
+ const map=buildFieldMap({...s,seed:s.seed+segmentSeed,fieldZoneId:branch.id,fieldSegmentIndex:f.segmentIndex},f.route,branch.target);
  for(const key of ['spawn','x','y','steps','worldW','worldH','visitedHazards','nodes','obstacles','hazards'])f[key]=map[key];
  f.action=false;f.target=branch.target;f.harvestProgress=0;f.harvestNode=null;f.activeEvent=null;
  // HP, bag, bento, skill cooldown and equipped cookware persist across all three segments.
@@ -789,10 +789,24 @@ export function buildFieldMap(s,route,target){
   {key:'branch',id:pick(risky?'beef':extras[(seed>>>9)%extras.length]),x:7,y:2,n:risky?2:1,type:risky?'danger':'gather',claimed:false},
   {key:'cache',id:pick(extras[(seed>>>15)%extras.length]),x:4,y:1,n:1,type:'event',claimed:false}
  ];
+ // Branch entry has its own terrain arrangement, not only a different name
+ // on the same forest/hot-spring board. Keep target and spawn positions clear.
+ const zoneVariant=s.fieldSegmentIndex===3?2:s.fieldSegmentIndex===2?1:0;
+ const forestObstacleSets=[
+  [{x:2,y:6},{x:6,y:5},{x:2,y:2},{x:6,y:8}],
+  [{x:1,y:6},{x:6,y:6},{x:3,y:2},{x:7,y:8}],
+  [{x:1,y:5},{x:7,y:6},{x:3,y:3},{x:5,y:8}]
+ ];
+ const springObstacleSets=[
+  [{x:4,y:8},{x:5,y:5},{x:1,y:5},{x:4,y:3},{x:7,y:9}],
+  [{x:3,y:8},{x:5,y:5},{x:1,y:4},{x:6,y:3},{x:7,y:9}],
+  [{x:4,y:7},{x:6,y:6},{x:1,y:6},{x:5,y:3},{x:7,y:8}]
+ ];
+ const zoneObstacles=springs?springObstacleSets[zoneVariant]:forestObstacleSets[zoneVariant];
  const spots=springs?[[0,8],[8,5],[1,3],[6,9]]:[[0,6],[8,6],[2,9],[6,1]];
  for(const [i,[x,y]] of spots.entries())nodes.push({key:`side-${i}`,id:pick(pool.find(id=>!used.has(id))),x,y,n:1,type:'gather',claimed:false});
  return {region:springs?'spring':'forest',spawn:springs?{x:2.5,y:10.1}:{x:4.5,y:9.4},x:springs?2:4,y:9,steps:0,worldW:9,worldH:11,visitedHazards:[],nodes,
-  obstacles:springs?[{x:4,y:8},{x:5,y:5},{x:1,y:5},{x:4,y:3},{x:7,y:9}]:[{x:2,y:6},{x:6,y:5},{x:2,y:2},{x:6,y:8}],
+  obstacles:zoneObstacles,
   hazards:springs?[{x:3,y:5},{x:6,y:4},{x:7,y:6}]:risky?[{x:5,y:5},{x:6,y:3}]:[{x:6,y:3}]};
 }
 
