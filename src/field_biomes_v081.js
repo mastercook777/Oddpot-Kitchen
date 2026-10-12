@@ -68,7 +68,7 @@ export function generateBiomeMap(s,route,target){
  // room for later high-value ingredients. Seed-based +/-1 richness varies runs.
  // Even a fertile map has only four to six points, boss nests only two or three.
  const variance=((seed>>>7)%3)-1;
- const sourceCount=Math.max(2,Math.min(6,biome.count+variance));
+ const sourceCount=Math.max(2,Math.min(6,biome.count+(biome.count>=4?variance:Math.min(0,variance))));
  const chosen=[...spots.slice(0,sourceCount)];
  const actualTarget=target||biome.primary;
  const first=chosen.shift();
