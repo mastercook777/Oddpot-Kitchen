@@ -26,7 +26,7 @@ test('backpack expands from eight to twelve at real cost and persists through ne
  assert.equal(bagUpgradePrice(s),110);assert.ok(buyBagUpgrade(s));assert.equal(s.bagSlots,12);assert.equal(s.coins,80);
  assert.equal(bagUpgradePrice(s),null);assert.equal(buyBagUpgrade(s),false);
  assert.equal(s.ledger.filter(e=>e.id.startsWith('bag-upgrade-')).length,2);
- assert.ok(advanceDay(s));assert.equal(s.bagSlots,8);
+ assert.ok(advanceDay(s));assert.equal(s.bagSlots,12);
  nextPhase(s,'field');assert.ok(enterField(s,'spring_safe'));assert.equal(s.field.capacity,12);
 });
 test('insufficient funds cannot give a free bag upgrade or duplicate purchase',()=>{
