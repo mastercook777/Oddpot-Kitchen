@@ -17,13 +17,22 @@ function chef(c,x,y,t=0,options={}){
 }
 function monster(c,e,t){
  const x=e.x,y=e.y;
- if(e.hp>0||e.deathFx>0){c.save();if(e.hp<=0)c.globalAlpha=Math.min(1,(e.deathFx||0)/.27);pixelEnemy(c,e.kind,x,y,1.8,{face:e.face||1,walk:t,hurt:e.hurtFx||0});c.restore();}
- if(e.warning>0){circle(c,x,y,19+Math.sin(t*14)*3,'#e9c26445');text(c,'!',x,y-29,'#ffdf83',16)}
+ if(e.hp>0||e.deathFx>0){c.save();if(e.hp<=0)c.globalAlpha=Math.min(1,(e.deathFx||0)/.27);if(e.isBoss){
+  circle(c,x,y+5,27,'#352d2a88');
+  circle(c,x,y-4,22,e.kind==='boss_spore'?'#9870af':'#e46c3c');
+  circle(c,x,y-5,15,e.kind==='boss_spore'?'#d2b0da':'#ffc26d');
+  for(const a of [-1,0,1])circle(c,x+a*12,y-13,4,e.kind==='boss_spore'?'#ede5ff':'#ffebae');
+  circle(c,x-8,y-2,3,'#222e29');circle(c,x+8,y-2,3,'#222e29');
+  line(c,x-9,y+12,x+9,y+12,'#382d30',3);
+ }else pixelEnemy(c,e.kind,x,y,1.8,{face:e.face||1,walk:t,hurt:e.hurtFx||0});c.restore();}
+ if(e.warning>0){circle(c,x,y,(e.isBoss?30:19)+Math.sin(t*14)*3,'#e9c26445');text(c,'!',x,y-29,'#ffdf83',16)}
  if(e.hp>0){capsule(c,x-12,y-27,24,4,'#28352f');capsule(c,x-12,y-27,24*e.hp/e.maxHp,4,'#e3b65d')}
 }
 function plant(c,n,t){const x=n.x,y=n.y;if(n.claimed)return;
- circle(c,x,y+6,13,'#274a3677');circle(c,x,y,11,n.key==='target'?'#f3d27d':'#8ba87a');
- if(n.id==='mushroom'){rect(c,x-2,y-2,4,13,'#e8d3ad');circle(c,x,y-4,9,'#a75f56');circle(c,x-3,y-6,2,'#f7e4b7')}
+ circle(c,x,y+6,13,'#274a3677');circle(c,x,y,n.key?.startsWith('boss-reward')?16:11,n.key==='target'?'#f3d27d':n.key?.startsWith('boss-reward')?'#ffd06d':'#8ba87a');
+ if(n.id==='mushroom_heart'){circle(c,x,y-5,9,'#bb89e8');circle(c,x,y-10,5,'#f9dcff');text(c,'★',x,y,'#fff6df',11)}
+ else if(n.id==='ember_pepper'){circle(c,x,y,10,'#db653e');circle(c,x,y-6,5,'#ffe6a1');text(c,'★',x,y,'#fff6df',11)}
+ else if(n.id==='mushroom'){rect(c,x-2,y-2,4,13,'#e8d3ad');circle(c,x,y-4,9,'#a75f56');circle(c,x-3,y-6,2,'#f7e4b7')}
  else if(n.id==='chili'){line(c,x-2,y+8,x+3,y-8,'#d85e37',7);line(c,x+3,y-8,x+7,y-11,'#376b38',3)}
  else if(n.id==='beef'||n.id==='chicken'){circle(c,x,y,9,'#b36656');circle(c,x-2,y-1,5,'#d99171')}
  else {circle(c,x-4,y,6,'#6c9862');circle(c,x+4,y-3,5,'#c3ba68');rect(c,x-1,y+1,3,9,'#6f553e')}
@@ -38,9 +47,15 @@ export function drawField(canvas,s,clock){const size=setCanvas(canvas);if(!size|
  for(const o of f.obstacles){c.save();c.translate(o.x+.5,o.y+.5);c.scale(1/sc,1/sc);if(springs){circle(c,0,3,15,'#8c5940');circle(c,-5,-4,14,'#625d59');circle(c,5,-6,9,'#817875');rect(c,-4,-18,8,3,'#be9a78')}else tree(c,0,0);c.restore()}
  for(const n of f.nodes){if(n.type==='event'&&!n.claimed){circle(c,n.x,n.y,.23,'#ecd597');rect(c,n.x-.11,n.y-.17,.23,.32,'#916b4b');text(c,'?',n.x,n.y-.04,'#4d3d28',.27)}else {c.save();c.translate(n.x,n.y);c.scale(1/sc,1/sc);plant(c,{...n,x:0,y:0},clock);c.restore()}}
  for(const p of f.projectiles||[]){circle(c,p.x,p.y,.12,'#ef9c4e');circle(c,p.x,p.y,.05,'#ffe5a3')}
+ for(const p of f.playerProjectiles||[]){
+  const arc=Math.sin(Math.PI*Math.min(1,p.time/p.duration))*.37;
+  circle(c,p.x,p.y,.18,'#eac69b');circle(c,p.x,p.y-arc,.16,'#c68c55');
+  circle(c,p.x-.045,p.y-arc-.04,.04,'#fff0ca');
+  line(c,p.x,p.y-arc-.17,p.x+.08,p.y-arc-.22,'#7ca26a',.06);
+ }
  for(const e of f.enemies||[]){if(e.hp>0||e.deathFx>0){c.save();c.translate(e.x,e.y);c.scale(1/sc,1/sc);monster(c,{...e,x:0,y:0},clock);c.restore()}}
  // Attack swipe uses the *same* direction and trigger as combat hit detection.
- if(f.attackFx?.ttl>0){
+ if(f.attackFx?.ttl>0&&!f.attackFx.pot){
   const fx=f.attackFx,progress=1-fx.ttl/fx.duration,angle=Math.atan2(fx.dy,fx.dx);
   c.save();c.translate(f.pos.x,f.pos.y);c.rotate(angle);c.globalAlpha=Math.min(1,fx.ttl*4);
   c.strokeStyle='#ffe6a1';c.lineWidth=.15;c.beginPath();c.arc(0,0,.79,-.93+progress*.7,.52+progress*.7);c.stroke();
@@ -50,7 +65,8 @@ export function drawField(canvas,s,clock){const size=setCanvas(canvas);if(!size|
  for(const e of f.enemies||[]){if(e.hurtFx>0&&e.hp>0){c.save();c.translate(e.x,e.y);c.scale(1/sc,1/sc);pixelImpact(c,0,-5,8);c.restore()}}
  for(const fx of f.popFx||[]){c.save();c.translate(fx.x,fx.y-(.76-fx.ttl)*.5);c.scale(1/sc,1/sc);text(c,fx.text,0,-17,fx.color||'#fff1b1',12);c.restore()}
  c.save();c.translate(f.pos.x,f.pos.y);c.scale(1/sc,1/sc);
- chef(c,0,Math.sin(clock*9)*(f.moving?1.5:.35),clock,{scale:1.55,walk:f.moving,attack:!!f.attackFx,face:(f.facing?.x||0)<-.15?-1:1,hurt:f.hurtFx});c.restore();
+ chef(c,0,Math.sin(clock*9)*(f.moving?1.5:.35),clock,{scale:1.55,walk:f.moving,attack:!!f.attackFx,face:(f.facing?.x||0)<-.15?-1:1,hurt:f.hurtFx});
+ text(c,f.weapon?.type==='POT'?'🍲':'🛡️',13,-17,'#fff1cc',11);c.restore();
  if(f.harvestNode){const n=f.nodes.find(n=>n.key===f.harvestNode);if(n){capsule(c,n.x-.40,n.y-.49,.8,.10,'#304d39');capsule(c,n.x-.40,n.y-.49,.8*(f.harvestProgress/.82),.10,'#f3dd7e')}}
  c.restore();
  // Gameplay feedback lives in a short-lived DOM notice; never reserve a permanent text strip over the forest.
