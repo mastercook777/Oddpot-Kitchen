@@ -88,7 +88,7 @@ test('all visible game versions, entrypoint and offline build are aligned',()=>{
  app=src('../src/app.js'),pkg=JSON.parse(src('../package.json'));
  assert.equal(pkg.version,'0.9.1');
  assert.match(html,/Oddpot Kitchen v0\.9\.1/);
- assert.match(html,/app\.js\?v=0\.9\.1-growth/);
+ assert.match(html,/app\.js\?v=0\.9\.1-layout/);
  assert.match(app,/ODDPOT · v0\.9\.1/);
  assert.match(app,/版本 v0\.9\.1/);
  assert.match(script,/diner_ambience_v077\.js/);
