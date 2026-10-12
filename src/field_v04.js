@@ -85,7 +85,8 @@ function hurt(s,amount=1,source='enemy'){
  if(b&&!b.used){
   const enemyShield=b.kind==='first_enemy_hit'&&(source==='enemy'||(b.enhanced&&source==='pepper'));
   const springShield=b.kind==='spring_shield'&&(source==='vent'||(b.enhanced&&source==='pepper'));
-  if(enemyShield||springShield){amount=Math.max(0,amount-1);b.used=true;protectedHit=true}
+  const sporeShield=b.kind==='spore_shield'&&(source==='spore'||(b.enhanced&&source==='enemy'));
+  if(enemyShield||springShield||sporeShield){amount=Math.max(0,amount-1);b.used=true;protectedHit=true}
  }
  f.hp=Math.max(0,f.hp-amount);f.damageCd=1.15;f.hurtFx=.46;
  pushMsg(f,protectedHit?'🍱 便当生效！这一次抵御了 1 点伤害。':`受伤 -${amount}，可随时撤离保住收获。`);
@@ -169,16 +170,16 @@ export function stepActionField(s,axisX,axisY,dt){
    if(e.kind==='chicken'){e.lungeFx=.22;if(dist(f.pos,e)<.95)hurt(s,1,'enemy')}
    else{
     const a=e.aim||f.pos,ang=Math.atan2(a.y-e.y,a.x-e.x);
-    const spreads=e.isBoss?[-.34,0,.34]:[0];
+    const spreads=e.isBoss?e.kind==='boss_spore'?[-.55,0,.55]:[-.27,0,.27]:[0];
     for(const spread of spreads){
-     const theta=ang+spread,speed=e.isBoss?2.55:2.8;
+     const theta=ang+spread,speed=e.kind==='boss_spore'?1.9:e.isBoss?3.1:2.8;
      f.projectiles.push({x:e.x,y:e.y,vx:Math.cos(theta)*speed,
-       vy:Math.sin(theta)*speed,life:3});
+       vy:Math.sin(theta)*speed,life:3,source:e.kind==='boss_spore'?'spore':'pepper'});
     }
    }
   }}
  }
- for(const p of f.projectiles){p.x+=p.vx*dt;p.y+=p.vy*dt;p.life-=dt;if(dist(f.pos,p)<.28){p.life=0;hurt(s,1,'pepper')}}f.projectiles=f.projectiles.filter(p=>p.life>0&&!blocked(f,p,0));
+ for(const p of f.projectiles){p.x+=p.vx*dt;p.y+=p.vy*dt;p.life-=dt;if(dist(f.pos,p)<.28){p.life=0;hurt(s,1,p.source||'pepper')}}f.projectiles=f.projectiles.filter(p=>p.life>0&&!blocked(f,p,0));
  advancePlayerProjectiles(s,dt);
  if(f.attackCd<=0){
   const isPot=f.weapon?.type==='POT',range=isPot?3.5:1.25;
