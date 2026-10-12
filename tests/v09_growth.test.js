@@ -37,8 +37,8 @@ test('v0.9 room expansion is permanent, ledgered and changes the floor collision
  assert.equal(s.coins,40);
  assert.equal(tableCapacity(s),6);
  assert.equal(dinerFloor(s).tables.length,3);
- assert.equal(dinerSpot({x:.265,y:.74},s),'TABLE2');
- assert.equal(dinerBlocked(.265,.85,s),true);
+ assert.equal(dinerSpot({x:.385,y:.562},s),'TABLE2');
+ assert.equal(dinerBlocked(.255,.555,s),true);
  assert.equal(advanceDay(s),true);
  assert.equal(totalBusinessDay(s),4);
  assert.equal(tableCapacity(s),6);
