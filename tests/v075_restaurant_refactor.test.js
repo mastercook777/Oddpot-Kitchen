@@ -26,8 +26,8 @@ const dwell=(s,secs)=>{for(let t=0;t<secs;t+=.04)advanceWalkableInteraction(s,.0
 test('package, main website, and in-game visible brand agree on current release v0.8.0',()=>{
  const pkg=JSON.parse(read('../package.json')),html=read('../index.html');
  assert.equal(pkg.version,'0.8.0');
- assert.match(html,/<title>怪味食堂 · Oddpot Kitchen v0\.7\.8<\/title>/);
- assert.match(app,/ODDPOT · v0\.7\.8/);
+ assert.match(html,/<title>怪味食堂 · Oddpot Kitchen v0\.8\.0<\/title>/);
+ assert.match(app,/ODDPOT · v0\.8\.0/);
  assert.match(html,/restaurant_scene_v075\.css/);
 });
 test('canonical layout is the sole source of cooking and table service positions',()=>{
