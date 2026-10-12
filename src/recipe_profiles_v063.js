@@ -982,5 +982,157 @@ export const RECIPE_PROFILES = {
     },
     "bentoSpecific": null,
     "caution": "新菜，需验证菌香/甜香两种口味与客群体验。"
+  },
+"mushroom_heart_wok": {
+    "id": "mushroom_heart_wok",
+    "name": "菌心爆香",
+    "origin": "v0.8-boss-curated",
+    "ingredients": [
+      "mushroom_heart",
+      "garlic"
+    ],
+    "vessel": "WOK",
+    "baseTimeSeconds": 9,
+    "basePriceCoins": 35,
+    "baseTasteTags": [
+      "菌香",
+      "鲜",
+      "香"
+    ],
+    "personality": "菌王孢心与蒜瓣爆香，只有对应菜谱和正确工艺才对评论家生效。",
+    "styles": [
+      {
+        "code": "aroma",
+        "affinity": "signature",
+        "guestFitDelta": {
+          "critic": 10
+        },
+        "timeDeltaSeconds": 0,
+        "priceDeltaCoins": 0,
+        "culinaryReason": "菌王孢心与蒜瓣爆香，只有对应菜谱和正确工艺才对评论家生效。",
+        "playerCue": "原料熟透后使用对应锅具动作。"
+      }
+    ],
+    "crewSpecific": null,
+    "bentoSpecific": null,
+    "caution": "仅固定 Mini Boss 掉落；不加入通用菜谱自动生成。"
+  },
+  "mushroom_heart_pot": {
+    "id": "mushroom_heart_pot",
+    "name": "菌王浓汤",
+    "origin": "v0.8-boss-curated",
+    "ingredients": [
+      "mushroom_heart",
+      "chicken",
+      "mushroom"
+    ],
+    "vessel": "POT",
+    "baseTimeSeconds": 14,
+    "basePriceCoins": 36,
+    "baseTasteTags": [
+      "菌香",
+      "温和",
+      "鲜"
+    ],
+    "personality": "菌王孢心慢炖浓缩，家庭与评论家认可。",
+    "styles": [
+      {
+        "code": "reduced",
+        "affinity": "signature",
+        "guestFitDelta": {
+          "family": 8,
+          "critic": 6
+        },
+        "timeDeltaSeconds": 0,
+        "priceDeltaCoins": 0,
+        "culinaryReason": "菌王孢心慢炖浓缩，家庭与评论家认可。",
+        "playerCue": "原料熟透后使用对应锅具动作。"
+      }
+    ],
+    "crewSpecific": null,
+    "bentoSpecific": {
+      "type": "first_enemy_hit",
+      "base": "首次孢子伤害 -1，仅一次。",
+      "preferredStyle": "reduced",
+      "enhance": "收汁版可抵御首次孢子与一般怪物伤害，共享一次。"
+    },
+    "caution": "仅固定 Mini Boss 掉落；不加入通用菜谱自动生成。"
+  },
+  "ember_pepper_wok": {
+    "id": "ember_pepper_wok",
+    "name": "熔心爆牛",
+    "origin": "v0.8-boss-curated",
+    "ingredients": [
+      "ember_pepper",
+      "beef",
+      "garlic"
+    ],
+    "vessel": "WOK",
+    "baseTimeSeconds": 11,
+    "basePriceCoins": 46,
+    "baseTasteTags": [
+      "辣",
+      "肉",
+      "爆香"
+    ],
+    "personality": "辣香爆炒强化肉质的层次，仅熔心爆牛专属。",
+    "styles": [
+      {
+        "code": "burst",
+        "affinity": "signature",
+        "guestFitDelta": {
+          "adventurer": 8,
+          "critic": 10
+        },
+        "timeDeltaSeconds": 0,
+        "priceDeltaCoins": 0,
+        "culinaryReason": "辣香爆炒强化肉质的层次，仅熔心爆牛专属。",
+        "playerCue": "原料熟透后使用对应锅具动作。"
+      }
+    ],
+    "crewSpecific": null,
+    "bentoSpecific": null,
+    "caution": "仅固定 Mini Boss 掉落；不加入通用菜谱自动生成。"
+  },
+  "ember_pepper_pot": {
+    "id": "ember_pepper_pot",
+    "name": "火山焖鸡",
+    "origin": "v0.8-boss-curated",
+    "ingredients": [
+      "ember_pepper",
+      "chicken",
+      "potato"
+    ],
+    "vessel": "POT",
+    "baseTimeSeconds": 14,
+    "basePriceCoins": 38,
+    "baseTasteTags": [
+      "辣",
+      "饱腹",
+      "温和"
+    ],
+    "personality": "焖煮后浓缩椒晶香气，冒险者特别认可。",
+    "styles": [
+      {
+        "code": "reduced",
+        "affinity": "signature",
+        "guestFitDelta": {
+          "adventurer": 8
+        },
+        "timeDeltaSeconds": 0,
+        "priceDeltaCoins": 0,
+        "culinaryReason": "焖煮后浓缩椒晶香气，冒险者特别认可。",
+        "playerCue": "原料熟透后使用对应锅具动作。"
+      }
+    ],
+    "crewSpecific": null,
+    "bentoSpecific": {
+      "type": "spring_shield",
+      "base": "首次热泉喷气环境伤害 -1，仅一次。",
+      "preferredStyle": "reduced",
+      "enhance": "收汁版也防一次火椒弹丸，共享一次。"
+    },
+    "caution": "仅固定 Mini Boss 掉落；不加入通用菜谱自动生成。"
   }
+
 };
