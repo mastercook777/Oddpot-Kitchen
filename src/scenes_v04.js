@@ -276,61 +276,47 @@ function speechRectOverlap(a,b,pad=0){
 export function placeRestaurantSpeech(guestCues,workerCue,actors,w,h){
  const byId=new Map(actors.map(a=>[a.id,a])),placed=[],result=new Map();
  const items=[...(guestCues||[]).map(cue=>({cue,actor:byId.get(cue.id),staff:false})),
-              ...(workerCue?[{cue:workerCue,actor:byId.get(workerCue.staffRole),staff:true}]:[])]
-   .filter(item=>item.actor&&item.cue.text)
-   .sort((a,b)=>b.cue.priority-a.cue.priority||Number(a.staff)-Number(b.staff)||String(a.cue.id).localeCompare(String(b.cue.id)));
- const pad=7,top=h*.205+5,bottom=h*.875;
- // Keep words away from permanent kitchen labels, preparation stations and
- // the actual characters' heads; a speech card must never conceal the speaker.
- const protectedRects=[
-  {x:w*.085,y:h*.21,width:w*.33,height:h*.155},
-  {x:w*.585,y:h*.21,width:w*.33,height:h*.155},
-  {x:w*.40,y:h*.415,width:w*.20,height:h*.070}
- ];
- const faces=actors.map(a=>({x:a.x*w-12,y:a.y*h-31,width:24,height:26,id:a.id}));
- for(const item of items){
-  const {cue,actor,staff}=item;
+   ...(workerCue?[{cue:workerCue,actor:byId.get(workerCue.staffRole),staff:true}]:[])]
+   .filter(x=>x.actor&&x.cue.text)
+   .sort((a,b)=>(b.cue.priority||0)-(a.cue.priority||0)||Number(a.staff)-Number(b.staff));
+ const safeTop=h*.205+4,safeBottom=h*.90,margin=7;
+ // A speech bubble belongs to its speaker. Never trade that identity away to
+ // avoid scenery: previous collision scoring teleported bubbles below cooks
+ // and towards neighbouring dining tables on narrow phones.
+ for(const {cue,actor,staff} of items){
   const lines=diningBubbleLines(cue.text,staff?12:16);
-  const font=staff?10:11,height=lines.length>1?(staff?34:40):(staff?24:27);
-  const maxWidth=Math.min(staff?106:119,w*(staff ? .33 : .38));
-  const width=Math.min(maxWidth,Math.max(staff?60:59,Math.max(...lines.map(v=>Array.from(v).length))*font+18));
-  const x=actor.x*w,headY=actor.y*h-27;
-  const candidates=[
-   {x:x-width/2,y:headY-height-13,dir:'above'},
-   {x:x-width*.83,y:headY-height-16,dir:'above'},
-   {x:x-width*.17,y:headY-height-16,dir:'above'},
-   {x:x+21,y:headY-height*.55,dir:'right'},
-   {x:x-width-21,y:headY-height*.55,dir:'left'},
-   {x:x-width/2,y:actor.y*h+17,dir:'below'},
-   {x:x-width/2-27,y:headY-height-48,dir:'above'},
-   {x:x-width/2+27,y:headY-height-48,dir:'above'},
-   {x:x-width/2,y:actor.y*h+39,dir:'below'}
-  ];
+  const font=staff?10:11,height=lines.length>1?(staff?35:40):(staff?27:29);
+  const width=Math.min(w-2*margin,Math.min(staff?116:129,Math.max(64,
+    Math.max(...lines.map(line=>Array.from(line).length))*font+18)));
+  const ax=actor.x*w,ay=actor.y*h;
+  // Pixel actors are drawn with their feet at (ax,ay); the tip should point
+  // to the forehead, not to the table, the feet or the order emoji.
+  const tipX=ax,tipY=ay-24;
+  const originY=tipY-height-12;
+  const offsets=staff?[0,17,-17,29,-29]:[0,14,-14,27,-27];
   let best=null;
-  for(const [index,candidate] of candidates.entries()){
-   const bx=speechClamp(candidate.x,pad,w-width-pad);
-   const by=speechClamp(candidate.y,top,Math.max(top,bottom-height));
-   const box={x:bx,y:by,width,height};
-   const overlap=placed.reduce((sum,p)=>sum+speechRectOverlap(box,p,5),0);
-   // Furniture is a lower priority than readable speech. Character heads
-   // and existing dialogue are harder constraints.
-   const furniture=protectedRects.reduce((sum,r)=>sum+speechRectOverlap(box,r),0);
-   const heads=faces.reduce((sum,f)=>sum+speechRectOverlap(box,f,5),0);
-   const displacement=Math.hypot((bx+width/2)-x,(by+height/2)-headY);
-   const clampCost=Math.hypot(bx-candidate.x,by-candidate.y);
-   const score=overlap*1000+heads*90+furniture*2.4+displacement*.23+clampCost*.9+index*7;
-   if(!best||score<best.score)best={...box,dir:candidate.dir,score};
+  for(const [i,off] of offsets.entries()){
+   const left=speechClamp(ax-width/2+off,margin,w-width-margin);
+   const top=speechClamp(originY,safeTop,Math.max(safeTop,safeBottom-height));
+   const box={x:left,y:top,width,height};
+   const peer=placed.reduce((sum,p)=>sum+speechRectOverlap(box,p,4),0);
+   const coversOtherHeads=actors.filter(other=>other!==actor).reduce((sum,other)=>
+    sum+speechRectOverlap(box,{x:other.x*w-11,y:other.y*h-30,width:22,height:29},2),0);
+   const tail=Math.hypot(speechClamp(tipX,left+9,left+width-9)-tipX,tipY-(top+height));
+   const penalty=peer*120+ coversOtherHeads*38+ Math.max(0,tail-30)*90+
+     Math.abs(off)*1.5+Math.abs(top-originY)*.8+i*.5;
+   if(!best||penalty<best.penalty)best={...box,penalty};
   }
+  // Suppress low-value worker chatter rather than let it cover a customer,
+  // the hero or migrate into an unrelated corner of the restaurant.
   if(!best)continue;
-  const left=best.x,by=best.y;
-  let baseX,baseY,tipX=x,tipY=headY+1;
-  if(best.dir==='right'){baseX=left;baseY=speechClamp(tipY,by+8,by+height-8);}
-  else if(best.dir==='left'){baseX=left+width;baseY=speechClamp(tipY,by+8,by+height-8);}
-  else if(best.dir==='below'){baseX=speechClamp(x,left+10,left+width-10);baseY=by;}
-  else {baseX=speechClamp(x,left+10,left+width-10);baseY=by+height;}
-  const placement={...best,lines,baseX,baseY,tipX,tipY,staff};
+  const overlap=placed.reduce((sum,p)=>sum+speechRectOverlap(best,p,3),0);
+  if(staff&&overlap>0)continue;
+  const baseX=speechClamp(tipX,best.x+9,best.x+best.width-9);
+  const baseY=best.y+best.height;
+  if(staff&&Math.hypot(baseX-tipX,baseY-tipY)>40)continue;
   placed.push(best);
-  result.set(cue.id,placement);
+  result.set(cue.id,{...best,lines,baseX,baseY,tipX,tipY,staff,dir:'above'});
  }
  return result;
 }
@@ -344,7 +330,7 @@ function drawSpeechCard(c,cue,p,staff=false){
  c.beginPath();c.roundRect(p.x,p.y,p.width,p.height,staff?7:9);c.fill();c.stroke();
  // A short pointer connects the bubble edge with the ACTUAL actor head.
  const dx=p.tipX-p.baseX,dy=p.tipY-p.baseY,dist=Math.hypot(dx,dy)||1;
- if(dist<74){
+ if(dist<=42&&p.tipY>=p.baseY){
   const nx=-dy/dist*3.6,ny=dx/dist*3.6;
   c.fillStyle=fill;c.beginPath();c.moveTo(p.baseX+nx,p.baseY+ny);
   c.lineTo(p.baseX-nx,p.baseY-ny);c.lineTo(p.tipX,p.tipY);c.closePath();c.fill();
