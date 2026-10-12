@@ -702,16 +702,21 @@ function stepWalkableShift(s){
  if(h.recovery>=1){const n=Math.floor(h.recovery);h.recovery-=n;h.energy=Math.min(h.maxEnergy,h.energy+n);}
  if(h.energy>=h.maxEnergy)h.recovery=0;
 }
+// Real satisfaction rules are unchanged. Species-specific lines are the
+// presentation of that verdict, not additional hidden score modifiers.
+export const CUSTOMER_REVIEW_VOICES={
+ adventurer:{late:'这锅香归香，我的矿车都开走了！',quality:'火候软得像矿渣，再来点劲！',taste:'这味道不够扎实，矿工吃不饱。',delicious:'好吃！胡子都沾上锅气了！',happy:'够劲！明天带矿友来。',okay:'嗯，勉强够下矿了。',bad:'没填饱矿工的肚子。'},
+ family:{late:'幼菇们都快睡着了……',quality:'菌汤还差点火候呢。',taste:'这味道让小菌帽有点不适应。',delicious:'真好吃！幼菇们都笑啦！',happy:'暖暖的，下次还来。',okay:'还算温暖，孩子们吃得下。',bad:'小菌帽们没吃尽兴。'},
+ regular:{late:'好吃归好吃，我都快等成一滩啦！',quality:'呜咕，火候让口感变硬了。',taste:'呜咕，这口味让我不太想弹。',delicious:'咕噜！好吃得浑身发光！',happy:'弹！明天再来一份！',okay:'咕噜……还可以。',bad:'呜咕，没吃出开心来。'},
+ critic:{late:'让亡灵苦等，香气也会散尽。',quality:'火候未得其魂，甚是可惜。',taste:'异味有了，层次还差一些。',delicious:'绝妙！这味道足以穿透灵界。',happy:'有趣，下次再品鉴。',okay:'尚可，留下些许余味。',bad:'灵魂未被打动。'}
+};
 export function guestReview(o){
  const wait=Math.max(0,(o.landedAt??o.served??0)-(o.arrival||0));
  const ratio=wait/Math.max(1,o.patience||1);
- if(ratio>.72)return {type:'late',text:'好吃是好吃，等太久啦…'};
- if((o.quality||0)<62)return {type:'quality',text:'这道菜火候不太对。'};
- if((o.fit||0)<57)return {type:'taste',text:'这个味道不太合我口味。'};
- if((o.sat||0)>=87)return {type:'delicious',text:'太好吃了！还想再来！'};
- if((o.sat||0)>=72)return {type:'happy',text:'好吃！下次还来！'};
- if((o.sat||0)>=55)return {type:'okay',text:'嗯，还不错。'};
- return {type:'bad',text:'一般般，有点失望。'};
+ const type=ratio>.72?'late':(o.quality||0)<62?'quality':(o.fit||0)<57?'taste':
+    (o.sat||0)>=87?'delicious':(o.sat||0)>=72?'happy':(o.sat||0)>=55?'okay':'bad';
+ const voice=CUSTOMER_REVIEW_VOICES[o.segment]||CUSTOMER_REVIEW_VOICES.regular;
+ return {type,text:voice[type]};
 }
 function advanceGuestMeals(s){
  const v=s.service;
