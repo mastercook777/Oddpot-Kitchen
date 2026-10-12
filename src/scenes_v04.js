@@ -276,7 +276,7 @@ export function placeRestaurantSpeech(guestCues,workerCue,actors,w,h){
   const {cue,actor,staff}=item;
   const lines=diningBubbleLines(cue.text,staff?12:16);
   const font=staff?10:11,height=lines.length>1?(staff?34:40):(staff?24:27);
-  const maxWidth=Math.min(staff?106:119,w*(staff?.33:.38));
+  const maxWidth=Math.min(staff?106:119,w*(staff ? .33 : .38));
   const width=Math.min(maxWidth,Math.max(staff?60:59,Math.max(...lines.map(v=>Array.from(v).length))*font+18));
   const x=actor.x*w,headY=actor.y*h-27;
   const candidates=[
@@ -323,7 +323,7 @@ function drawSpeechCard(c,cue,p,staff=false){
  const negative=!staff&&(cue.kind==='upset'||cue.kind==='review'&&['late','bad','quality','taste'].includes(cue.reviewType));
  const fill=staff?'#dcebd6':negative?'#ffe2ca':cue.kind==='review'?'#f5e9c8':'#f2eed3';
  const stroke=staff?'#5c846c':negative?'#d59775':'#b7a67c';
- c.save();c.globalAlpha=Math.min(staff?.92:.94,speechOpacity(cue));
+ c.save();c.globalAlpha=Math.min(staff ? .92 : .94,speechOpacity(cue));
  c.fillStyle=fill;c.strokeStyle=stroke;c.lineWidth=1.1;
  c.beginPath();c.roundRect(p.x,p.y,p.width,p.height,staff?7:9);c.fill();c.stroke();
  // A short pointer connects the bubble edge with the ACTUAL actor head.
@@ -488,7 +488,7 @@ function drawRestaurantV075(c,s,t,w,h){
  const workerCue=selectStaffSpeech(s,t,visibleSpeech);
  const workerActor=workerCue?actors.find(a=>a.id===workerCue.staffRole):null;
  const speechPlacements=placeRestaurantSpeech(visibleSpeech,workerCue,actors,w,h);
- for(const a of actors)a.speechPlacement=speechPlacements.get(a.id);
+ for(const a of actors)a.speechPlacement=speechPlacements.get(a.id)||(workerCue&&a.id===workerCue.staffRole?speechPlacements.get(workerCue.id):null);
  const speaking=new Set(visibleSpeech.map(q=>q.id));
  for(const a of actors){
   const X=x(a.x),Y=y(a.y)+(a.order?.status==='eating'?Math.sin(t*5+Number(a.order.seatId||0))*.9:0);
