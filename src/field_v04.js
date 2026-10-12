@@ -236,11 +236,11 @@ export function stepActionField(s,axisX,axisY,dt){
   const chase=e.kind==='boar'?1.22:e.kind==='chicken'?1.02:e.kind==='steam_crab'?.78:e.isBoss?.47:.62;
   // Make the wind-up readable and dodgeable: melee enemies stop tracking
   // once their attack starts and aim at the player's LAST locked position.
-  if(e.warning<=0&&d<3.6&&d>.62){
+  if(!(e.warning>0)&&d<3.6&&d>.62){
    const speed=chase*(e.slowTime>0?.45:1),next={x:e.x+(f.pos.x-e.x)/d*speed*dt,y:e.y+(f.pos.y-e.y)/d*speed*dt};
    if(!blocked(f,next,.1)){e.x=next.x;e.y=next.y}
   }
-  if(d<(melee?profile.trigger:e.isBoss?4:3.2)&&e.cooldown<=0&&e.warning<=0){
+  if(d<(melee?profile.trigger:e.isBoss?4:3.2)&&e.cooldown<=0&&!(e.warning>0)){
    e.cooldown=e.isBoss?3:e.kind==='boar'?2.1:melee?1.7:e.kind==='sporeling'?2.9:2.5;
    e.warning=melee?profile.windup:e.isBoss?.85:e.kind==='sporeling'?.72:.55;
    e.windupTotal=e.warning;
