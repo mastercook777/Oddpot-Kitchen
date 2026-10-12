@@ -1,4 +1,4 @@
-import {fieldWokPose} from './field_pose_v083.js?v=0.8.3';
+import {fieldWokPose} from './field_pose_v083.js?v=0.8.4';
 import {meleeProfile,meleeWindupProgress} from './field_combat_feedback_v084.js?v=0.8.4';
 import {pixelActor,pixelEnemy,pixelImpact} from './pixels_v041.js?v=0.8.2';
 // Lightweight procedural game graphics: original Canvas shapes, no art pack.
