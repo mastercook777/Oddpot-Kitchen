@@ -33,7 +33,7 @@ function playablePhase(){return game.phase==='service'||(game.phase==='field'&&!
 function sceneNotice(){return `<div class="ingame-notice" role="status" id="ingame-notice" ${performance.now()>flashUntil?'hidden':''}>${esc(message.slice(0,28))}</div>`}
 function shell(stage,dock){
  const walk=game.phase==='service'&&game.service?.walkable,home=game.phase==='forecast';
- return `<div class="game-shell ${walk?'v075-game-shell':''} ${home?'v076-home-shell':''}">${hud()}<main class="stage ${game.phase}${game.cook?' wok-active':''}">${stage}${playablePhase()?sceneNotice():''}</main>${playablePhase()||home?'':toast()}${walk||home?'':`<nav class="dock">${dock}</nav>`}${overlayMarkup()}</div>`;
+ return `<div class="game-shell ${walk?'v075-game-shell':''} ${home?'v076-home-shell':''} ${game.phase==='field'&&game.field?.action?'is-field-playing':''}">${hud()}<main class="stage ${game.phase}${game.cook?' wok-active':''}">${stage}${playablePhase()?sceneNotice():''}</main>${playablePhase()||home?'':toast()}${walk||home?'':`<nav class="dock">${dock}</nav>`}${overlayMarkup()}</div>`;
 }
 function overlayMarkup(){if(!overlay)return '';
  let body='';
@@ -504,6 +504,42 @@ function frame(now){const delta=Math.min(.045,(now-(lastFrame||now))/1000);lastF
  requestAnimationFrame(frame);
 }
 requestAnimationFrame(frame);
+// Safari selection may start on the *lower dock* when a thumb lands beside
+// its instruction text. Both the playfield and the unused dock background are
+// gameplay joystick surfaces, but none of their actionable buttons are.
+function fieldGestureSurface(target){
+ if(!target?.closest)return false;
+ if(target.closest('button,select,input,textarea,[contenteditable="true"],.field-event,.sheet,.modal'))return false;
+ return !!target.closest('.action-forest,.action-field-dock');
+}
+function playingFieldGestures(){return game.phase==='field'&&!!game.field?.action&&!game.field.finished&&game.field.segmentStatus!=='choice'&&!overlay;}
+function clearThumbSelection(){
+ const selected=window.getSelection?.();
+ if(selected&&!selected.isCollapsed)selected.removeAllRanges();
+}
+// Only cancel iOS native gestures while the expedition joystick owns a finger.
+// Never steal touches from the two bottom action buttons or a dialog.
+app.addEventListener('touchstart',e=>{
+ if(!playingFieldGestures()||!fieldGestureSurface(e.target))return;
+ if(e.cancelable)e.preventDefault();
+ clearThumbSelection();
+},{passive:false});
+app.addEventListener('touchmove',e=>{
+ if(!playingFieldGestures()||stick.pointer===null)return;
+ if(e.cancelable)e.preventDefault();
+},{passive:false});
+app.addEventListener('selectstart',e=>{
+ if(game.phase==='field'&&game.field?.action&&!e.target.closest?.('input,textarea,[contenteditable="true"]'))e.preventDefault();
+});
+app.addEventListener('contextmenu',e=>{
+ if(game.phase==='field'&&game.field?.action&&!e.target.closest?.('input,textarea,[contenteditable="true"]'))e.preventDefault();
+});
+app.addEventListener('dragstart',e=>{
+ if(game.phase==='field'&&game.field?.action)e.preventDefault();
+});
+document.addEventListener('selectionchange',()=>{
+ if(playingFieldGestures()&&stick.pointer!==null)clearThumbSelection();
+});
 // Floating analog: anchored at finger-down anywhere on the forest canvas.
 // Pointer capture stays on #app, which does not get replaced during scene updates.
 function releaseStick(){
@@ -522,8 +558,8 @@ app.addEventListener('pointerdown',e=>{
  const fieldReady=game.phase==='field'&&game.field?.action&&!game.field.finished&&!game.field.activeEvent&&game.field.segmentStatus!=='choice';
  if(!(serviceReady||fieldReady)||overlay||stick.pointer!==null)return;
  // The scene is the input surface. Do not steal events from active buttons or dialogs.
- if(!(serviceReady?e.target.closest('.diner-world'):e.target.closest('.action-forest'))||e.target.closest('.field-event,button,select,[data-seat],[data-station]'))return;
- e.preventDefault();stick.pointer=e.pointerId;stick.originX=e.clientX;stick.originY=e.clientY;
+ if(!(serviceReady?e.target.closest('.diner-world'):fieldGestureSurface(e.target))||e.target.closest('.field-event,button,select,[data-seat],[data-station]'))return;
+ e.preventDefault();clearThumbSelection();stick.pointer=e.pointerId;stick.originX=e.clientX;stick.originY=e.clientY;
  const pad=app.querySelector('#field-stick, #diner-stick');if(pad){pad.classList.add('active');pad.style.left=e.clientX+'px';pad.style.top=e.clientY+'px';}
  try{app.setPointerCapture(e.pointerId)}catch{}
  updateStick(e);
