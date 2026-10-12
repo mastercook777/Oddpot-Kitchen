@@ -3,7 +3,7 @@ import {pixelActor,pixelEnemy,pixelImpact} from './pixels_v041.js?v=0.5.5';
 import {ING,RECIPES,CUSTOMERS} from './data.js?v=0.5.5';
 import {heroZone,waiterDeliveryPose,HERO_PASS} from './walkable_restaurant_v07.js?v=0.7.5';
 import {DINER_FLOOR} from './restaurant_scene_v075.js?v=0.7.5';
-import {selectDiningSpeech,diningBubbleLines,speechOpacity} from './diner_ambience_v077.js?v=0.7.7';
+import {selectDiningSpeech,selectStaffSpeech,diningBubbleLines,speechOpacity} from './diner_ambience_v077.js?v=0.7.8';
 const color={ink:'#24382a',leaf:'#386b43',soil:'#806044',stone:'#a6b392',cream:'#f4dfb0',gold:'#dfb873'};
 function rect(c,x,y,w,h,fill){c.fillStyle=fill;c.fillRect(x,y,w,h)}
 function circle(c,x,y,r,fill){c.fillStyle=fill;c.beginPath();c.arc(x,y,r,0,Math.PI*2);c.fill()}
@@ -274,6 +274,23 @@ function drawGuestSpeech077(c,cue,actor,w,h){
     cue.kind==='upset'?'#7b4237':'#394234',font);
  c.restore();
 }
+// A SMALL speech card next to the actual worker. The canvas never intercepts
+// joystick, service and tool actions. Only one worker can speak at a time.
+function drawStaffSpeech078(c,cue,actor,w,h){
+ const lines=diningBubbleLines(cue.text,12),width=Math.min(102,w*.30),height=lines.length>1?34:23;
+ if(!lines.length)return;
+ const X=actor.x*w,Y=actor.y*h;
+ let bx=cue.staffRole==='helper'
+  ? (X<w*.5?7:w-width-7)
+  : Math.min(w-width-7,Math.max(7,X+(X<w*.5?17:-width-17)));
+ let by=cue.staffRole==='helper'?Math.min(h-height-8,Y+24):Math.max(h*.22,Y-height-35);
+ c.save();c.globalAlpha=Math.min(.92,speechOpacity(cue));
+ c.fillStyle='#dcebd6';c.strokeStyle='#5c846c';c.lineWidth=1.1;
+ c.beginPath();c.roundRect(bx,by,width,height,7);c.fill();c.stroke();
+ for(let i=0;i<lines.length;i++)
+  text(c,lines[i],bx+width/2,by+(lines.length===1?height/2:10+i*14),'#2f493e',10);
+ c.restore();
+}
 // v0.7.5 official restaurant. One world; furniture, actors, services and
 // collision share DINER_FLOOR. The old DOM kitchen is NOT drawn here.
 function drawRestaurantV075(c,s,t,w,h){
@@ -410,8 +427,11 @@ function drawRestaurantV075(c,s,t,w,h){
  // The dialogue slots attach to actual seated actors. Only high-signal
  // transient phrases survive, with one bubble per table and no stick overlays.
  const speechCues=selectDiningSpeech(v?.orders||[],t,2);
- const speechActors=new Map(actors.filter(a=>a.order&&!a.walk).map(a=>[a.id,a]));
+ const speechActors=new Map(actors.filter(a=>a.order&&(!a.walk||['left','rejected'].includes(a.order.status))).map(a=>[a.id,a]));
  const visibleSpeech=speechCues.filter(q=>speechActors.has(q.id));
+ // Customer urgency and actual reviews always beat optional worker banter.
+ const workerCue=selectStaffSpeech(s,t,visibleSpeech);
+ const workerActor=workerCue?actors.find(a=>a.id===workerCue.staffRole):null;
  const speaking=new Set(visibleSpeech.map(q=>q.id));
  for(const a of actors){
   const X=x(a.x),Y=y(a.y)+(a.order?.status==='eating'?Math.sin(t*5+Number(a.order.seatId||0))*.9:0);
@@ -419,6 +439,11 @@ function drawRestaurantV075(c,s,t,w,h){
   pixelActor(c,a.kind,X,Y,DINER_ACTOR_SCALE,{walk:a.walk?t*2:0,
     face:a.direction==='left'?-1:1,attack:!!a.working});
   if(a.plate)dish(c,X+14,Y-12,'WOK');
+  if(['left','rejected'].includes(a.order?.status)&&t-(a.order.leftAt??t)<1.1){
+   // Short angry-exit cue, anchored to the REAL walking guest.
+   line(c,X-9,Y-28,X-4,Y-32,'#f4a48b',2);
+   line(c,X-3,Y-32,X+3,Y-30,'#f4a48b',2);
+  }
   if(a.order?.status==='eating'){
    // Low-key cutlery gesture, same actor scale and no extra speech sprite.
    const bite=Math.sin(t*5+(a.order.seatId||0))*.9;
@@ -441,6 +466,7 @@ function drawRestaurantV075(c,s,t,w,h){
   }
  }
  for(const cue of visibleSpeech){const speaker=speechActors.get(cue.id);if(speaker)drawGuestSpeech077(c,cue,speaker,w,h)}
+ if(workerCue&&workerActor)drawStaffSpeech078(c,workerCue,workerActor,w,h);
 }
 
 export function drawDiner(canvas,s,clock,simTime=s.service?.time??clock){
