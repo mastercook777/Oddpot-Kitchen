@@ -147,7 +147,7 @@ function field(){
    <div class="ux-field-label"><strong>携带厨具</strong><span>升级也会影响探索</span></div>
    <div class="v08-weapon-picks">${ensureKitchen(game).slots.map((slot,i)=>`<button class="v08-weapon-pick ${game.selectedWeaponSlot===i?'chosen':''}" data-weapon="${i}">${slot.type==='WOK'?'🛡️ 炒锅剑盾':'🧅 汤锅投弹'} · Lv${slot.level}<small>${i?'右':'左'}厨位 · ${slot.type==='WOK'?'被动正面格挡':'远程爆炸'}</small></button>`).join('')}</div>
    <div class="ux-field-label"><strong>路线</strong><span>点击出发</span></div>
-   <div class="route-options">${activeRoutes.map(r=>`<button class="route-card ${/risk/.test(r.id)?'route-risk':'route-safe'}" data-route="${r.id}"><span class="route-emoji" aria-hidden="true">${r.emoji}</span><div><strong>${r.name}</strong><small>${/risk/.test(r.id)?`${r.subtitle} · Boss 珍稀奖励，记得留 1 格背包`:r.subtitle}</small></div><span class="route-risk-label">${/risk/.test(r.id)?'高风险':'安全'}</span><b aria-hidden="true">›</b></button>`).join('')}</div>
+   <div class="route-options">${activeRoutes.map(r=>`<button class="route-card ${/risk/.test(r.id)?'route-risk':'route-safe'}" data-route="${r.id}"><span class="route-emoji" aria-hidden="true">${r.emoji}</span><div><strong>${r.name}</strong><small>${/risk/.test(r.id)?`${r.subtitle} · 第三段必遇${bossHint(selectedRegion).boss} · 掉落${bossHint(selectedRegion).name} ×${bossHint(selectedRegion).qty}，留 1 格背包`:r.subtitle}</small></div><span class="route-risk-label">${/risk/.test(r.id)?'高风险':'安全'}</span><b aria-hidden="true">›</b></button>`).join('')}</div>
   </div></div>`,
  `<div class="dock-head"><span>最多三段探索 · 可随时回店</span><span>背包 ${game.bagSlots||8} 格</span></div><div class="action-row">${b('bento','🍱 便当','secondary')}${b('skip-field','暂不探索 · 去研发','secondary wide')}</div>`]
  }
