@@ -254,6 +254,7 @@ export function enterField(s,route){
  s.route=route;
  s.field={route,hp:3,node:0,bag:{},bagStacks:[],capacity:s.bagSlots||8,sequence,
   segmentIndex:1,segmentStatus:'active',zoneId:route.startsWith('spring')?'hot_spring_shallows':'herb_path',
+  zoneTitle:route.startsWith('spring')?'热泉浅滩':'香草小径',
   dangerCommitment:risk,selectedBranches:[],choices:[],weapon:fieldWeaponSnapshot(s),
   finished:false,...buildFieldMap(s,route,target),bento:s.bento?.day===kitchenDayKey(s)?clone(s.bento):null};
  return true;
@@ -275,7 +276,7 @@ export function chooseFieldBranch(s,choiceId){
  const branch=f.choices?.find(a=>a.choiceId===choiceId);
  if(!branch)return false;
  f.selectedBranches.push(branch.choiceId);f.dangerCommitment ||=branch.danger;
- f.segmentIndex++;f.zoneId=branch.id;f.segmentStatus='active';f.choices=[];
+ f.segmentIndex++;f.zoneId=branch.id;f.zoneTitle=branch.name;f.segmentStatus='active';f.choices=[];
  f.route=f.region==='spring'?(f.dangerCommitment?'spring_risk':'spring_safe'):(f.dangerCommitment?'risk':'safe');
  const segmentSeed=(f.segmentIndex*1307+branch.id.split('').reduce((n,c)=>n+c.charCodeAt(0),0)*17);
  const map=buildFieldMap({...s,seed:s.seed+segmentSeed,fieldZoneId:branch.id,fieldSegmentIndex:f.segmentIndex},f.route,branch.target);
