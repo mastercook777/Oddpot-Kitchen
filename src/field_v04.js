@@ -1,27 +1,85 @@
 // v0.4 real-time forest encounter. The underlying kitchen inventory remains
 // governed by engine.settleField; this file only mutates the expedition bag.
 import {ING} from './data.js?v=0.5.4';
-import {clamp, rand, settleField} from './engine.js?v=0.5.4';
+import {clamp, rand, settleField,addFieldBag} from './engine.js?v=0.5.4';
 const dist=(a,b)=>Math.hypot(a.x-b.x,a.y-b.y);
 const pushMsg=(f,message)=>{f.actionMessage=message;f.actionMessageTTL=2.7;};
 export function startActionField(s){
  const f=s.field;if(!f||f.action)return false;
  f.action=true;f.pos={...(f.spawn||{x:4.5,y:9.4})};f.x=f.pos.x;f.y=f.pos.y;
- f.elapsed=0;f.harvestProgress=0;f.harvestNode=null;f.attackCd=0;f.skillCd=0;f.damageCd=0;f.activeEvent=null;
- f.projectiles=[];f.attackFx=null;f.skillFx=0;f.hurtFx=0;f.popFx=[];f.facing={x:0,y:-1};f.moving=false;f.actionMessage='移动寻找食材。靠近目标会自动采集。';f.actionMessageTTL=4;
+ f.elapsed=0;f.harvestProgress=0;f.harvestNode=null;f.attackCd=0;f.skillCd??=0;f.damageCd=0;f.guardTime??=0;f.activeEvent=null;
+ f.projectiles=[];f.playerProjectiles=[];f.attackFx=null;f.skillFx=0;f.hurtFx=0;f.popFx=[];f.facing={x:0,y:-1};f.moving=false;f.actionMessage='移动寻找食材。靠近目标会自动采集。';f.actionMessageTTL=4;
  f.enemies=(f.route==='risk'||f.route==='spring_risk')?
  [{id:'chicken',kind:'chicken',x:6.85,y:6.6,hp:3,maxHp:3,cooldown:1.5,phase:0},
   {id:'pepper',kind:'pepper',x:2,y:3.3,hp:3,maxHp:3,cooldown:2.3,phase:1}]:
  [f.region==='spring'?{id:'pepper',kind:'pepper',x:6.8,y:3.3,hp:2,maxHp:2,cooldown:2.5,phase:0}:{id:'chicken',kind:'chicken',x:7.2,y:2.9,hp:2,maxHp:2,cooldown:2.0,phase:0}];
+ if(f.segmentIndex===3&&f.dangerCommitment&&!f.legacyField){
+  const hot=f.region==='spring';
+  f.enemies.push({id:hot?'ember_king':'spore_king',kind:hot?'boss_ember':'boss_spore',
+   isBoss:true,x:4.5,y:1.8,hp:10,maxHp:10,cooldown:2.5,
+   warning:0,phase:0,slowTime:0,lootDropped:false});
+ }
  // A target is always safely reachable before enemy engagement. Additional
  // meat from a combat-only reward sits near the high-risk side branch.
  f.nodes=f.nodes.map(n=>({...n,x:n.x+.5,y:n.y+.5,type:n.type==='danger'?'combat':n.type}));
  return true;
 }
 function blocked(f,p,r=.20){return p.x<r||p.y<r||p.x>f.worldW-r||p.y>f.worldH-r||f.obstacles.some(o=>Math.abs(p.x-(o.x+.5))<.40+r&&Math.abs(p.y-(o.y+.5))<.40+r)}
-export function addBag(f,id,n){if(!ING[id]||!n)return 0;const old=f.bag[id]||0;const capacity=Math.max(6,Number(f.capacity)||6);if(old>=3||(!old&&Object.keys(f.bag).length>=capacity))return 0;const actual=Math.min(n,3-old);f.bag[id]=old+actual;return actual}
+export function addBag(f,id,n){return addFieldBag(f,id,n)}
+function damageEnemy(s,e,amount=1){
+ const f=s.field;if(!e||e.hp<=0)return false;
+ e.hp=Math.max(0,e.hp-amount);e.hurtFx=.36;
+ f.popFx??=[];f.popFx.push({x:e.x,y:e.y,text:'-'+amount,ttl:.72,color:'#ffeab4'});
+ if(e.hp>0||e.lootDropped)return true;
+ e.lootDropped=true;e.deathFx=.45;
+ if(e.isBoss){
+  const ingredient=e.kind==='boss_ember'?'ember_pepper':'mushroom_heart';
+  const first=!s.bossCleared?.[e.id];f.bossDefeated=e.id;
+  f.nodes.push({key:'boss-reward-'+f.segmentIndex,id:ingredient,n:first?2:1,
+   type:'gather',x:e.x,y:e.y,claimed:false});
+  pushMsg(f,'Mini Boss 被击败！珍贵食材已掉落，靠近拾取再返回饭店。');
+ }else{
+  const ingredient=e.kind==='pepper'?'chili':'chicken';
+  f.nodes.push({key:e.id+'-drop-'+f.segmentIndex,id:ingredient,n:1,
+   type:'gather',x:e.x,y:e.y,claimed:false});
+  pushMsg(f,'打败食材怪！附近可以采集新食材。');
+ }
+ return true;
+}
+function clearLineOfFire(f,a,b){
+ const d=Math.hypot(a.x-b.x,a.y-b.y);
+ for(let t=.20;t<d;t+=.18){
+  const q={x:a.x+(b.x-a.x)*t/d,y:a.y+(b.y-a.y)*t/d};
+  if(f.obstacles.some(o=>Math.abs(q.x-(o.x+.5))<.43&&Math.abs(q.y-(o.y+.5))<.43))return false;
+ }
+ return true;
+}
+function potLaunch(f,target,damage=1,radius=.65,slow=0){
+ f.playerProjectiles??=[];
+ f.playerProjectiles.push({x:f.pos.x,y:f.pos.y,fromX:f.pos.x,fromY:f.pos.y,
+  targetX:target.x,targetY:target.y,time:0,duration:.38,damage,radius,slow});
+}
+function advancePlayerProjectiles(s,dt){
+ const f=s.field;
+ for(const p of f.playerProjectiles||[]){
+  p.time+=dt;const factor=Math.min(1,p.time/p.duration);
+  p.x=p.fromX+(p.targetX-p.fromX)*factor;p.y=p.fromY+(p.targetY-p.fromY)*factor;
+  if(factor<1||p.hit)continue;
+  p.hit=true;
+  for(const e of f.enemies||[]){
+   if(e.hp>0&&dist({x:p.targetX,y:p.targetY},e)<=p.radius){
+    damageEnemy(s,e,p.damage);if(p.slow>0)e.slowTime=Math.max(e.slowTime||0,p.slow);
+   }
+  }
+  f.popFx??=[];f.popFx.push({x:p.targetX,y:p.targetY,text:'💥',ttl:.5,color:'#ffe5ad'});
+ }
+ f.playerProjectiles=(f.playerProjectiles||[]).filter(p=>!p.hit);
+}
 function hurt(s,amount=1,source='enemy'){
  const f=s.field;if(f.damageCd>0)return false;
+ if(f.weapon?.type==='WOK'&&f.guardTime>0&&(source==='enemy'||source==='pepper')){
+  f.guardTime=0;f.damageCd=.38;pushMsg(f,'🛡️ 锅盖格挡成功！');return true;
+ }
  const b=f.bento;
  let protectedHit=false;
  if(b&&!b.used){
