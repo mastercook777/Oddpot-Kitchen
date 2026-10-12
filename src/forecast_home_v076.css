@@ -1,0 +1,90 @@
+/* v0.7.6 pre-opening home. One mission, one live restaurant preview,
+   one primary action. No old dock/toast/oversized scene overlays. */
+.v076-home-shell .stage.forecast{background:#1f3c30;min-height:0;overflow:hidden}
+.v076-home-shell .v076-home-hud{height:calc(55px + env(safe-area-inset-top));
+  padding:calc(6px + env(safe-area-inset-top)) 11px 5px;gap:7px}
+.v076-home-hud .brand{min-width:0;gap:7px}
+.v076-home-hud .brand strong{font-size:19px;line-height:1.1}
+.v076-home-hud .brand small{font-size:10px;letter-spacing:0;color:#adcbb1}
+.v076-home-hud .logo{font-size:24px}
+.v076-home-hud .hud-meta{gap:8px;font-size:12px}
+.v076-home-hud .hud-gear{min-width:34px;min-height:37px;font-size:22px;padding:2px}
+.v076-home-shell .v076-home-day{height:29px;background:#2a4c39;color:#f4deaf;
+ border-bottom:1px solid #70926f;padding:4px 13px;gap:8px;font-size:12px}
+.v076-home-day .day-phase{font-size:12px;color:#ffe3a2}
+.v076-home{width:100%;height:100%;min-height:0;display:flex;flex-direction:column;
+ gap:9px;padding:10px 11px calc(9px + env(safe-area-inset-bottom));
+ background:linear-gradient(#254a38 0%,#244436 32%,#152d25 100%)}
+.v076-mission{flex:0 0 auto;border-radius:12px;border:1px solid #c79f63;
+ padding:10px 13px 11px;background:linear-gradient(135deg,#315543,#233f32);
+ box-shadow:0 2px 6px #0920184d}
+.v076-mission-meta{display:flex;align-items:center;justify-content:space-between;gap:8px;
+ color:#cfdfa9;font-size:10px;font-weight:850;white-space:nowrap}
+.v076-mission-meta span:last-child{color:#f1d499}
+.v076-mission h1{font-size:19px;line-height:1.2;letter-spacing:.3px;color:#ffe8b9;
+ font-weight:900;margin:5px 0 6px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.v076-mission p{font-size:12px;line-height:1.4;color:#fff0d2;margin:0;font-weight:800}
+.v076-mission small{display:block;font-size:10px;line-height:1.35;color:#b9d1b8;
+ margin-top:5px}
+.v076-preview{flex:1 1 0;min-height:125px;position:relative;overflow:hidden;
+ border:2px solid #947447;border-radius:13px;
+ background:#72543a;box-shadow:0 3px 10px #091f1873}
+.v076-preview .diner-world{position:absolute;inset:0;width:100%;height:100%}
+.v076-preview .diner-canvas{position:absolute;inset:0;width:100%;height:100%;display:block}
+.v076-preview-info{position:absolute;bottom:7px;left:8px;right:8px;z-index:3;
+ display:flex;gap:7px;justify-content:center;pointer-events:none}
+.v076-preview-info span{background:#17382cbf;color:#fff0d0;min-width:0;
+ padding:5px 9px;border:1px solid #e3c1838c;border-radius:999px;
+ font-size:10px;font-weight:850;text-align:center;white-space:nowrap;
+ box-shadow:0 2px 4px #071b1460}
+.v076-home-controls{flex:0 0 auto;display:flex;flex-direction:column;gap:8px}
+.v076-home-resources{display:flex;justify-content:space-between;align-items:center;
+ padding:0 3px;color:#f9e3b2;font-size:12px}
+.v076-home-resources strong{font-size:13px}
+.v076-home-resources span{color:#cfe2ca;font-size:11px}
+.v076-home-shortcuts{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:7px}
+.v076-home-shortcuts button{background:#335844;border:1px solid #89a783;
+ color:#f9efd7;border-radius:11px;min-height:44px;font-size:12px;font-weight:800;
+ white-space:nowrap;box-shadow:0 2px #183828}
+.v076-home-shortcuts button span{font-size:16px;margin-right:3px}
+.v076-home-primary{display:flex;align-items:center;justify-content:center;gap:10px;
+ background:linear-gradient(#f4ce89,#dfa456);color:#352e20;
+ border:2px solid #ffe1a0;box-shadow:0 3px #936038;
+ border-radius:12px;min-height:53px;width:100%;font-size:17px;font-weight:900;
+ letter-spacing:.3px}
+.v076-home-primary span{font-size:20px}
+.v076-home-primary:active,.v076-home-shortcuts button:active{transform:translateY(2px);box-shadow:none}
+@media(max-width:350px){
+ .v076-home{padding-left:7px;padding-right:7px;gap:6px}
+ .v076-home-hud .brand strong{font-size:17px}
+ .v076-home-hud .hud-meta{gap:4px;font-size:11px}
+ .v076-home-hud .hud-gear{font-size:20px;min-width:31px}
+ .v076-mission{padding:8px 10px}
+ .v076-home-shortcuts{gap:5px}
+ .v076-home-shortcuts button{min-height:41px;font-size:11px}
+ .v076-preview-info{gap:4px;left:4px;right:4px}
+ .v076-preview-info span{font-size:9px;padding:4px 6px}
+}
+@media(max-height:700px){
+ .v076-home{gap:6px;padding-top:6px;padding-bottom:calc(5px + env(safe-area-inset-bottom))}
+ .v076-mission{padding:7px 11px}
+ .v076-mission h1{font-size:17px;margin:3px 0}
+ .v076-mission small{margin-top:3px;font-size:9px}
+ .v076-home-controls{gap:5px}
+ .v076-home-shortcuts button{min-height:38px}
+ .v076-home-primary{min-height:45px;font-size:15px}
+ .v076-home-resources{font-size:11px}
+ .v076-preview{min-height:112px}
+}
+@media(max-height:575px){
+ .v076-mission small{display:none}
+ .v076-home-shell .v076-home-hud{height:calc(46px + env(safe-area-inset-top))}
+ .v076-home-shell .v076-home-day{height:25px}
+ .v076-home{gap:4px;padding-top:4px}
+ .v076-mission{padding:6px 10px}
+ .v076-mission h1{font-size:15px}
+ .v076-preview{min-height:90px}
+ .v076-preview-info span{font-size:9px;padding:3px 6px}
+ .v076-home-shortcuts button{min-height:34px}
+ .v076-home-primary{min-height:40px}
+}
