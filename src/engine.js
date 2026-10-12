@@ -431,7 +431,7 @@ export function serviceDayPlan(s){
   '节日高峰':{min:10,spread:2,spacing:1,favorite:'adventurer'}
  };
  const rule=crowdRules[pressure];
- const count=Math.min(14,rule.min+((key>>>5)%rule.spread)+(firstChallenge(s)?1:0)+(s.cycle>1?2:0)+(s.reputation>=10?1:0));
+ const count=Math.min(s.cycle===1?11:14,rule.min+((key>>>5)%rule.spread)+(firstChallenge(s)?1:0)+(s.cycle>1?2:0)+(s.reputation>=10?1:0));
  const favorite=rule.favorite;
  const baseline=today(s).segments;
  const guests=Array.from({length:count},(_,i)=>{
