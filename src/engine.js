@@ -421,14 +421,14 @@ export function serviceDayPlan(s){
  const key=rand(s.seed+s.cycle*3109+s.day*701+Math.max(0,s.reputation)*11);
  // The LCG multiplier is divisible by 5, so key % 5 was CONSTANT.
  // Use mixed high bits or every night falsely advertises the same scenario.
- const pressure=['街坊小聚','周末食客','冒险者晚宴','雨夜热汤','节日高峰'][(key>>>17)%5];
+ const pressure=['街坊晚餐','菌帽家庭聚餐','矿工收工','雨夜暖汤','集市热闹夜'][(key>>>17)%5];
  // Crowd labels represent different *operational pressure*, not cosmetic themes.
  const crowdRules={
-  '街坊小聚':{min:6,spread:2,spacing:3,favorite:'regular'},
-  '周末食客':{min:8,spread:2,spacing:2,favorite:'family'},
-  '冒险者晚宴':{min:8,spread:3,spacing:1,favorite:'adventurer'},
-  '雨夜热汤':{min:6,spread:3,spacing:3,favorite:'family'},
-  '节日高峰':{min:10,spread:2,spacing:1,favorite:'adventurer'}
+  '街坊晚餐':{min:6,spread:2,spacing:3,favorite:'regular'},
+  '菌帽家庭聚餐':{min:8,spread:2,spacing:2,favorite:'family'},
+  '矿工收工':{min:8,spread:3,spacing:1,favorite:'adventurer'},
+  '雨夜暖汤':{min:6,spread:3,spacing:3,favorite:'family'},
+  '集市热闹夜':{min:10,spread:2,spacing:1,favorite:'adventurer'}
  };
  const rule=crowdRules[pressure];
  const count=Math.min(s.cycle===1?11:14,rule.min+((key>>>5)%rule.spread)+(firstChallenge(s)?1:0)+(s.cycle>1?2:0)+(s.reputation>=10?1:0));
@@ -535,12 +535,12 @@ export function breakPrep(s,recipeId){
  record(s,{type:'emergency_prep',recipeId});return true;
 }
 export const SERVICE_EVENTS={
- 1:{id:'rush',title:'临时来了旅行团',description:'下一波冒险者可能增多；你的辣味与炖煮产能能接住吗？',choices:[
-  {id:'sign',label:'挂辣味招牌',detail:'将下一波一位顾客改为冒险者，获得需求机会'},
+ 1:{id:'rush',title:'矿井刚刚换班',description:'饥肠辘辘的矮人陆续进门，肉菜可能卖得更快。',choices:[
+  {id:'sign',label:'主推辣味菜',detail:'下一波增加一位喜欢辣味的矮人'},
   {id:'kitchen',label:'整理后厨',detail:'花 6 金币：下一波炒锅每单减少 3 秒'},
   {id:'steady',label:'保持原计划',detail:'不追加成本，原客群结构保持不变'}]},
- 2:{id:'critic',title:'街角传来美食评论家的消息',description:'有人说今晚会有人特别关注出餐与招待。',choices:[
-  {id:'soup',label:'主推温和餐',detail:'将下一波一位顾客改为家庭客群'},
+ 2:{id:'critic',title:'门外飘来一团灵雾',description:'听说幽灵鉴味师会来，出餐速度和火候都得留心。',choices:[
+  {id:'soup',label:'主推温和餐',detail:'下一波增加一位菌帽食客'},
   {id:'assist',label:'雇临时帮厨',detail:'花 8 金币：下一波两口锅每单减少 3 秒'},
   {id:'publicity',label:'免费试吃宣传',detail:'花 5 金币：下一波顾客满意度 +10'}]}
 };
@@ -552,8 +552,8 @@ export const SERVICE_EVENT_POOL={
    {id:'soup',label:'推荐一份热汤',detail:'下一波一位顾客转为家庭客'},
    {id:'kitchen',label:'帮后厨清台',detail:'6 金币：炒锅加速 3 秒'},
    {id:'steady',label:'不追热潮',detail:'保持计划，保存金币'}]},
-  {id:'market',title:'门口摆起了夜市摊',description:'能否接住突然增加的冒险者需求？',choices:[
-   {id:'sign',label:'推出辛辣招牌',detail:'下一波增加冒险者需求'},
+  {id:'market',title:'矿工们被香味引了过来',description:'门外越来越热闹，今晚的肉菜会不会不够？',choices:[
+   {id:'sign',label:'推出辛辣招牌',detail:'下一波增加矮人食客'},
    {id:'kitchen',label:'整理炒锅',detail:'6 金币：炒锅每单缩短 3 秒'},
    {id:'steady',label:'保留原菜单',detail:'不改变今晚的客群'}]}],
  2:[SERVICE_EVENTS[2],
@@ -561,8 +561,8 @@ export const SERVICE_EVENT_POOL={
    {id:'assist',label:'临时请人帮忙',detail:'8 金币：所有锅具加速 3 秒'},
    {id:'publicity',label:'送一份试吃',detail:'5 金币：下一波好感 +10'},
    {id:'steady',label:'稳住节奏',detail:'不追加支出'}]},
-  {id:'family',title:'附近家庭结伴而来',description:'温和菜可能更受欢迎，值得临时调整吗？',choices:[
-   {id:'soup',label:'优先推荐温和菜',detail:'下一波一位顾客改成家庭客'},
+  {id:'family',title:'几顶小菌帽探进门来',description:'林地家庭想吃温暖的料理，需要调整菜单吗？',choices:[
+   {id:'soup',label:'优先推荐温和菜',detail:'下一波增加菌帽食客'},
    {id:'publicity',label:'附赠小菜招待',detail:'5 金币：下一波好感 +10'},
    {id:'assist',label:'请人救急',detail:'8 金币：双厨具加速 3 秒'}]}]
 };
@@ -581,7 +581,7 @@ export function chooseServiceEvent(s,choice){
  else if(choice==='assist'){v.eventEffects.WOK=3;v.eventEffects.POT=3;}
  else if(choice==='publicity'){v.guestMood=10;v.eventMoodWave=wave;}
  v.eventChoiceMade.push(wave);v.breakUsed=true;
- v.decisionFlash=({sign:'冒险者客群增加',kitchen:'炒锅加速 -3秒',steady:'稳住服务节奏',soup:'家庭客群增加',assist:'双厨具加速 -3秒',publicity:'顾客好感 +10'})[choice]||'事件已处理';v.decisionAt=v.time;
+ v.decisionFlash=({sign:'矮人客人增加',kitchen:'炒锅加速 -3秒',steady:'稳住服务节奏',soup:'菌帽食客增加',assist:'双厨具加速 -3秒',publicity:'顾客好感 +10'})[choice]||'事件已处理';v.decisionAt=v.time;
  record(s,{type:'management_choice',wave,choice,cost});return true;
 }
 export function swapBreakMenu(s,slot,id){
