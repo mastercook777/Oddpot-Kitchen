@@ -1,34 +1,34 @@
 import {RECIPE_PROFILES} from './recipe_profiles_v063.js?v=0.8.0';
 // v0.3 prototype content — expanded, configurable, not final balance values.
 export const ING = {
-  beef:{name:'野牛肉',emoji:'🥩',tags:['鲜','肉','厚重'],lo:5,hi:8,cost:8},
-  chicken:{name:'林地鸡肉',emoji:'🍗',tags:['鲜','肉','温和'],lo:5,hi:8,cost:6},
-  chili:{name:'火椒',emoji:'🌶️',tags:['辣'],lo:3,hi:6,cost:4},
-  garlic:{name:'蒜瓣',emoji:'🧄',tags:['香'],lo:3,hi:6,cost:2},
+  beef:{name:'铁角野牛肉',emoji:'🥩',tags:['鲜','肉','厚重'],lo:5,hi:8,cost:8},
+  chicken:{name:'咕咕鸡肉',emoji:'🍗',tags:['鲜','肉','温和'],lo:5,hi:8,cost:6},
+  chili:{name:'喷火椒',emoji:'🌶️',tags:['辣'],lo:3,hi:6,cost:4},
+  garlic:{name:'跳跳蒜瓣',emoji:'🧄',tags:['香'],lo:3,hi:6,cost:2},
   mushroom:{name:'幽光蘑菇',emoji:'🍄',tags:['菌香','鲜'],lo:4,hi:7,cost:3},
-  cabbage:{name:'卷心菜',emoji:'🥬',tags:['清爽'],lo:3,hi:6,cost:2},
+  cabbage:{name:'卷卷魔菜',emoji:'🥬',tags:['清爽'],lo:3,hi:6,cost:2},
   onion:{name:'琥珀洋葱',emoji:'🧅',tags:['甜香','温和'],lo:3,hi:6,cost:3},
   potato:{name:'地精土豆',emoji:'🥔',tags:['饱腹','温和'],lo:5,hi:8,cost:4}
 };
 export const RECIPES = {
-  chili_meat:{name:'辣椒炒肉',emoji:'🌶️',ids:['chicken','chili'],also:[['beef','chili']],method:'stir',station:'WOK',time:8,price:28,tags:['辣','肉','鲜'],cost:12,hint:'肉类 + 火椒，尝试爆炒'},
-  mushroom_stir:{name:'菌香小炒',emoji:'🍄',ids:['mushroom','garlic'],method:'stir',station:'WOK',time:6,price:18,tags:['菌香','鲜','香'],cost:6,hint:'森林蘑菇需要一味香料'},
-  chicken_stew:{name:'蘑菇焖鸡',emoji:'🍲',ids:['chicken','mushroom'],method:'stew',station:'POT',time:12,price:24,tags:['温和','菌香','鲜'],cost:9,hint:'鸡肉与森林鲜味，慢火焖煮'},
-  veg_stir:{name:'清炒双蔬',emoji:'🥬',ids:['cabbage','mushroom'],method:'stir',station:'WOK',time:6,price:16,tags:['清爽','菌香'],cost:5,hint:'清爽蔬菜与蘑菇快速翻炒'},
-  flame_beef:{name:'爆炎牛肉',emoji:'🔥',ids:['beef','chili','garlic'],method:'stir',station:'WOK',time:10,price:34,tags:['辣','肉','香','爆香'],cost:15,hidden:true,hint:'牛肉与辣椒贴近两拍，蒜瓣到锅心爆香'},
+  chili_meat:{name:'火椒噼啪肉',emoji:'🌶️',ids:['chicken','chili'],also:[['beef','chili']],method:'stir',station:'WOK',time:8,price:28,tags:['辣','肉','鲜'],cost:12,hint:'肉类 + 火椒，尝试爆炒'},
+  mushroom_stir:{name:'幽光菌锅舞',emoji:'🍄',ids:['mushroom','garlic'],method:'stir',station:'WOK',time:6,price:18,tags:['菌香','鲜','香'],cost:6,hint:'森林蘑菇需要一味香料'},
+  chicken_stew:{name:'咕噜菌雾鸡',emoji:'🍲',ids:['chicken','mushroom'],method:'stew',station:'POT',time:12,price:24,tags:['温和','菌香','鲜'],cost:9,hint:'鸡肉与森林鲜味，慢火焖煮'},
+  veg_stir:{name:'月光跳跳蔬',emoji:'🥬',ids:['cabbage','mushroom'],method:'stir',station:'WOK',time:6,price:16,tags:['清爽','菌香'],cost:5,hint:'清爽蔬菜与蘑菇快速翻炒'},
+  flame_beef:{name:'爆炎牛魔锅',emoji:'🔥',ids:['beef','chili','garlic'],method:'stir',station:'WOK',time:10,price:34,tags:['辣','肉','香','爆香'],cost:15,hidden:true,hint:'牛肉与辣椒贴近两拍，蒜瓣到锅心爆香'},
   garlic_beef:{name:'焦香蒜牛',emoji:'🥩',ids:['beef','garlic'],method:'stir',station:'WOK',time:9,price:32,tags:['肉','香','鲜'],cost:10,hint:'野牛肉和蒜瓣，爆炒出焦香'},
   spicy_mushroom:{name:'火山菌菇',emoji:'🍄',ids:['chili','mushroom'],method:'stir',station:'WOK',time:7,price:21,tags:['辣','菌香'],cost:7,hint:'辣椒与蘑菇不一定需要肉'},
   onion_chicken:{name:'洋葱烩鸡',emoji:'🍗',ids:['chicken','onion'],method:'stew',station:'POT',time:11,price:26,tags:['温和','肉','甜香'],cost:9,hint:'甜香洋葱，试着与鸡肉同炖'},
-  potato_stew:{name:'地精土豆煲',emoji:'🥔',ids:['potato','onion'],method:'stew',station:'POT',time:11,price:20,tags:['饱腹','温和'],cost:7,hint:'两种田野作物慢慢焖煮'},
+  potato_stew:{name:'地精咕噜土豆煲',emoji:'🥔',ids:['potato','onion'],method:'stew',station:'POT',time:11,price:20,tags:['饱腹','温和'],cost:7,hint:'两种田野作物慢慢焖煮'},
   chili_potato:{name:'爆辣脆薯',emoji:'🍟',ids:['potato','chili'],method:'stir',station:'WOK',time:7,price:23,tags:['辣','饱腹'],cost:8,hint:'火椒配上能扛高温的根茎'},
   woodland_pot:{name:'森林浓汤',emoji:'🥣',ids:['mushroom','potato'],method:'stew',station:'POT',time:13,price:23,tags:['菌香','温和','饱腹'],cost:7,hint:'蘑菇与土豆，慢煮出浓郁'},
   harvest_stir:{name:'丰收三拼',emoji:'🥘',ids:['cabbage','onion','potato'],method:'stir',station:'WOK',time:10,price:29,tags:['清爽','温和','饱腹'],cost:9,hint:'卷心菜、洋葱和土豆，考验三种不同耐热'}
 };
-export const CUSTOMERS={adventurer:{name:'冒险者',emoji:'⚔️',likes:['辣','肉','饱腹'],budget:40,patience:24},family:{name:'家庭食客',emoji:'👨‍👩‍👧',likes:['温和','菌香','甜香'],budget:28,patience:32},regular:{name:'街坊客人',emoji:'🙂',likes:['清爽','菌香','鲜'],budget:26,patience:27},critic:{name:'美食评论家',emoji:'⭐',likes:['辣','香','爆香'],budget:50,patience:26}};
+export const CUSTOMERS={adventurer:{name:'铁甲矮人',emoji:'⛏️',likes:['辣','肉','饱腹'],budget:40,patience:24},family:{name:'菌帽一家',emoji:'🍄',likes:['温和','菌香','甜香'],budget:28,patience:32},regular:{name:'史莱姆街坊',emoji:'🟢',likes:['清爽','菌香','鲜'],budget:26,patience:27},critic:{name:'幽灵鉴味师',emoji:'👻',likes:['辣','香','爆香'],budget:50,patience:26}};
 export const FORECAST=[
-  {name:'温暖家常',hint:'家庭食客爱温和菜，菌香与炖煮受欢迎',segments:['family','regular','family','adventurer','regular','family','critic']},
-  {name:'勇者集会',hint:'冒险者涌入小镇，辛辣肉食和饱腹菜热卖',segments:['adventurer','family','adventurer','adventurer','regular','adventurer','critic']},
-  {name:'爆炎厨王挑战',hint:'最后一桌是评委！辛辣或爆香的高品质料理更出彩',segments:['adventurer','family','adventurer','adventurer','regular','adventurer','critic']}
+  {name:'菌帽家族的晚餐',hint:'家庭食客爱温和菜，菌香与炖煮受欢迎',segments:['family','regular','family','adventurer','regular','family','critic']},
+  {name:'矮人探险团集会',hint:'冒险者涌入小镇，辛辣肉食和饱腹菜热卖',segments:['adventurer','family','adventurer','adventurer','regular','adventurer','critic']},
+  {name:'爆炎厨王的怪味试炼',hint:'最后一桌是评委！辛辣或爆香的高品质料理更出彩',segments:['adventurer','family','adventurer','adventurer','regular','adventurer','critic']}
 ];
 // v0.8: sources are authoritative for both warehouse controls and domain purchases.
 for(const [id,ing] of Object.entries(ING))ing.acquisitionPolicy=
@@ -63,8 +63,8 @@ const FEATURED_ADDITIONS = {
 for(const [id,r] of Object.entries(FEATURED_ADDITIONS)){RECIPES[id]=r;registerRecipe(id,r)}
 const RARE_FEATURED_RECIPES={
   mushroom_heart_wok:{name:'菌心爆香',emoji:'🍄',ids:['mushroom_heart','garlic'],method:'stir',station:'WOK',time:9,price:35,tags:['菌香','鲜','香'],cost:15,hint:'菌王孢心配蒜瓣，高温激发菌香',rare:true},
-  mushroom_heart_pot:{name:'菌王浓汤',emoji:'🥣',ids:['mushroom_heart','chicken','mushroom'],method:'stew',station:'POT',time:14,price:36,tags:['菌香','鲜','温和'],cost:22,hint:'菌王孢心与鸡汤慢炖，再收汁',rare:true},
-  ember_pepper_wok:{name:'熔心爆牛',emoji:'🔥',ids:['ember_pepper','beef','garlic'],method:'stir',station:'WOK',time:11,price:46,tags:['辣','肉','香','爆香'],cost:26,hint:'熔心椒晶、野牛肉和蒜瓣极速爆炒',rare:true},
+  mushroom_heart_pot:{name:'菌王吐息浓汤',emoji:'🥣',ids:['mushroom_heart','chicken','mushroom'],method:'stew',station:'POT',time:14,price:36,tags:['菌香','鲜','温和'],cost:22,hint:'菌王孢心与鸡汤慢炖，再收汁',rare:true},
+  ember_pepper_wok:{name:'熔心喷火牛',emoji:'🔥',ids:['ember_pepper','beef','garlic'],method:'stir',station:'WOK',time:11,price:46,tags:['辣','肉','香','爆香'],cost:26,hint:'熔心椒晶、野牛肉和蒜瓣极速爆炒',rare:true},
   ember_pepper_pot:{name:'火山焖鸡',emoji:'🍲',ids:['ember_pepper','chicken','potato'],method:'stew',station:'POT',time:14,price:38,tags:['辣','饱腹','温和'],cost:26,hint:'熔心椒晶与鸡肉土豆慢炖',rare:true}
 };
 for(const [id,r] of Object.entries(RARE_FEATURED_RECIPES)){RECIPES[id]=r;registerRecipe(id,r)}

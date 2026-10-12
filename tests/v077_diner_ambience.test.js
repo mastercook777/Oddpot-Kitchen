@@ -13,7 +13,7 @@ const order=(status,tableId=0,seatId=0)=>({
 });
 test('guests request real menu dishes, never unrelated invented dialogue',()=>{
  const o=order('queued');
- assert.ok(diningSpeechCue(o,3.3)?.text.startsWith('蘑菇焖鸡！'));
+ assert.ok(diningSpeechCue(o,3.3)?.text.startsWith('咕噜菌雾鸡！'));
  assert.equal(diningSpeechCue(o,7),null);
  assert.ok(diningSpeechCue({...o,recipeId:'no-such-dish'},3.3)?.text.startsWith('招牌菜！'));
 });
@@ -86,13 +86,13 @@ test('speech calculations do not mutate real inventory, orders, money or service
 test('all visible game versions, entrypoint and offline build are aligned',()=>{
  const html=src('../index.html'),script=src('../scripts/build-standalone.py'),
  app=src('../src/app.js'),pkg=JSON.parse(src('../package.json'));
- assert.equal(pkg.version,'0.8.5');
- assert.match(html,/Oddpot Kitchen v0\.8\.5/);
- assert.match(html,/app\.js\?v=0\.8\.5-pot-restored/);
- assert.match(app,/ODDPOT · v0\.8\.5/);
- assert.match(app,/版本 v0\.8\.5/);
+ assert.equal(pkg.version,'0.9.0');
+ assert.match(html,/Oddpot Kitchen v0\.9\.0/);
+ assert.match(html,/app\.js\?v=0\.9\.0-growth/);
+ assert.match(app,/ODDPOT · v0\.9\.0/);
+ assert.match(app,/版本 v0\.9\.0/);
  assert.match(script,/diner_ambience_v077\.js/);
- assert.match(script,/v0\.8\.5 离线版/);
+ assert.match(script,/v0\.9\.0 离线版/);
  for(const name of ['../src/diner_ambience_v077.js','../src/scenes_v04.js']){
   const check=spawnSync(process.execPath,['--check',new URL(name,import.meta.url).pathname],{encoding:'utf8'});
   assert.equal(check.status,0,check.stderr);

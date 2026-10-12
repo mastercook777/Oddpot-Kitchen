@@ -71,7 +71,7 @@ test('aroma recognition also works for garlic+mushroom and mushroom+chicken',()=
  const a=evaluateLiveCook(['garlic','mushroom'],'WOK',[{id:'garlic',t:0,index:0},{id:'mushroom',t:2,index:1}],[{type:'flip',t:3,with:['garlic','mushroom']}],9);
  const b=evaluateLiveCook(['chicken','mushroom'],'WOK',[{id:'mushroom',t:0,index:0},{id:'chicken',t:2,index:1}],[{type:'flip',t:3,with:['mushroom','chicken']}],9);
  assert.equal(a.style,'aroma');assert.equal(b.style,'aroma');
- assert.equal(a.recipeName,'菌香小炒');assert.equal(b.recipeName,'山菌炒鸡');
+ assert.equal(a.recipeName,RECIPES.mushroom_stir.name);assert.equal(b.recipeName,'山菌炒鸡');
  assert.ok(a.sellable&&b.sellable);
 });
 test('old saves gain legacy variants with unchanged quality and the same default menu',()=>{

@@ -19,13 +19,20 @@ function person(c,kind,walk,attack){
  }else if(kind==='waiter'){
   r(c,2,0,14,3,'#466251');r(c,6,-2,7,3,'#ddc391');r(c,6,13,8,3,'#e9daa7');
  }else if(kind==='adventurer'){
-  r(c,2,1,15,4,P.outline);r(c,4,0,12,4,p[2]);r(c,14,11,4,8,'#8c764b');
+  // Ironhorn dwarf: horned helmet, copper beard and heavy travel pack.
+  r(c,2,1,15,4,P.outline);r(c,4,0,12,4,'#8d7660');r(c,1,-3,4,5,'#ddd0a5');r(c,14,-3,4,5,'#ddd0a5');
+  r(c,5,9,9,4,'#ab6a3d');r(c,8,11,3,4,'#b87d43');r(c,14,11,4,8,'#8c764b');
  }else if(kind==='critic'){
-  r(c,3,0,13,4,P.outline);r(c,4,0,11,2,p[2]);r(c,1,3,4,8,p[2]);r(c,14,3,4,8,p[2]);r(c,5,13,8,2,'#d4b16d');
+  // Floating ghost critic, veil and lilac ectoplasm rather than a normal human.
+  r(c,3,0,13,4,P.outline);r(c,4,-2,11,4,'#d8c6ed');r(c,1,3,4,8,'#9275ae');r(c,14,3,4,8,'#9275ae');
+  r(c,3,18,12,4,'#bb9ad3');r(c,5,13,8,2,'#d4b16d');
  }else if(kind==='family'){
-  r(c,3,0,13,4,p[2]);r(c,2,3,4,8,p[2]);r(c,15,3,3,8,p[2]);
+  // Spotted mushroom-cap people, silhouette still legible at phone size.
+  r(c,1,1,17,4,'#a34c5b');r(c,3,-3,13,5,'#d26c79');r(c,5,-2,3,2,'#fff0c6');r(c,12,0,2,2,'#fff0c6');
+  r(c,2,3,4,8,p[2]);r(c,15,3,3,8,p[2]);
  }else{
-  r(c,3,0,13,4,p[2]);r(c,4,3,5,2,p[2]);
+  // Slime villager: translucent turquoise head and bobbing droplets.
+  r(c,3,0,13,4,'#52ae9d');r(c,4,3,5,2,'#70debc');r(c,1,1,2,2,'#8be9d3');r(c,15,1,2,2,'#8be9d3');
  }
  if(attack){
   // A readable, off-center utensil silhouette synchronized to the attack state.

@@ -68,3 +68,7 @@
  .v075-event-card h2{font-size:16px}
  .v075-event-choice{padding:8px 11px}
 }
+
+
+/* v0.9: queue means actual unseated visitors awaiting a free chair. */
+.v09-queue{position:absolute;z-index:8;top:46px;left:50%;transform:translateX(-50%);max-width:95%;white-space:nowrap;border-radius:9px;padding:5px 9px;background:#573b30e8;border:1px solid #e3b981;color:#ffe6ae;font-size:10px;font-weight:800;pointer-events:none}

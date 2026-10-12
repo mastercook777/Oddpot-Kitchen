@@ -1,11 +1,11 @@
 import {fieldWokPose,fieldPotPose} from './field_pose_v083.js?v=0.8.5';
 import {meleeProfile,meleeWindupProgress} from './field_combat_feedback_v084.js?v=0.8.4';
-import {pixelActor,pixelEnemy,pixelImpact} from './pixels_v041.js?v=0.8.2';
+import {pixelActor,pixelEnemy,pixelImpact} from './pixels_v041.js?v=0.9.0';
 // Lightweight procedural game graphics: original Canvas shapes, no art pack.
-import {ING,RECIPES,CUSTOMERS} from './data.js?v=0.8.1';
-import {heroZone,waiterDeliveryPose,HERO_PASS} from './walkable_restaurant_v07.js?v=0.7.5';
-import {DINER_FLOOR} from './restaurant_scene_v075.js?v=0.7.5';
-import {selectDiningSpeech,selectStaffSpeech,diningBubbleLines,speechOpacity} from './diner_ambience_v077.js?v=0.7.8';
+import {ING,RECIPES,CUSTOMERS} from './data.js?v=0.9.0';
+import {heroZone,waiterDeliveryPose,HERO_PASS} from './walkable_restaurant_v07.js?v=0.9.0';
+import {DINER_FLOOR,dinerFloor} from './restaurant_scene_v075.js?v=0.9.0';
+import {selectDiningSpeech,selectStaffSpeech,diningBubbleLines,speechOpacity} from './diner_ambience_v077.js?v=0.9.0';
 const color={ink:'#24382a',leaf:'#386b43',soil:'#806044',stone:'#a6b392',cream:'#f4dfb0',gold:'#dfb873'};
 function rect(c,x,y,w,h,fill){c.fillStyle=fill;c.fillRect(x,y,w,h)}
 function circle(c,x,y,r,fill){c.fillStyle=fill;c.beginPath();c.arc(x,y,r,0,Math.PI*2);c.fill()}
@@ -606,7 +606,7 @@ function drawStaffSpeech078(c,cue,actor,w,h){
 // v0.7.5 official restaurant. One world; furniture, actors, services and
 // collision share DINER_FLOOR. The old DOM kitchen is NOT drawn here.
 function drawRestaurantV075(c,s,t,w,h){
- const g=DINER_FLOOR,v=s.service,x=f=>f*w,y=f=>f*h;
+ const g=dinerFloor(s),v=s.service,x=f=>f*w,y=f=>f*h;
  const rr=(X,Y,W,H,R,color,stroke)=>{
   c.beginPath();c.roundRect(X,Y,W,H,R);c.fillStyle=color;c.fill();
   if(stroke){c.strokeStyle=stroke;c.lineWidth=2;c.stroke();}
@@ -641,7 +641,7 @@ function drawRestaurantV075(c,s,t,w,h){
   rr(X-rw*.36,Y+27,rw*.72,7,4,'#2b4136','#b18b64');
   if(busy){rr(X-rw*.35,Y+28,Math.max(3,rw*.70*cookProgress),5,2,'#f6cc82');text(c,Math.ceil(busy.left)+'s',X,Y+46,'#ffe3a8',11);}
   const zone=pt;const hero=v?.hero;
-  const near=heroZone(hero)===key;
+  const near=heroZone(hero,s)===key;
   c.beginPath();c.ellipse(x(zone.x),y(zone.y),w*.10,h*.032,0,0,Math.PI*2);
   c.lineWidth=2;c.strokeStyle=near?'#ffe69f':'#c8b6857d';c.stroke();
  }
@@ -694,6 +694,11 @@ function drawRestaurantV075(c,s,t,w,h){
  rr(x(.43),y(.895),x(.14),h*.10,5,'#825d40','#e0bc85');
  rr(x(.46),y(.91),x(.08),h*.07,4,'#294c3d');
  for(const px of [.095,.905]){rr(x(px)-7,y(.84),14,20,3,'#66462d');circle(c,x(px),y(.838),13,'#54845b')}
+ // A real queue accumulates at the threshold until expanded seating frees a table.
+ // Draw only the first few visitors, rather than fake serving or deleting demand.
+ if(v){const line=v.orders.filter(o=>o.status==='waiting'&&o.arrival<=v.time).slice(0,3);
+  line.forEach((o,i)=>pixelActor(c,o.segment,x(.40+i*.075),y(.894+i%2*.018),DINER_ACTOR_SCALE*.82,{walk:0}));
+ }
  // Actors are sorted by floor position. Same real sprite scale for everyone.
  const actors=[];
  if(v){
@@ -704,7 +709,7 @@ function drawRestaurantV075(c,s,t,w,h){
        ||(['left','rejected'].includes(o.status)&&Number.isFinite(o.leftAt)&&t-o.leftAt<2.6);
    if(!eligible)continue;
    const pt=g.tables[o.tableId],side=o.seatId===0?-1:1;
-   const seat={x:pt.x+side*.082,y:.653};
+   const seat={x:pt.x+side*.082,y:pt.y-.063};
    const entry={x:g.entrance.x,y:.96},hall={x:.5,y:.81},flank={x:seat.x,y:.80};
    const age=t-(o.doorAt??o.arrival);
    const leaving=o.status==='served'&&t-(o.reviewedAt??o.served??t)>.65||(['left','rejected'].includes(o.status)&&Number.isFinite(o.leftAt));
@@ -727,7 +732,7 @@ function drawRestaurantV075(c,s,t,w,h){
    actors.push({id:'waiter',x:pos.x,y:pos.y,kind:'waiter',walk:pos.moving,plate:pos.plate});
   }
   if(v.hero){
-   const hero=v.hero,zone=heroZone(hero);
+   const hero=v.hero,zone=heroZone(hero,s);
    const carried=v.orders.find(o=>o.id===hero.carryOrderId&&o.status==='carried');
    actors.push({id:'hero',x:hero.x,y:hero.y,kind:'chef',walk:hero.moving,plate:!!carried,
      working:!carried&&['WOK','POT'].includes(zone)&&!!v.stations[zone],direction:hero.direction,

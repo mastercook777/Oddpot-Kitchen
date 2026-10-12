@@ -27,11 +27,11 @@ test('all four customer segments have distinct, multiple voice lines for every m
 test('speech for a real dish leads with the actual recipe name and is deterministic across frames',()=>{
  const o=sample('critic','queued');
  const a=diningSpeechCue(o,3.2),b=diningSpeechCue(o,3.9);
- assert.ok(a.text.startsWith('辣椒炒肉！'));
+ assert.ok(a.text.startsWith('火椒噼啪肉！'));
  assert.equal(a.text,b.text);
  assert.equal(diningSpeechCue(o,7),null,'transient speech must disappear');
  const f={...o,id:'another-guest'};
- assert.ok(diningSpeechCue(f,3.3)?.text.startsWith('辣椒炒肉！'));
+ assert.ok(diningSpeechCue(f,3.3)?.text.startsWith('火椒噼啪肉！'));
 });
 test('real shortage mentions genuinely unavailable ingredients, not a generic bad-menu reason',()=>{
  const s=newGame();s.phase='service';
@@ -122,17 +122,17 @@ test('long daily report scrolls from TOP and semantic title does not clip or dra
  assert.match(css,/box-shadow:none/);
  assert.match(css,/@media\(max-height:650px\)/);
  const html=source('../index.html');
- assert.match(html,/diner_polish_v078\.css\?v=0\.7\.8/);
+ assert.match(html,/diner_polish_v078\.css\?v=0\.9\.0/);
 });
 test('version, offline bundle and complete JavaScript stay parseable',()=>{
  const html=source('../index.html'),app=source('../src/app.js'),build=source('../scripts/build-standalone.py');
- assert.equal(JSON.parse(source('../package.json')).version,'0.8.5');
- assert.match(html,/Oddpot Kitchen v0\.8\.5/);
- assert.match(html,/app\.js\?v=0\.8\.5-pot-restored/);
- assert.match(app,/ODDPOT · v0\.8\.5/);
- assert.match(app,/版本 v0\.8\.5/);
+ assert.equal(JSON.parse(source('../package.json')).version,'0.9.0');
+ assert.match(html,/Oddpot Kitchen v0\.9\.0/);
+ assert.match(html,/app\.js\?v=0\.9\.0-growth/);
+ assert.match(app,/ODDPOT · v0\.9\.0/);
+ assert.match(app,/版本 v0\.9\.0/);
  assert.match(build,/diner_polish_v078\.css/);
- assert.match(build,/v0\.8\.5 离线版/);
+ assert.match(build,/v0\.9\.0 离线版/);
  for(const path of ['../src/app.js','../src/diner_ambience_v077.js','../src/engine.js','../src/scenes_v04.js']){
   const p=spawnSync(process.execPath,['--check',new URL(path,import.meta.url).pathname],{encoding:'utf8'});
   assert.equal(p.status,0,path+' '+p.stderr);
