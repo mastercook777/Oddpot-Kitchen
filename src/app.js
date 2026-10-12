@@ -24,11 +24,17 @@ const meal=r=>`${r.emoji} ${r.name}`;
 const onlyName=id=>ING[id]?.name||id;
 const itemCount=()=>Object.keys(game.recipes).length;
 
-function hud(){return `<div class="hud"><div class="brand"><span class="logo" aria-hidden="true">🍳</span><div><strong>怪味食堂</strong><small>ODDPOT · v0.7.5</small></div></div><div class="hud-meta"><span aria-label="金币">🪙 ${game.coins}</span><span aria-label="声望">⭐ ${game.reputation}</span></div><button class="hud-gear" data-act="settings" aria-label="设置">⚙</button></div><div class="day-strip"><b>第 ${game.cycle} 轮 · 第 ${game.day} 天</b><span class="day-phase">${phaseLabels[game.phase]}</span><span class="day-recipes">图鉴 ${itemCount()}/${Object.keys(RECIPES).length}</span></div>`}
+function hud(){
+ const home=game.phase==='forecast';
+ return `<div class="hud ${home?'v076-home-hud':''}"><div class="brand"><span class="logo" aria-hidden="true">🍳</span><div><strong>怪味食堂</strong><small>${home?'边境小食堂':'ODDPOT · v0.7.6'}</small></div></div><div class="hud-meta"><span aria-label="金币">🪙 ${game.coins}</span><span aria-label="声望">⭐ ${game.reputation}</span></div><button class="hud-gear" data-act="settings" aria-label="设置">⚙</button></div><div class="day-strip ${home?'v076-home-day':''}"><b>第 ${game.cycle} 轮 · 第 ${game.day} 天</b><span class="day-phase">${home?'☀ 开店前':phaseLabels[game.phase]}</span>${home?'':`<span class="day-recipes">图鉴 ${itemCount()}/${Object.keys(RECIPES).length}</span>`}</div>`;
+}
 function toast(){return `<div class="game-toast" role="status"><span>${esc(message)}</span></div>`}
 function playablePhase(){return game.phase==='service'||(game.phase==='field'&&!!game.field?.action)}
 function sceneNotice(){return `<div class="ingame-notice" role="status" id="ingame-notice" ${performance.now()>flashUntil?'hidden':''}>${esc(message.slice(0,28))}</div>`}
-function shell(stage,dock){const walk=game.phase==='service'&&game.service?.walkable;return `<div class="game-shell ${walk?'v075-game-shell':''}">${hud()}<main class="stage ${game.phase}${game.cook?' wok-active':''}">${stage}${playablePhase()?sceneNotice():''}</main>${playablePhase()?'':toast()}${walk?'':`<nav class="dock">${dock}</nav>`}${overlayMarkup()}</div>`}
+function shell(stage,dock){
+ const walk=game.phase==='service'&&game.service?.walkable,home=game.phase==='forecast';
+ return `<div class="game-shell ${walk?'v075-game-shell':''} ${home?'v076-home-shell':''}">${hud()}<main class="stage ${game.phase}${game.cook?' wok-active':''}">${stage}${playablePhase()?sceneNotice():''}</main>${playablePhase()||home?'':toast()}${walk||home?'':`<nav class="dock">${dock}</nav>`}${overlayMarkup()}</div>`;
+}
 function overlayMarkup(){if(!overlay)return '';
  let body='';
  if(overlay==='book'){
@@ -60,7 +66,7 @@ function overlayMarkup(){if(!overlay)return '';
    };
    body=`<h2>👩‍🍳 食堂伙伴</h2><p class="sheet-lead">雇员永久留下；每人每天最多吃 1 道料理。员工餐真实扣料并增加当日效率，也积累最多 3 点熟练。</p><div class="staff-roster">${row('helper')}${row('waiter')}</div>`;
  }else if(overlay==='settings'){
-  body=`<h2>⚙ 试玩设置</h2><p class="sheet-lead">固定 9:16 竖屏 · 单机 localStorage 存档 · 原型验证版本</p>${b('reset','重置存档，从 DAY 1 重新开始','danger')}<p class="sheet-lead">切到后台时营业会自动暂停。更换设备不会同步存档。</p>`;
+  body=`<h2>⚙ 试玩设置</h2><p class="sheet-lead">版本 v0.7.6 · 固定 9:16 竖屏 · 单机 localStorage 存档</p>${b('reset','重置存档，从 DAY 1 重新开始','danger')}<p class="sheet-lead">切到后台时营业会自动暂停。更换设备不会同步存档。</p>`;
  }else if(overlay==='details'){
   const r=game.report;body=r?`<h2>营业账本详情</h2><p class="sheet-lead">本日订单由真实食材库存、工位工作秒数和顾客等待事件计算。</p><div class="book-list">${Object.entries(r.byDish).map(([id,d])=>`<div class="detail-row">${RECIPES[id].emoji} ${RECIPES[id].name}：售出 ${d.count} 份 · 满意 ${Math.round(d.totalSat/d.count)}</div>`).join('')}<div class="detail-row">WOK 占用 ${r.congestion.WOK} 秒 / POT ${r.congestion.POT} 秒</div><div class="detail-row">食材耗用估值 ${r.cost} · 招待支出 ${r.hospitalityCost||0} · 收入 ${r.revenue} · 贡献利润 ${r.profit}</div></div>`:'';
  }
@@ -82,10 +88,38 @@ function restaurantView(interactive=false){
  return `<div class="diner-world"><canvas id="diner-canvas" class="diner-canvas"></canvas><div class="diner-top"><div class="shop-sign">ODDPOT · 边境小食堂</div><div class="tiny-window">🌙</div></div><div class="diner-kitchen">${st('WOK')}<div class="cook-avatar"><span>👩‍🍳</span><small>主厨</small></div>${st('POT')}</div><div class="service-counter"><i></i>出餐柜台<i></i></div><div class="diner-tables">${table(0)}${table(1)}</div><div class="diner-floor"><span>🪴</span><span class="diner-entry">🚪<small>欢迎光临</small></span><span>🪴</span></div>${v?`<div class="scene-corner">已服务 ${v.orders.filter(o=>o.status==='served').length}/${v.orders.length}</div>`:''}${interactive&&v?.walkable?`<div id="diner-stick" class="diner-float-stick" aria-hidden="true"><div id="diner-stick-knob" class="diner-float-knob"></div></div><button id="diner-special" data-act="hero-special" class="diner-special" type="button" hidden aria-label="主动使用主厨技能"></button>`:''}</div>`;
 }
 function sceneTag(title,sub=''){return `<div class="scene-tag"><strong>${title}</strong>${sub?`<small>${sub}</small>`:''}</div>`}
-function forecast(){const f=today(game),plan=serviceDayPlan(game);return [
- `<div class="scene-bg diner-bg">${restaurantView(false)}<div class="scene-float top">${sceneTag(game.day===3?'🔥 爆炎厨王踢馆':plan.pressure,`预计 ${plan.count} 位 · 今日目标：${plan.goal.label}`)}</div><div class="scene-float bottom forecast-advice">${game.day===3?'今晚的评委关注辛辣或爆香料理，评分目标 71 分。':'今天的菜单，不必和昨天一样。研发新菜能吸引不同的客人。'}</div></div>`,
- `<div class="dock-head"><span>🌅 开店前</span><span>库存 ${Object.values(game.inventory).reduce((a,b)=>a+b,0)} 份</span></div><div class="action-row">${b('stock','🎒 仓库','secondary')}${b('bento','🍱 便当','secondary')}${b('to-field','🌲 出门取材 →','primary wide')}</div>`
- ]}
+function forecast(){
+ const plan=serviceDayPlan(game),kitchen=ensureKitchen(game);
+ const stock=Object.values(game.inventory).reduce((sum,n)=>sum+n,0);
+ const bentoReady=game.bento?.day===game.cycle+'-'+game.day;
+ const title=game.day===3?'爆炎厨王踢馆':plan.pressure;
+ const brief=game.day===3?'评委将重点关注辛辣与爆香料理。':'依据今晚的客流与目标，安排今天的料理研发。';
+ return [`
+ <div class="v076-home">
+  <section class="v076-mission" aria-label="今日营业目标">
+    <div class="v076-mission-meta"><span>☀ 今日营业计划</span><span>👥 预计 ${plan.count} 位</span></div>
+    <h1>${esc(title)}</h1>
+    <p><span aria-hidden="true">🎯</span> ${esc(plan.goal.label)}</p>
+    <small>${brief}</small>
+  </section>
+  <section class="v076-preview" aria-label="餐馆准备状态预览">
+    ${restaurantView(false)}
+    <div class="v076-preview-info" aria-label="当前厨房与餐桌配置">
+     <span>${kitchen.slots.map(x=>x.type==='WOK'?'🍳':'🍲').join(' ')} 两口厨位</span>
+     <span>🪑 2 桌 · 4 席</span>
+    </div>
+  </section>
+  <section class="v076-home-controls" aria-label="开店前可用操作">
+    <div class="v076-home-resources"><strong>出发准备</strong><span>🎒 食材 ${stock} 份</span></div>
+    <div class="v076-home-shortcuts">
+      <button type="button" data-act="stock"><span aria-hidden="true">🎒</span> 仓库</button>
+      <button type="button" data-act="bento"><span aria-hidden="true">🍱</span> 便当${bentoReady?' ✓':''}</button>
+      <button type="button" data-act="book"><span aria-hidden="true">📖</span> 图鉴</button>
+    </div>
+    <button type="button" class="v076-home-primary" data-act="to-field">🌲 出门取材 <span aria-hidden="true">→</span></button>
+  </section>
+ </div>`,'' ];
+}
 function field(){
  const f=game.field;
  if(!f){
