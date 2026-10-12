@@ -1,0 +1,45 @@
+/* v0.7.8: Daily report is a TOP-ANCHORED scrollable document, not a
+   vertically centered pile of cards. Fixes the title clipping/broken frame
+   on short iPhone screens after long cooking/craft sales reports. */
+.stage.report{min-height:0;overflow:hidden}
+.stage.report>.report-scene{
+ flex:1 1 auto;min-width:0;min-height:0;width:100%;height:100%;
+ display:flex;flex-direction:column;align-items:stretch;justify-content:flex-start;
+ gap:10px;overflow-x:hidden;overflow-y:auto;
+ overscroll-behavior-y:contain;-webkit-overflow-scrolling:touch;
+ padding:15px 12px 20px;box-sizing:border-box;
+}
+.stage.report .report-header{
+ position:relative;display:block;flex:0 0 auto;
+ width:100%;max-width:100%;min-width:0;min-height:auto;
+ margin:0;padding:9px 8px 12px;box-sizing:border-box;
+ text-align:center;font-size:clamp(15px,4.3vw,19px);line-height:1.4;
+ font-weight:900;letter-spacing:0;white-space:normal;overflow-wrap:anywhere;
+ color:#ffeac0;background:transparent;border:0;border-radius:0;
+ box-shadow:none;overflow:visible;transform:none;
+}
+.stage.report .report-header:after{
+ content:'';position:absolute;bottom:0;left:21%;right:21%;
+ height:2px;background:linear-gradient(90deg,transparent,#e6bb78,transparent);
+ pointer-events:none;
+}
+/* Long sales and craft summaries must not shrink the title or truncate
+   the summary grid. Each block owns a normal, scrollable content height. */
+.stage.report .report-scene>*{flex-shrink:0;max-width:100%;box-sizing:border-box}
+.stage.report .report-stats{grid-template-columns:repeat(2,minmax(0,1fr));min-width:0}
+.stage.report .report-stats>div{min-width:0}
+.stage.report .report-stats b{overflow-wrap:anywhere;text-align:center}
+.stage.report .v063-craft-report,
+.stage.report .v04-choices,
+.stage.report .guest-feedback-list,
+.stage.report .kitchen-report,
+.stage.report .staff-report,
+.stage.report .daily-goal-result,
+.stage.report .guest-verdict,
+.stage.report .recipe-lead{min-width:0;overflow-wrap:anywhere}
+@media(max-height:650px){
+ .stage.report>.report-scene{padding:8px 9px 14px;gap:7px}
+ .stage.report .report-header{padding:5px 6px 8px;font-size:16px}
+ .stage.report .report-stats{gap:6px}
+ .stage.report .report-stats>div{min-height:51px;padding:7px 5px}
+}
