@@ -122,7 +122,7 @@ test('long daily report scrolls from TOP and semantic title does not clip or dra
  assert.match(css,/box-shadow:none/);
  assert.match(css,/@media\(max-height:650px\)/);
  const html=source('../index.html');
- assert.match(html,/diner_polish_v078\.css\?v=0\.8\.0/);
+ assert.match(html,/diner_polish_v078\.css\?v=0\.7\.8/);
 });
 test('version, offline bundle and complete JavaScript stay parseable',()=>{
  const html=source('../index.html'),app=source('../src/app.js'),build=source('../scripts/build-standalone.py');
