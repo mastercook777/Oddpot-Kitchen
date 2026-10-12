@@ -129,7 +129,7 @@ test('main H5 uses scene joystick, not enlarged chef/status words, with explicit
  const html=readFileSync(new URL('../index.html',import.meta.url),'utf8');
  const css=readFileSync(new URL('../src/walkable_restaurant_v07.css',import.meta.url),'utf8');
  assert.match(app,/createService\(game,\{walkable:true\}\)/);
- assert.match(app,/walkServiceHero\(h,dx,dy,delta\)/);
+ assert.match(app,/walkServiceHero\(h,dx,dy,delta,game\)/);
  assert.match(app,/diner-stick/);
  assert.match(app,/activateWalkableSpecial\(game\)/);
  assert.match(html,/walkable_restaurant_v07\.css/);
