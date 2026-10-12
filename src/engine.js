@@ -165,7 +165,7 @@ export function save(s){try{localStorage.setItem(SAVE_KEY,JSON.stringify(s))}cat
 export function load(){try{
 const s=JSON.parse(localStorage.getItem(SAVE_KEY));
 if(s?.version!==4||!PHASES.includes(s.phase))return null;
-if(s.service){s.service.walkable??=false;if(s.service.walkable){s.service.hero??=newServiceHero();s.service.hero.dwell??=0;s.service.hero.dwellZone??=null;if(s.service.sceneVersion!=='0.7.5'){s.service.sceneVersion='0.7.5';s.service.hero.x=.5;s.service.hero.y=.365;s.service.hero.dwell=0;s.service.hero.dwellZone=null;s.service.clockAccumulator=0;}}s.service.paused ??= true;s.service.breakAt ??= 0;s.service.breakUsed ??= false;s.service.breakSeen ??= [];s.service.events ??= [];s.service.treatUsed ??= false;
+if(s.service){s.service.walkable??=false;if(s.service.walkable){s.service.hero??=newServiceHero();s.service.hero.dwell??=0;s.service.hero.dwellZone??=null;if(!['0.7.5','0.9.0'].includes(s.service.sceneVersion)){s.service.sceneVersion='0.9.0';s.service.hero.x=.5;s.service.hero.y=.365;s.service.hero.dwell=0;s.service.hero.dwellZone=null;s.service.clockAccumulator=0;}}s.service.paused ??= true;s.service.breakAt ??= 0;s.service.breakUsed ??= false;s.service.breakSeen ??= [];s.service.events ??= [];s.service.treatUsed ??= false;
  s.service.kitchenSnapshot ??= structuredClone(ensureKitchen(s).slots);
  s.service.stationStats ??= {WOK:{count:0,secondsSaved:0},POT:{count:0,secondsSaved:0}};
  s.service.judgeOrderId ??= firstChallenge(s)?s.service.orders.at(-1)?.id:null;
