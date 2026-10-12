@@ -60,7 +60,7 @@ test('menu mismatch, material shortage, late exits and closing are not conflated
  assert.equal(menu.kind,'upset');assert.equal(stock.kind,'upset');
  assert.notEqual(menu.text,stock.text);
  assert.notEqual(late.text,closing.text);
- assert.ok(diningSpeechCue({...o,status:'rejected',rejectReason:'食材不足',leftAt:20,missingIngredients:['chili']},20.4).text.includes('辣椒'));
+ assert.ok(diningSpeechCue({...o,status:'rejected',rejectReason:'食材不足',leftAt:20,missingIngredients:['chili']},20.4).text.includes('火椒'));
 });
 test('long wait yields two short warnings, then an angry exit without infinite loop',()=>{
  const o={...sample('family','queued'),orderedAt:2,arrival:3,patience:20};
