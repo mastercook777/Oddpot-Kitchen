@@ -8,10 +8,10 @@ const source=p=>readFileSync(new URL(p,import.meta.url),'utf8');
 const app=source('../src/app.js'),css=source('../src/forecast_home_v076.css');
 const index=source('../index.html'),pkg=JSON.parse(source('../package.json'));
 
-test('the internal, browser, offline and package versions all target v0.7.8',()=>{
- assert.equal(pkg.version,'0.7.8');
+test('the internal, browser, offline and package versions all target v0.8.0',()=>{
+ assert.equal(pkg.version,'0.8.0');
  assert.match(index,/<title>怪味食堂 · Oddpot Kitchen v0\.7\.8<\/title>/);
- assert.match(index,/src\/app\.js\?v=0\.7\.8-chitchat/);
+ assert.match(index,/src\/app\.js\?v=0\.7\.8-exploration/);
  assert.match(index,/forecast_home_v076\.css\?v=0\.7\.6/);
  assert.match(app,/ODDPOT · v0\.7\.8/);
  assert.match(app,/版本 v0\.7\.8/);
