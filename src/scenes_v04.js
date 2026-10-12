@@ -190,7 +190,24 @@ export function drawField(canvas,s,clock){const size=setCanvas(canvas);if(!size|
  for(const fx of f.popFx||[]){c.save();c.translate(fx.x,fx.y-(.76-fx.ttl)*.5);c.scale(1/sc,1/sc);text(c,fx.text,0,-17,fx.color||'#fff1b1',12);c.restore()}
  c.save();c.translate(f.pos.x,f.pos.y);c.scale(1/sc,1/sc);
  chef(c,0,Math.sin(clock*9)*(f.moving?1.5:.35),clock,{scale:1.55,walk:f.moving,attack:!!f.attackFx,face:(f.facing?.x||0)<-.15?-1:1,hurt:f.hurtFx});
- text(c,f.weapon?.type==='POT'?'🍲':'🛡️',13,-17,'#fff1cc',11);c.restore();
+ if(f.weapon?.type==='WOK'){
+  // Physically visible wok + pan lid shield on the character, not a tiny emoji.
+  const ready=!!f.shieldCharge,parry=(f.guardTime||0)>0,flash=(f.shieldFlash||0)>0;
+  line(c,12,-12,23,-19,'#9b7751',4);circle(c,10,-11,9,'#252c35');circle(c,10,-11,6,'#c3a17b');
+  c.save();c.translate(-13,-11);
+  if(flash){c.shadowColor='#efffc9';c.shadowBlur=18;}
+  circle(c,0,0,10,parry?'#f4e7ab':ready?'#d5e4cc':'#596b67');
+  circle(c,0,0,8,parry?'#dcad5a':ready?'#648b93':'#344854');
+  circle(c,0,0,4,parry?'#fff7bd':ready?'#bedce4':'#87948d');
+  c.strokeStyle=parry?'#fffad1':ready?'#eef9c4':'#8b9a98';
+  c.lineWidth=ready||parry?2.5:1.3;c.beginPath();c.arc(0,0,11,0,Math.PI*2);c.stroke();
+  if(!ready){c.strokeStyle='#e5e0a4';c.lineWidth=2;
+   c.beginPath();c.arc(0,0,11,-Math.PI/2,-Math.PI/2+Math.PI*2*Math.max(0,1-(f.shieldCooldown||0)/8));c.stroke();}
+  c.restore();
+  if(flash){c.save();c.strokeStyle='#f4ffe5';c.lineWidth=3;
+   c.beginPath();c.arc(-13,-11,17,0,Math.PI*2);c.stroke();c.restore();}
+ }else text(c,'🍲',17,-16,'#fff1cc',13);
+ c.restore();
  if(f.harvestNode){const n=f.nodes.find(n=>n.key===f.harvestNode);if(n){capsule(c,n.x-.40,n.y-.49,.8,.10,'#304d39');capsule(c,n.x-.40,n.y-.49,.8*(f.harvestProgress/.82),.10,'#f3dd7e')}}
  c.restore();
  // Gameplay feedback lives in a short-lived DOM notice; never reserve a permanent text strip over the forest.
