@@ -682,6 +682,7 @@ function drawRestaurantV075(c,s,t,w,h){
    circle(c,X-half-8,Y-half-30,3,'#c1e9a9');
   }
   if(v){
+   // Plates remain on the ACTUAL table while visitors eat and review.
    const meals=v.orders.filter(o=>o.tableId===i&&['eating','review'].includes(o.status));
    meals.forEach(o=>{
     const px=X+(o.seatId===0?-1:1)*Math.min(13,side*.24),py=Y+4;
