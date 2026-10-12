@@ -37,7 +37,7 @@ test('character has finite, smooth world speed and table/counter collisions',()=
  const h=newServiceHero(),x=h.x,y=h.y;
  assert.ok(walkServiceHero(h,1,0,.05));assert.ok(h.x>x&&h.x-x<.025);assert.equal(h.y,y);
  for(let i=0;i<400;i++)walkServiceHero(h,1,1,.05);
- assert.ok(h.x<=.905&&h.y<=.915);
+ assert.ok(h.x<=.925&&h.y<=.945,'hero follows the new room margins');
  assert.ok(h.y>=.155);
  const hx=newServiceHero();hx.x=.28;hx.y=.48;
  for(let i=0;i<60;i++)walkServiceHero(hx,0,1,.05);
