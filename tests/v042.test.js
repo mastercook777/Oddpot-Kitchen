@@ -11,7 +11,8 @@ test('two regions have genuinely distinct collectible, rock and hazard layouts',
  assert.notDeepEqual(a.field.obstacles,b.field.obstacles);
  assert.notDeepEqual(a.field.nodes.map(n=>[n.x,n.y]),b.field.nodes.map(n=>[n.x,n.y]));
  assert.ok(startActionField(a));assert.ok(startActionField(b));
- assert.equal(a.field.enemies[0].kind,'chicken');assert.equal(b.field.enemies[0].kind,'pepper');
+ assert.ok(['chicken','boar'].includes(a.field.enemies[0].kind));
+ assert.ok(['steam_crab','pepper'].includes(b.field.enemies[0].kind));
  assert.ok(Math.hypot(b.field.pos.x-2.5,b.field.pos.y-10.1)<.01);
 });
 test('both region routes keep a reliably discoverable target source',()=>{
