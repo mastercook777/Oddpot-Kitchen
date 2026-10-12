@@ -20,18 +20,18 @@ test('both region routes keep a reliably discoverable target source',()=>{
   assert.ok(s.field.nodes.some(n=>n.key==='target'&&n.id==='chili'&&n.n>=1));
  }
 });
-test('backpack expands from six to eight at real cost and persists through next days',()=>{
+test('backpack expands from eight to twelve at real cost and persists through next days',()=>{
  const s=newGame();s.phase='upgrade';s.coins=250;
- assert.equal(bagUpgradePrice(s),45);assert.ok(buyBagUpgrade(s));assert.equal(s.bagSlots,7);assert.equal(s.coins,205);
- assert.equal(bagUpgradePrice(s),75);assert.ok(buyBagUpgrade(s));assert.equal(s.bagSlots,8);assert.equal(s.coins,130);
+ assert.equal(bagUpgradePrice(s),60);assert.ok(buyBagUpgrade(s));assert.equal(s.bagSlots,10);assert.equal(s.coins,190);
+ assert.equal(bagUpgradePrice(s),110);assert.ok(buyBagUpgrade(s));assert.equal(s.bagSlots,12);assert.equal(s.coins,80);
  assert.equal(bagUpgradePrice(s),null);assert.equal(buyBagUpgrade(s),false);
  assert.equal(s.ledger.filter(e=>e.id.startsWith('bag-upgrade-')).length,2);
- assert.ok(advanceDay(s));assert.equal(s.bagSlots,8);
- nextPhase(s,'field');assert.ok(enterField(s,'spring_safe'));assert.equal(s.field.capacity,8);
+ assert.ok(advanceDay(s));assert.equal(s.bagSlots,12);
+ nextPhase(s,'field');assert.ok(enterField(s,'spring_safe'));assert.equal(s.field.capacity,12);
 });
 test('insufficient funds cannot give a free bag upgrade or duplicate purchase',()=>{
  const s=newGame();s.phase='upgrade';s.coins=44;
- assert.equal(buyBagUpgrade(s),false);assert.equal(s.bagSlots,6);
+ assert.equal(buyBagUpgrade(s),false);assert.equal(s.bagSlots,8);
  s.coins=100;assert.ok(buyBagUpgrade(s));assert.equal(s.ledger.filter(e=>e.type==='upgrade').length,1);
 });
 test('arrival and serving animations are one-shot, monotonic and remain frozen on pause',()=>{
@@ -48,7 +48,7 @@ test('arrival and serving animations are one-shot, monotonic and remain frozen o
 });
 test('forest and spring startActionField handle historical six-slot saves safely',()=>{
  const s=newGame();delete s.bagSlots;nextPhase(s,'field');assert.ok(enterField(s,'spring_risk'));
- assert.equal(s.field.capacity,6);assert.ok(startActionField(s));
+ assert.equal(s.field.capacity,8);assert.ok(startActionField(s));
  const px=s.field.pos.x,py=s.field.pos.y;stepActionField(s,0,0,.03);
  assert.equal(s.field.pos.x,px);assert.equal(s.field.pos.y,py);
 });

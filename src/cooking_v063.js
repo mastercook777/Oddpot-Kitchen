@@ -1,7 +1,7 @@
 // v0.6.3-A: real-time ingredient-event adjudicator.
 // No timed turns, no universal style buffs and no direct inventory writes.
-import {ING,RECIPES,RECIPE_INDEX,recipeSignature} from './data.js?v=0.6.3';
-import {RECIPE_PROFILES} from './recipe_profiles_v063.js?v=0.6.3';
+import {ING,RECIPES,RECIPE_INDEX,recipeSignature} from './data.js?v=0.8.0';
+import {RECIPE_PROFILES} from './recipe_profiles_v063.js?v=0.8.0';
 
 export const LIVE_ACTIONS={
   WOK:[{id:'flip',name:'翻炒',emoji:'🍳'},{id:'toss',name:'颠勺',emoji:'↗'}],
@@ -12,10 +12,10 @@ export const LIVE_STYLES={
   pot_home:'家常炖煮',gentle:'清润慢炖',reduced:'浓香收汁',legacy:'标准工艺'
 };
 export const LIVE_AFFINITY={signature:'招牌适配',viable:'适合',ordinary:'普通',off:'不契合'};
-const REQUIRE={beef:5.4,chicken:6.1,chili:1.3,garlic:1.3,mushroom:2.9,cabbage:2.5,onion:2.8,potato:6.2};
-const AROMATICS=new Set(['onion','garlic','chili','mushroom']);
-const MAIN_PRIORITY=['beef','chicken','potato','cabbage','mushroom','onion','chili','garlic'];
-const PRIMARY_AROMATIC={garlic:true,onion:true,chili:true,mushroom:true};
+const REQUIRE={beef:5.4,chicken:6.1,chili:1.3,garlic:1.3,mushroom:2.9,cabbage:2.5,onion:2.8,potato:6.2,mushroom_heart:3.9,ember_pepper:1.9};
+const AROMATICS=new Set(['onion','garlic','chili','mushroom','ember_pepper']);
+const MAIN_PRIORITY=['beef','chicken','potato','cabbage','mushroom','mushroom_heart','onion','ember_pepper','chili','garlic'];
+const PRIMARY_AROMATIC={garlic:true,onion:true,chili:true,mushroom:true,ember_pepper:true};
 export const liveRecipeId=(ids,station)=>RECIPE_INDEX[recipeSignature(ids,station)]||null;
 
 export function liveCookAmount(drop,t,actions,vessel){
@@ -34,7 +34,7 @@ export function liveIngredientState(drop,t,actions,vessel){
  if(ratio<.65)return '偏生';
  if(ratio<1)return '受热中';
  if((ratio>3.4&&['beef','chicken','potato'].includes(drop.id))||
-    age>(['garlic','chili','onion'].includes(drop.id)?14:16))return '焦糊';
+    age>(drop.id==='ember_pepper'&&vessel==='POT'?19:['garlic','chili','onion','ember_pepper'].includes(drop.id)?14:16))return '焦糊';
  return '熟透';
 }
 export function readCookFacts(ids,vessel,drops,actions,t){

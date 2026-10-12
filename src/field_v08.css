@@ -1,0 +1,33 @@
+/* v0.8 routes and cookware; layout stays inside one phone viewport. */
+.v08-weapon-picks{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:7px;margin:5px 0 11px}
+.v08-weapon-pick{border:1px solid #8da48488;background:#263e2fe8;color:#eee5c6;border-radius:10px;
+ padding:9px 6px;min-height:51px;font:600 12px/1.25 system-ui;text-align:left}
+.v08-weapon-pick small{display:block;color:#b9c6a9;font-size:10px;margin-top:3px}
+.v08-weapon-pick.chosen{border:2px solid #f1d98c;background:#355942;box-shadow:0 0 0 1px #ead99e33}
+.v08-branch-scene{height:100%;min-height:0;display:flex;align-items:center;justify-content:center;
+ background:radial-gradient(circle at 50% 0,#526b4f,#273b32 65%,#172a27);padding:10px 12px;box-sizing:border-box}
+.v08-branch-panel{display:flex;flex-direction:column;gap:9px;width:min(100%,390px);
+ max-height:100%;overflow-y:auto;overscroll-behavior:contain;padding:13px;
+ background:#263d31f5;border:1px solid #a5a98482;border-radius:15px;color:#f7edce;box-sizing:border-box}
+.v08-branch-panel>small{font:700 11px/1.3 system-ui;color:#e6c984}
+.v08-branch-panel>h2{font:800 19px/1.3 system-ui;margin:0;color:#fff0c1;overflow-wrap:anywhere}
+.v08-branch-panel>p{font:500 12px/1.5 system-ui;margin:0;color:#c5d3b8}
+.v08-branch-cards{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px}
+.v08-branch-card{display:flex;flex-direction:column;gap:9px;text-align:left;align-items:flex-start;justify-content:flex-start;
+ border-radius:11px;border:1px solid #a8be9c;background:#41604c;color:#fdf0cb;padding:11px;min-height:132px;
+ white-space:normal;overflow-wrap:anywhere;cursor:pointer}
+.v08-branch-card strong{font:800 14px/1.35 system-ui}
+.v08-branch-card span{font:500 11px/1.5 system-ui}
+.v08-branch-card small{font:600 10px/1.4 system-ui;color:#fbda96}
+.v08-branch-card:active{transform:scale(.985)}
+.v08-home-choice{margin-top:3px;background:#d6bb84;color:#2e3c30;font:800 13px/1.3 system-ui;
+ min-height:40px;border:none;border-radius:9px}
+.v08-source-only{font:600 10px/1.3 system-ui;color:#e7cf96;max-width:86px;text-align:right}
+@media (max-width:360px), (max-height:620px){
+ .v08-branch-panel{gap:7px;padding:10px}
+ .v08-branch-panel>h2{font-size:16px}
+ .v08-branch-card{min-height:114px;padding:9px;gap:6px}
+ .v08-branch-card strong{font-size:12px}
+ .v08-branch-card span{font-size:10px}
+ .v08-home-choice{min-height:37px}
+}
