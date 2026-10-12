@@ -1,6 +1,6 @@
 // v0.6.3-A: real-time ingredient-event adjudicator.
 // No timed turns, no universal style buffs and no direct inventory writes.
-import {ING,RECIPES,RECIPE_INDEX,recipeSignature} from './data.js?v=0.8.0';
+import {ING,RECIPES,RECIPE_INDEX,recipeSignature} from './data.js?v=0.9.0';
 import {RECIPE_PROFILES} from './recipe_profiles_v063.js?v=0.8.0';
 
 export const LIVE_ACTIONS={
