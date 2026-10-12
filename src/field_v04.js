@@ -15,7 +15,7 @@ export function startActionField(s){
  // but dangerous branches always retain at least one hostile encounter.
  const encounterSeed=(profile.encounterSeed||((s.seed||1)>>>0))+wave*9187;
  const random=i=>(Math.imul(1664525,((encounterSeed+i*7919)>>>0))+1013904223)>>>0;
- const base=profile.enemyCount||1,shift=random(3)%3-1;
+ const base=profile.enemyCount||1,shift=((random(3)>>>12)%3)-1;
  const count=Math.min(4,Math.max(risk?1:1,base+shift+(risk&&wave>1?1:0)));
  const positions=[
   {x:6.85,y:6.6},{x:2.1,y:3.3},{x:7.1,y:2.9},{x:1.8,y:6.3},
@@ -23,13 +23,13 @@ export function startActionField(s){
  ];
  f.enemies=[];
  for(let i=0;i<count;i++){
-  const pick=mix[(random(i+19)+i)%mix.length],kind=pick||'chicken';
+  const pick=mix[((random(i+19)>>>8)+i)%mix.length],kind=pick||'chicken';
   const candidates=positions.slice();
-  const start=(random(i+47)+i)%candidates.length;
+  const start=((random(i+47)>>>9)+i)%candidates.length;
   let p=null;
   for(let c=0;c<candidates.length;c++){
    const basePos=candidates[(start+c)%candidates.length];
-   const dx=(random(i*13+c+12)%5-2)*.07,dy=(random(i*17+c+27)%5-2)*.07;
+   const dx=((random(i*13+c+12)>>>13)%5-2)*.07,dy=((random(i*17+c+27)>>>13)%5-2)*.07;
    const candidate={x:basePos.x+dx,y:basePos.y+dy};
    if(blocked(f,candidate,.16)||dist(candidate,f.spawn||{x:4.5,y:9.4})<2.4)continue;
    if(f.enemies.some(e=>dist(e,candidate)<1.1))continue;
@@ -38,7 +38,7 @@ export function startActionField(s){
   if(!p)p={x:7-i*.8,y:3+i*.55};
   const hp=kind==='boar'?4:kind==='chicken'||kind==='steam_crab'?3:2;
   f.enemies.push({id:kind+'-'+i+'-'+wave,kind,x:p.x,y:p.y,hp,maxHp:hp,
-   cooldown:1.55+(random(i+81)%10)*.12,phase:i});
+   cooldown:1.55+((random(i+81)>>>8)%10)*.12,phase:i});
  }
  if(f.segmentIndex===3&&f.dangerCommitment&&!f.legacyField){
   const hot=f.region==='spring',p=f.bossSpawn||{x:4.5,y:1.8};
