@@ -1,7 +1,7 @@
 // v0.4 real-time forest encounter. The underlying kitchen inventory remains
 // governed by engine.settleField; this file only mutates the expedition bag.
 import {ING} from './data.js?v=0.8.0';
-import {clamp, rand, settleField,addFieldBag} from './engine.js?v=0.8.0';
+import {clamp, rand, settleField,addFieldBag} from './engine.js?v=0.8.1';
 const dist=(a,b)=>Math.hypot(a.x-b.x,a.y-b.y);
 const pushMsg=(f,message)=>{f.actionMessage=message;f.actionMessageTTL=2.7;};
 export function startActionField(s){
@@ -9,14 +9,19 @@ export function startActionField(s){
  f.action=true;f.pos={...(f.spawn||{x:4.5,y:9.4})};f.x=f.pos.x;f.y=f.pos.y;
  f.elapsed=0;f.harvestProgress=0;f.harvestNode=null;f.attackCd=0;f.skillCd??=0;f.damageCd=0;f.guardTime??=0;f.activeEvent=null;
  f.projectiles=[];f.playerProjectiles=[];f.attackFx=null;f.skillFx=0;f.hurtFx=0;f.popFx=[];f.facing={x:0,y:-1};f.moving=false;f.actionMessage='移动寻找食材。靠近目标会自动采集。';f.actionMessageTTL=4;
- f.enemies=(f.route==='risk'||f.route==='spring_risk')?
- [{id:'chicken',kind:'chicken',x:6.85,y:6.6,hp:3,maxHp:3,cooldown:1.5,phase:0},
-  {id:'pepper',kind:'pepper',x:2,y:3.3,hp:3,maxHp:3,cooldown:2.3,phase:1}]:
- [f.region==='spring'?{id:'pepper',kind:'pepper',x:6.8,y:3.3,hp:2,maxHp:2,cooldown:2.5,phase:0}:{id:'chicken',kind:'chicken',x:7.2,y:2.9,hp:2,maxHp:2,cooldown:2.0,phase:0}];
+ const profile=f.biome||{},mix=profile.enemyMix||[f.region==='spring'?'pepper':'chicken'];
+ const enemyPos=[{x:6.85,y:6.6},{x:2.1,y:3.3},{x:7.1,y:2.9},{x:1.8,y:6.3}];
+ const count=Math.min(4,Math.max(profile.enemyCount||1,/risk/.test(f.route)?2:1));
+ f.enemies=Array.from({length:count},(_,i)=>{
+  const kind=mix[i%mix.length],p=!/risk/.test(f.route)&&profile.style==='meadow'&&i===0?{x:7.2,y:4.8}:enemyPos[(i+(profile.flipped?1:0))%enemyPos.length];
+  const hp=kind==='chicken'?3:2;
+  return {id:kind+'-'+i+'-'+(f.segmentIndex||1),kind,x:p.x,y:p.y,hp,maxHp:hp,
+   cooldown:1.7+i*.4,phase:i};
+ });
  if(f.segmentIndex===3&&f.dangerCommitment&&!f.legacyField){
-  const hot=f.region==='spring';
+  const hot=f.region==='spring',p=f.bossSpawn||{x:4.5,y:1.8};
   f.enemies.push({id:hot?'ember_king':'spore_king',kind:hot?'boss_ember':'boss_spore',
-   isBoss:true,x:4.5,y:1.8,hp:10,maxHp:10,cooldown:2.5,
+   isBoss:true,x:p.x,y:p.y,hp:10,maxHp:10,cooldown:2.5,
    warning:0,phase:0,slowTime:0,lootDropped:false});
  }
  // A target is always safely reachable before enemy engagement. Additional
@@ -149,7 +154,15 @@ export function stepActionField(s,axisX,axisY,dt){
  f.moving=len>.08; if(f.moving)f.facing={x:dx,y:dy};
  // Hot springs vent on a visible, deterministic cycle. The warning pool can
  // be crossed safely if the player pays attention; forest has no vent pulse.
- if(f.region==='spring'&&f.hp>0){for(const vent of f.hazards){const phase=(f.elapsed+(vent.x%2)*1.7)%4.2;if(phase>3.45&&Math.hypot(f.pos.x-(vent.x+.5),f.pos.y-(vent.y+.5))<.55){hurt(s,1,'vent');break}}}
+ if((f.region==='spring'||f.biome?.style==='roots')&&f.hp>0){
+  const spore=f.biome?.style==='roots';
+  for(const vent of f.hazards){
+   const phase=(f.elapsed+(vent.x%2)*1.7)%4.2;
+   if(phase>(spore?3.15:3.45)&&Math.hypot(f.pos.x-(vent.x+.5),f.pos.y-(vent.y+.5))<.55){
+    hurt(s,1,spore?'spore':'vent');break;
+   }
+  }
+ }
  const b=f.bento;
  const risk=/risk/.test(f.route);
  const boost=b&&((b.kind==='risk_move'&&risk)||(b.kind==='danger_speed'&&risk))?(b.enhanced?.07:.05):0;

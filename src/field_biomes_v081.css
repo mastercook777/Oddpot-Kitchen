@@ -1,0 +1,11 @@
+/* Biome identity lives INSIDE the Canvas scene; the label is click-through. */
+.v081-biome-name{
+ position:absolute;z-index:3;top:89px;left:50%;transform:translateX(-50%);
+ display:flex;align-items:center;gap:4px;max-width:87%;
+ padding:5px 11px;background:#17372bbb;color:#f4eacb;
+ border:1px solid #e3dfb366;border-radius:999px;
+ white-space:nowrap;font:700 11px/1.2 system-ui;
+ pointer-events:none;text-shadow:0 1px 2px #182e25aa;
+}
+.v081-biome-name small{font:500 10px/1.2 system-ui;color:#efce8d}
+@media (max-height:600px){.v081-biome-name{top:78px;padding:4px 7px;font-size:10px}}

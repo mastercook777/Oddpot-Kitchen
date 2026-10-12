@@ -1,6 +1,6 @@
 import {pixelActor,pixelEnemy,pixelImpact} from './pixels_v041.js?v=0.5.5';
 // Lightweight procedural game graphics: original Canvas shapes, no art pack.
-import {ING,RECIPES,CUSTOMERS} from './data.js?v=0.8.0';
+import {ING,RECIPES,CUSTOMERS} from './data.js?v=0.8.1';
 import {heroZone,waiterDeliveryPose,HERO_PASS} from './walkable_restaurant_v07.js?v=0.7.5';
 import {DINER_FLOOR} from './restaurant_scene_v075.js?v=0.7.5';
 import {selectDiningSpeech,selectStaffSpeech,diningBubbleLines,speechOpacity} from './diner_ambience_v077.js?v=0.7.8';
@@ -38,13 +38,137 @@ function plant(c,n,t){const x=n.x,y=n.y;if(n.claimed)return;
  else {circle(c,x-4,y,6,'#6c9862');circle(c,x+4,y-3,5,'#c3ba68');rect(c,x-1,y+1,3,9,'#6f553e')}
  if(n.key==='target'){c.strokeStyle='#ffe09c';c.lineWidth=2;c.beginPath();c.arc(x,y,16+Math.sin(t*3)*2,0,Math.PI*2);c.stroke()}
 }
+// Landmark painting is expressed in actual 9x11 world coordinates.
+// It stays below combatants and pickups, and is purely presentational.
+function drawBiomeLandscape(c,f,time){
+ const bio=f.biome||{},style=bio.style|| (f.region==='spring'?'spring':'meadow');
+ const floor=bio.floor|| (f.region==='spring'?'#a38a66':'#51764e');
+ const grain=bio.grain||'#6f8d65',accent=bio.accent||'#f3db9b';
+ const ellipse=(x,y,rx,ry,fill,stroke=null,sw=.05)=>{
+  c.beginPath();c.ellipse(x,y,rx,ry,0,0,Math.PI*2);c.fillStyle=fill;c.fill();
+  if(stroke){c.strokeStyle=stroke;c.lineWidth=sw;c.stroke();}
+ };
+ const ribbon=(pts,col,width)=>{
+  c.beginPath();c.moveTo(pts[0][0],pts[0][1]);
+  for(const p of pts.slice(1))c.lineTo(p[0],p[1]);
+  c.strokeStyle=col;c.lineWidth=width;c.lineJoin='round';c.lineCap='round';c.stroke();
+ };
+ const dot=(x,y,color,r=.075)=>ellipse(x,y,r,r,color);
+ c.fillStyle=floor;c.fillRect(0,0,f.worldW,f.worldH);
+ c.save();c.globalAlpha=.21;
+ for(let i=0;i<47;i++){
+  const x=.2+((i*47+11)%89)/10,y=.2+((i*29+3)%106)/10;
+  ellipse(x,y,.14+(i%3)*.055,.07,grain);
+ }
+ c.restore();
+ const mirror=fn=>{if(bio.flipped){c.save();c.translate(9,0);c.scale(-1,1);fn();c.restore()}else fn()};
+ if(style==='meadow'){
+  ribbon([[3.8,11],[4.5,8.3],[3.7,5.8],[4.3,3.4],[3.6,0]],'#a5a177',1.45);
+  ribbon([[3.8,11],[4.5,8.3],[3.7,5.8],[4.3,3.4],[3.6,0]],'#cec49a',.86);
+  for(let i=0;i<32;i++){const x=((i*29+6)%86)/10+.1,y=((i*23+13)%106)/10+.2;
+   if(Math.abs(x-(4.1+Math.sin(y*1.3)*.5))>.8){
+    dot(x,y,i%3===0?'#f0e3ae':i%3===1?'#d6b0a3':'#a9d99b',.06);
+    dot(x-.09,y+.09,'#466747',.075);
+   }}
+ }else if(style==='glow'){
+  mirror(()=>{
+   ellipse(2.2,4.2,2.65,2.8,'#193d50','#477983',.20);
+   ellipse(1.9,4,2.35,2.25,'#245568','#79d9d0',.13);
+   for(let i=0;i<12;i++){
+    const x=.65+((i*17)%38)/10,y=2.0+((i*21)%46)/10;
+    c.save();c.shadowBlur=14;c.shadowColor='#a7ffe5';
+    ellipse(x,y,.20+(i%3)*.09,.16+(i%3)*.04,'#9ff0d5');
+    c.restore();dot(x,y-.18,'#f1ffcb',.06);
+   }
+   ribbon([[7.7,11],[6.4,8.1],[5.6,5.7],[5.2,3],[6,0]],'#547c76',1.03);
+   ribbon([[7.7,11],[6.4,8.1],[5.6,5.7],[5.2,3],[6,0]],'#88a78d',.55);
+  });
+ }else if(style==='roots'){
+  mirror(()=>{
+   ellipse(1.9,2.2,2,2.15,'#1d292f','#806574',.35);
+   ellipse(2,2.5,1.45,1.54,'#49383b','#ab8292',.25);
+   ellipse(2.0,2.45,.95,1.15,'#201f2a');
+   for(const pts of [
+    [[1.7,3],[1.6,4.6],[.7,6.7],[.15,8.8]],
+    [[2.3,3.2],[3.3,5],[3.9,7.7],[5.6,10]],
+    [[3,2.7],[4.5,3.7],[6.7,4.4],[8.7,5.8]]]){
+    ribbon(pts,'#332832',.56);ribbon(pts,'#81606b',.29);
+   }
+   for(let i=0;i<10;i++){const x=((i*17)%72)/10+.65,y=((i*13)%78)/10+1;
+    dot(x,y,'#c598df',.15);dot(x-.07,y-.12,'#f0d7ee',.06);}
+  });
+ }else if(style==='garden'){
+  ribbon([[4.5,0],[4,3],[5,5],[4,8],[4.8,11]],'#c8b48b',.95);
+  for(let r=0;r<3;r++)for(let k=0;k<3;k++){
+   const x=.3+k*1.18+(r%2)*.18,y=2.6+r*2.35;
+   c.save();c.translate(x,y);c.rotate(-.07);
+   c.fillStyle=(r+k)%2?'#4f7552':'#667e50';c.fillRect(0,0,.92,1.68);
+   for(let n=0;n<5;n++)dot(.14+n*.13,.28+n*.23,n%2?'#a5cb77':'#d9b27b',.075);
+   c.restore();
+  }
+ }else if(style==='spring'){
+  for(const [x,y,rx] of [[6,3.1,1.95],[3.1,5.4,1.33],[7,8.5,1.06]]){
+   ellipse(x,y,rx,rx*.78,'#d6be99','#8f806b',.22);
+   ellipse(x,y,rx*.82,rx*.63,'#6eada7','#d2f8e5',.16);
+   ellipse(x+.15,y-.12,rx*.6,rx*.39,'#80c1b3');
+   for(let i=0;i<3;i++)dot(x-.35+i*.24,y+.15,'#c8e9d8',.09);
+  }
+  ribbon([[0,2],[1.9,2.8],[4,2],[8.8,1]],'#9d8b6f',.55);
+ }else if(style==='steam'){
+  mirror(()=>{
+   ribbon([[1,0],[2.5,2.6],[3.6,4.3],[5.4,6.8],[8.4,11]],'#2d464b',1.15);
+   ribbon([[1,0],[2.5,2.6],[3.6,4.3],[5.4,6.8],[8.4,11]],'#779b9a',.63);
+   ribbon([[1,0],[2.5,2.6],[3.6,4.3],[5.4,6.8],[8.4,11]],'#b6c7ba',.25);
+   for(const [x,y] of [[2,2],[5.6,3.2],[7.2,7],[1.9,8.6]]){
+    ellipse(x,y,1.1,.58,'#9bada8','#566e72',.17);
+    for(let i=0;i<3;i++){
+     c.save();c.globalAlpha=.19+Math.sin(time*2+i)*.055;
+     ellipse(x+.12*i-.2,y-.40-.13*i,.18+i*.12,.45,'#f1f4df');c.restore();
+    }
+   }
+  });
+ }else if(style==='ember'){
+  mirror(()=>{
+   ribbon([[0,1],[2.2,2.2],[2.6,4.8],[4.8,5.7],[5.3,8.5],[7.6,11]],'#241f2a',1.2);
+   ribbon([[0,1],[2.2,2.2],[2.6,4.8],[4.8,5.7],[5.3,8.5],[7.6,11]],'#bb4c32',.77);
+   ribbon([[0,1],[2.2,2.2],[2.6,4.8],[4.8,5.7],[5.3,8.5],[7.6,11]],'#ef9b48',.34);
+   for(let i=0;i<20;i++){
+    const x=((i*33)%86)/10+.15,y=((i*41)%105)/10+.25;
+    ellipse(x,y,.13+(i%3)*.08,.09,i%2?'#8b5c46':'#2e3038');
+    if(i%4===0)dot(x+.06,y-.03,'#efb668',.065);
+   }
+  });
+ }else if(style==='oasis'){
+  for(const [x,y,r] of [[2.4,3.4,2.4],[6.5,6.4,2.3],[3,8.5,1.4]]){
+   ellipse(x,y,r,r*.75,'#e6cfb4','#998d79',.16);
+   ellipse(x,y,r*.85,r*.64,'#75ada7','#c0e9dd',.17);
+   ellipse(x,y,r*.65,r*.49,'#a0ded1');
+  }
+  ribbon([[.1,5],[3.7,5],[5.1,4],[8.8,3.3]],'#c5a980',.8);
+ }
+}
 export function drawField(canvas,s,clock){const size=setCanvas(canvas);if(!size||!s.field?.action)return;const {c,w,h}=size,f=s.field;const springs=f.region==='spring';const sc=Math.min(w/f.worldW,h/f.worldH),left=(w-sc*f.worldW)/2,top=(h-sc*f.worldH)/2;
  c.fillStyle=springs?'#9c674c':'#305a40';c.fillRect(0,0,w,h);c.save();c.translate(left,top);c.scale(sc,sc);
- rect(c,0,0,f.worldW,f.worldH,springs?'#ae8158':'#528659');for(let i=0;i<f.worldH;i++){rect(c,0,i,f.worldW,1,springs?(i%2?'#ae805a':'#b68762'):(i%2?'#548459':'#4c7f56'));}
- for(let k=0;k<45;k++){const x=((k*13+4)%87)/10,y=((k*17+3)%103)/10;circle(c,x,y,.04,springs?'#edc18a66':'#98b67a66')}
- c.fillStyle=springs?'#e0c49055':'#bbac7855';c.beginPath();c.ellipse(springs?3.7:4.4,6.4,2.2,4.9,.05,0,Math.PI*2);c.fill();
- if(springs){for(const hz of f.hazards){const x=hz.x+.5,y=hz.y+.5;circle(c,x,y,.39,'#775958');circle(c,x,y,.30,'#66949b');circle(c,x,y,.21,'#c1e1d9');if(((f.elapsed+(hz.x%2)*1.7)%4.2)>2.8){circle(c,x,y,.41,'#f7dcb355');circle(c,x,y,.32,'#efb86888')}}}
- for(const o of f.obstacles){c.save();c.translate(o.x+.5,o.y+.5);c.scale(1/sc,1/sc);if(springs){circle(c,0,3,15,'#8c5940');circle(c,-5,-4,14,'#625d59');circle(c,5,-6,9,'#817875');rect(c,-4,-18,8,3,'#be9a78')}else tree(c,0,0);c.restore()}
+ drawBiomeLandscape(c,f,clock);
+ if(f.hazards?.length){for(const hz of f.hazards){
+  const x=hz.x+.5,y=hz.y+.5,style=f.biome?.style||'spring',roots=style==='roots',ember=style==='ember';
+  circle(c,x,y,.39,roots?'#493450':ember?'#452e30':'#775958');
+  circle(c,x,y,.28,roots?'#ac7dc7':ember?'#c65630':'#66949b');
+  circle(c,x,y,.17,roots?'#efd4ed':ember?'#ffd58a':'#c1e1d9');
+  if(((f.elapsed+(hz.x%2)*1.7)%4.2)>2.8){
+   circle(c,x,y,.45,roots?'#eeb5ef66':ember?'#ffad6b55':'#f7dcb355');
+  }
+ }}
+ for(const o of f.obstacles){c.save();c.translate(o.x+.5,o.y+.5);c.scale(1/sc,1/sc);if(f.biome?.style==='glow'){
+  circle(c,0,4,14,'#263d48');circle(c,0,-6,17,'#6ebaaa');circle(c,-7,-9,8,'#c5e8d1');
+ }else if(f.biome?.style==='roots'){
+  circle(c,0,5,17,'#242430');circle(c,0,-5,19,'#75505f');
+  circle(c,-6,-8,9,'#aa7589');
+ }else if(f.biome?.style==='ember'){
+  circle(c,0,5,16,'#292a30');circle(c,-4,-6,14,'#443d42');
+  line(c,-5,-10,1,4,'#df7546',4);
+ }else if(springs){circle(c,0,3,15,'#8c5940');circle(c,-5,-4,14,'#625d59');circle(c,5,-6,9,'#817875');rect(c,-4,-18,8,3,'#be9a78')}
+ else tree(c,0,0);c.restore()}
  for(const n of f.nodes){if(n.type==='event'&&!n.claimed){circle(c,n.x,n.y,.23,'#ecd597');rect(c,n.x-.11,n.y-.17,.23,.32,'#916b4b');text(c,'?',n.x,n.y-.04,'#4d3d28',.27)}else {c.save();c.translate(n.x,n.y);c.scale(1/sc,1/sc);plant(c,{...n,x:0,y:0},clock);c.restore()}}
  for(const p of f.projectiles||[]){circle(c,p.x,p.y,.12,'#ef9c4e');circle(c,p.x,p.y,.05,'#ffe5a3')}
  for(const p of f.playerProjectiles||[]){
@@ -276,61 +400,47 @@ function speechRectOverlap(a,b,pad=0){
 export function placeRestaurantSpeech(guestCues,workerCue,actors,w,h){
  const byId=new Map(actors.map(a=>[a.id,a])),placed=[],result=new Map();
  const items=[...(guestCues||[]).map(cue=>({cue,actor:byId.get(cue.id),staff:false})),
-              ...(workerCue?[{cue:workerCue,actor:byId.get(workerCue.staffRole),staff:true}]:[])]
-   .filter(item=>item.actor&&item.cue.text)
-   .sort((a,b)=>b.cue.priority-a.cue.priority||Number(a.staff)-Number(b.staff)||String(a.cue.id).localeCompare(String(b.cue.id)));
- const pad=7,top=h*.205+5,bottom=h*.875;
- // Keep words away from permanent kitchen labels, preparation stations and
- // the actual characters' heads; a speech card must never conceal the speaker.
- const protectedRects=[
-  {x:w*.085,y:h*.21,width:w*.33,height:h*.155},
-  {x:w*.585,y:h*.21,width:w*.33,height:h*.155},
-  {x:w*.40,y:h*.415,width:w*.20,height:h*.070}
- ];
- const faces=actors.map(a=>({x:a.x*w-12,y:a.y*h-31,width:24,height:26,id:a.id}));
- for(const item of items){
-  const {cue,actor,staff}=item;
+   ...(workerCue?[{cue:workerCue,actor:byId.get(workerCue.staffRole),staff:true}]:[])]
+   .filter(x=>x.actor&&x.cue.text)
+   .sort((a,b)=>(b.cue.priority||0)-(a.cue.priority||0)||Number(a.staff)-Number(b.staff));
+ const safeTop=h*.205+4,safeBottom=h*.90,margin=7;
+ // A speech bubble belongs to its speaker. Never trade that identity away to
+ // avoid scenery: previous collision scoring teleported bubbles below cooks
+ // and towards neighbouring dining tables on narrow phones.
+ for(const {cue,actor,staff} of items){
   const lines=diningBubbleLines(cue.text,staff?12:16);
-  const font=staff?10:11,height=lines.length>1?(staff?34:40):(staff?24:27);
-  const maxWidth=Math.min(staff?106:119,w*(staff ? .33 : .38));
-  const width=Math.min(maxWidth,Math.max(staff?60:59,Math.max(...lines.map(v=>Array.from(v).length))*font+18));
-  const x=actor.x*w,headY=actor.y*h-27;
-  const candidates=[
-   {x:x-width/2,y:headY-height-13,dir:'above'},
-   {x:x-width*.83,y:headY-height-16,dir:'above'},
-   {x:x-width*.17,y:headY-height-16,dir:'above'},
-   {x:x+21,y:headY-height*.55,dir:'right'},
-   {x:x-width-21,y:headY-height*.55,dir:'left'},
-   {x:x-width/2,y:actor.y*h+17,dir:'below'},
-   {x:x-width/2-27,y:headY-height-48,dir:'above'},
-   {x:x-width/2+27,y:headY-height-48,dir:'above'},
-   {x:x-width/2,y:actor.y*h+39,dir:'below'}
-  ];
+  const font=staff?10:11,height=lines.length>1?(staff?35:40):(staff?27:29);
+  const width=Math.min(w-2*margin,Math.min(staff?116:129,Math.max(64,
+    Math.max(...lines.map(line=>Array.from(line).length))*font+18)));
+  const ax=actor.x*w,ay=actor.y*h;
+  // Pixel actors are drawn with their feet at (ax,ay); the tip should point
+  // to the forehead, not to the table, the feet or the order emoji.
+  const tipX=ax,tipY=ay-24;
+  const originY=tipY-height-12;
+  const offsets=staff?[0,17,-17,29,-29]:[0,14,-14,27,-27];
   let best=null;
-  for(const [index,candidate] of candidates.entries()){
-   const bx=speechClamp(candidate.x,pad,w-width-pad);
-   const by=speechClamp(candidate.y,top,Math.max(top,bottom-height));
-   const box={x:bx,y:by,width,height};
-   const overlap=placed.reduce((sum,p)=>sum+speechRectOverlap(box,p,5),0);
-   // Furniture is a lower priority than readable speech. Character heads
-   // and existing dialogue are harder constraints.
-   const furniture=protectedRects.reduce((sum,r)=>sum+speechRectOverlap(box,r),0);
-   const heads=faces.reduce((sum,f)=>sum+speechRectOverlap(box,f,5),0);
-   const displacement=Math.hypot((bx+width/2)-x,(by+height/2)-headY);
-   const clampCost=Math.hypot(bx-candidate.x,by-candidate.y);
-   const score=overlap*1000+heads*90+furniture*2.4+displacement*.23+clampCost*.9+index*7;
-   if(!best||score<best.score)best={...box,dir:candidate.dir,score};
+  for(const [i,off] of offsets.entries()){
+   const left=speechClamp(ax-width/2+off,margin,w-width-margin);
+   const top=speechClamp(originY,safeTop,Math.max(safeTop,safeBottom-height));
+   const box={x:left,y:top,width,height};
+   const peer=placed.reduce((sum,p)=>sum+speechRectOverlap(box,p,4),0);
+   const coversOtherHeads=actors.filter(other=>other!==actor).reduce((sum,other)=>
+    sum+speechRectOverlap(box,{x:other.x*w-11,y:other.y*h-30,width:22,height:29},2),0);
+   const tail=Math.hypot(speechClamp(tipX,left+9,left+width-9)-tipX,tipY-(top+height));
+   const penalty=peer*120+ coversOtherHeads*38+ Math.max(0,tail-30)*90+
+     Math.abs(off)*1.5+Math.abs(top-originY)*.8+i*.5;
+   if(!best||penalty<best.penalty)best={...box,penalty};
   }
+  // Suppress low-value worker chatter rather than let it cover a customer,
+  // the hero or migrate into an unrelated corner of the restaurant.
   if(!best)continue;
-  const left=best.x,by=best.y;
-  let baseX,baseY,tipX=x,tipY=headY+1;
-  if(best.dir==='right'){baseX=left;baseY=speechClamp(tipY,by+8,by+height-8);}
-  else if(best.dir==='left'){baseX=left+width;baseY=speechClamp(tipY,by+8,by+height-8);}
-  else if(best.dir==='below'){baseX=speechClamp(x,left+10,left+width-10);baseY=by;}
-  else {baseX=speechClamp(x,left+10,left+width-10);baseY=by+height;}
-  const placement={...best,lines,baseX,baseY,tipX,tipY,staff};
+  const overlap=placed.reduce((sum,p)=>sum+speechRectOverlap(best,p,3),0);
+  if(staff&&overlap>0)continue;
+  const baseX=speechClamp(tipX,best.x+9,best.x+best.width-9);
+  const baseY=best.y+best.height;
+  if(staff&&Math.hypot(baseX-tipX,baseY-tipY)>40)continue;
   placed.push(best);
-  result.set(cue.id,placement);
+  result.set(cue.id,{...best,lines,baseX,baseY,tipX,tipY,staff,dir:'above'});
  }
  return result;
 }
@@ -344,7 +454,7 @@ function drawSpeechCard(c,cue,p,staff=false){
  c.beginPath();c.roundRect(p.x,p.y,p.width,p.height,staff?7:9);c.fill();c.stroke();
  // A short pointer connects the bubble edge with the ACTUAL actor head.
  const dx=p.tipX-p.baseX,dy=p.tipY-p.baseY,dist=Math.hypot(dx,dy)||1;
- if(dist<74){
+ if(dist<=42&&p.tipY>=p.baseY){
   const nx=-dy/dist*3.6,ny=dx/dist*3.6;
   c.fillStyle=fill;c.beginPath();c.moveTo(p.baseX+nx,p.baseY+ny);
   c.lineTo(p.baseX-nx,p.baseY-ny);c.lineTo(p.tipX,p.tipY);c.closePath();c.fill();
