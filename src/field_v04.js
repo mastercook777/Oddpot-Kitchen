@@ -1,23 +1,45 @@
 // v0.4 real-time forest encounter. The underlying kitchen inventory remains
 // governed by engine.settleField; this file only mutates the expedition bag.
 import {ING} from './data.js?v=0.8.0';
-import {clamp, rand, settleField,addFieldBag} from './engine.js?v=0.8.1';
+import {clamp, rand, settleField,addFieldBag} from './engine.js?v=0.8.2';
 const dist=(a,b)=>Math.hypot(a.x-b.x,a.y-b.y);
 const pushMsg=(f,message)=>{f.actionMessage=message;f.actionMessageTTL=2.7;};
 export function startActionField(s){
  const f=s.field;if(!f||f.action)return false;
  f.action=true;f.pos={...(f.spawn||{x:4.5,y:9.4})};f.x=f.pos.x;f.y=f.pos.y;
- f.elapsed=0;f.harvestProgress=0;f.harvestNode=null;f.attackCd=0;f.skillCd??=0;f.damageCd=0;f.guardTime??=0;f.activeEvent=null;
+ f.elapsed=0;f.harvestProgress=0;f.harvestNode=null;f.attackCd=0;f.skillCd??=0;f.damageCd=0;f.guardTime??=0;f.shieldCharge??=(f.weapon?.type==='WOK');f.shieldCooldown??=0;f.shieldFlash??=0;f.activeEvent=null;
  f.projectiles=[];f.playerProjectiles=[];f.attackFx=null;f.skillFx=0;f.hurtFx=0;f.popFx=[];f.facing={x:0,y:-1};f.moving=false;f.actionMessage='移动寻找食材。靠近目标会自动采集。';f.actionMessageTTL=4;
  const profile=f.biome||{},mix=profile.enemyMix||[f.region==='spring'?'pepper':'chicken'];
- const enemyPos=[{x:6.85,y:6.6},{x:2.1,y:3.3},{x:7.1,y:2.9},{x:1.8,y:6.3}];
- const count=Math.min(4,Math.max(profile.enemyCount||1,/risk/.test(f.route)?2:1));
- f.enemies=Array.from({length:count},(_,i)=>{
-  const kind=mix[i%mix.length],p=!/risk/.test(f.route)&&profile.style==='meadow'&&i===0?{x:7.2,y:4.8}:enemyPos[(i+(profile.flipped?1:0))%enemyPos.length];
-  const hp=kind==='chicken'?3:2;
-  return {id:kind+'-'+i+'-'+(f.segmentIndex||1),kind,x:p.x,y:p.y,hp,maxHp:hp,
-   cooldown:1.7+i*.4,phase:i};
- });
+ const risk=/risk/.test(f.route),wave=f.segmentIndex||1;
+ // Encounter composition, count and spawn rotate with the run seed and zone,
+ // but dangerous branches always retain at least one hostile encounter.
+ const encounterSeed=(profile.encounterSeed||((s.seed||1)>>>0))+wave*9187;
+ const random=i=>(Math.imul(1664525,((encounterSeed+i*7919)>>>0))+1013904223)>>>0;
+ const base=profile.enemyCount||1,shift=((random(3)>>>12)%3)-1;
+ const count=Math.min(4,Math.max(risk?1:1,base+shift+(risk&&wave>1?1:0)));
+ const positions=[
+  {x:6.85,y:6.6},{x:2.1,y:3.3},{x:7.1,y:2.9},{x:1.8,y:6.3},
+  {x:6.9,y:4.25},{x:2.8,y:7.1},{x:5.8,y:2.4},{x:1.6,y:4.6}
+ ];
+ f.enemies=[];
+ for(let i=0;i<count;i++){
+  const pick=mix[((random(i+19)>>>8)+i)%mix.length],kind=pick||'chicken';
+  const candidates=positions.slice();
+  const start=((random(i+47)>>>9)+i)%candidates.length;
+  let p=null;
+  for(let c=0;c<candidates.length;c++){
+   const basePos=candidates[(start+c)%candidates.length];
+   const dx=((random(i*13+c+12)>>>13)%5-2)*.07,dy=((random(i*17+c+27)>>>13)%5-2)*.07;
+   const candidate={x:basePos.x+dx,y:basePos.y+dy};
+   if(blocked(f,candidate,.16)||dist(candidate,f.spawn||{x:4.5,y:9.4})<2.4)continue;
+   if(f.enemies.some(e=>dist(e,candidate)<1.1))continue;
+   p=candidate;break;
+  }
+  if(!p)p={x:7-i*.8,y:3+i*.55};
+  const hp=kind==='boar'?4:kind==='chicken'||kind==='steam_crab'?3:2;
+  f.enemies.push({id:kind+'-'+i+'-'+wave,kind,x:p.x,y:p.y,hp,maxHp:hp,
+   cooldown:1.55+((random(i+81)>>>8)%10)*.12,phase:i});
+ }
  if(f.segmentIndex===3&&f.dangerCommitment&&!f.legacyField){
   const hot=f.region==='spring',p=f.bossSpawn||{x:4.5,y:1.8};
   f.enemies.push({id:hot?'ember_king':'spore_king',kind:hot?'boss_ember':'boss_spore',
@@ -44,7 +66,7 @@ function damageEnemy(s,e,amount=1){
    type:'gather',x:e.x,y:e.y,claimed:false});
   pushMsg(f,'Mini Boss 被击败！珍贵食材已掉落，靠近拾取再返回饭店。');
  }else{
-  const ingredient=e.kind==='pepper'?'chili':'chicken';
+  const ingredient=e.kind==='pepper'?'chili':e.kind==='sporeling'?'mushroom':e.kind==='boar'?'beef':e.kind==='steam_crab'?'potato':'chicken';
   f.nodes.push({key:e.id+'-drop-'+f.segmentIndex,id:ingredient,n:1,
    type:'gather',x:e.x,y:e.y,claimed:false});
   pushMsg(f,'打败食材怪！附近可以采集新食材。');
@@ -80,10 +102,28 @@ function advancePlayerProjectiles(s,dt){
  }
  f.playerProjectiles=(f.playerProjectiles||[]).filter(p=>!p.hit);
 }
-function hurt(s,amount=1,source='enemy'){
+const WOK_SHIELD_RECHARGE=8;
+function shieldAttackIsFrontal(f,attacker){
+ if(!attacker||!Number.isFinite(attacker.x)||!Number.isFinite(attacker.y))return false;
+ const aim=f.facing||{x:0,y:-1},norm=Math.hypot(aim.x,aim.y)||1;
+ const dx=attacker.x-f.pos.x,dy=attacker.y-f.pos.y,dist=Math.hypot(dx,dy)||1;
+ return (aim.x*dx+aim.y*dy)/(norm*dist)>=Math.cos(Math.PI*2/5);
+}
+function hurt(s,amount=1,source='enemy',attacker=null){
  const f=s.field;if(f.damageCd>0)return false;
- if(f.weapon?.type==='WOK'&&f.guardTime>0&&(source==='enemy'||source==='pepper')){
-  f.guardTime=0;f.damageCd=.38;pushMsg(f,'🛡️ 锅盖格挡成功！');return true;
+ // A WOK shield deflects ONE attack coming from the front once recharged;
+ // active parry is deliberately a separate short timing window.
+ const isAttack=['enemy','pepper','spore'].includes(source);
+ if(f.weapon?.type==='WOK'&&isAttack&&shieldAttackIsFrontal(f,attacker)){
+  const parry=f.guardTime>0,passive=!!f.shieldCharge;
+  if(parry||passive){
+   if(parry)f.guardTime=0;
+   else {f.shieldCharge=false;f.shieldCooldown=WOK_SHIELD_RECHARGE;}
+   f.shieldFlash=.55;f.damageCd=.38;
+   f.popFx??=[];f.popFx.push({x:f.pos.x,y:f.pos.y-.2,text:parry?'完美格挡!':'盾牌挡住!',ttl:.82,color:'#faffb8'});
+   pushMsg(f,parry?'🛡️ 锅盖反击成功！':'🛡️ 锅盖自动抵挡！8 秒后恢复防护。');
+   return true;
+  }
  }
  const b=f.bento;
  let protectedHit=false;
@@ -146,6 +186,8 @@ export function stepActionField(s,axisX,axisY,dt){
  const f=s.field;if(s.phase!=='field'||!f?.action||f.finished||f.settled||f.activeEvent)return null;
  if(f.segmentStatus==='choice')return null;
  dt=clamp(Number(dt)||0,0,.06); f.elapsed+=dt;f.guardTime=Math.max(0,(f.guardTime||0)-dt);
+ f.shieldFlash=Math.max(0,(f.shieldFlash||0)-dt);
+ if(f.weapon?.type==='WOK'&&!f.shieldCharge){f.shieldCooldown=Math.max(0,(f.shieldCooldown||0)-dt);if(f.shieldCooldown<=0)f.shieldCharge=true;}
  for(const key of ['attackCd','skillCd','damageCd','actionMessageTTL','skillFx','hurtFx'])f[key]=Math.max(0,(f[key]||0)-dt);
  if(f.attackFx){f.attackFx.ttl=Math.max(0,f.attackFx.ttl-dt);if(!f.attackFx.ttl)f.attackFx=null;}
  for(const e of f.enemies){e.hurtFx=Math.max(0,(e.hurtFx||0)-dt);e.lungeFx=Math.max(0,(e.lungeFx||0)-dt);e.deathFx=Math.max(0,(e.deathFx||0)-dt);}
@@ -173,26 +215,33 @@ export function stepActionField(s,axisX,axisY,dt){
   if(e.hp<=0)continue;
   e.cooldown-=dt;
   const d=dist(f.pos,e);
+  const melee=['chicken','boar','steam_crab'].includes(e.kind);
   e.slowTime=Math.max(0,(e.slowTime||0)-dt);
-  if(d<3.6&&d>.6){const chase=(e.kind==='chicken'?1.02:e.isBoss?.47:.64)*(e.slowTime>0?.45:1);const next={x:e.x+(f.pos.x-e.x)/d*chase*dt,y:e.y+(f.pos.y-e.y)/d*chase*dt};if(!blocked(f,next,.1)){e.x=next.x;e.y=next.y}}
-  if(d<(e.kind==='chicken'?.70:e.isBoss?4:3.2)&&e.cooldown<=0){
-   if(e.kind==='chicken'){e.cooldown=1.6;e.warning=.45;}
-   else {e.cooldown=e.isBoss?3:2.5;e.warning=e.isBoss?.85:.55;e.aim={x:f.pos.x,y:f.pos.y}}
+  const chase=e.kind==='boar'?1.22:e.kind==='chicken'?1.02:e.kind==='steam_crab'?.78:e.isBoss?.47:.62;
+  if(d<3.6&&d>.62){
+   const speed=chase*(e.slowTime>0?.45:1),next={x:e.x+(f.pos.x-e.x)/d*speed*dt,y:e.y+(f.pos.y-e.y)/d*speed*dt};
+   if(!blocked(f,next,.1)){e.x=next.x;e.y=next.y}
+  }
+  if(d<(melee?.88:e.isBoss?4:3.2)&&e.cooldown<=0){
+   e.cooldown=e.isBoss?3:e.kind==='boar'?2.1:melee?1.7:e.kind==='sporeling'?2.9:2.5;
+   e.warning=e.isBoss?.85:melee?.42:e.kind==='sporeling'?.72:.55;
+   e.aim={x:f.pos.x,y:f.pos.y};
   }
   if(e.warning>0){e.warning-=dt;if(e.warning<=0){
-   if(e.kind==='chicken'){e.lungeFx=.22;if(dist(f.pos,e)<.95)hurt(s,1,'enemy')}
+   if(melee){e.lungeFx=.22;if(dist(f.pos,e)<(e.kind==='boar'?1.10:.95))hurt(s,1,'enemy',e)}
    else{
-    const a=e.aim||f.pos,ang=Math.atan2(a.y-e.y,a.x-e.x);
+    const aim=e.aim||f.pos,ang=Math.atan2(aim.y-e.y,aim.x-e.x);
     const spreads=e.isBoss?e.kind==='boss_spore'?[-.55,0,.55]:[-.27,0,.27]:[0];
+    const source=e.kind==='boss_spore'||e.kind==='sporeling'?'spore':'pepper';
     for(const spread of spreads){
-     const theta=ang+spread,speed=e.kind==='boss_spore'?1.9:e.isBoss?3.1:2.8;
-     f.projectiles.push({x:e.x,y:e.y,vx:Math.cos(theta)*speed,
-       vy:Math.sin(theta)*speed,life:3,source:e.kind==='boss_spore'?'spore':'pepper'});
+     const theta=ang+spread,speed=source==='spore'?(e.isBoss?1.9:2.1):e.isBoss?3.1:2.8;
+     f.projectiles.push({x:e.x,y:e.y,vx:Math.cos(theta)*speed,vy:Math.sin(theta)*speed,
+       ownerX:e.x,ownerY:e.y,life:3,source});
     }
    }
   }}
  }
- for(const p of f.projectiles){p.x+=p.vx*dt;p.y+=p.vy*dt;p.life-=dt;if(dist(f.pos,p)<.28){p.life=0;hurt(s,1,p.source||'pepper')}}f.projectiles=f.projectiles.filter(p=>p.life>0&&!blocked(f,p,0));
+ for(const p of f.projectiles){p.x+=p.vx*dt;p.y+=p.vy*dt;p.life-=dt;if(dist(f.pos,p)<.28){p.life=0;hurt(s,1,p.source||'pepper',{x:p.ownerX??p.x,y:p.ownerY??p.y})}}f.projectiles=f.projectiles.filter(p=>p.life>0&&!blocked(f,p,0));
  advancePlayerProjectiles(s,dt);
  if(f.attackCd<=0){
   const isPot=f.weapon?.type==='POT',range=isPot?3.5:1.25;
