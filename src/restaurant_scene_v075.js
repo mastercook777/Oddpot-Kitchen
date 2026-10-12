@@ -64,6 +64,7 @@ export function dinerBlocked(x,y,s=null){
  return false;
 }
 export function dinerWalk(hero,dx,dy,dt,s=null){
+ const g=dinerFloor(s);
  if(!hero||![dx,dy,dt].every(Number.isFinite))return false;
  const length=Math.hypot(dx,dy);
  dt=clamp075(dt,0,.06);
