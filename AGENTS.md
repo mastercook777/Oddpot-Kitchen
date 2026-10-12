@@ -1,3 +1,12 @@
+## v0.7.6 正式开店前首屏改版（2026-10-12）
+
+- 完整交接：`docs/V0.7.6_FORECAST_HOME_IMPLEMENTATION.md`。新版开店前 `forecast()` 输出**唯一今日目标卡 → 无浮层餐厅预览 → 三个轻量入口（仓库/便当/图鉴） → 唯一主按钮出门取材**。
+- `shell()` 在 forecast 不再输出底部旧 `dock` 和全屏提示 `toast`；`hud()` 在 forecast 顶部只显示店名、金币、声望、设置、轮次和阶段，不把长期图鉴进度/大版本号放进主视觉。设置中有实际版本号，其他阶段仍可显示版本。
+- 主页餐厅使用已经存在的 `drawRestaurantV075` Canvas；不得重新加回旧 `scene-float top/bottom` 大卡，也不得在锅/桌上覆盖长教学文案。CSS 以 `src/forecast_home_v076.css` 为权威，注意 iPhone safe-area 和 `max-height:575px`。
+- 开店前主按钮仍是 `to-field`，不要因库存等状态擅自绕开现有探索→研发→菜单流程。仓库/便当/图鉴入口全部沿用真实旧 `data-act`。
+- **版本同步硬性要求：** 现行为 `0.7.6`；修改时必须同时更新 `package.json`、`index.html` 的浏览器标题和 app.js 缓存查询、`src/app.js` 的游戏内/设置版本、`scripts/build-standalone.py` 和 `standalone.html`。用户曾反馈看见旧版本号，不能只换文字而忘记 Safari JS 缓存键。
+- 自动回归 `tests/v076_forecast_home.test.js`。CSS 与 DOM 的通过不等于真实 iPhone Safari 截图通过，需要玩家手动验收。
+
 ## v0.7.5 主线经营体验重构已提交（2026-10-11）
 
 - 最新实现交接：docs/V0.7.5_MAINLINE_IMPLEMENTATION.md。此前 v0.7.4 被用户拒收，新 v0.7.5 是对应的重绘/简化版，**仍须真机玩家体验验收**；下方较旧段落仅保留历史，不应据此恢复原交互。
