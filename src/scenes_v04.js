@@ -1,4 +1,5 @@
-import {fieldWokPose} from './field_pose_v083.js?v=0.8.3';
+import {fieldWokPose} from './field_pose_v083.js?v=0.8.4';
+import {meleeProfile,meleeWindupProgress} from './field_combat_feedback_v084.js?v=0.8.4';
 import {pixelActor,pixelEnemy,pixelImpact} from './pixels_v041.js?v=0.8.2';
 // Lightweight procedural game graphics: original Canvas shapes, no art pack.
 import {ING,RECIPES,CUSTOMERS} from './data.js?v=0.8.1';
@@ -18,6 +19,7 @@ function chef(c,x,y,t=0,options={}){
 }
 function monster(c,e,t){
  const x=e.x,y=e.y;
+ const melee=meleeProfile(e.kind),charging=!!melee&&e.warning>0;
  if(e.hp>0||e.deathFx>0){c.save();if(e.hp<=0)c.globalAlpha=Math.min(1,(e.deathFx||0)/.27);if(e.isBoss){
   circle(c,x,y+5,27,'#352d2a88');
   circle(c,x,y-4,22,e.kind==='boss_spore'?'#9870af':'#e46c3c');
@@ -25,8 +27,18 @@ function monster(c,e,t){
   for(const a of [-1,0,1])circle(c,x+a*12,y-13,4,e.kind==='boss_spore'?'#ede5ff':'#ffebae');
   circle(c,x-8,y-2,3,'#222e29');circle(c,x+8,y-2,3,'#222e29');
   line(c,x-9,y+12,x+9,y+12,'#382d30',3);
- }else pixelEnemy(c,e.kind,x,y,1.8,{face:e.face||1,walk:t,hurt:e.hurtFx||0});c.restore();}
- if(e.warning>0){circle(c,x,y,(e.isBoss?30:19)+Math.sin(t*14)*3,'#e9c26445');text(c,'!',x,y-29,'#ffdf83',16)}
+ }else {
+  c.save();
+  if(charging){
+   const windup=meleeWindupProgress(e);
+   // Visible crouch/pullback over the full warning, followed by sharp strike.
+   c.translate(0,1.6*windup);
+   c.scale(1+windup*.12,1-windup*.09);
+  }
+  pixelEnemy(c,e.kind,x,y,1.8,{face:e.face||1,walk:charging?0:t,hurt:e.hurtFx||0});
+  c.restore();
+ }c.restore();}
+ if(e.warning>0){circle(c,x,y,(e.isBoss?30:19)+Math.sin(t*14)*3,charging?'#f8866266':'#e9c26445');text(c,charging?'⚠':'!',x,y-29,charging?'#ffe3b8':'#ffdf83',16)}
  if(e.hp>0){capsule(c,x-12,y-27,24,4,'#28352f');capsule(c,x-12,y-27,24*e.hp/e.maxHp,4,'#e3b65d')}
 }
 function plant(c,n,t){const x=n.x,y=n.y;if(n.claimed)return;
@@ -148,8 +160,40 @@ function drawBiomeLandscape(c,f,time){
   ribbon([[.1,5],[3.7,5],[5.1,4],[8.8,3.3]],'#c5a980',.8);
  }
 }
+// A stationary, aim-locked fan appears BEFORE melee strikes. It communicates
+// both remaining wind-up and the direction the player can dodge out of.
+function drawMeleeWarnings(c,f){
+ for(const e of f.enemies||[]){
+  const p=meleeProfile(e.kind);if(!p||e.hp<=0)continue;
+  const fx=e.strikeFx,charging=e.warning>0;
+  if(!charging&&!(fx?.ttl>0))continue;
+  if(charging){
+   const origin=e.attackOrigin||e,aim=e.aim||f.pos;
+   const a=Math.atan2(aim.y-origin.y,aim.x-origin.x);
+   const progress=meleeWindupProgress(e),spread=p.arcDeg*Math.PI/360;
+   c.save();c.translate(e.x,e.y);c.rotate(a);
+   c.beginPath();c.moveTo(0,0);c.arc(0,0,p.reach,-spread,spread);c.closePath();
+   c.fillStyle=`rgba(245,87,54,${(.14+progress*.29).toFixed(3)})`;c.fill();
+   c.strokeStyle=progress>.7?'#ffe29b':'#fa9372';c.lineWidth=.060+progress*.022;c.stroke();
+   c.beginPath();c.arc(0,0,.45,-Math.PI/2,-Math.PI/2+progress*Math.PI*2);
+   c.strokeStyle='#fff3aa';c.lineWidth=.08;c.stroke();
+   c.restore();
+  }
+  if(fx?.ttl>0){
+   const a=Math.atan2(fx.dy,fx.dx),alpha=Math.min(1,fx.ttl/.18);
+   c.save();c.translate(fx.x,fx.y);c.rotate(a);c.globalAlpha=alpha;
+   c.beginPath();c.arc(0,0,p.reach*.90,-.55,.55);
+   c.strokeStyle='#fff0c4';c.lineWidth=.17;c.stroke();
+   c.beginPath();c.arc(0,0,p.reach,-.60,.60);
+   c.strokeStyle=p.accent;c.lineWidth=.07;c.stroke();c.restore();
+  }
+ }
+}
 export function drawField(canvas,s,clock){const size=setCanvas(canvas);if(!size||!s.field?.action)return;const {c,w,h}=size,f=s.field;const springs=f.region==='spring';const sc=Math.min(w/f.worldW,h/f.worldH),left=(w-sc*f.worldW)/2,top=(h-sc*f.worldH)/2;
- c.fillStyle=springs?'#9c674c':'#305a40';c.fillRect(0,0,w,h);c.save();c.translate(left,top);c.scale(sc,sc);
+ c.fillStyle=springs?'#9c674c':'#305a40';c.fillRect(0,0,w,h);
+ const shake=(f.hitShake||0)/.24,shakeX=shake?Math.sin(f.elapsed*151)*4*shake:0;
+ const shakeY=shake?Math.cos(f.elapsed*117)*2.4*shake:0;
+ c.save();c.translate(left+shakeX,top+shakeY);c.scale(sc,sc);
  drawBiomeLandscape(c,f,clock);
  if(f.hazards?.length){for(const hz of f.hazards){
   const x=hz.x+.5,y=hz.y+.5,style=f.biome?.style||'spring',roots=style==='roots',ember=style==='ember';
@@ -178,6 +222,7 @@ export function drawField(canvas,s,clock){const size=setCanvas(canvas);if(!size|
   circle(c,p.x-.045,p.y-arc-.04,.04,'#fff0ca');
   line(c,p.x,p.y-arc-.17,p.x+.08,p.y-arc-.22,'#7ca26a',.06);
  }
+ drawMeleeWarnings(c,f);
  for(const e of f.enemies||[]){if(e.hp>0||e.deathFx>0){c.save();c.translate(e.x,e.y);c.scale(1/sc,1/sc);monster(c,{...e,x:0,y:0},clock);c.restore()}}
  // Attack swipe uses the *same* direction and trigger as combat hit detection.
  if(f.attackFx?.ttl>0&&!f.attackFx.pot){
@@ -226,9 +271,27 @@ export function drawField(canvas,s,clock){const size=setCanvas(canvas);if(!size|
   if(flash){c.strokeStyle='#edffc9';c.lineWidth=2;c.beginPath();c.arc(0,0,sh.radius+5,0,Math.PI*2);c.stroke();}
   c.restore();
  }else text(c,'🍲',17,-10,'#fff1cc',13);
+ if((f.hitFlash||0)>0){
+  const ratio=Math.min(1,f.hitFlash/.52);
+  c.save();c.globalAlpha=ratio;
+  c.strokeStyle='#fff5df';c.lineWidth=2.4;
+  c.beginPath();c.arc(0,-3,14+(1-ratio)*12,0,Math.PI*2);c.stroke();
+  pixelImpact(c,0,-8,14,'#fff3d4');
+  c.restore();
+ }
  c.restore();
  if(f.harvestNode){const n=f.nodes.find(n=>n.key===f.harvestNode);if(n){capsule(c,n.x-.40,n.y-.49,.8,.10,'#304d39');capsule(c,n.x-.40,n.y-.49,.8*(f.harvestProgress/.82),.10,'#f3dd7e')}}
  c.restore();
+ // Real HP loss briefly lights the screen edges without adding UI controls.
+ if((f.hitFlash||0)>0){
+  const intensity=Math.min(1,f.hitFlash/.52);
+  c.save();
+  const grad=c.createRadialGradient(w/2,h/2,Math.min(w,h)*.12,w/2,h/2,Math.max(w,h)*.72);
+  grad.addColorStop(0,'rgba(255,80,55,0)');
+  grad.addColorStop(1,`rgba(203,45,36,${(.32*intensity).toFixed(3)})`);
+  c.fillStyle=grad;c.fillRect(0,0,w,h);
+  c.restore();
+ }
  // Gameplay feedback lives in a short-lived DOM notice; never reserve a permanent text strip over the forest.
 }
 function guest(c,x,y,kind,time,walking=false){pixelActor(c,kind||'regular',x,y,1.4,{walk:walking?time:0});}

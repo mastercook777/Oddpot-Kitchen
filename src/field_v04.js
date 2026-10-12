@@ -1,14 +1,15 @@
 // v0.4 real-time forest encounter. The underlying kitchen inventory remains
 // governed by engine.settleField; this file only mutates the expedition bag.
 import {ING} from './data.js?v=0.8.0';
-import {clamp, rand, settleField,addFieldBag} from './engine.js?v=0.8.2';
+import {meleeProfile,meleeAttackWouldHit} from './field_combat_feedback_v084.js?v=0.8.4';
+import {clamp, rand, settleField,addFieldBag} from './engine.js?v=0.8.4';
 const dist=(a,b)=>Math.hypot(a.x-b.x,a.y-b.y);
 const pushMsg=(f,message)=>{f.actionMessage=message;f.actionMessageTTL=2.7;};
 export function startActionField(s){
  const f=s.field;if(!f||f.action)return false;
  f.action=true;f.pos={...(f.spawn||{x:4.5,y:9.4})};f.x=f.pos.x;f.y=f.pos.y;
  f.elapsed=0;f.harvestProgress=0;f.harvestNode=null;f.attackCd=0;f.skillCd??=0;f.damageCd=0;f.guardTime??=0;f.shieldCharge??=(f.weapon?.type==='WOK');f.shieldCooldown??=0;f.shieldFlash??=0;f.activeEvent=null;
- f.projectiles=[];f.playerProjectiles=[];f.attackFx=null;f.skillFx=0;f.hurtFx=0;f.popFx=[];f.facing={x:0,y:-1};f.moving=false;f.actionMessage='移动寻找食材。靠近目标会自动采集。';f.actionMessageTTL=4;
+ f.projectiles=[];f.playerProjectiles=[];f.attackFx=null;f.skillFx=0;f.hurtFx=0;f.hitFlash=0;f.hitShake=0;f.hitDir=null;f.popFx=[];f.facing={x:0,y:-1};f.moving=false;f.actionMessage='移动寻找食材。靠近目标会自动采集。';f.actionMessageTTL=4;
  const profile=f.biome||{},mix=profile.enemyMix||[f.region==='spring'?'pepper':'chicken'];
  const risk=/risk/.test(f.route),wave=f.segmentIndex||1;
  // Encounter composition, count and spawn rotate with the run seed and zone,
@@ -133,7 +134,21 @@ function hurt(s,amount=1,source='enemy',attacker=null){
   const sporeShield=b.kind==='spore_shield'&&(source==='spore'||(b.enhanced&&source==='enemy'));
   if(enemyShield||springShield||sporeShield){amount=Math.max(0,amount-1);b.used=true;protectedHit=true}
  }
- f.hp=Math.max(0,f.hp-amount);f.damageCd=1.15;f.hurtFx=.46;
+ // Damage feedback is based on the real HP event, never an unrelated
+ // animation timer. A bento absorption is a distinct softer visual cue.
+ const hpBefore=f.hp;
+ f.hp=Math.max(0,f.hp-amount);f.damageCd=1.15;f.hurtFx=amount>0?.62:.30;
+ f.hitFlash=amount>0?.52:.22;f.hitShake=amount>0?.24:0;
+ const from=attacker&&Number.isFinite(attacker.x)&&Number.isFinite(attacker.y)?attacker:null;
+ const nx=from?f.pos.x-from.x:0,ny=from?f.pos.y-from.y:-1;
+ const length=Math.hypot(nx,ny)||1;f.hitDir={x:nx/length,y:ny/length};
+ if(amount>0){
+  // Short knockback is meaningful but can't teleport through rocks or leave map.
+  const recoil={x:f.pos.x+f.hitDir.x*.23,y:f.pos.y+f.hitDir.y*.23};
+  if(!blocked(f,recoil,.19)){f.pos.x=recoil.x;f.pos.y=recoil.y;f.x=recoil.x;f.y=recoil.y;}
+  f.popFx??=[];
+  f.popFx.push({x:f.pos.x,y:f.pos.y-.10,text:'♥ -'+(hpBefore-f.hp),ttl:.82,color:'#ffd0bc'});
+ }
  pushMsg(f,protectedHit?'🍱 便当生效！这一次抵御了 1 点伤害。':`受伤 -${amount}，可随时撤离保住收获。`);
  if(f.hp===0){f.finished=true;settleField(s,'faint')}return true;
 }
@@ -187,10 +202,11 @@ export function stepActionField(s,axisX,axisY,dt){
  if(f.segmentStatus==='choice')return null;
  dt=clamp(Number(dt)||0,0,.06); f.elapsed+=dt;f.guardTime=Math.max(0,(f.guardTime||0)-dt);
  f.shieldFlash=Math.max(0,(f.shieldFlash||0)-dt);
+ f.hitFlash=Math.max(0,(f.hitFlash||0)-dt);f.hitShake=Math.max(0,(f.hitShake||0)-dt);
  if(f.weapon?.type==='WOK'&&!f.shieldCharge){f.shieldCooldown=Math.max(0,(f.shieldCooldown||0)-dt);if(f.shieldCooldown<=0)f.shieldCharge=true;}
  for(const key of ['attackCd','skillCd','damageCd','actionMessageTTL','skillFx','hurtFx'])f[key]=Math.max(0,(f[key]||0)-dt);
  if(f.attackFx){f.attackFx.ttl=Math.max(0,f.attackFx.ttl-dt);if(!f.attackFx.ttl)f.attackFx=null;}
- for(const e of f.enemies){e.hurtFx=Math.max(0,(e.hurtFx||0)-dt);e.lungeFx=Math.max(0,(e.lungeFx||0)-dt);e.deathFx=Math.max(0,(e.deathFx||0)-dt);}
+ for(const e of f.enemies){e.hurtFx=Math.max(0,(e.hurtFx||0)-dt);e.lungeFx=Math.max(0,(e.lungeFx||0)-dt);if(e.strikeFx)e.strikeFx.ttl=Math.max(0,e.strikeFx.ttl-dt);e.deathFx=Math.max(0,(e.deathFx||0)-dt);}
  f.popFx=(f.popFx||[]).filter(x=>(x.ttl-=dt)>0);
  const len=Math.hypot(axisX,axisY), dx=len>0?axisX/len:0,dy=len>0?axisY/len:0;
  f.moving=len>.08; if(f.moving)f.facing={x:dx,y:dy};
@@ -215,20 +231,38 @@ export function stepActionField(s,axisX,axisY,dt){
   if(e.hp<=0)continue;
   e.cooldown-=dt;
   const d=dist(f.pos,e);
-  const melee=['chicken','boar','steam_crab'].includes(e.kind);
+  const profile=meleeProfile(e.kind),melee=!!profile;
   e.slowTime=Math.max(0,(e.slowTime||0)-dt);
   const chase=e.kind==='boar'?1.22:e.kind==='chicken'?1.02:e.kind==='steam_crab'?.78:e.isBoss?.47:.62;
-  if(d<3.6&&d>.62){
+  // Make the wind-up readable and dodgeable: melee enemies stop tracking
+  // once their attack starts and aim at the player's LAST locked position.
+  if(!(e.warning>0)&&d<3.6&&d>.62){
    const speed=chase*(e.slowTime>0?.45:1),next={x:e.x+(f.pos.x-e.x)/d*speed*dt,y:e.y+(f.pos.y-e.y)/d*speed*dt};
    if(!blocked(f,next,.1)){e.x=next.x;e.y=next.y}
   }
-  if(d<(melee?.88:e.isBoss?4:3.2)&&e.cooldown<=0){
+  if(d<(melee?profile.trigger:e.isBoss?4:3.2)&&e.cooldown<=0&&!(e.warning>0)){
    e.cooldown=e.isBoss?3:e.kind==='boar'?2.1:melee?1.7:e.kind==='sporeling'?2.9:2.5;
-   e.warning=e.isBoss?.85:melee?.42:e.kind==='sporeling'?.72:.55;
+   e.warning=melee?profile.windup:e.isBoss?.85:e.kind==='sporeling'?.72:.55;
+   e.windupTotal=e.warning;
    e.aim={x:f.pos.x,y:f.pos.y};
+   e.attackOrigin={x:e.x,y:e.y};
+   e.intentKind=melee?'melee':'ranged';
   }
   if(e.warning>0){e.warning-=dt;if(e.warning<=0){
-   if(melee){e.lungeFx=.22;if(dist(f.pos,e)<(e.kind==='boar'?1.10:.95))hurt(s,1,'enemy',e)}
+   if(melee){
+    e.aim??={...f.pos};e.attackOrigin??={x:e.x,y:e.y};
+    const original={x:e.x,y:e.y},aim=e.aim;
+    const dirX=aim.x-(e.attackOrigin?.x??original.x),dirY=aim.y-(e.attackOrigin?.y??original.y);
+    const n=Math.hypot(dirX,dirY)||1;
+    // Small readable forward strike; obstacles still apply.
+    const next={x:e.x+dirX/n*profile.dash,y:e.y+dirY/n*profile.dash};
+    if(!blocked(f,next,.18)){e.x=next.x;e.y=next.y;}
+    e.strikeFx={ttl:.28,duration:.28,x:e.x,y:e.y,dx:dirX/n,dy:dirY/n};
+    e.lungeFx=.28;
+    // Snapshot direction + reach, not a tracking attack on the moving player.
+    if(meleeAttackWouldHit(e,f.pos))hurt(s,1,'enemy',e);
+    e.attackOrigin=null;
+   }
    else{
     const aim=e.aim||f.pos,ang=Math.atan2(aim.y-e.y,aim.x-e.x);
     const spreads=e.isBoss?e.kind==='boss_spore'?[-.55,0,.55]:[-.27,0,.27]:[0];

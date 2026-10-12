@@ -1,0 +1,12 @@
+/* v0.8.4 : HP flashes only on a real unblocked hit. Gameplay Canvas
+   owns red vignette/knockback; this CSS highlights actual heart loss. */
+.game-shell.is-field-playing .field-hp.taking-hit{
+ color:#fff4ef;
+ text-shadow:0 0 7px #ff7a66,0 0 17px #ff5f4d;
+ transform:scale(1.09);
+ transition:transform .055s ease-out,color .07s ease-out;
+}
+.game-shell.is-field-playing .field-hp{
+ transform-origin:50% 50%;
+ transition:transform .22s ease-out,color .22s ease-out;
+}
