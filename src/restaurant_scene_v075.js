@@ -59,6 +59,7 @@ export function dinerBlocked(x,y,s=null){
  // from kitchen to dining without walking through stove fronts.
  if(y>g.geometry.counterTop&&y<g.geometry.counterBottom&&(x<g.geometry.counterGapLeft||x>g.geometry.counterGapRight))return true;
  if(close075({x,y},g.stoveLeft,g.geometry.stoveHalfX,g.geometry.stoveHalfY)||close075({x,y},g.stoveRight,g.geometry.stoveHalfX,g.geometry.stoveHalfY))return true;
+ if(close075({x,y},g.reservedStove,.071,.047))return true;
  for(const p of g.tables)if(Math.abs(x-p.x)<g.geometry.tableHalfX&&Math.abs(y-p.y)<g.geometry.tableHalfY)return true;
  return false;
 }
