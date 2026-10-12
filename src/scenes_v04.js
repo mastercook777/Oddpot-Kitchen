@@ -4,7 +4,7 @@ import {pixelActor,pixelEnemy,pixelImpact} from './pixels_v041.js?v=0.9.0';
 // Lightweight procedural game graphics: original Canvas shapes, no art pack.
 import {ING,RECIPES,CUSTOMERS} from './data.js?v=0.9.0';
 import {heroZone,waiterDeliveryPose,HERO_PASS} from './walkable_restaurant_v07.js?v=0.9.0';
-import {DINER_FLOOR,dinerFloor} from './restaurant_scene_v075.js?v=0.9.0';
+import {DINER_FLOOR,dinerFloor,dinerGuestRoute} from './restaurant_scene_v075.js?v=0.9.1';
 import {selectDiningSpeech,selectStaffSpeech,diningBubbleLines,speechOpacity} from './diner_ambience_v077.js?v=0.9.0';
 const color={ink:'#24382a',leaf:'#386b43',soil:'#806044',stone:'#a6b392',cream:'#f4dfb0',gold:'#dfb873'};
 function rect(c,x,y,w,h,fill){c.fillStyle=fill;c.fillRect(x,y,w,h)}
@@ -623,81 +623,104 @@ function drawRestaurantV075(c,s,t,w,h){
  rr(w*.25,h*.092,w*.50,34,9,'#483a2a','#dfae67');
  text(c,'ODDPOT  ·  怪味食堂',w*.50,h*.092+17,'#ffe6ab',Math.min(15,w*.042));
  for(const xx of [.08,.92]){rr(x(xx)-13,h*.12,26,46,5,'#6e937e','#cfae7d');rect(c,x(xx)-8,h*.135,16,21,'#3e6e68')}
- // Back wall and worktops. The service targets sit on the WALKABLE FLOOR
- // in front of the stove units (rather than inside the illustrated kettles).
+ // The two active stoves are deliberately compact; the centre is reserved for
+ // a later third production slot. No area names are printed on screen.
  for(const [i,key] of ['WOK','POT'].entries()){
   const body=i?g.stoveRight:g.stoveLeft,pt=i?g.right:g.left,slot=s.kitchen?.slots?.[i];
   const type=slot?.type||(i?'POT':'WOK'),busy=v?.stations?.[key];
-  const X=x(body.x),Y=y(body.y),rw=Math.min(94,w*.26);
-  rr(X-rw/2,Y-41,rw,77,12,'#523f30','#cfaa76');
-  rr(X-rw*.43,Y-36,rw*.86,56,8,'#98744d','#e6bb79');
-  circle(c,X,Y-9,Math.min(31,w*.083),'#c8bca2');
-  circle(c,X,Y-9,Math.min(25,w*.070),type==='WOK'?'#354847':'#517078','#e6dac0');
-  if(type==='POT'){circle(c,X,Y-9,Math.min(17,w*.045),'#9c7651');rect(c,X-31,Y-13,62,7,'#d3c7a4')}
-  else{line(c,X+19,Y-12,X+43,Y-24,'#d5b47a',6)}
-  if(busy){for(let j=0;j<3;j++)circle(c,X-15+j*14,Y-33+Math.sin(t*4+j)*3,3.5,'#f2e9bcaa')}
-  text(c,(type==='WOK'?'🍳':'🍲')+' '+(slot?.level>1?'Ⅱ':''),X,Y-53,'#f9e3a7',16);
+  const X=x(body.x),Y=y(body.y),rw=Math.min(62,w*.177);
+  rr(X-rw/2,Y-24,rw,51,7,'#513c30','#b99765');
+  rr(X-rw*.43,Y-20,rw*.86,39,5,'#916d49','#d8ae74');
+  circle(c,X,Y-4,Math.min(21,w*.057),'#d7c19b');
+  circle(c,X,Y-4,Math.min(17,w*.047),type==='WOK'?'#394b49':'#587580','#d5c9a7');
+  if(type==='POT'){circle(c,X,Y-4,Math.min(11,w*.034),'#ac7a51');rect(c,X-18,Y-7,36,4,'#dbc39a')}
+  else line(c,X+12,Y-8,X+24,Y-16,'#d5b47a',4);
+  if(busy){for(let j=0;j<2;j++)circle(c,X-7+j*14,Y-18+Math.sin(t*4+j)*2.5,2.5,'#f2e9bcaa')}
+  // Equipment level is shown with one understated pip, never a large floating label.
+  if(slot?.level>1)circle(c,X+rw*.37,Y-19,3.4,'#ffe3a2');
   const cookProgress=busy?Math.max(0,Math.min(1,1-(busy.left/Math.max(1,RECIPES[v.orders.find(o=>o.id===busy.orderId)?.recipeId]?.time||10)))):0;
-  rr(X-rw*.36,Y+27,rw*.72,7,4,'#2b4136','#b18b64');
-  if(busy){rr(X-rw*.35,Y+28,Math.max(3,rw*.70*cookProgress),5,2,'#f6cc82');text(c,Math.ceil(busy.left)+'s',X,Y+46,'#ffe3a8',11);}
-  const zone=pt;const hero=v?.hero;
-  const near=heroZone(hero,s)===key;
-  c.beginPath();c.ellipse(x(zone.x),y(zone.y),w*.10,h*.032,0,0,Math.PI*2);
-  c.lineWidth=2;c.strokeStyle=near?'#ffe69f':'#c8b6857d';c.stroke();
+  rr(X-rw*.34,Y+19,rw*.68,5,3,'#243c33','#b18b64');
+  if(busy){rr(X-rw*.33,Y+20,Math.max(2,rw*.66*cookProgress),3,2,'#f6cc82');text(c,Math.ceil(busy.left)+'s',X,Y+33,'#ffe3a8',10);}
+  const near=heroZone(v?.hero,s)===key;
+  c.beginPath();c.ellipse(x(pt.x),y(pt.y),w*.075,h*.025,0,0,Math.PI*2);
+  c.lineWidth=1.5;c.strokeStyle=near?'#ffe69f':'#c8b68575';c.stroke();
  }
- // Service counter leaves the center circulation lane clear. The pass is a
- // distinct low table in the opening, NOT a solid wall across the corridor.
- for(const [from,to] of [[.08,.40],[.60,.92]]){
-  rr(x(from),y(.425),x(to-from),h*.053,5,'#5a3e2d','#d6ad77');
-  rect(c,x(from),y(.425),x(to-from),6,'#ba8b57');
+ // A sealed empty hearth is a future upgrade affordance, never an active third station.
+ const reserve=g.reservedStove,RX=x(reserve.x),RY=y(reserve.y);
+ rr(RX-21,RY-20,42,42,6,'#463c34','#907859');
+ rr(RX-16,RY-15,32,27,4,'#625647','#927d60');
+ line(c,RX-13,RY+8,RX+13,RY-12,'#998469',3);
+ line(c,RX-13,RY-12,RX+13,RY+8,'#998469',3);
+ // Compact pass counter: continuous centre aisle, no full-width obstruction.
+ for(const [from,to] of [[.075,.390],[.610,.925]]){
+  rr(x(from),y(g.geometry.counterTop),x(to-from),h*.039,4,'#5b3e2e','#cda575');
+  rect(c,x(from),y(g.geometry.counterTop),x(to-from),4,'#c39965');
  }
- rr(x(.43),y(.427),x(.14),h*.033,5,'#b18b5f','#e5bd86');
+ rr(x(.441),y(.389),x(.118),h*.025,4,'#9e805d','#caaa77');
  const pending=v?.orders?.filter(o=>o.status==='pickup')||[];
- pending.slice(0,3).forEach((o,i)=>{dish(c,x(.50+(i-(Math.min(pending.length,3)-1)/2)*.046),y(.43),RECIPES[o.recipeId]?.station||'WOK')});
+ pending.slice(0,3).forEach((o,i)=>{dish(c,x(.50+(i-(Math.min(pending.length,3)-1)/2)*.046),y(.400),RECIPES[o.recipeId]?.station||'WOK')});
  const target=v?.hero?.carryOrderId?v.orders.find(o=>o.id===v.hero.carryOrderId&&o.status==='carried'):null;
- if(target){const p=g.tableWork[target.tableId];if(p){c.beginPath();c.ellipse(x(p.x),y(p.y),w*.13,h*.048,0,0,Math.PI*2);c.fillStyle='#ffe6a325';c.fill();c.lineWidth=2;c.strokeStyle='#f6d37d';c.stroke();}}
- // Tables, chairs and actual world collision are all in DINER_FLOOR.
+ if(target){const p=g.tableWork[target.tableId];if(p){c.beginPath();c.ellipse(x(p.x),y(p.y),w*.081,h*.034,0,0,Math.PI*2);c.fillStyle='#ffe6a325';c.fill();c.lineWidth=2;c.strokeStyle='#f6d37d';c.stroke();}}
+ // Real two-person SQUARE tables. Seats, plates, collision and serving target
+ // all correspond to the same canonical room coordinates, even after expansion.
  for(const [i,pt] of g.tables.entries()){
-  const X=x(pt.x),Y=y(pt.y),r=Math.min(w*.16,h*.085);
-  for(const side of [-1,1])rr(X+side*r*.73-10,Y-13,20,26,6,'#664732','#e2b27b');
-  circle(c,X,Y+6,r+6,'#433326a9');
-  circle(c,X,Y,r,'#5f422e','#daae79');
-  circle(c,X,Y-5,r-8,'#bc8956','#edc58c');
-  text(c,(i+1)+'',X,Y-5,'#714626',14);
+  const X=x(pt.x),Y=y(pt.y),side=Math.min(51,Math.max(39,w*.126)),half=side/2;
+  for(const sign of [-1,1]){
+   rr(X+sign*side*.77-8,Y-10,16,24,4,'#4e372c','#a87d56');
+   rr(X+sign*side*.77-7,Y-14,14,13,3,'#78573b','#bc9366');
+  }
+  rr(X-half-3,Y-half+7,side+6,side+5,6,'#493124','#67462e');
+  rr(X-half,Y-half,side,side,5,i===2?'#916b48':'#a0754a','#e0b27b');
+  rr(X-half+4,Y-half+4,side-8,side-8,3,'#ae865a','#c69d65');
+  line(c,X-half+6,Y-4,X+half-6,Y-4,'#8d6845',1);
+  line(c,X-half+6,Y+6,X+half-6,Y+6,'#8d6845',1);
+  // A single subtle rune is part of the wood, not an in-world UI name.
+  circle(c,X,Y,3,i===2?'#b2db9e':'#ceb17c');
+  if(i===2){ // a low mushroom lamp identifies the alcove without any label
+   line(c,X-half-8,Y-half-28,X-half-8,Y-half-8,'#756d56',2);
+   circle(c,X-half-8,Y-half-28,8,'#72a37f');
+   circle(c,X-half-8,Y-half-30,3,'#c1e9a9');
+  }
   if(v){
-   // Plates remain on the ACTUAL table while patrons eat/review.
-   // This is restaurant life feedback, not a second sales or HUD layer.
    const meals=v.orders.filter(o=>o.tableId===i&&['eating','review'].includes(o.status));
    meals.forEach(o=>{
-     const px=X+(o.seatId===0?-1:1)*Math.min(24,r*.53),py=Y+12;
-     dish(c,px,py,RECIPES[o.recipeId]?.station||'WOK');
-     if(o.status==='eating'&&t-(o.landedAt??t)<.8){
-      const shimmer=Math.max(0,1-(t-o.landedAt)/.8);
-      c.save();c.globalAlpha=shimmer*.8;
-      circle(c,px-12,py-15-Math.sin(t*7)*2,2,'#fff2ae');
-      circle(c,px+13,py-12+Math.cos(t*6)*2,1.7,'#ffe7a9');
-      c.restore();
-     }
+    const px=X+(o.seatId===0?-1:1)*Math.min(13,side*.24),py=Y+4;
+    dish(c,px,py,RECIPES[o.recipeId]?.station||'WOK');
+    if(o.status==='eating'&&t-(o.landedAt??t)<.8){
+     const shimmer=Math.max(0,1-(t-o.landedAt)/.8);
+     c.save();c.globalAlpha=shimmer*.8;
+     circle(c,px-8,py-12-Math.sin(t*7)*2,2,'#fff2ae');c.restore();
+    }
    });
    const waiting=v.orders.filter(o=>o.tableId===i&&['ordering','queued','cooking','pickup','carried','delivering'].includes(o.status));
    if(waiting.length){
     const patience=Math.min(...waiting.map(o=>o.patience-(t-o.arrival)));
     const urgency=patience<=9?'#ff756e':patience<=16?'#ffc67c':'#a4daaa';
-    c.beginPath();c.arc(X,Y,r+11,-Math.PI/2,-Math.PI/2+Math.PI*2*Math.max(.06,Math.min(1,patience/35)));
-    c.strokeStyle=urgency;c.lineWidth=4;c.stroke();
-    const main=waiting[0];const icon=RECIPES[main.recipeId]?.emoji||'🍽️';
-    text(c,icon,X,Y+22,'#ffe4af',18);
+    const pct=Math.max(.04,Math.min(1,patience/35));
+    rr(X-half,Y+half+5,side,4,2,'#392c25');
+    rr(X-half,Y+half+5,Math.max(2,side*pct),4,2,urgency);
+    const icon=RECIPES[waiting[0].recipeId]?.emoji||'🍽️';
+    text(c,icon,X,Y+4,'#ffe4af',14);
    }
   }
  }
- // Entrance and dining-room plants.
- rr(x(.43),y(.895),x(.14),h*.10,5,'#825d40','#e0bc85');
- rr(x(.46),y(.91),x(.08),h*.07,4,'#294c3d');
- for(const px of [.095,.905]){rr(x(px)-7,y(.84),14,20,3,'#66462d');circle(c,x(px),y(.838),13,'#54845b')}
+ // Natural details, not extra UI: hanging roots, spore lamps and pantry jars.
+ for(const [sx,shade] of [[.088,'#76a17f'],[.912,'#8d9b7d']]){
+  line(c,x(sx),y(.144),x(sx),y(.187),'#b69c72',2);
+  circle(c,x(sx),y(.190),8,shade);
+  circle(c,x(sx)-2,y(.187),2,'#e4e3ae');
+ }
+ for(let i=0;i<4;i++){
+  rr(x(.15+i*.055)-5,y(.185),10,15+(i%2)*4,2,i%2?'#83614b':'#698772','#c5aa75');
+ }
+ // Clear centre door and waiting strip, with furniture pushed to the edges.
+ rr(x(.440),y(.904),x(.120),h*.072,5,'#75563b','#cfa779');
+ rr(x(.465),y(.916),x(.070),h*.058,3,'#315547');
+ for(const px of [.09,.91]){rr(x(px)-6,y(.860),12,18,3,'#6f4b32');circle(c,x(px),y(.855),9,'#62916c')}
  // A real queue accumulates at the threshold until expanded seating frees a table.
  // Draw only the first few visitors, rather than fake serving or deleting demand.
  if(v){const line=v.orders.filter(o=>o.status==='waiting'&&o.arrival<=v.time).slice(0,3);
-  line.forEach((o,i)=>pixelActor(c,o.segment,x(.40+i*.075),y(.894+i%2*.018),DINER_ACTOR_SCALE*.82,{walk:0}));
+  line.forEach((o,i)=>pixelActor(c,o.segment,x(.405+i*.090),y(.883+i%2*.016),DINER_ACTOR_SCALE*.75,{walk:0}));
  }
  // Actors are sorted by floor position. Same real sprite scale for everyone.
  const actors=[];
@@ -708,18 +731,13 @@ function drawRestaurantV075(c,s,t,w,h){
        ||(o.status==='served'&&t-(o.reviewedAt??o.served??t)<2.3)
        ||(['left','rejected'].includes(o.status)&&Number.isFinite(o.leftAt)&&t-o.leftAt<2.6);
    if(!eligible)continue;
-   const pt=g.tables[o.tableId],side=o.seatId===0?-1:1;
-   const seat={x:pt.x+side*.082,y:pt.y-.063};
-   const entry={x:g.entrance.x,y:.96},hall={x:.5,y:.81},flank={x:seat.x,y:.80};
+   const route=dinerGuestRoute(o.tableId,o.seatId??0,s);
    const age=t-(o.doorAt??o.arrival);
    const leaving=o.status==='served'&&t-(o.reviewedAt??o.served??t)>.65||(['left','rejected'].includes(o.status)&&Number.isFinite(o.leftAt));
    const progress=leaving?Math.max(0,1-(t-(o.status==='served'?(o.reviewedAt??o.served??t)+.65:o.leftAt))/2.2):
        Math.max(0,Math.min(1,age/2.4));
    if(leaving&&progress<=0)continue;
-   const seg=progress<.35?0:progress<.70?1:2;
-   const ptA=[entry,hall,flank][seg],ptB=[hall,flank,seat][seg];
-   const q=seg===0?progress/.35:seg===1?(progress-.35)/.35:(progress-.7)/.3;
-   const loc={x:ptA.x+(ptB.x-ptA.x)*q,y:ptA.y+(ptB.y-ptA.y)*q};
+   const loc=routePoint(route,progress);
    actors.push({id:o.id,x:loc.x,y:loc.y,kind:o.segment,walk:progress>0&&progress<1,order:o});
   }
   const crew=v.crew||s.crew;
