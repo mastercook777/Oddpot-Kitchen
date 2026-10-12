@@ -77,7 +77,7 @@ test('danger final segment deterministically spawns matching mini boss and rare 
   clearStage(s);chooseFieldBranch(s,s.field.choices[0].choiceId);startActionField(s);
   const f=s.field,boss=f.enemies.find(e=>e.isBoss);
   assert.equal(boss.id,bossId);
-  f.enemies=[boss];boss.cooldown=999;f.pos={x:boss.x+1.2,y:boss.y+2};
+  f.enemies=[boss];boss.cooldown=999;f.pos={x:boss.x+2,y:boss.y+.9};
   f.damageCd=999;
   const before=s.inventory.onion;
   for(let i=0;i<400&&boss.hp>0;i++)stepActionField(s,0,0,.06);
