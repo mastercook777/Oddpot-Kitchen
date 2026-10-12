@@ -248,48 +248,103 @@ function paintDinerStaff(c,s,v,t,w,h){
 }
 // Compact speech is painted INSIDE the one restaurant canvas. It has no DOM
 // hit target, cannot intercept the joystick, and never covers either table.
-function drawGuestSpeech077(c,cue,actor,w,h){
- const lines=diningBubbleLines(cue.text),maxWidth=Math.min(116,w*.36);
- if(!lines.length)return;
- const font=11,lh=14;
- const width=Math.min(maxWidth,Math.max(59,Math.max(...lines.map(s=>Array.from(s).length))*font+18));
- const height=lines.length===1?27:40;
- const leftSide=cue.tableId===0, minX=leftSide?7:w*.51;
- const maxX=leftSide?w*.49-width:w-7-width;
- const centerX=actor.x*w+(cue.seatId===0?-8:8);
- const bx=Math.max(minX,Math.min(Math.max(minX,maxX),centerX-width/2));
- const headY=actor.y*h-25;
- const by=Math.max(h*.20,Math.min(h-height-5,headY-height-8));
- const negative=cue.kind==='upset'||cue.kind==='review'&&['late','bad','quality','taste'].includes(cue.reviewType);
- const bg=negative?'#ffe2ca':cue.kind==='review'?'#f5e9c8':'#f2eed3';
- c.save();c.globalAlpha=Math.min(.94,speechOpacity(cue));
- c.fillStyle=bg;c.strokeStyle=negative?'#d59775':'#b7a67c';c.lineWidth=1.2;
- c.beginPath();c.roundRect(bx,by,width,height,9);c.fill();c.stroke();
- const pointX=Math.max(bx+12,Math.min(bx+width-12,actor.x*w));
- c.fillStyle=bg;c.beginPath();
- c.moveTo(pointX-4,by+height-1);c.lineTo(pointX+4,by+height-1);
- c.lineTo(Math.max(bx+9,Math.min(bx+width-9,actor.x*w)),by+height+7);c.closePath();c.fill();
- for(let i=0;i<lines.length;i++)
-  text(c,lines[i],bx+width/2,by+(lines.length===1?height/2:12+i*15),
-    cue.kind==='upset'?'#7b4237':'#394234',font);
+
+const speechClamp=(n,a,b)=>Math.max(a,Math.min(b,n));
+function speechRectOverlap(a,b,pad=0){
+ return Math.max(0,Math.min(a.x+a.width+pad,b.x+b.width+pad)-Math.max(a.x-pad,b.x-pad))*
+        Math.max(0,Math.min(a.y+a.height+pad,b.y+b.height+pad)-Math.max(a.y-pad,b.y-pad));
+}
+// Deterministic speech placement for one Canvas frame. Guest priority and
+// actual head positions drive layout; staff chatter uses only spare space.
+// Returns a map of cue IDs, not persistent game state or interactive overlays.
+export function placeRestaurantSpeech(guestCues,workerCue,actors,w,h){
+ const byId=new Map(actors.map(a=>[a.id,a])),placed=[],result=new Map();
+ const items=[...(guestCues||[]).map(cue=>({cue,actor:byId.get(cue.id),staff:false})),
+              ...(workerCue?[{cue:workerCue,actor:byId.get(workerCue.staffRole),staff:true}]:[])]
+   .filter(item=>item.actor&&item.cue.text)
+   .sort((a,b)=>b.cue.priority-a.cue.priority||Number(a.staff)-Number(b.staff)||String(a.cue.id).localeCompare(String(b.cue.id)));
+ const pad=7,top=h*.205+5,bottom=h*.875;
+ // Keep words away from permanent kitchen labels, preparation stations and
+ // the actual characters' heads; a speech card must never conceal the speaker.
+ const protectedRects=[
+  {x:w*.085,y:h*.21,width:w*.33,height:h*.155},
+  {x:w*.585,y:h*.21,width:w*.33,height:h*.155},
+  {x:w*.40,y:h*.415,width:w*.20,height:h*.070}
+ ];
+ const faces=actors.map(a=>({x:a.x*w-12,y:a.y*h-31,width:24,height:26,id:a.id}));
+ for(const item of items){
+  const {cue,actor,staff}=item;
+  const lines=diningBubbleLines(cue.text,staff?12:16);
+  const font=staff?10:11,height=lines.length>1?(staff?34:40):(staff?24:27);
+  const maxWidth=Math.min(staff?106:119,w*(staff?.33:.38));
+  const width=Math.min(maxWidth,Math.max(staff?60:59,Math.max(...lines.map(v=>Array.from(v).length))*font+18));
+  const x=actor.x*w,headY=actor.y*h-27;
+  const candidates=[
+   {x:x-width/2,y:headY-height-13,dir:'above'},
+   {x:x-width*.83,y:headY-height-16,dir:'above'},
+   {x:x-width*.17,y:headY-height-16,dir:'above'},
+   {x:x+21,y:headY-height*.55,dir:'right'},
+   {x:x-width-21,y:headY-height*.55,dir:'left'},
+   {x:x-width/2,y:actor.y*h+17,dir:'below'},
+   {x:x-width/2-27,y:headY-height-48,dir:'above'},
+   {x:x-width/2+27,y:headY-height-48,dir:'above'},
+   {x:x-width/2,y:actor.y*h+39,dir:'below'}
+  ];
+  let best=null;
+  for(const [index,candidate] of candidates.entries()){
+   const bx=speechClamp(candidate.x,pad,w-width-pad);
+   const by=speechClamp(candidate.y,top,Math.max(top,bottom-height));
+   const box={x:bx,y:by,width,height};
+   const overlap=placed.reduce((sum,p)=>sum+speechRectOverlap(box,p,5),0);
+   // Furniture is a lower priority than readable speech. Character heads
+   // and existing dialogue are harder constraints.
+   const furniture=protectedRects.reduce((sum,r)=>sum+speechRectOverlap(box,r),0);
+   const heads=faces.reduce((sum,f)=>sum+speechRectOverlap(box,f,5),0);
+   const displacement=Math.hypot((bx+width/2)-x,(by+height/2)-headY);
+   const clampCost=Math.hypot(bx-candidate.x,by-candidate.y);
+   const score=overlap*1000+heads*90+furniture*2.4+displacement*.23+clampCost*.9+index*7;
+   if(!best||score<best.score)best={...box,dir:candidate.dir,score};
+  }
+  if(!best)continue;
+  const left=best.x,by=best.y;
+  let baseX,baseY,tipX=x,tipY=headY+1;
+  if(best.dir==='right'){baseX=left;baseY=speechClamp(tipY,by+8,by+height-8);}
+  else if(best.dir==='left'){baseX=left+width;baseY=speechClamp(tipY,by+8,by+height-8);}
+  else if(best.dir==='below'){baseX=speechClamp(x,left+10,left+width-10);baseY=by;}
+  else {baseX=speechClamp(x,left+10,left+width-10);baseY=by+height;}
+  const placement={...best,lines,baseX,baseY,tipX,tipY,staff};
+  placed.push(best);
+  result.set(cue.id,placement);
+ }
+ return result;
+}
+function drawSpeechCard(c,cue,p,staff=false){
+ if(!p)return;
+ const negative=!staff&&(cue.kind==='upset'||cue.kind==='review'&&['late','bad','quality','taste'].includes(cue.reviewType));
+ const fill=staff?'#dcebd6':negative?'#ffe2ca':cue.kind==='review'?'#f5e9c8':'#f2eed3';
+ const stroke=staff?'#5c846c':negative?'#d59775':'#b7a67c';
+ c.save();c.globalAlpha=Math.min(staff?.92:.94,speechOpacity(cue));
+ c.fillStyle=fill;c.strokeStyle=stroke;c.lineWidth=1.1;
+ c.beginPath();c.roundRect(p.x,p.y,p.width,p.height,staff?7:9);c.fill();c.stroke();
+ // A short pointer connects the bubble edge with the ACTUAL actor head.
+ const dx=p.tipX-p.baseX,dy=p.tipY-p.baseY,dist=Math.hypot(dx,dy)||1;
+ if(dist<74){
+  const nx=-dy/dist*3.6,ny=dx/dist*3.6;
+  c.fillStyle=fill;c.beginPath();c.moveTo(p.baseX+nx,p.baseY+ny);
+  c.lineTo(p.baseX-nx,p.baseY-ny);c.lineTo(p.tipX,p.tipY);c.closePath();c.fill();
+  c.strokeStyle=stroke;c.beginPath();c.moveTo(p.baseX+nx,p.baseY+ny);
+  c.lineTo(p.tipX,p.tipY);c.lineTo(p.baseX-nx,p.baseY-ny);c.stroke();
+ }
+ for(let i=0;i<p.lines.length;i++)
+  text(c,p.lines[i],p.x+p.width/2,p.y+(p.lines.length===1?p.height/2:(staff?10:12)+i*(staff?14:15)),
+       staff?'#2f493e':negative?'#7b4237':'#394234',staff?10:11);
  c.restore();
 }
-// A SMALL speech card next to the actual worker. The canvas never intercepts
-// joystick, service and tool actions. Only one worker can speak at a time.
+function drawGuestSpeech077(c,cue,actor,w,h){
+ drawSpeechCard(c,cue,actor.speechPlacement,false);
+}
 function drawStaffSpeech078(c,cue,actor,w,h){
- const lines=diningBubbleLines(cue.text,12),width=Math.min(102,w*.30),height=lines.length>1?34:23;
- if(!lines.length)return;
- const X=actor.x*w,Y=actor.y*h;
- let bx=cue.staffRole==='helper'
-  ? (X<w*.5?7:w-width-7)
-  : Math.min(w-width-7,Math.max(7,X+(X<w*.5?17:-width-17)));
- let by=cue.staffRole==='helper'?Math.min(h-height-8,Y+24):Math.max(h*.22,Y-height-35);
- c.save();c.globalAlpha=Math.min(.92,speechOpacity(cue));
- c.fillStyle='#dcebd6';c.strokeStyle='#5c846c';c.lineWidth=1.1;
- c.beginPath();c.roundRect(bx,by,width,height,7);c.fill();c.stroke();
- for(let i=0;i<lines.length;i++)
-  text(c,lines[i],bx+width/2,by+(lines.length===1?height/2:10+i*14),'#2f493e',10);
- c.restore();
+ drawSpeechCard(c,cue,actor.speechPlacement,true);
 }
 // v0.7.5 official restaurant. One world; furniture, actors, services and
 // collision share DINER_FLOOR. The old DOM kitchen is NOT drawn here.
@@ -432,6 +487,8 @@ function drawRestaurantV075(c,s,t,w,h){
  // Customer urgency and actual reviews always beat optional worker banter.
  const workerCue=selectStaffSpeech(s,t,visibleSpeech);
  const workerActor=workerCue?actors.find(a=>a.id===workerCue.staffRole):null;
+ const speechPlacements=placeRestaurantSpeech(visibleSpeech,workerCue,actors,w,h);
+ for(const a of actors)a.speechPlacement=speechPlacements.get(a.id);
  const speaking=new Set(visibleSpeech.map(q=>q.id));
  for(const a of actors){
   const X=x(a.x),Y=y(a.y)+(a.order?.status==='eating'?Math.sin(t*5+Number(a.order.seatId||0))*.9:0);
