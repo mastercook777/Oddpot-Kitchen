@@ -57,10 +57,10 @@ test('different advertised crowd scenarios change guest count and arrival spacin
   if(o.length>1)spacing[name]=o[1].arrival-o[0].arrival;
  }
  assert.ok(Object.keys(counts).length>=4);
- assert.ok(Math.min(...counts['节日高峰'])>=10);
- assert.ok(Math.max(...counts['街坊小聚'])<=8);
- assert.equal(spacing['节日高峰'],1);
- assert.equal(spacing['街坊小聚'],3);
+ assert.ok(Math.min(...counts['集市热闹夜'])>=10);
+ assert.ok(Math.max(...counts['街坊晚餐'])<=8);
+ assert.equal(spacing['集市热闹夜'],1);
+ assert.equal(spacing['街坊晚餐'],3);
 });
 test('goal celebration is recorded once at milestone, not every tick',()=>{
  const s=serveSetup(55);s.service.goal={kind:'served',target:1,label:'成功送达一单'};

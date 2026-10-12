@@ -1,8 +1,8 @@
-import {ING,RECIPES,CUSTOMERS,FORECAST,DEFAULT_INVENTORY,SHOP_STAPLES} from './data.js?v=0.9.0';
+import {ING,RECIPES,CUSTOMERS,FORECAST,DEFAULT_INVENTORY,SHOP_STAPLES} from './data.js?v=0.9.1';
 import {LIVE_ACTIONS,evaluateLiveCook,liveIngredientState,legacyVariant,makeLiveVariant,resolveTechnique} from './cooking_v063.js?v=0.8.0';
 import {RECIPE_PROFILES} from './recipe_profiles_v063.js?v=0.8.0';
 import {generateBiomeMap} from './field_biomes_v081.js?v=0.8.2';
-import {newServiceHero,heroZone} from './walkable_restaurant_v07.js?v=0.9.0';
+import {newServiceHero,heroZone} from './walkable_restaurant_v07.js?v=0.9.1';
 export const PHASES=['forecast','field','research','menu','prep','service','report','upgrade'];
 export const SAVE_KEY='oddpot-prototype-v04'; // v0.2 兼容先前试玩存档
 const clone=x=>structuredClone(x);
@@ -421,14 +421,14 @@ export function serviceDayPlan(s){
  const key=rand(s.seed+s.cycle*3109+s.day*701+Math.max(0,s.reputation)*11);
  // The LCG multiplier is divisible by 5, so key % 5 was CONSTANT.
  // Use mixed high bits or every night falsely advertises the same scenario.
- const pressure=['街坊小聚','周末食客','冒险者晚宴','雨夜热汤','节日高峰'][(key>>>17)%5];
+ const pressure=['街坊晚餐','菌帽家庭聚餐','矿工收工','雨夜暖汤','集市热闹夜'][(key>>>17)%5];
  // Crowd labels represent different *operational pressure*, not cosmetic themes.
  const crowdRules={
-  '街坊小聚':{min:6,spread:2,spacing:3,favorite:'regular'},
-  '周末食客':{min:8,spread:2,spacing:2,favorite:'family'},
-  '冒险者晚宴':{min:8,spread:3,spacing:1,favorite:'adventurer'},
-  '雨夜热汤':{min:6,spread:3,spacing:3,favorite:'family'},
-  '节日高峰':{min:10,spread:2,spacing:1,favorite:'adventurer'}
+  '街坊晚餐':{min:6,spread:2,spacing:3,favorite:'regular'},
+  '菌帽家庭聚餐':{min:8,spread:2,spacing:2,favorite:'family'},
+  '矿工收工':{min:8,spread:3,spacing:1,favorite:'adventurer'},
+  '雨夜暖汤':{min:6,spread:3,spacing:3,favorite:'family'},
+  '集市热闹夜':{min:10,spread:2,spacing:1,favorite:'adventurer'}
  };
  const rule=crowdRules[pressure];
  const count=Math.min(s.cycle===1?11:14,rule.min+((key>>>5)%rule.spread)+(firstChallenge(s)?1:0)+(s.cycle>1?2:0)+(s.reputation>=10?1:0));
@@ -535,12 +535,12 @@ export function breakPrep(s,recipeId){
  record(s,{type:'emergency_prep',recipeId});return true;
 }
 export const SERVICE_EVENTS={
- 1:{id:'rush',title:'临时来了旅行团',description:'下一波冒险者可能增多；你的辣味与炖煮产能能接住吗？',choices:[
-  {id:'sign',label:'挂辣味招牌',detail:'将下一波一位顾客改为冒险者，获得需求机会'},
+ 1:{id:'rush',title:'矿井刚刚换班',description:'饥肠辘辘的矮人陆续进门，肉菜可能卖得更快。',choices:[
+  {id:'sign',label:'主推辣味菜',detail:'下一波增加一位喜欢辣味的矮人'},
   {id:'kitchen',label:'整理后厨',detail:'花 6 金币：下一波炒锅每单减少 3 秒'},
   {id:'steady',label:'保持原计划',detail:'不追加成本，原客群结构保持不变'}]},
- 2:{id:'critic',title:'街角传来美食评论家的消息',description:'有人说今晚会有人特别关注出餐与招待。',choices:[
-  {id:'soup',label:'主推温和餐',detail:'将下一波一位顾客改为家庭客群'},
+ 2:{id:'critic',title:'门外飘来一团灵雾',description:'听说幽灵鉴味师会来，出餐速度和火候都得留心。',choices:[
+  {id:'soup',label:'主推温和餐',detail:'下一波增加一位菌帽食客'},
   {id:'assist',label:'雇临时帮厨',detail:'花 8 金币：下一波两口锅每单减少 3 秒'},
   {id:'publicity',label:'免费试吃宣传',detail:'花 5 金币：下一波顾客满意度 +10'}]}
 };
@@ -552,8 +552,8 @@ export const SERVICE_EVENT_POOL={
    {id:'soup',label:'推荐一份热汤',detail:'下一波一位顾客转为家庭客'},
    {id:'kitchen',label:'帮后厨清台',detail:'6 金币：炒锅加速 3 秒'},
    {id:'steady',label:'不追热潮',detail:'保持计划，保存金币'}]},
-  {id:'market',title:'门口摆起了夜市摊',description:'能否接住突然增加的冒险者需求？',choices:[
-   {id:'sign',label:'推出辛辣招牌',detail:'下一波增加冒险者需求'},
+  {id:'market',title:'矿工们被香味引了过来',description:'门外越来越热闹，今晚的肉菜会不会不够？',choices:[
+   {id:'sign',label:'推出辛辣招牌',detail:'下一波增加矮人食客'},
    {id:'kitchen',label:'整理炒锅',detail:'6 金币：炒锅每单缩短 3 秒'},
    {id:'steady',label:'保留原菜单',detail:'不改变今晚的客群'}]}],
  2:[SERVICE_EVENTS[2],
@@ -561,8 +561,8 @@ export const SERVICE_EVENT_POOL={
    {id:'assist',label:'临时请人帮忙',detail:'8 金币：所有锅具加速 3 秒'},
    {id:'publicity',label:'送一份试吃',detail:'5 金币：下一波好感 +10'},
    {id:'steady',label:'稳住节奏',detail:'不追加支出'}]},
-  {id:'family',title:'附近家庭结伴而来',description:'温和菜可能更受欢迎，值得临时调整吗？',choices:[
-   {id:'soup',label:'优先推荐温和菜',detail:'下一波一位顾客改成家庭客'},
+  {id:'family',title:'几顶小菌帽探进门来',description:'林地家庭想吃温暖的料理，需要调整菜单吗？',choices:[
+   {id:'soup',label:'优先推荐温和菜',detail:'下一波增加菌帽食客'},
    {id:'publicity',label:'附赠小菜招待',detail:'5 金币：下一波好感 +10'},
    {id:'assist',label:'请人救急',detail:'8 金币：双厨具加速 3 秒'}]}]
 };
@@ -581,7 +581,7 @@ export function chooseServiceEvent(s,choice){
  else if(choice==='assist'){v.eventEffects.WOK=3;v.eventEffects.POT=3;}
  else if(choice==='publicity'){v.guestMood=10;v.eventMoodWave=wave;}
  v.eventChoiceMade.push(wave);v.breakUsed=true;
- v.decisionFlash=({sign:'冒险者客群增加',kitchen:'炒锅加速 -3秒',steady:'稳住服务节奏',soup:'家庭客群增加',assist:'双厨具加速 -3秒',publicity:'顾客好感 +10'})[choice]||'事件已处理';v.decisionAt=v.time;
+ v.decisionFlash=({sign:'矮人客人增加',kitchen:'炒锅加速 -3秒',steady:'稳住服务节奏',soup:'菌帽食客增加',assist:'双厨具加速 -3秒',publicity:'顾客好感 +10'})[choice]||'事件已处理';v.decisionAt=v.time;
  record(s,{type:'management_choice',wave,choice,cost});return true;
 }
 export function swapBreakMenu(s,slot,id){
@@ -702,16 +702,21 @@ function stepWalkableShift(s){
  if(h.recovery>=1){const n=Math.floor(h.recovery);h.recovery-=n;h.energy=Math.min(h.maxEnergy,h.energy+n);}
  if(h.energy>=h.maxEnergy)h.recovery=0;
 }
+// Real satisfaction rules are unchanged. Species-specific lines are the
+// presentation of that verdict, not additional hidden score modifiers.
+export const CUSTOMER_REVIEW_VOICES={
+ adventurer:{late:'这锅香归香，我的矿车都开走了！',quality:'火候软得像矿渣，再来点劲！',taste:'这味道不够扎实，矿工吃不饱。',delicious:'好吃！胡子都沾上锅气了！',happy:'够劲！明天带矿友来。',okay:'嗯，勉强够下矿了。',bad:'没填饱矿工的肚子。'},
+ family:{late:'幼菇们都快睡着了……',quality:'菌汤还差点火候呢。',taste:'这味道让小菌帽有点不适应。',delicious:'真好吃！幼菇们都笑啦！',happy:'暖暖的，下次还来。',okay:'还算温暖，孩子们吃得下。',bad:'小菌帽们没吃尽兴。'},
+ regular:{late:'好吃归好吃，我都快等成一滩啦！',quality:'呜咕，火候让口感变硬了。',taste:'呜咕，这口味让我不太想弹。',delicious:'咕噜！好吃得浑身发光！',happy:'弹！明天再来一份！',okay:'咕噜……还可以。',bad:'呜咕，没吃出开心来。'},
+ critic:{late:'让亡灵苦等，香气也会散尽。',quality:'火候未得其魂，甚是可惜。',taste:'异味有了，层次还差一些。',delicious:'绝妙！这味道足以穿透灵界。',happy:'有趣，下次再品鉴。',okay:'尚可，留下些许余味。',bad:'灵魂未被打动。'}
+};
 export function guestReview(o){
  const wait=Math.max(0,(o.landedAt??o.served??0)-(o.arrival||0));
  const ratio=wait/Math.max(1,o.patience||1);
- if(ratio>.72)return {type:'late',text:'好吃是好吃，等太久啦…'};
- if((o.quality||0)<62)return {type:'quality',text:'这道菜火候不太对。'};
- if((o.fit||0)<57)return {type:'taste',text:'这个味道不太合我口味。'};
- if((o.sat||0)>=87)return {type:'delicious',text:'太好吃了！还想再来！'};
- if((o.sat||0)>=72)return {type:'happy',text:'好吃！下次还来！'};
- if((o.sat||0)>=55)return {type:'okay',text:'嗯，还不错。'};
- return {type:'bad',text:'一般般，有点失望。'};
+ const type=ratio>.72?'late':(o.quality||0)<62?'quality':(o.fit||0)<57?'taste':
+    (o.sat||0)>=87?'delicious':(o.sat||0)>=72?'happy':(o.sat||0)>=55?'okay':'bad';
+ const voice=CUSTOMER_REVIEW_VOICES[o.segment]||CUSTOMER_REVIEW_VOICES.regular;
+ return {type,text:voice[type]};
 }
 function advanceGuestMeals(s){
  const v=s.service;
