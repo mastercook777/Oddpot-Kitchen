@@ -31,7 +31,7 @@ test('speech for a real dish leads with the actual recipe name and is determinis
  assert.equal(a.text,b.text);
  assert.equal(diningSpeechCue(o,7),null,'transient speech must disappear');
  const f={...o,id:'another-guest'};
- assert.ok(diningSpeechCue(f,3.3)?.text.startsWith('辣椒炒肉！'));
+ assert.ok(diningSpeechCue(f,3.3)?.text.startsWith('火椒噼啪肉！'));
 });
 test('real shortage mentions genuinely unavailable ingredients, not a generic bad-menu reason',()=>{
  const s=newGame();s.phase='service';
