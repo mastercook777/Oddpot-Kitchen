@@ -1,4 +1,4 @@
-import {fieldWokPose} from './field_pose_v083.js?v=0.8.4';
+import {fieldWokPose,fieldPotPose} from './field_pose_v083.js?v=0.8.5';
 import {meleeProfile,meleeWindupProgress} from './field_combat_feedback_v084.js?v=0.8.4';
 import {pixelActor,pixelEnemy,pixelImpact} from './pixels_v041.js?v=0.8.2';
 // Lightweight procedural game graphics: original Canvas shapes, no art pack.
@@ -238,6 +238,7 @@ export function drawField(canvas,s,clock){const size=setCanvas(canvas);if(!size|
  const chefFace=(f.facing?.x||0)<-.15?-1:1;
  const isWok=f.weapon?.type==='WOK';
  const posture=isWok?fieldWokPose(f.facing,f.moving,clock,(f.guardTime||0)>0):null;
+ const potPose=!isWok?fieldPotPose(f.facing,f.moving,clock,!!(f.attackFx?.pot&&f.attackFx?.ttl>0)):null;
  if(isWok){
   // BACK LAYER: pan handle runs from the rear hand to a compact wok.
   // This replaces the oversized circular pan beside the face.
@@ -252,6 +253,11 @@ export function drawField(canvas,s,clock){const size=setCanvas(canvas);if(!size|
   c.fillStyle='#283840';c.fill();c.strokeStyle='#d9c29d';c.lineWidth=2;c.stroke();
   c.beginPath();c.ellipse(0,0,4.2,3.0,0,0,Math.PI*2);c.fillStyle='#69828b';c.fill();
   c.restore();
+ }else if(potPose){
+  // POT BACK LAYER: a clear forearm grip connecting chef and cauldron.
+  const hand=potPose.hand,held=potPose.pot;
+  line(c,hand.x,hand.y,held.x-potPose.side*5,held.y-1,'#373b36',5);
+  line(c,hand.x,hand.y,held.x-potPose.side*5,held.y-1,'#d0aa76',2.6);
  }
  chef(c,0,Math.sin(clock*9)*(f.moving?1.5:.35),clock,{scale:1.55,walk:f.moving,attack:!!f.attackFx,face:chefFace,hurt:f.hurtFx});
  if(isWok){
@@ -270,7 +276,33 @@ export function drawField(canvas,s,clock){const size=setCanvas(canvas);if(!size|
    c.arc(0,0,sh.radius+2,-Math.PI/2,-Math.PI/2+Math.PI*2*Math.max(0,1-(f.shieldCooldown||0)/8));c.stroke();}
   if(flash){c.strokeStyle='#edffc9';c.lineWidth=2;c.beginPath();c.arc(0,0,sh.radius+5,0,Math.PI*2);c.stroke();}
   c.restore();
- }else text(c,'🍲',17,-10,'#fff1cc',13);
+ }else if(potPose){
+  // POT FOREGROUND: enamel stockpot with two handles, visible mouth and
+  // magical onion ammunition. Geometry stays below the face across directions.
+  const held=potPose.pot;
+  c.save();c.translate(held.x,held.y);c.scale(held.scale,held.scale);
+  if(potPose.casting){c.rotate(.12*potPose.side);c.shadowColor='#d8f9ad';c.shadowBlur=8;}
+  // Handles first; distinct from the earlier floating soup emoji.
+  c.beginPath();c.roundRect(-10,-4,5,7,2.2);c.fillStyle='#283c46';c.fill();
+  c.beginPath();c.roundRect(5,-4,5,7,2.2);c.fill();
+  c.beginPath();c.roundRect(-7,-4,14,12,3.8);c.fillStyle='#6ca4a8';c.fill();
+  c.lineWidth=2;c.strokeStyle='#263d49';c.stroke();
+  c.beginPath();c.roundRect(-5,-3,10,8,2.4);c.fillStyle='#477e87';c.fill();
+  c.beginPath();c.ellipse(0,-4,7.5,3,0,0,Math.PI*2);
+  c.fillStyle='#d9c8a2';c.fill();c.strokeStyle='#374b52';c.lineWidth=1.8;c.stroke();
+  c.beginPath();c.ellipse(0,-4,5.2,1.7,0,0,Math.PI*2);
+  c.fillStyle=potPose.casting?'#e7f3a2':'#83b3a6';c.fill();
+  // An onion-bomb peeks out of the pot, with a leaf-shaped fuse.
+  c.beginPath();c.ellipse(0,-4,2.7,2.3,0,0,Math.PI*2);
+  c.fillStyle='#e5ba75';c.fill();
+  line(c,0,-6,.9,-9,'#77ac65',1.5);
+  if(potPose.casting){
+   c.globalAlpha=.8;
+   c.beginPath();c.arc(0,-6,10,Math.PI*1.1,Math.PI*1.85);
+   c.strokeStyle='#e6f7ba';c.lineWidth=1.6;c.stroke();
+  }
+  c.restore();
+ }
  if((f.hitFlash||0)>0){
   const ratio=Math.min(1,f.hitFlash/.52);
   c.save();c.globalAlpha=ratio;
