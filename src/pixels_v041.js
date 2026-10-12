@@ -43,7 +43,29 @@ export function pixelEnemy(c,kind,x,y,scale=2.4,options={}){
  c.save();c.translate(Math.round(x),Math.round(y));c.scale((options.face||1)<0?-scale:scale,scale);c.translate(-9,-10);
  const bounce=Math.sin((options.walk||0)*12)*1.5;
  if(options.hurt&&Math.floor(options.hurt*22)%2===0)c.globalAlpha=.36;
- if(kind==='chicken'){
+ if(kind==='sporeling'){
+  // Animated purple fungus with luminous spores, distinct from pepper.
+  r(c,6,14+bounce,4,5,P.outline);r(c,11,14-bounce,4,5,P.outline);
+  r(c,4,7,12,11,P.outline);r(c,5,7,10,10,'#a88bc4');
+  r(c,1,5,18,7,P.outline);r(c,2,4,16,7,'#9e67b9');
+  r(c,5,1,11,5,'#d6acdc');r(c,5,4,3,2,'#eed9eb');r(c,13,3,3,3,'#eed9eb');
+  r(c,8,11,2,2,P.outline);r(c,12,11,2,2,P.outline);
+ }else if(kind==='boar'){
+  // Stocky meat boar: charge attack rather than a ranged projectile.
+  r(c,1,13+bounce,5,6,P.outline);r(c,13,13-bounce,5,6,P.outline);
+  r(c,2,4,16,13,P.outline);r(c,3,5,14,11,'#87593e');
+  r(c,0,3,6,6,'#483832');r(c,14,3,6,6,'#483832');
+  r(c,5,9,10,6,'#bd9271');r(c,5,12,3,3,'#483832');r(c,12,12,3,3,'#483832');
+  r(c,3,10,3,4,'#eee4c9');r(c,14,10,3,4,'#eee4c9');
+  r(c,6,6,2,2,'#fff4d5');r(c,13,6,2,2,'#fff4d5');
+ }else if(kind==='steam_crab'){
+  // Steam shell hides until it lunges; distinctive horizontal silhouette.
+  r(c,0,12+bounce,6,4,'#3f5853');r(c,14,12-bounce,6,4,'#3f5853');
+  r(c,1,8,5,6,'#7c9d8d');r(c,14,8,5,6,'#7c9d8d');
+  r(c,3,7,14,11,P.outline);r(c,4,7,12,10,'#6d9b96');r(c,6,4,8,7,'#a2c9b8');
+  r(c,6,10,2,2,P.outline);r(c,12,10,2,2,P.outline);
+  r(c,8,2,4,3,'#e2f1d6');
+ }else if(kind==='chicken'){
   r(c,3,15+bounce,4,6,P.outline);r(c,12,15-bounce,4,6,P.outline);
   r(c,3,4,14,13,P.outline);r(c,4,5,12,11,'#e6cca1');r(c,2,8,5,6,'#d8b482');
   r(c,6,0,3,6,'#ba5545');r(c,10,-2,4,8,'#c7694a');
