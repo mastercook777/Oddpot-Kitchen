@@ -2,41 +2,41 @@
 // The physical layout, resource concentration and color identity live together.
 const STYLE={
  meadow:{label:'林地草甸',region:'forest',floor:'#51764e',grain:'#67925b',accent:'#ebd38f',
-  count:8,primary:'garlic',resources:[['garlic',5],['cabbage',5],['onion',2],['potato',1],['mushroom',1]],
+  count:4,primary:'garlic',resources:[['garlic',5],['cabbage',5],['onion',2],['potato',1],['mushroom',1]],
   spots:[[4,6],[1,6],[2,6],[1,5],[2,5],[6,4],[7,4],[6,2],[7,2],[3,2]],
-  obstacles:[[2,2],[6,7],[1,3]],hazards:[],enemyMix:['chicken'],enemyCount:1},
+  obstacles:[[2,2],[6,7],[1,3]],hazards:[],enemyMix:['chicken','boar'],enemyCount:1},
  glow:{label:'幽光菌沼',region:'forest',floor:'#284a52',grain:'#336775',accent:'#92f1db',
-  count:6,primary:'mushroom',resources:[['mushroom',8],['chicken',2],['onion',1]],
+  count:3,primary:'mushroom',resources:[['mushroom',8],['chicken',2],['onion',1]],
   spots:[[1,4],[1,3],[2,4],[2,3],[3,5],[6,2],[6,3],[7,7]],
   obstacles:[[4,5],[5,4],[2,7]],hazards:[],enemyMix:['chicken'],enemyCount:1},
  roots:{label:'古树孢巢',region:'forest',floor:'#393c47',grain:'#565165',accent:'#d8a0ee',
-  count:4,primary:'mushroom',resources:[['mushroom',9],['beef',3],['chicken',2]],
+  count:2,primary:'mushroom',resources:[['mushroom',9],['beef',3],['chicken',2]],
   spots:[[5,6],[5,5],[6,6],[6,5],[2,3],[3,3],[7,2],[1,7]],
   obstacles:[[2,5],[3,5],[4,3],[6,7],[7,4]],hazards:[[5,3],[6,4]],
-  enemyMix:['chicken','pepper'],enemyCount:3},
+  enemyMix:['sporeling','boar','chicken'],enemyCount:3},
  garden:{label:'野蔬采集圃',region:'forest',floor:'#72835a',grain:'#98a46c',accent:'#f3d78a',
-  count:9,primary:'cabbage',resources:[['cabbage',8],['potato',5],['garlic',4],['onion',2]],
+  count:5,primary:'cabbage',resources:[['cabbage',8],['potato',5],['garlic',4],['onion',2]],
   spots:[[3,6],[2,5],[3,5],[4,5],[2,6],[4,6],[6,3],[6,4],[7,4],[1,3],[1,4]],
   obstacles:[[5,7],[5,2]],hazards:[],enemyMix:['chicken'],enemyCount:1},
  spring:{label:'热泉浅滩',region:'spring',floor:'#a38a66',grain:'#c1a276',accent:'#b2e8d7',
-  count:8,primary:'potato',resources:[['potato',6],['chili',5],['garlic',2],['onion',1]],
+  count:4,primary:'potato',resources:[['potato',6],['chili',5],['garlic',2],['onion',1]],
   spots:[[2,8],[1,8],[3,8],[2,7],[1,7],[7,3],[7,4],[6,3],[5,2]],
   obstacles:[[4,8],[5,5],[1,5]],hazards:[[3,4],[6,6]],
-  enemyMix:['pepper'],enemyCount:1},
+  enemyMix:['steam_crab','pepper'],enemyCount:1},
  steam:{label:'蒸汽裂隙',region:'spring',floor:'#686f6c',grain:'#929489',accent:'#e4ece1',
-  count:5,primary:'chili',resources:[['chili',5],['beef',3],['onion',3],['potato',1]],
+  count:3,primary:'chili',resources:[['chili',5],['beef',3],['onion',3],['potato',1]],
   spots:[[6,5],[6,4],[7,5],[7,4],[5,6],[1,3],[2,3],[3,2]],
   obstacles:[[4,5],[4,6],[3,8],[1,5],[7,8]],hazards:[[5,3],[2,6],[6,7]],
-  enemyMix:['pepper','chicken'],enemyCount:2},
+  enemyMix:['steam_crab','pepper','chicken'],enemyCount:2},
  ember:{label:'赤焰断坡',region:'spring',floor:'#553f3e',grain:'#805149',accent:'#f2aa5c',
-  count:4,primary:'chili',resources:[['chili',9],['beef',4],['garlic',1]],
+  count:2,primary:'chili',resources:[['chili',9],['beef',4],['garlic',1]],
   spots:[[6,6],[6,5],[7,6],[7,5],[2,3],[3,3],[5,2],[2,7]],
   obstacles:[[3,5],[4,5],[5,4],[1,6],[7,3]],hazards:[[5,6],[2,5],[6,2]],
-  enemyMix:['pepper','chicken'],enemyCount:3},
+  enemyMix:['pepper','steam_crab','boar'],enemyCount:3},
  oasis:{label:'矿泉晶池',region:'spring',floor:'#8e9681',grain:'#b2b79c',accent:'#b9f6ed',
-  count:9,primary:'potato',resources:[['potato',6],['onion',4],['chili',3],['garlic',3]],
+  count:5,primary:'potato',resources:[['potato',6],['onion',4],['chili',3],['garlic',3]],
   spots:[[1,7],[2,7],[3,7],[1,6],[2,6],[3,6],[6,3],[7,3],[6,4],[7,4]],
-  obstacles:[[5,7],[4,4]],hazards:[[5,3]],enemyMix:['pepper'],enemyCount:1}
+  obstacles:[[5,7],[4,4]],hazards:[[5,3]],enemyMix:['steam_crab','chicken'],enemyCount:1}
 };
 const ZONES={
  herb_path:'meadow',glow_mushroom:'glow',old_tree_edge:'roots',forest_garden:'garden',
@@ -64,21 +64,24 @@ export function generateBiomeMap(s,route,target){
  const biome=getFieldBiome(id,route),turn=biome.flipped,flip=x=>turn?8-x:x;
  const seed=SEED((s.seed||20261009)+s.cycle*301+s.day*37+hash(id)+(route.includes('risk')?991:0));
  const spots=biome.spots.map(([x,y])=>[flip(x),y]);
- // Deliberately concentrated caches: one large vein and one or two smaller
- // pockets, with some maps offering only four sources and others nine.
- const chosen=[...spots.slice(0,biome.count)];
+ // Three segments share one eight-slot bag: small concentrated deposits leave
+ // room for later high-value ingredients. Seed-based +/-1 richness varies runs.
+ // Even a fertile map has only four to six points, boss nests only two or three.
+ const variance=((seed>>>7)%3)-1;
+ const sourceCount=Math.max(2,Math.min(6,biome.count+variance));
+ const chosen=[...spots.slice(0,sourceCount)];
  const actualTarget=target||biome.primary;
  const first=chosen.shift();
  const nodes=[{key:'target',id:actualTarget,x:first[0],y:first[1],n:2,type:'gather',claimed:false}];
  for(const [i,[x,y]] of chosen.entries()){
   const id=weightedIngredient(biome.resources,SEED(seed+i*737));
-  const quantity=i<2?(biome.count<=5?2:3):(i%3===0?2:1);
+  const quantity=i===0?2:i===1&&biome.count>=5?2:1;
   nodes.push({key:'pocket-'+i,id,x,y,n:quantity,type:i===chosen.length-1&&biome.enemyCount>=3?'danger':'gather',claimed:false});
  }
  // Non-dangerous story encounters are infrequent, not a guaranteed filler
  // node repeated in identical map positions.
- if(biome.count>=8&&seed%3===0){
-  const spot=spots[biome.count];if(spot)nodes.push({key:'flavor-cache',id:'mushroom',x:spot[0],y:spot[1],n:1,type:'event',claimed:false});
+ if(sourceCount>=4&&seed%5===0){
+  const spot=spots[sourceCount];if(spot)nodes.push({key:'flavor-cache',id:'mushroom',x:spot[0],y:spot[1],n:1,type:'event',claimed:false});
  }
  const obstacles=biome.obstacles.map(([x,y])=>({x:flip(x),y}));
  const hazards=biome.hazards.map(([x,y])=>({x:flip(x),y}));
@@ -88,7 +91,7 @@ export function generateBiomeMap(s,route,target){
  const bossSpawn={x:turn?5.5:4.5,y:1.8};
  return {region:biome.region,biome:{zoneId:id,style:biome.style,label:biome.label,
   floor:biome.floor,grain:biome.grain,accent:biome.accent,flipped:turn,
-  enemyMix:[...biome.enemyMix],enemyCount:biome.enemyCount},
+  enemyMix:[...biome.enemyMix],enemyCount:biome.enemyCount,encounterSeed:SEED(seed+8277)},
   spawn,x:Math.floor(spawn.x),y:Math.floor(spawn.y),steps:0,worldW:9,worldH:11,
   visitedHazards:[],nodes,obstacles,hazards,bossSpawn};
 }
