@@ -9,6 +9,6 @@ export function newServiceHero(){
   carryOrderId:null,assistIds:[],comfortIds:[],assists:0,comforts:0,delivered:0,
   dwellZone:null,dwell:0};
 }
-export function heroZone(h){return dinerSpot(h)}
-export function walkServiceHero(h,dx,dy,dt){return dinerWalk(h,dx,dy,dt)}
+export function heroZone(h,s=null){return dinerSpot(h,s)}
+export function walkServiceHero(h,dx,dy,dt,s=null){return dinerWalk(h,dx,dy,dt,s)}
 export function waiterDeliveryPose(s,t){return dinerWaiterRoute(s,t)}
