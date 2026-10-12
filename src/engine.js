@@ -205,15 +205,44 @@ const SPRING_ZONES={
  finishBoss:[{id:'ember_gate',name:'熔岩正坡',description:'密集小怪 · 熔壳椒王',danger:true,target:'chili'},
        {id:'ember_side',name:'蒸汽绕行',description:'更多喷气地形 · 熔壳椒王',danger:true,target:'chili'}]
 };
-export function fieldWeaponSnapshot(s){
- const slot=Math.min(1,Math.max(0,Number(s.selectedWeaponSlot)||0));
- const obj=ensureKitchen(s).slots[slot];
- return {slotIndex:slot,type:obj.type,level:obj.level,attackId:obj.type==='WOK'?'wok_sweep':'pot_onion',
-  skillId:obj.type==='WOK'?'wok_guard':'pot_pressure'};
+// Both starter cookware modes are owned from day one. Physical stations
+// affect the combat level only while fitted: a stored spare always remains
+// usable as a Lv1 expedition weapon, without changing the kitchen layout.
+export function fieldWeaponChoices(s){
+ const slots=ensureKitchen(s).slots;
+ return ['WOK','POT'].map(type=>{
+  const installed=slots.map((slot,index)=>({...slot,index}))
+   .filter(slot=>slot.type===type)
+   .sort((a,b)=>b.level-a.level||a.index-b.index)[0];
+  return {type,level:installed?.level||1,slotIndex:installed?.index??null,
+    fitted:!!installed,source:installed?'kitchen':'reserve'};
+ });
 }
-export function selectFieldWeapon(s,index){
- if(s.phase!=='field'||s.field||![0,1].includes(index))return false;
- s.selectedWeaponSlot=index;return true;
+export function selectedFieldWeaponType(s){
+ if(s.selectedWeaponType==='WOK'||s.selectedWeaponType==='POT')return s.selectedWeaponType;
+ const slot=Math.min(1,Math.max(0,Number(s.selectedWeaponSlot)||0));
+ return ensureKitchen(s).slots[slot].type;
+}
+export function fieldWeaponSnapshot(s){
+ // New game UI selects a cookware TYPE, not one of two physical kitchen slots.
+ // Legacy saves that only saved selectedWeaponSlot keep their previous behavior.
+ const type=selectedFieldWeaponType(s);
+ const choice=fieldWeaponChoices(s).find(x=>x.type===type);
+ return {slotIndex:choice.slotIndex,type,level:choice.level,source:choice.source,
+  attackId:type==='WOK'?'wok_sweep':'pot_onion',skillId:type==='WOK'?'wok_guard':'pot_pressure'};
+}
+export function selectFieldWeapon(s,selection){
+ if(s.phase!=='field'||s.field)return false;
+ // Retain the old numeric input for existing integrations and tests.
+ if(Number.isInteger(selection)&&[0,1].includes(selection)){
+  const kitchen=ensureKitchen(s);s.selectedWeaponSlot=selection;
+  s.selectedWeaponType=kitchen.slots[selection].type;return true;
+ }
+ if(!['WOK','POT'].includes(selection))return false;
+ s.selectedWeaponType=selection;
+ const selected=fieldWeaponChoices(s).find(x=>x.type===selection);
+ if(selected.slotIndex!==null)s.selectedWeaponSlot=selected.slotIndex;
+ return true;
 }
 export function syncFieldBagStacks(f){
  if(!f)return [];
