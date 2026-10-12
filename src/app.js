@@ -431,7 +431,7 @@ function frame(now){const delta=Math.min(.045,(now-(lastFrame||now))/1000);lastF
   if(evt==='harvest'&&game.field?.nodes?.some(n=>n.key==='target'&&n.claimed)){releaseStick();render();}
   if(evt==='field_event'){message='遇见流浪调味师：请选择方案。';releaseStick();render()}
   else if(game.phase!=='field'){releaseStick();message='探索结束：只损失本次背包收获，原仓库安全。';render()}
-  else {const f=game.field;const hp=app.querySelector('.field-hp');if(hp)hp.textContent='♥'.repeat(f.hp)+'♡'.repeat(3-f.hp);
+  else {const f=game.field;const hp=app.querySelector('.field-hp');if(hp){hp.textContent='♥'.repeat(f.hp)+'♡'.repeat(3-f.hp);hp.classList.toggle('taking-hit',(f.hitFlash||0)>0);}
    const count=app.querySelector('#field-bag-count');if(count)count.textContent=fieldBagSlotsUsed(f)+'/'+(f.capacity||8);
    const timer=app.querySelector('#field-clock');if(timer)timer.textContent=(f.segmentIndex||1)+'/3 · '+Math.floor(f.elapsed)+'s';const bento=app.querySelector('#v063-bento-effect');if(bento&&f.bento)bento.textContent=f.bento.used?'已触发':'待触发';
    const skill=app.querySelector('[data-act="skill"]');const cooldown=app.querySelector('#skill-cooldown');if(skill){skill.disabled=f.skillCd>0;skill.style.setProperty('--cooldown',(f.skillCd/6.5*100).toFixed(2)+'%');if(cooldown){cooldown.hidden=f.skillCd<=0;cooldown.textContent=f.skillCd>0?Math.ceil(f.skillCd)+'s':'';}}
