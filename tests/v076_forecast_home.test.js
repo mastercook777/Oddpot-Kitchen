@@ -11,7 +11,7 @@ const index=source('../index.html'),pkg=JSON.parse(source('../package.json'));
 test('the internal, browser, offline and package versions all target v0.9.1',()=>{
  assert.equal(pkg.version,'0.9.1');
  assert.match(index,/<title>怪味食堂 · Oddpot Kitchen v0\.9\.1<\/title>/);
- assert.match(index,/src\/app\.js\?v=0\.9\.1-growth/);
+ assert.match(index,/src\/app\.js\?v=0\.9\.1-layout/);
  assert.match(index,/forecast_home_v076\.css\?v=0\.7\.6/);
  assert.match(app,/ODDPOT · v0\.9\.1/);
  assert.match(app,/版本 v0\.9\.1/);
@@ -57,7 +57,7 @@ test('the book progress moves out of header only on forecast; settings retains a
  assert.match(hud,/home\?'☀ 开店前'/);
  assert.match(hud,/home\?'':/);
  assert.match(hud,/图鉴/);
- assert.match(hud,/边境小食堂/);
+ assert.match(hud,/今日营业/);
 });
 test('small-phone responsive CSS protects the preview, touch targets and bottom safe area',()=>{
  assert.match(css,/\.v076-preview\{flex:1 1 0/);
