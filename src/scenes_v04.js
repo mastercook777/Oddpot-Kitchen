@@ -3,6 +3,7 @@ import {pixelActor,pixelEnemy,pixelImpact} from './pixels_v041.js?v=0.5.5';
 import {ING,RECIPES,CUSTOMERS} from './data.js?v=0.5.5';
 import {heroZone,waiterDeliveryPose,HERO_PASS} from './walkable_restaurant_v07.js?v=0.7.5';
 import {DINER_FLOOR} from './restaurant_scene_v075.js?v=0.7.5';
+import {selectDiningSpeech,diningBubbleLines,speechOpacity} from './diner_ambience_v077.js?v=0.7.7';
 const color={ink:'#24382a',leaf:'#386b43',soil:'#806044',stone:'#a6b392',cream:'#f4dfb0',gold:'#dfb873'};
 function rect(c,x,y,w,h,fill){c.fillStyle=fill;c.fillRect(x,y,w,h)}
 function circle(c,x,y,r,fill){c.fillStyle=fill;c.beginPath();c.arc(x,y,r,0,Math.PI*2);c.fill()}
@@ -245,6 +246,34 @@ function paintDinerStaff(c,s,v,t,w,h){
  const recentThrow=(v?.events||[]).slice().reverse().find(e=>e.type==='throw'&&plateFlight(t,e.t,2).flying);
  pixelActor(c,'chef',w*.5,h*.34,DINER_ACTOR_SCALE,{attack:!!recentThrow,walk:jobs.WOK||jobs.POT?t:0});
 }
+// Compact speech is painted INSIDE the one restaurant canvas. It has no DOM
+// hit target, cannot intercept the joystick, and never covers either table.
+function drawGuestSpeech077(c,cue,actor,w,h){
+ const lines=diningBubbleLines(cue.text),maxWidth=Math.min(116,w*.36);
+ if(!lines.length)return;
+ const font=11,lh=14;
+ const width=Math.min(maxWidth,Math.max(59,Math.max(...lines.map(s=>Array.from(s).length))*font+18));
+ const height=lines.length===1?27:40;
+ const leftSide=cue.tableId===0, minX=leftSide?7:w*.51;
+ const maxX=leftSide?w*.49-width:w-7-width;
+ const centerX=actor.x*w+(cue.seatId===0?-8:8);
+ const bx=Math.max(minX,Math.min(Math.max(minX,maxX),centerX-width/2));
+ const headY=actor.y*h-25;
+ const by=Math.max(h*.20,Math.min(h-height-5,headY-height-8));
+ const negative=cue.kind==='upset'||cue.kind==='review'&&['late','bad','quality','taste'].includes(cue.reviewType);
+ const bg=cue.kind==='upset'?'#ffe2ca':cue.kind==='review'?'#f5e9c8':'#f2eed3';
+ c.save();c.globalAlpha=Math.min(.94,speechOpacity(cue));
+ c.fillStyle=bg;c.strokeStyle=cue.kind==='upset'?'#d59775':'#b7a67c';c.lineWidth=1.2;
+ c.beginPath();c.roundRect(bx,by,width,height,9);c.fill();c.stroke();
+ const pointX=Math.max(bx+12,Math.min(bx+width-12,actor.x*w));
+ c.fillStyle=bg;c.beginPath();
+ c.moveTo(pointX-4,by+height-1);c.lineTo(pointX+4,by+height-1);
+ c.lineTo(Math.max(bx+9,Math.min(bx+width-9,actor.x*w)),by+height+7);c.closePath();c.fill();
+ for(let i=0;i<lines.length;i++)
+  text(c,lines[i],bx+width/2,by+(lines.length===1?height/2:12+i*15),
+    cue.kind==='upset'?'#7b4237':'#394234',font);
+ c.restore();
+}
 // v0.7.5 official restaurant. One world; furniture, actors, services and
 // collision share DINER_FLOOR. The old DOM kitchen is NOT drawn here.
 function drawRestaurantV075(c,s,t,w,h){
@@ -364,8 +393,14 @@ function drawRestaurantV075(c,s,t,w,h){
   }
  }
  actors.sort((a,b)=>a.y-b.y);
+ // The dialogue slots attach to actual seated actors. Only high-signal
+ // transient phrases survive, with one bubble per table and no stick overlays.
+ const speechCues=selectDiningSpeech(v?.orders||[],t,2);
+ const speechActors=new Map(actors.filter(a=>a.order&&!a.walk).map(a=>[a.id,a]));
+ const visibleSpeech=speechCues.filter(q=>speechActors.has(q.id));
+ const speaking=new Set(visibleSpeech.map(q=>q.id));
  for(const a of actors){
-  const X=x(a.x),Y=y(a.y);
+  const X=x(a.x),Y=y(a.y)+(a.order?.status==='eating'?Math.sin(t*5+Number(a.order.seatId||0))*.9:0);
   if(a.id==='hero')circle(c,X,Y+11,12,'#f6df9e2d');
   pixelActor(c,a.kind,X,Y,DINER_ACTOR_SCALE,{walk:a.walk?t*2:0,
     face:a.direction==='left'?-1:1,attack:!!a.working});
@@ -380,12 +415,13 @@ function drawRestaurantV075(c,s,t,w,h){
   }
   if(a.order){
    const o=a.order;
-   if(['queued','cooking','pickup','carried','delivering'].includes(o.status))
+   if(!speaking.has(o.id)&&['queued','cooking','pickup','carried','delivering'].includes(o.status))
     text(c,RECIPES[o.recipeId]?.emoji||'🍽️',X,Y-34,'#fff2c9',12);
-   if(o.status==='review'||(o.status==='served'&&t-(o.reviewedAt??0)<1.1))
+   if(!speaking.has(o.id)&&(o.status==='review'||(o.status==='served'&&t-(o.reviewedAt??0)<1.1)))
     text(c,o.sat>=70?'💚':'💬',X,Y-34,'#ffe6bd',15);
   }
  }
+ for(const cue of visibleSpeech){const speaker=speechActors.get(cue.id);if(speaker)drawGuestSpeech077(c,cue,speaker,w,h)}
 }
 
 export function drawDiner(canvas,s,clock,simTime=s.service?.time??clock){
