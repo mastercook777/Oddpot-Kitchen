@@ -20,7 +20,7 @@ test('target is harvested after dwelling near it; retreat transfers once',()=>{
 });
 test('safe line can collect target without engaging optional enemy',()=>{
  const s=explore('safe'),f=s.field;f.pos={x:4.5,y:7};for(let i=0;i<22;i++)stepActionField(s,0,0,.05);
- assert.equal(f.hp,3);assert.equal(f.enemies[0].hp,2);assert.equal(f.bag.chili,2);
+ assert.equal(f.hp,3);assert.equal(f.enemies[0].hp,f.enemies[0].maxHp);assert.equal(f.bag.chili,2);
 });
 test('risk path includes two enemies and skill cooldown damage',()=>{
  const s=explore('risk'),f=s.field;assert.equal(f.enemies.length,2);
