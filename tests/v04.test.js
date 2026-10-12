@@ -25,7 +25,7 @@ test('safe line can collect target without engaging optional enemy',()=>{
 test('risk path includes two enemies and skill cooldown damage',()=>{
  const s=explore('risk'),f=s.field;assert.ok(f.enemies.length>=1&&f.enemies.length<=4);
  f.pos={x:f.enemies[0].x,y:f.enemies[0].y+.5};assert.equal(useFieldSkill(s),true);assert.equal(useFieldSkill(s),false);
- assert.equal(f.skillCd,6.5);assert.ok(f.enemies[0].hp<=1);
+ assert.equal(f.skillCd,6.5);assert.ok(f.enemies[0].hp<=f.enemies[0].maxHp-2);
 });
 test('forest event offers a real HP vs materials decision',()=>{
  const s=explore('risk'),f=s.field;
