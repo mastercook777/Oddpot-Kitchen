@@ -122,17 +122,17 @@ test('long daily report scrolls from TOP and semantic title does not clip or dra
  assert.match(css,/box-shadow:none/);
  assert.match(css,/@media\(max-height:650px\)/);
  const html=source('../index.html');
- assert.match(html,/diner_polish_v078\.css\?v=0\.9\.0/);
+ assert.match(html,/diner_polish_v078\.css\?v=0\.9\.1/);
 });
 test('version, offline bundle and complete JavaScript stay parseable',()=>{
  const html=source('../index.html'),app=source('../src/app.js'),build=source('../scripts/build-standalone.py');
- assert.equal(JSON.parse(source('../package.json')).version,'0.9.0');
- assert.match(html,/Oddpot Kitchen v0\.9\.0/);
- assert.match(html,/app\.js\?v=0\.9\.0-growth/);
- assert.match(app,/ODDPOT · v0\.9\.0/);
- assert.match(app,/版本 v0\.9\.0/);
+ assert.equal(JSON.parse(source('../package.json')).version,'0.9.1');
+ assert.match(html,/Oddpot Kitchen v0\.9\.1/);
+ assert.match(html,/app\.js\?v=0\.9\.1-growth/);
+ assert.match(app,/ODDPOT · v0\.9\.1/);
+ assert.match(app,/版本 v0\.9\.1/);
  assert.match(build,/diner_polish_v078\.css/);
- assert.match(build,/v0\.9\.0 离线版/);
+ assert.match(build,/v0\.9\.1 离线版/);
  for(const path of ['../src/app.js','../src/diner_ambience_v077.js','../src/engine.js','../src/scenes_v04.js']){
   const p=spawnSync(process.execPath,['--check',new URL(path,import.meta.url).pathname],{encoding:'utf8'});
   assert.equal(p.status,0,path+' '+p.stderr);
