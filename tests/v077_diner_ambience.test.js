@@ -19,7 +19,7 @@ test('guests request real menu dishes, never unrelated invented dialogue',()=>{
 });
 test('each order phase carries a short contextual reaction',()=>{
  for(const [state,t,word] of [
-  ['ordering',2.4,'菜单'],['cooking',8.6,'香'],['pickup',10.8,'香'],
+  ['ordering',2.4,'吃什么'],['cooking',8.6,'香'],['pickup',10.8,'香'],
   ['carried',10.9,'我的'],['delivering',12.6,'菜'],['eating',16.8,'开动']
  ]){
   const cue=diningSpeechCue(order(state),t);
@@ -61,7 +61,7 @@ test('one speech per table, two maximum; meaningful events prioritize table chat
  assert.equal(selectDiningSpeech(both,19.3,1).length,1);
 });
 test('up to two short lines and smooth finite fade, no flashing CSS bubble',()=>{
- const lines=diningBubbleLines('好吃是好吃，等太久啦，非常抱歉');
+ const lines=diningBubbleLines('好吃是好吃，等太久啦，非常抱歉以后不会再来吃了');
  assert.ok(lines.length<=2&&lines.every(x=>Array.from(x).length<=8));
  assert.match(lines.at(-1),/…$/);
  const o=order('review');
@@ -75,7 +75,7 @@ test('official new canvas paints bounded speech and hides duplicate head icons',
  assert.match(scene,/drawGuestSpeech077\(c,cue,speaker,w,h\)/);
  assert.match(scene,/const speaking=new Set\(visibleSpeech\.map\(q=>q\.id\)\)/);
  assert.match(scene,/if\(!speaking\.has\(o\.id\)/);
- assert.match(scene,/real served plates/i);
+ assert.match(scene,/Plates remain on the ACTUAL table/i);
  assert.match(scene,/if\(v\?\.walkable\|\|!v\)\{drawRestaurantV075\(c,s,t,w,h\);return;\}/);
 });
 test('speech calculations do not mutate real inventory, orders, money or service clock',()=>{
