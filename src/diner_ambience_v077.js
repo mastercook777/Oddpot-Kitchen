@@ -3,8 +3,8 @@
 // Max one speech per table, max two across the entire restaurant.
 import {RECIPES} from './data.js?v=0.6.3';
 
-const clamp=x=>Math.max(0,Math.min(1,x));
-const when=(t,start,duration)=>Number.isFinite(start)&&t>=start&&t<start+duration;
+const clampSpeech=x=>Math.max(0,Math.min(1,x));
+const speechWhen=(t,start,duration)=>Number.isFinite(start)&&t>=start&&t<start+duration;
 const waiting=new Set(['queued','cooking','pickup','carried','delivering']);
 const intro=(name)=>'来一份'+name+'！';
 function displayName(order){
@@ -15,23 +15,23 @@ export function diningSpeechCue(order,t){
  if(!order||!Number.isFinite(t)||order.tableId==null||!Number.isInteger(order.tableId))return null;
  const o=order;
  const cue=(content,kind,priority,start,length)=>({
-  id:o.id,tableId:o.tableId,seatId:o.seatId||0,text:content,kind,priority,
-  phase:clamp((t-start)/length),elapsed:t-start
+  id:o.id,tableId:o.tableId,seatId:o.seatId||0,text:content,kind,priority,reviewType:o.reviewType||null,
+  phase:clampSpeech((t-start)/length),elapsed:t-start
  });
  // A real disappointment/review always outranks decorative chatter.
- if(o.status==='review'&&when(t,o.reviewAt,2.1))
+ if(o.status==='review'&&speechWhen(t,o.reviewAt,2.1))
   return cue(o.reviewText||'谢谢招待！','review',9,o.reviewAt,2.1);
- if(o.status==='served'&&when(t,o.reviewedAt,.8))
+ if(o.status==='served'&&speechWhen(t,o.reviewedAt,.8))
   return cue(o.reviewText||'欢迎下次！','review',8,o.reviewedAt,.8);
- if(o.status==='left'&&when(t,o.leftAt,1.8))
+ if(o.status==='left'&&speechWhen(t,o.leftAt,1.8))
   return cue('等太久了…','upset',9,o.leftAt,1.8);
- if(o.status==='rejected'&&when(t,o.leftAt,1.8))
+ if(o.status==='rejected'&&speechWhen(t,o.leftAt,1.8))
   return cue('没有想吃的…','upset',9,o.leftAt,1.8);
 
- if(o.status==='eating'&&when(t,o.landedAt,1.8))
+ if(o.status==='eating'&&speechWhen(t,o.landedAt,1.8))
   return cue('我开动啦！','eating',7,o.landedAt,1.8);
 
- if(o.status==='ordering'&&when(t,o.seatedAt,1.6))
+ if(o.status==='ordering'&&speechWhen(t,o.seatedAt,1.6))
   return cue('看看今天吃什么…','order',4,o.seatedAt,1.6);
 
  if(waiting.has(o.status)){
@@ -40,18 +40,18 @@ export function diningSpeechCue(order,t){
   // no fake mood/happiness values are generated.
   if(remaining<=9&&remaining>0){
    const startedAt=o.arrival+o.patience-9;
-   if(when(t,startedAt,2.4))
+   if(speechWhen(t,startedAt,2.4))
     return cue(remaining<=5?'菜还没好吗？':'等得有点久啦…','upset',8,Math.max(startedAt,t-2.4),2.4);
   }
-  if(o.status==='delivering'&&when(t,o.deliveryAt,1.8))
+  if(o.status==='delivering'&&speechWhen(t,o.deliveryAt,1.8))
    return cue('我的菜来啦！','arrival',6,o.deliveryAt,1.8);
-  if(o.status==='carried'&&when(t,o.pickupAt,2.6))
+  if(o.status==='carried'&&speechWhen(t,o.pickupAt,2.6))
    return cue('是我的那份吗？','arrival',5,o.pickupAt,2.6);
-  if(o.status==='pickup'&&when(t,o.pickupAt,1.8))
+  if(o.status==='pickup'&&speechWhen(t,o.pickupAt,1.8))
    return cue('闻着好香呀！','arrival',5,o.pickupAt,1.8);
-  if(o.status==='queued'&&when(t,o.orderedAt,2.1))
+  if(o.status==='queued'&&speechWhen(t,o.orderedAt,2.1))
    return cue(intro(displayName(o)),'order',6,o.orderedAt,2.1);
-  if(o.status==='cooking'&&when(t,o.started+3,1.65))
+  if(o.status==='cooking'&&speechWhen(t,o.started+3,1.65))
    return cue('厨房好香呀！','ambient',2,o.started+3,1.65);
  }
  return null;
@@ -79,7 +79,7 @@ export function speechOpacity(cue){
  if(!cue)return 0;
  // Gentle short fade at intro/outro, no pulsing, blinking or scrolling text.
  const p=cue.phase||0;
- return clamp(Math.min(1,p*7,(1-p)*7));
+ return clampSpeech(Math.min(1,p*7,(1-p)*7));
 }
 export function diningBubbleLines(words,maxChars=16){
  const chars=Array.from(String(words||'')).slice(0,maxChars);
