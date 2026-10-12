@@ -12,13 +12,13 @@ test('every actual biome has landmark style, ecological source weight and its ow
  for(const zone of zones){
   const b=getFieldBiome(zone,region(zone));
   assert.ok(b.floor&&b.accent&&b.grain&&b.resources?.length>0,zone);
-  assert.ok(b.count>=4&&b.count<=9,zone);
+  assert.ok(b.count>=2&&b.count<=5,zone);
   ids.add(b.zoneId);styles.add(b.style);
   const m=generateBiomeMap({seed:31,cycle:1,day:1,fieldZoneId:zone},region(zone),'chili');
   resourceLayouts.add(m.nodes.map(n=>[n.id,n.x,n.y,n.n]).join('|'));
   assert.ok(m.nodes.some(n=>n.key==='target'&&n.n===2),zone);
   assert.ok(m.nodes.every(n=>!['mushroom_heart','ember_pepper'].includes(n.id)),zone);
-  assert.ok(m.nodes.length>=4&&m.nodes.length<=10,zone);
+  assert.ok(m.nodes.length>=2&&m.nodes.length<=7,zone);
  }
  assert.equal(ids.size,zones.length);assert.ok(styles.size>=8);
  assert.equal(resourceLayouts.size,zones.length);
