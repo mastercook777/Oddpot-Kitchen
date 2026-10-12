@@ -13,7 +13,7 @@ const order=(status,tableId=0,seatId=0)=>({
 });
 test('guests request real menu dishes, never unrelated invented dialogue',()=>{
  const o=order('queued');
- assert.ok(diningSpeechCue(o,3.3)?.text.startsWith('蘑菇焖鸡！'));
+ assert.ok(diningSpeechCue(o,3.3)?.text.startsWith('咕噜菌雾鸡！'));
  assert.equal(diningSpeechCue(o,7),null);
  assert.ok(diningSpeechCue({...o,recipeId:'no-such-dish'},3.3)?.text.startsWith('招牌菜！'));
 });
