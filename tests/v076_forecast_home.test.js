@@ -8,16 +8,16 @@ const source=p=>readFileSync(new URL(p,import.meta.url),'utf8');
 const app=source('../src/app.js'),css=source('../src/forecast_home_v076.css');
 const index=source('../index.html'),pkg=JSON.parse(source('../package.json'));
 
-test('the internal, browser, offline and package versions all target v0.8.2',()=>{
- assert.equal(pkg.version,'0.8.2');
- assert.match(index,/<title>怪味食堂 · Oddpot Kitchen v0\.8\.2<\/title>/);
- assert.match(index,/src\/app\.js\?v=0\.8\.2-shield/);
+test('the internal, browser, offline and package versions all target v0.8.3',()=>{
+ assert.equal(pkg.version,'0.8.3');
+ assert.match(index,/<title>怪味食堂 · Oddpot Kitchen v0\.8\.3<\/title>/);
+ assert.match(index,/src\/app\.js\?v=0\.8\.3-touch-pose/);
  assert.match(index,/forecast_home_v076\.css\?v=0\.7\.6/);
- assert.match(app,/ODDPOT · v0\.8\.2/);
- assert.match(app,/版本 v0\.8\.2/);
+ assert.match(app,/ODDPOT · v0\.8\.3/);
+ assert.match(app,/版本 v0\.8\.3/);
  const script=source('../scripts/build-standalone.py');
  assert.match(script,/forecast_home_v076\.css/);
- assert.match(script,/v0\.8\.2 离线版/);
+ assert.match(script,/v0\.8\.3 离线版/);
 });
 test('home is its own phase UI, without historical large message bar or old bottom dock',()=>{
  const s=app.slice(app.indexOf('function shell('),app.indexOf('\nfunction overlayMarkup(',app.indexOf('function shell(')));
