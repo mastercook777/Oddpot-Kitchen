@@ -1,4 +1,4 @@
-import {ING,RECIPES,CUSTOMERS,FORECAST,DEFAULT_INVENTORY} from './data.js?v=0.6.3';
+import {ING,RECIPES,CUSTOMERS,FORECAST,DEFAULT_INVENTORY,SHOP_STAPLES} from './data.js?v=0.6.3';
 import {LIVE_ACTIONS,evaluateLiveCook,liveIngredientState,legacyVariant,makeLiveVariant,resolveTechnique} from './cooking_v063.js?v=0.6.3';
 import {RECIPE_PROFILES} from './recipe_profiles_v063.js?v=0.6.3';
 import {newServiceHero,heroZone} from './walkable_restaurant_v07.js?v=0.7.5';
@@ -8,7 +8,7 @@ const clone=x=>structuredClone(x);
 export const clamp=(n,a,b)=>Math.min(b,Math.max(a,n));
 export function rand(seed){return (Math.imul(1664525,seed>>>0)+1013904223)>>>0}
 export function uniqueAdd(ledger,id,type,extra={}){if(ledger.some(x=>x.id===id))return false;ledger.push({id,type,...extra});return true}
-export function newGame(seed=20261009){return {version:4,seed,cycle:1,day:1,phase:'forecast',coins:120,reputation:0,inventory:{...DEFAULT_INVENTORY},recipes:{chicken_stew:76,mushroom_stir:76,veg_stir:72},learned:{},recipeVariants:{},activeVariantIds:{},tech:false,upgrade:false,crew:{helper:{hired:false,station:0,meals:0,feed:null},waiter:{hired:false,meals:0,feed:null}},staffFoodCost:0,kitchen:{slots:[{type:'WOK',level:1},{type:'POT',level:1}],refitDay:null,freeRefitUsed:false,extraRefits:0},bagSlots:6,bento:null,selectedTarget:'chili',route:null,field:null,cook:null,menu:['chicken_stew','mushroom_stir','veg_stir'],prep:{},prepVariants:{},prepCost:0,manualCost:0,service:null,report:null,lastCook:null,researchReceipt:false,ledger:[],logs:[],result:null,step:0};}
+export function newGame(seed=20261009){return {version:4,seed,cycle:1,day:1,phase:'forecast',coins:120,reputation:0,inventory:{...DEFAULT_INVENTORY},recipes:{chicken_stew:76,mushroom_stir:76,veg_stir:72},learned:{},recipeVariants:{},activeVariantIds:{},tech:false,upgrade:false,crew:{helper:{hired:false,station:0,meals:0,feed:null},waiter:{hired:false,meals:0,feed:null}},staffFoodCost:0,kitchen:{slots:[{type:'WOK',level:1},{type:'POT',level:1}],refitDay:null,freeRefitUsed:false,extraRefits:0},bagSlots:8,selectedWeaponSlot:0,bento:null,selectedTarget:'chili',route:null,field:null,cook:null,menu:['chicken_stew','mushroom_stir','veg_stir'],prep:{},prepVariants:{},prepCost:0,manualCost:0,service:null,report:null,lastCook:null,researchReceipt:false,ledger:[],logs:[],result:null,step:0};}
 // Kitchen station IDs remain WOK/POT for compatibility with 0.4 saves,
 // but now denote PHYSICAL positions (left/right), not stove types.
 export const KITCHEN_POSITIONS=['WOK','POT'];
@@ -150,8 +150,9 @@ if(s.service){s.service.walkable??=false;if(s.service.walkable){s.service.hero??
  for(const o of active){if(o.tableId==null){const n=[0,1].find(i=>!taken.has(i));if(n!==undefined){o.tableId=n;taken.add(n)}}o.seatId??=0;}
  }
 ensureKitchen(s);ensureCrew(s);ensureRecipeVariants(s);s.prepVariants??={};
-s.bagSlots ??= 6;
-if(s.field)s.field.capacity ??= s.bagSlots;
+s.bagSlots = s.bagSlots===6?8:s.bagSlots===7?10:s.bagSlots===8&&s._bagMigrated!==true&&s._v08Save!==true?12:s.bagSlots;
+s._bagMigrated=true;s._v08Save=true;s.selectedWeaponSlot??=0;
+if(s.field){s.field.capacity??=s.bagSlots;s.field.capacity=Math.max(s.field.capacity,s.bagSlots);syncFieldBagStacks(s.field);s.field.weapon??=fieldWeaponSnapshot(s);if(!s.field.segmentIndex){s.field.segmentIndex=3;s.field.segmentStatus='active';s.field.legacyField=true;}}
 if(s.cook)s.cook.flame ??= 0;
 return s;
 }catch{return null}}
@@ -187,16 +188,118 @@ export function prepareBento(s,recipeId){
   ingredients:[...craft.ingredientIds],used:false};
  return true;
 }
-export function enterField(s,route){if(s.phase!=='field'||s.field)return false;const target=s.selectedTarget;const isRisk=route==='risk'||route==='spring_risk';if(!['safe','risk','spring_safe','spring_risk'].includes(route))return false;s.route=route;const sequence=isRisk?[{type:'gather',id:target,n:2,label:'定向采集'},{type:'danger',id:'beef',n:2,label:'野牛领地'},{type:'event',id:'mushroom',n:2,label:'菌菇奇遇'}]:[{type:'gather',id:target,n:2,label:'目标采集'},{type:'gather',id:s.day===2?'chili':'mushroom',n:3,label:'林间采集'},{type:'event',id:'chicken',n:2,label:'流浪农夫'}];s.field={route,hp:3,node:0,bag:{},capacity:s.bagSlots||6,sequence,finished:false,...buildFieldMap(s,route,target),bento:s.bento?.day===kitchenDayKey(s)?clone(s.bento):null};return true}
+const FOREST_ZONES={
+ safe:[{id:'glow_mushroom',name:'幽光菌地',description:'菌菇与鸡肉 · 常规探索',danger:false,target:'mushroom'},
+       {id:'old_tree_edge',name:'古树外缘',description:'高危孢雾 · 第三段菇王',danger:true,target:'mushroom'}],
+ finishSafe:[{id:'forest_garden',name:'林地菜圃',description:'平稳补充蔬菜与蘑菇',danger:false,target:'cabbage'},
+       {id:'forest_secret',name:'菌光秘径',description:'更多菌菇与奇遇',danger:false,target:'mushroom'}],
+ finishBoss:[{id:'spore_gate',name:'孢巢正门',description:'更多食材怪 · 孢冠菇王',danger:true,target:'mushroom'},
+       {id:'spore_roots',name:'枯根侧道',description:'更复杂地形 · 孢冠菇王',danger:true,target:'mushroom'}]
+};
+const SPRING_ZONES={
+ safe:[{id:'steam_crack',name:'蒸汽裂隙',description:'火椒与肉类 · 常规探索',danger:false,target:'chili'},
+       {id:'ember_edge',name:'赤焰外缘',description:'高危热泉 · 第三段椒王',danger:true,target:'chili'}],
+ finishSafe:[{id:'steam_lake',name:'温泉食材滩',description:'稳定火椒与土豆',danger:false,target:'potato'},
+       {id:'spring_market',name:'裂隙秘泉',description:'有机会发现更多香料',danger:false,target:'chili'}],
+ finishBoss:[{id:'ember_gate',name:'熔岩正坡',description:'密集小怪 · 熔壳椒王',danger:true,target:'chili'},
+       {id:'ember_side',name:'蒸汽绕行',description:'更多喷气地形 · 熔壳椒王',danger:true,target:'chili'}]
+};
+export function fieldWeaponSnapshot(s){
+ const slot=Math.min(1,Math.max(0,Number(s.selectedWeaponSlot)||0));
+ const obj=ensureKitchen(s).slots[slot];
+ return {slotIndex:slot,type:obj.type,level:obj.level,attackId:obj.type==='WOK'?'wok_sweep':'pot_onion',
+  skillId:obj.type==='WOK'?'wok_guard':'pot_pressure'};
+}
+export function selectFieldWeapon(s,index){
+ if(s.phase!=='field'||s.field||![0,1].includes(index))return false;
+ s.selectedWeaponSlot=index;return true;
+}
+export function syncFieldBagStacks(f){
+ if(!f)return [];
+ const stacks=[];
+ for(const [id,number] of Object.entries(f.bag||{})){
+  let n=Math.max(0,Math.trunc(number)||0),j=0;
+  while(n>0){const quantity=Math.min(3,n);stacks.push({stackId:id+'-'+j++,ingredientId:id,quantity});n-=quantity;}
+ }
+ f.bagStacks=stacks;return stacks;
+}
+export function fieldBagSlotsUsed(f){return syncFieldBagStacks(f).length}
+export function addFieldBag(f,id,count){
+ if(!f||!ING[id]||!Number.isInteger(count)||count<1)return 0;
+ let gained=0;
+ while(gained<count){
+  const n=f.bag?.[id]||0;
+  const used=fieldBagSlotsUsed(f),needsNew=n%3===0;
+  if(needsNew&&used>=f.capacity)break;
+  const accepted=Math.min(count-gained,3-(n%3));
+  f.bag[id]=n+accepted;gained+=accepted;
+ }
+ syncFieldBagStacks(f);return gained;
+}
+export function fieldBranchChoices(f){
+ const zones=f.region==='spring'?SPRING_ZONES:FOREST_ZONES;
+ return f.segmentIndex===1&&!f.dangerCommitment?zones.safe:
+   f.dangerCommitment?zones.finishBoss:
+   f.segmentIndex===2?[
+    zones.finishSafe[0],
+    {...zones.finishBoss[0],name:f.region==='spring'?'赤焰断坡':'古树孢巢',description:'危险终点 · 固定 Mini Boss'}
+   ]:zones.safe;
+}
+export function enterField(s,route){
+ if(s.phase!=='field'||s.field||!['safe','risk','spring_safe','spring_risk'].includes(route))return false;
+ const target=ING[s.selectedTarget]?.acquisitionPolicy==='BOSS_ONLY'?'mushroom':s.selectedTarget;
+ const risk=route==='risk'||route==='spring_risk';
+ const sequence=risk?[{type:'gather',id:target,n:2,label:'定向采集'},{type:'danger',id:'beef',n:2,label:'野牛领地'},{type:'event',id:'mushroom',n:2,label:'菌菇奇遇'}]:
+  [{type:'gather',id:target,n:2,label:'目标采集'},{type:'gather',id:s.day===2?'chili':'mushroom',n:3,label:'林间采集'},{type:'event',id:'chicken',n:2,label:'流浪农夫'}];
+ s.route=route;
+ s.field={route,hp:3,node:0,bag:{},bagStacks:[],capacity:s.bagSlots||8,sequence,
+  segmentIndex:1,segmentStatus:'active',zoneId:route.startsWith('spring')?'hot_spring_shallows':'herb_path',
+  dangerCommitment:risk,selectedBranches:[],choices:[],weapon:fieldWeaponSnapshot(s),
+  finished:false,...buildFieldMap(s,route,target),bento:s.bento?.day===kitchenDayKey(s)?clone(s.bento):null};
+ return true;
+}
+export function completeFieldSegment(s){
+ const f=s.field;
+ if(s.phase!=='field'||!f||f.settled||f.finished||f.segmentStatus!=='active')return false;
+ if(!f.nodes?.some(n=>n.key==='target'&&n.claimed))return false;
+ if(f.segmentIndex===3){
+  if(f.dangerCommitment&&f.enemies?.some(e=>e.isBoss&&e.hp>0))return false;
+  return settleField(s,'completed');
+ }
+ f.segmentStatus='choice';f.choices=fieldBranchChoices(f).map((a,i)=>({...a,choiceId:f.segmentIndex+'-'+i}));
+ return true;
+}
+export function chooseFieldBranch(s,choiceId){
+ const f=s.field;
+ if(s.phase!=='field'||!f||f.settled||f.segmentStatus!=='choice'||f.segmentIndex>=3)return false;
+ const branch=f.choices?.find(a=>a.choiceId===choiceId);
+ if(!branch)return false;
+ f.selectedBranches.push(branch.choiceId);f.dangerCommitment ||=branch.danger;
+ f.segmentIndex++;f.zoneId=branch.id;f.segmentStatus='active';f.choices=[];
+ f.route=f.region==='spring'?(f.dangerCommitment?'spring_risk':'spring_safe'):(f.dangerCommitment?'risk':'safe');
+ const segmentSeed=(f.segmentIndex*1307+branch.id.split('').reduce((n,c)=>n+c.charCodeAt(0),0)*17);
+ const map=buildFieldMap({...s,seed:s.seed+segmentSeed},f.route,branch.target);
+ for(const key of ['spawn','x','y','steps','worldW','worldH','visitedHazards','nodes','obstacles','hazards'])f[key]=map[key];
+ f.action=false;f.target=branch.target;f.harvestProgress=0;f.harvestNode=null;f.activeEvent=null;
+ // HP, bag, bento, skill cooldown and equipped cookware persist across all three segments.
+ return true;
+}
 export function bagCount(bag){return Object.values(bag).reduce((a,n)=>a+n,0)}
 export function collectNode(s,choice='collect'){const f=s.field;if(!f||f.finished||f.node>=f.sequence.length)return {ok:false,message:'探索已结束'};const n=f.sequence[f.node];if(choice==='skip'){f.node++;return {ok:true,message:'绕过当前节点'};}if(n.type==='danger'){const hit=rand(s.seed+s.cycle*100+s.day*10+f.node)%3===0?2:1;f.hp-=hit;if(f.hp<=0){f.finished=true;return settleField(s,'faint')} }
 if(f.bag[n.id]>=3)return {ok:false,message:'单格堆叠已满，先撤离'};
 if(Object.keys(f.bag).length>=(f.capacity||6)&&!f.bag[n.id])return {ok:false,message:'背包六格已满，先撤离'};
 const gain=Math.min(n.n,3-(f.bag[n.id]||0));f.bag[n.id]=(f.bag[n.id]||0)+gain;f.node++;if(f.node>=f.sequence.length)f.finished=true;return {ok:true,message:`收获 ${ING[n.id].name} ×${gain}${n.type==='danger'?' · 遭遇受伤':''}`};}
-export function discardFieldStack(s,id){const f=s.field;if(s.phase!=='field'||!f||f.settled||f.finished||!Number.isInteger(f.bag?.[id])||f.bag[id]<=0)return false;delete f.bag[id];return true}
+export function discardFieldStack(s,id){
+ const f=s.field;if(s.phase!=='field'||!f||f.settled||f.finished)return false;
+ const parts=String(id).split('-'),ingredient=ING[id]?id:parts.slice(0,-1).join('-');
+ const n=f.bag?.[ingredient]||0;if(!n)return false;
+ const removing=ING[id]?n:Math.min(3,n);
+ if(n<=removing)delete f.bag[ingredient];else f.bag[ingredient]-=removing;
+ syncFieldBagStacks(f);return true;
+}
 export function settleField(s,reason='retreat'){const f=s.field;if(!f||f.settled)return false;let items={...f.bag};if(reason==='faint')for(const id of Object.keys(items)){items[id]=Math.ceil(items[id]/2);if(items[id]===0)delete items[id]};f.settled=true;f.reason=reason;f.winnings=items;transact(s,`field-${s.cycle}-${s.day}`,'exploration',items);nextPhase(s,'research');return true}
 export function skipField(s){if(s.phase!=='field'||s.field)return false;nextPhase(s,'research');return true}
-export function purchase(s,id,n=1){if(!ING[id]||!['garlic','mushroom','cabbage','chicken','chili','onion','potato'].includes(id)||n<1||n>5)return false;const price=ING[id].cost*n;if(s.coins<price)return false;return transact(s,`buy-${s.cycle}-${s.day}-${s.step++}`,'purchase',{[id]:n},-price)}
+export function purchase(s,id,n=1){if(!ING[id]||ING[id].acquisitionPolicy!=='SHOP_STAPLE'||n<1||n>5)return false;const price=ING[id].cost*n;if(s.coins<price)return false;return transact(s,`buy-${s.cycle}-${s.day}-${s.step++}`,'purchase',{[id]:n},-price)}
 export function startCook(s,ids,method='stir',context='research',orderId=null){if(!['research','service'].includes(s.phase)||s.cook||ids.length<2||ids.length>3||!canUse(s,ids))return false;const txn=`cook-${s.cycle}-${s.day}-${s.step++}`;if(context==='research'&&s.phase!=='research')return false;const tiles=Array(9).fill(null);const defaults=[0,1,4];ids.forEach((id,i)=>tiles[defaults[i]]={id,heat:0});s.cook={context,orderId,method,tiles,movedThisBeat:false,beats:0,adj:{spice:0,umami:0},effects:[],flame:0,txn};return true}
 export function moveTile(s,from,to){const c=s.cook;if(!c||c.beats>=3||(c.beats>0&&c.movedThisBeat)||from<0||from>8||to<0||to>8)return false;[c.tiles[from],c.tiles[to]]=[c.tiles[to],c.tiles[from]];if(c.beats>0)c.movedThisBeat=true;return true}
 const neighbors=(p,q)=>Math.abs(Math.floor(p/3)-Math.floor(q/3))+Math.abs(p%3-q%3)===1;
@@ -662,8 +765,8 @@ const goal=serviceGoalResult(v);if(goal?.success&&uniqueAdd(s.ledger,`goal-${s.c
 s.report={day:s.day,goal,scenario:v.scenario||'常规晚餐',totalOrders:v.orders.length,revenue,cost,profit:revenue-cost-hospitalityCost-eventExpense,hospitalityCost,eventExpense,choices:v.events.filter(e=>e.type==='management_choice'||e.type==='menu_swap'),served:served.length,left:left.length,rejected:rej.length,sat:Math.round(served.reduce((a,o)=>a+o.sat,0)/Math.max(1,served.length)),byDish,byCraft,guestReviews:v.events.filter(e=>e.type==='reviewed').map(e=>({recipeId:e.recipeId,sat:e.sat,text:e.text,reason:e.reason})),congestion:v.congestion,kitchen:{slots:clone(v.kitchenSnapshot||ensureKitchen(s).slots),stats:clone(v.stationStats||{})},staff:{crew:clone(v.crew||{}),stats:clone(v.staffStats||{}),foodCost:staffFoodCost},synergy:synergyFor(s.menu),suggested,challenge,won};s.result=won?'win':challenge?'loss':null;nextPhase(s,'report');return s.report}
 export function advanceDay(s){if(s.phase!=='upgrade')return false;const day=s.day;s.day=day===3?1:day+1;if(day===3)s.cycle++;s.phase='forecast';s.route=null;s.field=null;s.bento=null;s.cook=null;s.report=null;s.lastCook=null;s.researchReceipt=false;s.prep={};s.prepVariants={};s.prepCost=0;s.manualCost=0;s.service=null;s.step++;return true}
 export function buyUpgrade(s){return buyKitchenUpgrade(s,0)}
-export function bagUpgradePrice(s){return (s.bagSlots||6)>=8?null:(s.bagSlots||6)===6?45:75}
-export function buyBagUpgrade(s){const price=bagUpgradePrice(s);if(s.phase!=='upgrade'||price===null||s.coins<price)return false;const next=(s.bagSlots||6)+1;if(!transact(s,`bag-upgrade-${next}`,'upgrade',{},-price))return false;s.bagSlots=next;return true}
+export function bagUpgradePrice(s){return (s.bagSlots||8)>=12?null:(s.bagSlots||8)<=8?60:110}
+export function buyBagUpgrade(s){const price=bagUpgradePrice(s);if(s.phase!=='upgrade'||price===null||s.coins<price)return false;const next=Math.min(12,(s.bagSlots||8)+2);if(!transact(s,`bag-upgrade-${next}`,'upgrade',{},-price))return false;s.bagSlots=next;return true}
 
 // v0.3 walkable, deterministic field. Each node is claimed once, and nothing
 // reaches restaurant inventory until settleField() records the unique transaction.
