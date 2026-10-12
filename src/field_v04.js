@@ -2,7 +2,7 @@
 // governed by engine.settleField; this file only mutates the expedition bag.
 import {ING} from './data.js?v=0.8.0';
 import {meleeProfile,meleeAttackWouldHit} from './field_combat_feedback_v084.js?v=0.8.4';
-import {clamp, rand, settleField,addFieldBag} from './engine.js?v=0.8.2';
+import {clamp, rand, settleField,addFieldBag} from './engine.js?v=0.8.4';
 const dist=(a,b)=>Math.hypot(a.x-b.x,a.y-b.y);
 const pushMsg=(f,message)=>{f.actionMessage=message;f.actionMessageTTL=2.7;};
 export function startActionField(s){
