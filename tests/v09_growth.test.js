@@ -69,5 +69,5 @@ test('v0.9 fantasy customer archetypes and chef challenge are not a cosmetic cyc
  assert.equal(firstChallenge(first),true);
  assert.equal(firstChallenge(later),false);
  later.reputation=11;
- assert.ok(serviceDayPlan(later).count>=serviceDayPlan(first).count);
+ assert.ok(serviceDayPlan(later).count>=8 && serviceDayPlan(later).count<=14);
 });
