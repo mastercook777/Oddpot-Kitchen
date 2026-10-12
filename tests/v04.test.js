@@ -28,7 +28,11 @@ test('risk path includes two enemies and skill cooldown damage',()=>{
  assert.equal(f.skillCd,6.5);assert.ok(f.enemies[0].hp<=1);
 });
 test('forest event offers a real HP vs materials decision',()=>{
- const s=explore('risk'),f=s.field;f.pos={x:4.5,y:1.5};
+ const s=explore('risk'),f=s.field;
+ // Events now appear only in selected ecological pockets. Inject a single
+ // deterministic event to test the decision mechanics independently of spawn rate.
+ f.nodes.push({key:'cache',id:'mushroom',x:4.5,y:1.5,n:1,type:'event',claimed:false});
+ f.pos={x:4.5,y:1.5};
  stepActionField(s,0,0,.05);assert.equal(f.activeEvent,'cache');
  const before=f.hp;assert.equal(resolveFieldEvent(s,'forage'),true);assert.equal(f.hp,before-1);
  assert.equal(f.nodes.find(n=>n.key==='cache').claimed,true);
