@@ -16,7 +16,7 @@ export const DINER_FLOOR={
  margin:{left:.095,right:.905,top:.155,bottom:.915}
 };
 export function dinerFloor(s){
- const count=s?.service?.tableCount||s?.dining?.tableCount||2;
+ const count=s?.dining?.tableCount||s?.service?.tableCount||2;
  return count>=3?{...DINER_FLOOR,tables:DINER_FLOOR.expandedTables,tableWork:DINER_FLOOR.expandedTableWork}:DINER_FLOOR;
 }
 const clamp075=(x,a,b)=>Math.max(a,Math.min(b,x));
