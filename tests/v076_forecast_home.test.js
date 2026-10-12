@@ -9,15 +9,15 @@ const app=source('../src/app.js'),css=source('../src/forecast_home_v076.css');
 const index=source('../index.html'),pkg=JSON.parse(source('../package.json'));
 
 test('the internal, browser, offline and package versions all target v0.7.8',()=>{
- assert.equal(pkg.version,'0.7.7');
- assert.match(index,/<title>怪味食堂 · Oddpot Kitchen v0\.7\.7<\/title>/);
+ assert.equal(pkg.version,'0.7.8');
+ assert.match(index,/<title>怪味食堂 · Oddpot Kitchen v0\.7\.8<\/title>/);
  assert.match(index,/src\/app\.js\?v=0\.7\.8-chitchat/);
  assert.match(index,/forecast_home_v076\.css\?v=0\.7\.6/);
- assert.match(app,/ODDPOT · v0\.7\.7/);
- assert.match(app,/版本 v0\.7\.7/);
+ assert.match(app,/ODDPOT · v0\.7\.8/);
+ assert.match(app,/版本 v0\.7\.8/);
  const script=source('../scripts/build-standalone.py');
  assert.match(script,/forecast_home_v076\.css/);
- assert.match(script,/v0\.7\.7 离线版/);
+ assert.match(script,/v0\.7\.8 离线版/);
 });
 test('home is its own phase UI, without historical large message bar or old bottom dock',()=>{
  const s=app.slice(app.indexOf('function shell('),app.indexOf('\nfunction overlayMarkup(',app.indexOf('function shell(')));
