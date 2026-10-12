@@ -27,7 +27,7 @@ test('all four customer segments have distinct, multiple voice lines for every m
 test('speech for a real dish leads with the actual recipe name and is deterministic across frames',()=>{
  const o=sample('critic','queued');
  const a=diningSpeechCue(o,3.2),b=diningSpeechCue(o,3.9);
- assert.ok(a.text.startsWith('辣椒炒肉！'));
+ assert.ok(a.text.startsWith('火椒噼啪肉！'));
  assert.equal(a.text,b.text);
  assert.equal(diningSpeechCue(o,7),null,'transient speech must disappear');
  const f={...o,id:'another-guest'};
@@ -122,7 +122,7 @@ test('long daily report scrolls from TOP and semantic title does not clip or dra
  assert.match(css,/box-shadow:none/);
  assert.match(css,/@media\(max-height:650px\)/);
  const html=source('../index.html');
- assert.match(html,/diner_polish_v078\.css\?v=0\.7\.8/);
+ assert.match(html,/diner_polish_v078\.css\?v=0\.9\.0/);
 });
 test('version, offline bundle and complete JavaScript stay parseable',()=>{
  const html=source('../index.html'),app=source('../src/app.js'),build=source('../scripts/build-standalone.py');
