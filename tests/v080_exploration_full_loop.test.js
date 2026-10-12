@@ -4,7 +4,7 @@ import {ING,RECIPES,RECIPE_INDEX} from '../src/data.js';
 import {liveRecipeId,evaluateLiveCook} from '../src/cooking_v063.js';
 import {newGame,enterField,startCook,selectFieldWeapon,fieldWeaponSnapshot,
  completeFieldSegment,chooseFieldBranch,settleField,fieldBagSlotsUsed,addFieldBag,
- purchase,buyKitchenUpgrade,stationDuration,discardFieldStack,load,save,nextPhase} from '../src/engine.js';
+ purchase,ensureDailyMarket,buyKitchenUpgrade,stationDuration,discardFieldStack,load,save,nextPhase} from '../src/engine.js';
 import {startActionField,stepActionField,useFieldSkill} from '../src/field_v04.js';
 const start=(route='safe',weapon=0)=>{
  const s=newGame(42);s.phase='field';selectFieldWeapon(s,weapon);
@@ -36,7 +36,11 @@ test('catalog retains all normal recipes with exactly four curated rare dishes',
 });
 test('four staples only are purchasable, exploration and boss ingredients cannot be bought',()=>{
  const s=newGame();s.coins=400;
- for(const id of ['garlic','mushroom','cabbage','chicken'])assert.equal(purchase(s,id),true,id);
+ const offered=ensureDailyMarket(s).goods;
+ for(const id of ['garlic','mushroom','cabbage','chicken']){
+  assert.equal(ING[id].acquisitionPolicy,'SHOP_STAPLE');
+  assert.equal(purchase(s,id),Boolean(offered[id]),id);
+ }
  for(const id of ['beef','chili','onion','potato','mushroom_heart','ember_pepper'])
   assert.equal(purchase(s,id),false,id);
 });
