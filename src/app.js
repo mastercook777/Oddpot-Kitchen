@@ -128,10 +128,15 @@ function forecast(){
   </section>
  </div>`,'' ];
 }
+function bossHint(region){
+ const hot=region==='spring',ingredient=hot?'ember_pepper':'mushroom_heart',boss=hot?'熔壳椒王':'孢冠菇王';
+ const first=!game.bossCleared?.[hot?'ember_king':'spore_king'];
+ return {boss,name:ING[ingredient].name,qty:first?2:1,emoji:ING[ingredient].emoji};
+}
 function field(){
  const f=game.field;
  if(!f){
-  const activeRoutes=selectedRegion==='forest'?ROUTES:[{id:'spring_safe',name:'热泉浅滩',emoji:'♨',subtitle:'火椒、蒜瓣 · 可避开战斗'},{id:'spring_risk',name:'热泉断坡',emoji:'🌋',subtitle:'火椒、野牛肉 · 高风险'}];
+  const activeRoutes=selectedRegion==='forest'?ROUTES:[{id:'spring_safe',name:'热泉浅滩',emoji:'♨',subtitle:'火椒、蒜瓣 · 可避开战斗'},{id:'spring_risk',name:'热泉断坡',emoji:'🌋',subtitle:'深入第三段必遇熔壳椒王 · 熔心椒晶'}];
   return [
  `<div class="forest-scene route-scene ux-route">${forestBackdrop()}<div class="route-panel">
    <div class="route-intro"><span class="ux-kicker">出发准备</span><h2>今天去哪找食材？</h2><p>缺什么，就去哪。</p></div>
@@ -140,17 +145,28 @@ function field(){
    <div class="ux-field-label"><strong>探索区域</strong></div>
    <div class="region-tabs" role="group" aria-label="探索区域"><button data-region="forest" class="${selectedRegion==='forest'?'current':''}" aria-pressed="${selectedRegion==='forest'}">晨露森林</button><button data-region="spring" class="${selectedRegion==='spring'?'current':''}" aria-pressed="${selectedRegion==='spring'}">热泉峡谷</button></div>
    <div class="ux-field-label"><strong>携带厨具</strong><span>升级也会影响探索</span></div>
-   <div class="v08-weapon-picks">${ensureKitchen(game).slots.map((slot,i)=>`<button class="v08-weapon-pick ${game.selectedWeaponSlot===i?'chosen':''}" data-weapon="${i}">${slot.type==='WOK'?'🛡️ 炒锅剑盾':'🧅 汤锅投弹'} · Lv${slot.level}<small>${i?'右':'左'}厨位</small></button>`).join('')}</div>
+   <div class="v08-weapon-picks">${ensureKitchen(game).slots.map((slot,i)=>`<button class="v08-weapon-pick ${game.selectedWeaponSlot===i?'chosen':''}" data-weapon="${i}">${slot.type==='WOK'?'🛡️ 炒锅剑盾':'🧅 汤锅投弹'} · Lv${slot.level}<small>${i?'右':'左'}厨位 · ${slot.type==='WOK'?'被动正面格挡':'远程爆炸'}</small></button>`).join('')}</div>
    <div class="ux-field-label"><strong>路线</strong><span>点击出发</span></div>
-   <div class="route-options">${activeRoutes.map(r=>`<button class="route-card ${/risk/.test(r.id)?'route-risk':'route-safe'}" data-route="${r.id}"><span class="route-emoji" aria-hidden="true">${r.emoji}</span><div><strong>${r.name}</strong><small>${r.subtitle}</small></div><span class="route-risk-label">${/risk/.test(r.id)?'高风险':'安全'}</span><b aria-hidden="true">›</b></button>`).join('')}</div>
+   <div class="route-options">${activeRoutes.map(r=>`<button class="route-card ${/risk/.test(r.id)?'route-risk':'route-safe'}" data-route="${r.id}"><span class="route-emoji" aria-hidden="true">${r.emoji}</span><div><strong>${r.name}</strong><small>${/risk/.test(r.id)?`${r.subtitle} · Boss 珍稀奖励，记得留 1 格背包`:r.subtitle}</small></div><span class="route-risk-label">${/risk/.test(r.id)?'高风险':'安全'}</span><b aria-hidden="true">›</b></button>`).join('')}</div>
   </div></div>`,
  `<div class="dock-head"><span>最多三段探索 · 可随时回店</span><span>背包 ${game.bagSlots||8} 格</span></div><div class="action-row">${b('bento','🍱 便当','secondary')}${b('skip-field','暂不探索 · 去研发','secondary wide')}</div>`]
  }
- if(f.segmentStatus==='choice')return [`<div class="forest-scene v08-branch-scene"><div class="v08-branch-panel"><small>第 ${f.segmentIndex}/3 段探索完成</small><h2>继续深入，还是回饭店？</h2><p>背包 ${fieldBagSlotsUsed(f)}/${f.capacity} 格 · 生命 ${f.hp}/3 · ${f.weapon?.type||'WOK'} Lv${f.weapon?.level||1}</p><div class="v08-branch-cards">${f.choices.map(c=>`<button class="v08-branch-card" data-branch="${c.choiceId}"><strong>${c.danger?'⚠️':'🌿'} ${c.name}</strong><span>${c.description}</span><small>${c.danger?'危险路线 · 第三段固定 Mini Boss':'常规采集 · 可继续经营'}</small></button>`).join('')}</div><button type="button" class="v08-home-choice" data-act="retreat">🏠 带着收获回饭店</button></div></div>`, ''];
+ if(f.segmentStatus==='choice'){
+  const boss=bossHint(f.region),slots=fieldBagSlotsUsed(f),full=slots>=f.capacity;
+  return [`<div class="forest-scene v08-branch-scene"><div class="v08-branch-panel"><small>第 ${f.segmentIndex}/3 段探索完成</small><h2>继续深入，还是回饭店？</h2>
+  <p>背包 ${slots}/${f.capacity} 格 · 生命 ${f.hp}/3 · ${f.weapon?.type||'WOK'} Lv${f.weapon?.level||1}</p>
+  ${f.dangerCommitment?`<div class="v082-boss-promise">⚔️ 第三段必遇 ${boss.boss} · ${boss.emoji}${boss.name} ×${boss.qty}</div>`:''}
+  <div class="v08-branch-cards">${f.choices.map(c=>`<button class="v08-branch-card" data-branch="${c.choiceId}">
+  <strong>${c.danger?'⚠️':'🌿'} ${c.name}</strong><span>${c.description}</span>
+  <small>${c.danger?`⚔️ 第三段 ${boss.boss} · ${boss.name} ×${boss.qty}`:'🌱 普通资源 / 特殊事件'}</small>
+  </button>`).join('')}</div>
+  ${full?`<div class="v082-bag-warning">🎒 背包已满！Boss 奖励需要空格。可从背包丢弃一格材料。</div><button class="v082-manage-bag" data-act="field-bag">整理背包</button>`:`<p class="v082-bag-reminder">🎒 建议为后续稀有食材保留至少 1 格。</p>`}
+  <button type="button" class="v08-home-choice" data-act="retreat">🏠 带着收获回饭店</button></div></div>`, ''];
+ }
  const readyToFinish=f.nodes?.some(n=>n.key==='target'&&n.claimed)&&!(f.segmentIndex===3&&f.enemies?.some(e=>e.isBoss&&e.hp>0));
  const bag=Object.entries(f.bag).map(([id,n])=>`${ING[id].name}${n}`).join(' · ')||'空';
  const event=f.activeEvent&&f.nodes.find(n=>n.key===f.activeEvent);
- return [`<div class="forest-scene action-forest"><canvas id="forest-canvas" class="forest-canvas"></canvas><div class="floating-joystick" id="field-stick" aria-hidden="true"><div class="floating-joystick-knob" id="field-stick-knob"></div></div><div class="action-hud" aria-label="探索状态"><span class="field-hp" aria-label="体力">${'♥'.repeat(f.hp)}${'♡'.repeat(3-f.hp)}</span><button data-act="field-bag" class="field-bag-chip" aria-label="查看野外背包">背包 <b id="field-bag-count">${fieldBagSlotsUsed(f)}/${f.capacity||8}</b></button><span class="field-clock" id="field-clock">${f.segmentIndex||1}/3 · ${Math.floor(f.elapsed)}s</span></div><div class="field-action-notice" id="field-action-notice" hidden></div>${f.bento?`<div class="v063-field-bento">🍱 ${esc(RECIPES[f.bento.recipeId]?.name||"便当")} · <span id="v063-bento-effect">${f.bento.used?"已触发":"待触发"}</span></div>`:""}<button data-act="skill" class="field-skill" aria-label="${f.weapon?.type==='POT'?'高压洋葱炸弹':'锅盖反击'}"><span class="skill-glyph" aria-hidden="true">✦</span><span class="skill-caption">${f.weapon?.type==='POT'?'汤锅':'锅盖'}</span><span class="skill-cooldown" id="skill-cooldown" hidden></span></button>${event?`<div class="field-event"><strong>野外遭遇 · 流浪调味师</strong><p>你在林中发现一份料理线索，如何处理？</p><button data-event="trade">用蘑菇交换火椒</button><button data-event="forage">深入调查：损失生命，争取两份材料</button><button data-event="leave">绕开，保留现有收获</button></div>`:''}</div>`,
+ return [`<div class="forest-scene action-forest"><canvas id="forest-canvas" class="forest-canvas"></canvas><div class="floating-joystick" id="field-stick" aria-hidden="true"><div class="floating-joystick-knob" id="field-stick-knob"></div></div><div class="action-hud" aria-label="探索状态"><span class="field-hp" aria-label="体力">${'♥'.repeat(f.hp)}${'♡'.repeat(3-f.hp)}</span><button data-act="field-bag" class="field-bag-chip" aria-label="查看野外背包">背包 <b id="field-bag-count">${fieldBagSlotsUsed(f)}/${f.capacity||8}</b></button><span class="field-clock" id="field-clock">${f.segmentIndex||1}/3 · ${Math.floor(f.elapsed)}s</span></div><div class="field-action-notice" id="field-action-notice" hidden></div>${f.weapon?.type==='WOK'?`<div class="v082-shield-status" id="v082-shield-status" aria-label="锅盖被动防御状态">${f.shieldCharge!==false?'🛡 防御就绪':'🛡 蓄能 '+Math.ceil(f.shieldCooldown||0)+'s'}</div>`:''}${f.bento?`<div class="v063-field-bento">🍱 ${esc(RECIPES[f.bento.recipeId]?.name||"便当")} · <span id="v063-bento-effect">${f.bento.used?"已触发":"待触发"}</span></div>`:""}<button data-act="skill" class="field-skill" aria-label="${f.weapon?.type==='POT'?'高压洋葱炸弹':'锅盖反击'}"><span class="skill-glyph" aria-hidden="true">${f.weapon?.type==='WOK'?'🛡':'🧅'}</span><span class="skill-caption">${f.weapon?.type==='POT'?'汤锅':'反击'}</span><span class="skill-cooldown" id="skill-cooldown" hidden></span></button>${event?`<div class="field-event"><strong>野外遭遇 · 流浪调味师</strong><p>你在林中发现一份料理线索，如何处理？</p><button data-event="trade">用蘑菇交换火椒</button><button data-event="forage">深入调查：损失生命，争取两份材料</button><button data-event="leave">绕开，保留现有收获</button></div>`:''}</div>`,
  `<div class="action-field-dock field-compact-dock"><span class="field-touch-tip">按住场景 · 拖动移动</span>${readyToFinish?b('finish-segment',f.segmentIndex===3?'探索结束 · 返回':'结束本区 · 选择下一站','primary'):''}${b('retreat','撤离回店','secondary')} </div>`]
 }
 
@@ -419,6 +435,10 @@ function frame(now){const delta=Math.min(.045,(now-(lastFrame||now))/1000);lastF
    const count=app.querySelector('#field-bag-count');if(count)count.textContent=fieldBagSlotsUsed(f)+'/'+(f.capacity||8);
    const timer=app.querySelector('#field-clock');if(timer)timer.textContent=(f.segmentIndex||1)+'/3 · '+Math.floor(f.elapsed)+'s';const bento=app.querySelector('#v063-bento-effect');if(bento&&f.bento)bento.textContent=f.bento.used?'已触发':'待触发';
    const skill=app.querySelector('[data-act="skill"]');const cooldown=app.querySelector('#skill-cooldown');if(skill){skill.disabled=f.skillCd>0;skill.style.setProperty('--cooldown',(f.skillCd/6.5*100).toFixed(2)+'%');if(cooldown){cooldown.hidden=f.skillCd<=0;cooldown.textContent=f.skillCd>0?Math.ceil(f.skillCd)+'s':'';}}
+   const shieldStatus=app.querySelector('#v082-shield-status');if(shieldStatus){
+    shieldStatus.textContent=f.shieldCharge!==false?'🛡 防御就绪':'🛡 蓄能 '+Math.ceil(f.shieldCooldown||0)+'s';
+    shieldStatus.classList.toggle('charging',f.shieldCharge===false);
+   }
    const fieldNote=app.querySelector('#field-action-notice');if(fieldNote){fieldNote.hidden=!(f.actionMessageTTL>0);if(!fieldNote.hidden)fieldNote.textContent=f.elapsed<2?'移动 · 自动采集 / 攻击':f.actionMessage.slice(0,22);};
   }
  }
