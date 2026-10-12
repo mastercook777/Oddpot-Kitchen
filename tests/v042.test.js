@@ -53,14 +53,15 @@ test('forest and spring startActionField handle historical six-slot saves safely
  assert.equal(s.field.pos.x,px);assert.equal(s.field.pos.y,py);
 });
 
-test('seven genuinely distinct sources make backpack expansion materially useful',()=>{
+test('regional resource nodes are concentrated rather than always evenly distributed',()=>{
  for(const route of ['safe','risk','spring_safe','spring_risk']){
   const s=newGame();nextPhase(s,'field');enterField(s,route);
   const gather=s.field.nodes.filter(n=>n.type==='gather');
   // Risk route also has a guarded, collectible meat source when defeated.
   const collectible=s.field.nodes.filter(n=>n.type==='gather'||n.type==='danger');
-  assert.ok(collectible.length>=7,route);
-  assert.equal(new Set(collectible.map(n=>n.id)).size,collectible.length,route);
+  assert.ok(collectible.length>=4&&collectible.length<=10,route);
+  assert.ok(new Set(collectible.map(n=>n.id)).size<collectible.length,'at least one productive pocket must repeat a local ingredient: '+route);
+  assert.equal(s.field.nodes.some(n=>n.key==='target'),true);
  }
 });
 test('discard affects only expedition bag and cannot refund to restaurant stock',()=>{
