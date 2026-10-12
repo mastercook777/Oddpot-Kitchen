@@ -16,7 +16,7 @@ export function newGame(seed=20261009){return {version:4,seed,cycle:1,day:1,dini
 export const ROOM_EXPANSION_COST=160;
 export const totalBusinessDay=s=>(s.cycle-1)*3+s.day;
 export const firstChallenge=s=>s.cycle===1&&s.day===3;
-export const tableCapacity=s=>2*(s?.service?.tableCount||s?.dining?.tableCount||2);
+export const tableCapacity=s=>2*(s?.dining?.tableCount||s?.service?.tableCount||2);
 export function roomExpansionAvailable(s){return s.phase==='upgrade'&&
   (s.dining?.tableCount||2)<3&&totalBusinessDay(s)>=3&&s.reputation>=2&&s.coins>=ROOM_EXPANSION_COST}
 export function expandDiningRoom(s){
@@ -168,7 +168,7 @@ if(s?.version!==4||!PHASES.includes(s.phase))return null;
 if(s.service){s.service.walkable??=false;if(s.service.walkable){s.service.hero??=newServiceHero();s.service.hero.dwell??=0;s.service.hero.dwellZone??=null;if(s.service.sceneVersion!=='0.7.5'){s.service.sceneVersion='0.7.5';s.service.hero.x=.5;s.service.hero.y=.365;s.service.hero.dwell=0;s.service.hero.dwellZone=null;s.service.clockAccumulator=0;}}s.service.paused ??= true;s.service.breakAt ??= 0;s.service.breakUsed ??= false;s.service.breakSeen ??= [];s.service.events ??= [];s.service.treatUsed ??= false;
  s.service.kitchenSnapshot ??= structuredClone(ensureKitchen(s).slots);
  s.service.stationStats ??= {WOK:{count:0,secondsSaved:0},POT:{count:0,secondsSaved:0}};
- s.service.judgeOrderId ??= s.day===3?s.service.orders.at(-1)?.id:null;
+ s.service.judgeOrderId ??= firstChallenge(s)?s.service.orders.at(-1)?.id:null;
  s.service.crew ??= clone(crewEffects(s));
  s.service.staffStats ??= {helperSeconds:0,helperOrders:0,waiterBonus:0,waiterOrders:0,waiterSaved:0};
  // v0.1 浏览器存档尚无固定桌位，按当前等餐顺序温和迁移。
@@ -183,7 +183,7 @@ if(s.field){s.field.capacity??=s.bagSlots;s.field.capacity=Math.max(s.field.capa
 if(s.cook)s.cook.flame ??= 0;
 return s;
 }catch{return null}}
-export function today(s){return FORECAST[(s.day-1)%3]}
+export function today(s){return s.cycle>1&&s.day===3?FORECAST[(s.cycle-1)%2]:FORECAST[(s.day-1)%3]}
 export function transact(s,id,type,items={},amount=0){if(!uniqueAdd(s.ledger,id,type,{items,amount,day:s.day,cycle:s.cycle}))return false;for(const [ing,n] of Object.entries(items)){s.inventory[ing]=(s.inventory[ing]||0)+n;if(s.inventory[ing]<0)throw Error('库存不足 '+ing)}s.coins+=amount;return true}
 export function canUse(s,ids){return Object.entries(countIds(ids)).every(([id,n])=>(s.inventory[id]||0)>=n)}
 export function countIds(ids){const o={};for(const id of ids)o[id]=(o[id]||0)+1;return o}
@@ -510,7 +510,7 @@ export function createService(s,options={}){if(s.phase!=='service'||s.service||!
   queued:[],wave:0,done:false,events:[],income:0,cost:0,tableCount:s.dining?.tableCount||2,congestion:{WOK:0,POT:0},initialInventory:clone(s.inventory),
   reportBuilt:false,manualUsed:0,treatUsed:false,paused:true,breakAt:0,breakSeen:[],breakUsed:false,eventChoiceMade:[],
   eventEffects:{WOK:0,POT:0},eventExpense:0,guestMood:0,
-  walkable:options.walkable===true,sceneVersion:options.walkable===true?'0.7.5':null,hero:options.walkable===true?newServiceHero():null};
+  walkable:options.walkable===true,sceneVersion:options.walkable===true?'0.9.0':null,hero:options.walkable===true?newServiceHero():null};
  spawnArrivals(s);return true;
 }
 
