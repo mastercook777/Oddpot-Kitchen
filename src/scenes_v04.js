@@ -1,6 +1,6 @@
 import {pixelActor,pixelEnemy,pixelImpact} from './pixels_v041.js?v=0.5.5';
 // Lightweight procedural game graphics: original Canvas shapes, no art pack.
-import {ING,RECIPES,CUSTOMERS} from './data.js?v=0.8.0';
+import {ING,RECIPES,CUSTOMERS} from './data.js?v=0.8.1';
 import {heroZone,waiterDeliveryPose,HERO_PASS} from './walkable_restaurant_v07.js?v=0.7.5';
 import {DINER_FLOOR} from './restaurant_scene_v075.js?v=0.7.5';
 import {selectDiningSpeech,selectStaffSpeech,diningBubbleLines,speechOpacity} from './diner_ambience_v077.js?v=0.7.8';
