@@ -336,6 +336,20 @@ function drawRestaurantV075(c,s,t,w,h){
   circle(c,X,Y-5,r-8,'#bc8956','#edc58c');
   text(c,(i+1)+'',X,Y-5,'#714626',14);
   if(v){
+   // Plates remain on the ACTUAL table while patrons eat/review.
+   // This is restaurant life feedback, not a second sales or HUD layer.
+   const meals=v.orders.filter(o=>o.tableId===i&&['eating','review'].includes(o.status));
+   meals.forEach(o=>{
+     const px=X+(o.seatId===0?-1:1)*Math.min(24,r*.53),py=Y+12;
+     dish(c,px,py,RECIPES[o.recipeId]?.station||'WOK');
+     if(o.status==='eating'&&t-(o.landedAt??t)<.8){
+      const shimmer=Math.max(0,1-(t-o.landedAt)/.8);
+      c.save();c.globalAlpha=shimmer*.8;
+      circle(c,px-12,py-15-Math.sin(t*7)*2,2,'#fff2ae');
+      circle(c,px+13,py-12+Math.cos(t*6)*2,1.7,'#ffe7a9');
+      c.restore();
+     }
+   });
    const waiting=v.orders.filter(o=>o.tableId===i&&['ordering','queued','cooking','pickup','carried','delivering'].includes(o.status));
    if(waiting.length){
     const patience=Math.min(...waiting.map(o=>o.patience-(t-o.arrival)));
@@ -405,6 +419,11 @@ function drawRestaurantV075(c,s,t,w,h){
   pixelActor(c,a.kind,X,Y,DINER_ACTOR_SCALE,{walk:a.walk?t*2:0,
     face:a.direction==='left'?-1:1,attack:!!a.working});
   if(a.plate)dish(c,X+14,Y-12,'WOK');
+  if(a.order?.status==='eating'){
+   // Low-key cutlery gesture, same actor scale and no extra speech sprite.
+   const bite=Math.sin(t*5+(a.order.seatId||0))*.9;
+   line(c,X-12,Y-18+bite,X-9,Y-25+bite,'#f6dfac',1.4);
+  }
   if(a.id==='hero'){
    const hero=v.hero,focus=hero.dwellZone;
    if(focus&&hero.dwell>0){const required=focus.startsWith('serve:')?.48:.36;
