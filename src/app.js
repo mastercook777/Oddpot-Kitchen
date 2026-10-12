@@ -6,7 +6,7 @@ import {livePanMotion} from './cook_motion_v063.js?v=0.6.3';
 import {walkServiceHero} from './walkable_restaurant_v07.js?v=0.7.5';
 import {PHASES,newGame,save,load,beginLiveResearch,dropLiveIngredient,performLiveAction,finishLiveResearch,stepLiveResearch,liveCookPreview,ensureRecipeVariants,activeRecipeVariant,chooseRecipeVariant,recipeCraftSnapshot,availableBento,prepareBento,today,serviceDayPlan,tableSeatState,enterField,settleField,discardFieldStack,fieldBagSlotsUsed,completeFieldSegment,chooseFieldBranch,selectFieldWeapon,skipField,purchase,startCook,moveTile,beat,finishCook,synergyFor,canMenu,prepDish,createService,tick,expedite,walkableSpecial,activateWalkableSpecial,advanceWalkableInteraction,closeService,nextPhase,advanceDay,buyUpgrade,buyKitchenUpgrade,kitchenUpgradeCost,configureKitchenSlot,kitchenPreview,kitchenRefitCost,kitchenHasMenuCoverage,ensureKitchen,ensureCrew,CREW_ROLES,hireCrew,assignCrew,feedCrew,activeCrewMeal,crewEffects,buyBagUpgrade,bagUpgradePrice,canUse,setServicePaused,resumeBreak,breakPrep,setFlame,tossWok,previewHeat,moveExplorer,interactExplorer,sootheGuest,newRecipeLead,currentServiceEvent,chooseServiceEvent,swapBreakMenu,serviceGoalResult,serviceSupplyStatus} from './engine.js?v=0.8.2';
 import {startActionField,stepActionField,useFieldSkill,resolveFieldEvent} from './field_v04.js?v=0.8.2';
-import {drawField,drawDiner} from './scenes_v04.js?v=0.8.2';
+import {drawField,drawDiner} from './scenes_v04.js?v=0.8.3';
 
 let game=load()||newGame();
 let flashUntil=0;
@@ -26,14 +26,14 @@ const itemCount=()=>Object.keys(game.recipes).length;
 
 function hud(){
  const home=game.phase==='forecast';
- return `<div class="hud ${home?'v076-home-hud':''}"><div class="brand"><span class="logo" aria-hidden="true">🍳</span><div><strong>怪味食堂</strong><small>${home?'边境小食堂':'ODDPOT · v0.8.2'}</small></div></div><div class="hud-meta"><span aria-label="金币">🪙 ${game.coins}</span><span aria-label="声望">⭐ ${game.reputation}</span></div><button class="hud-gear" data-act="settings" aria-label="设置">⚙</button></div><div class="day-strip ${home?'v076-home-day':''}"><b>第 ${game.cycle} 轮 · 第 ${game.day} 天</b><span class="day-phase">${home?'☀ 开店前':phaseLabels[game.phase]}</span>${home?'':`<span class="day-recipes">图鉴 ${itemCount()}/${Object.keys(RECIPES).length}</span>`}</div>`;
+ return `<div class="hud ${home?'v076-home-hud':''}"><div class="brand"><span class="logo" aria-hidden="true">🍳</span><div><strong>怪味食堂</strong><small>${home?'边境小食堂':'ODDPOT · v0.8.3'}</small></div></div><div class="hud-meta"><span aria-label="金币">🪙 ${game.coins}</span><span aria-label="声望">⭐ ${game.reputation}</span></div><button class="hud-gear" data-act="settings" aria-label="设置">⚙</button></div><div class="day-strip ${home?'v076-home-day':''}"><b>第 ${game.cycle} 轮 · 第 ${game.day} 天</b><span class="day-phase">${home?'☀ 开店前':phaseLabels[game.phase]}</span>${home?'':`<span class="day-recipes">图鉴 ${itemCount()}/${Object.keys(RECIPES).length}</span>`}</div>`;
 }
 function toast(){return `<div class="game-toast" role="status"><span>${esc(message)}</span></div>`}
 function playablePhase(){return game.phase==='service'||(game.phase==='field'&&!!game.field?.action)}
 function sceneNotice(){return `<div class="ingame-notice" role="status" id="ingame-notice" ${performance.now()>flashUntil?'hidden':''}>${esc(message.slice(0,28))}</div>`}
 function shell(stage,dock){
  const walk=game.phase==='service'&&game.service?.walkable,home=game.phase==='forecast';
- return `<div class="game-shell ${walk?'v075-game-shell':''} ${home?'v076-home-shell':''}">${hud()}<main class="stage ${game.phase}${game.cook?' wok-active':''}">${stage}${playablePhase()?sceneNotice():''}</main>${playablePhase()||home?'':toast()}${walk||home?'':`<nav class="dock">${dock}</nav>`}${overlayMarkup()}</div>`;
+ return `<div class="game-shell ${walk?'v075-game-shell':''} ${home?'v076-home-shell':''} ${game.phase==='field'&&game.field?.action?'is-field-playing':''}">${hud()}<main class="stage ${game.phase}${game.cook?' wok-active':''}">${stage}${playablePhase()?sceneNotice():''}</main>${playablePhase()||home?'':toast()}${walk||home?'':`<nav class="dock">${dock}</nav>`}${overlayMarkup()}</div>`;
 }
 function overlayMarkup(){if(!overlay)return '';
  let body='';
@@ -74,7 +74,7 @@ function overlayMarkup(){if(!overlay)return '';
    };
    body=`<h2>👩‍🍳 食堂伙伴</h2><p class="sheet-lead">雇员永久留下；每人每天最多吃 1 道料理。员工餐真实扣料并增加当日效率，也积累最多 3 点熟练。</p><div class="staff-roster">${row('helper')}${row('waiter')}</div>`;
  }else if(overlay==='settings'){
-  body=`<h2>⚙ 试玩设置</h2><p class="sheet-lead">版本 v0.8.2 · 固定 9:16 竖屏 · 单机 localStorage 存档</p>${b('reset','重置存档，从 DAY 1 重新开始','danger')}<p class="sheet-lead">切到后台时营业会自动暂停。更换设备不会同步存档。</p>`;
+  body=`<h2>⚙ 试玩设置</h2><p class="sheet-lead">版本 v0.8.3 · 固定 9:16 竖屏 · 单机 localStorage 存档</p>${b('reset','重置存档，从 DAY 1 重新开始','danger')}<p class="sheet-lead">切到后台时营业会自动暂停。更换设备不会同步存档。</p>`;
  }else if(overlay==='details'){
   const r=game.report;body=r?`<h2>营业账本详情</h2><p class="sheet-lead">本日订单由真实食材库存、工位工作秒数和顾客等待事件计算。</p><div class="book-list">${Object.entries(r.byDish).map(([id,d])=>`<div class="detail-row">${RECIPES[id].emoji} ${RECIPES[id].name}：售出 ${d.count} 份 · 满意 ${Math.round(d.totalSat/d.count)}</div>`).join('')}<div class="detail-row">WOK 占用 ${r.congestion.WOK} 秒 / POT ${r.congestion.POT} 秒</div><div class="detail-row">食材耗用估值 ${r.cost} · 招待支出 ${r.hospitalityCost||0} · 收入 ${r.revenue} · 贡献利润 ${r.profit}</div></div>`:'';
  }
@@ -504,6 +504,42 @@ function frame(now){const delta=Math.min(.045,(now-(lastFrame||now))/1000);lastF
  requestAnimationFrame(frame);
 }
 requestAnimationFrame(frame);
+// Safari selection may start on the *lower dock* when a thumb lands beside
+// its instruction text. Both the playfield and the unused dock background are
+// gameplay joystick surfaces, but none of their actionable buttons are.
+function fieldGestureSurface(target){
+ if(!target?.closest)return false;
+ if(target.closest('button,select,input,textarea,[contenteditable="true"],.field-event,.sheet,.modal'))return false;
+ return !!target.closest('.action-forest,.action-field-dock');
+}
+function playingFieldGestures(){return game.phase==='field'&&!!game.field?.action&&!game.field.finished&&game.field.segmentStatus!=='choice'&&!overlay;}
+function clearThumbSelection(){
+ const selected=window.getSelection?.();
+ if(selected&&!selected.isCollapsed)selected.removeAllRanges();
+}
+// Only cancel iOS native gestures while the expedition joystick owns a finger.
+// Never steal touches from the two bottom action buttons or a dialog.
+app.addEventListener('touchstart',e=>{
+ if(!playingFieldGestures()||!fieldGestureSurface(e.target))return;
+ if(e.cancelable)e.preventDefault();
+ clearThumbSelection();
+},{passive:false});
+app.addEventListener('touchmove',e=>{
+ if(!playingFieldGestures()||stick.pointer===null)return;
+ if(e.cancelable)e.preventDefault();
+},{passive:false});
+app.addEventListener('selectstart',e=>{
+ if(game.phase==='field'&&game.field?.action&&!e.target.closest?.('input,textarea,[contenteditable="true"]'))e.preventDefault();
+});
+app.addEventListener('contextmenu',e=>{
+ if(game.phase==='field'&&game.field?.action&&!e.target.closest?.('input,textarea,[contenteditable="true"]'))e.preventDefault();
+});
+app.addEventListener('dragstart',e=>{
+ if(game.phase==='field'&&game.field?.action)e.preventDefault();
+});
+document.addEventListener('selectionchange',()=>{
+ if(playingFieldGestures()&&stick.pointer!==null)clearThumbSelection();
+});
 // Floating analog: anchored at finger-down anywhere on the forest canvas.
 // Pointer capture stays on #app, which does not get replaced during scene updates.
 function releaseStick(){
@@ -522,8 +558,8 @@ app.addEventListener('pointerdown',e=>{
  const fieldReady=game.phase==='field'&&game.field?.action&&!game.field.finished&&!game.field.activeEvent&&game.field.segmentStatus!=='choice';
  if(!(serviceReady||fieldReady)||overlay||stick.pointer!==null)return;
  // The scene is the input surface. Do not steal events from active buttons or dialogs.
- if(!(serviceReady?e.target.closest('.diner-world'):e.target.closest('.action-forest'))||e.target.closest('.field-event,button,select,[data-seat],[data-station]'))return;
- e.preventDefault();stick.pointer=e.pointerId;stick.originX=e.clientX;stick.originY=e.clientY;
+ if(!(serviceReady?e.target.closest('.diner-world'):fieldGestureSurface(e.target))||e.target.closest('.field-event,button,select,[data-seat],[data-station]'))return;
+ e.preventDefault();clearThumbSelection();stick.pointer=e.pointerId;stick.originX=e.clientX;stick.originY=e.clientY;
  const pad=app.querySelector('#field-stick, #diner-stick');if(pad){pad.classList.add('active');pad.style.left=e.clientX+'px';pad.style.top=e.clientY+'px';}
  try{app.setPointerCapture(e.pointerId)}catch{}
  updateStick(e);
