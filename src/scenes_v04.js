@@ -261,9 +261,9 @@ function drawGuestSpeech077(c,cue,actor,w,h){
  const headY=actor.y*h-25;
  const by=Math.max(h*.20,Math.min(h-height-5,headY-height-8));
  const negative=cue.kind==='upset'||cue.kind==='review'&&['late','bad','quality','taste'].includes(cue.reviewType);
- const bg=cue.kind==='upset'?'#ffe2ca':cue.kind==='review'?'#f5e9c8':'#f2eed3';
+ const bg=negative?'#ffe2ca':cue.kind==='review'?'#f5e9c8':'#f2eed3';
  c.save();c.globalAlpha=Math.min(.94,speechOpacity(cue));
- c.fillStyle=bg;c.strokeStyle=cue.kind==='upset'?'#d59775':'#b7a67c';c.lineWidth=1.2;
+ c.fillStyle=bg;c.strokeStyle=negative?'#d59775':'#b7a67c';c.lineWidth=1.2;
  c.beginPath();c.roundRect(bx,by,width,height,9);c.fill();c.stroke();
  const pointX=Math.max(bx+12,Math.min(bx+width-12,actor.x*w));
  c.fillStyle=bg;c.beginPath();
