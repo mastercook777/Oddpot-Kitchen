@@ -124,7 +124,7 @@ export function diningSpeechCue(o,t){
   if(o.status==='pickup'&&speechWhen(t,o.pickupAt,1.65))
    return mk(v.ready,'ready','arrival',5,o.pickupAt,1.65);
   if(o.status==='queued'&&speechWhen(t,o.orderedAt,2.1))
-   return speechCue(o,t,speechVariant(o,'order',v.order)+' '+speechName(o),'order',6,o.orderedAt,2.1);
+   return speechCue(o,t,speechName(o)+'！'+speechVariant(o,'order',v.order),'order',6,o.orderedAt,2.1);
   if(o.status==='cooking'&&speechWhen(t,o.started+3,1.7))
    return mk(v.kitchen,'kitchen','ambient',2,o.started+3,1.7);
  }
@@ -154,6 +154,15 @@ export function selectStaffSpeech(s,t,customerCues=[]){
  const helper=!!crew?.helper?.hired,waiter=!!crew?.waiter?.hired;
  if(!helper&&!waiter)return null;
  const events=v.events||[];
+ // A prep failure gets a distinct staff acknowledgment AFTER the rejected
+ // guest's urgent farewell has ended; never compete with that complaint.
+ if(helper){
+  const recentShortage=[...events].reverse().find(e=>e.type==='rejected'&&e.reason==='食材不足'
+    &&t-e.t>=2.55&&t-e.t<4.0);
+  if(recentShortage)return {id:'staff-shortage-'+recentShortage.order,staffRole:'helper',
+   kind:'staff',priority:4,text:['哎呀，材料用完了！','得赶紧补补库存！','这道菜缺食材了！'][speechHash(recentShortage.order)%3],
+   phase:clampSpeech((t-recentShortage.t-2.55)/1.45)};
+ }
  for(let i=events.length-1;i>=Math.max(0,events.length-10);i--){
   const e=events[i],elapsed=t-e.t;
   if(elapsed<0||elapsed>=1.45)continue;
