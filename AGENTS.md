@@ -1,3 +1,11 @@
+## v0.7.7 顾客对话与餐厅环境氛围（2026-10-12）
+
+- 权威交接：`docs/V0.7.7_LIVING_DINER_AMBIENCE.md`。用户确认 v0.7.6 移动经营方向变得更有趣，但希望恢复 v0.7.5 全 Canvas 重绘时丢失的顾客对话气泡。当前代码 **已经接回新餐厅渲染器**，旧版自动经营代码不动。
+- `src/diner_ambience_v077.js`：纯函数 `diningSpeechCue/selectDiningSpeech` 依据真实 `order.status/recipeId/patience/reviewText` 产生点单、等菜、出锅、送餐、吃饭、真实评价等短句。最多每桌一条、全厅两条，自动过期、长句限两行，无随机持久状态/金币/耐心改变。
+- `src/scenes_v04.js` 在 `drawRestaurantV075` 内将短气泡绘制在同一 Canvas 中，不创建 DOM/触控命中层。气泡限制在左右餐桌半区，只为停止移动的 NPC 显示，且说话时隐藏重复头顶订单 emoji；**不遮挡移动、厨位或出餐台操作**。用餐桌面真实盘子、短暂亮光、微吃饭动作增加生活气息。
+- 不得恢复过去的大段常驻浮层或让 NPC 气泡代替必要经营信息；人物保持正常的 `DINER_ACTOR_SCALE=1.13`。
+- 正式版本 `v0.7.7`：项目/游戏内/设置/网页标题，`index.html` app.js 查询和 `src/app.js` scenes_v04.js 查询，离线打包（`scripts/build-standalone.py` 和 `standalone.html`）一致。回归：`tests/v077_diner_ambience.test.js`。真机屏幕/视觉体验尚待验收。
+
 ## v0.7.6 正式开店前首屏改版（2026-10-12）
 
 - 完整交接：`docs/V0.7.6_FORECAST_HOME_IMPLEMENTATION.md`。新版开店前 `forecast()` 输出**唯一今日目标卡 → 无浮层餐厅预览 → 三个轻量入口（仓库/便当/图鉴） → 唯一主按钮出门取材**。
