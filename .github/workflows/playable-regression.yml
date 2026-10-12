@@ -1,0 +1,23 @@
+name: Oddpot playable regression
+on:
+  push:
+    branches:
+      - main
+      - feature/v0.9-fantasy-diner-growth
+  pull_request:
+    branches:
+      - main
+jobs:
+  node-regression:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Install
+        run: npm install --no-audit --no-fund
+      - name: Test gameplay rules
+        run: npm test
+      - name: Build web assets
+        run: npm run build
