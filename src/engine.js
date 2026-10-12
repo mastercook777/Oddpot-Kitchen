@@ -1,6 +1,7 @@
 import {ING,RECIPES,CUSTOMERS,FORECAST,DEFAULT_INVENTORY,SHOP_STAPLES} from './data.js?v=0.8.0';
 import {LIVE_ACTIONS,evaluateLiveCook,liveIngredientState,legacyVariant,makeLiveVariant,resolveTechnique} from './cooking_v063.js?v=0.8.0';
 import {RECIPE_PROFILES} from './recipe_profiles_v063.js?v=0.8.0';
+import {generateBiomeMap} from './field_biomes_v081.js?v=0.8.1';
 import {newServiceHero,heroZone} from './walkable_restaurant_v07.js?v=0.7.5';
 export const PHASES=['forecast','field','research','menu','prep','service','report','upgrade'];
 export const SAVE_KEY='oddpot-prototype-v04'; // v0.2 兼容先前试玩存档
@@ -280,7 +281,7 @@ export function chooseFieldBranch(s,choiceId){
  f.route=f.region==='spring'?(f.dangerCommitment?'spring_risk':'spring_safe'):(f.dangerCommitment?'risk':'safe');
  const segmentSeed=(f.segmentIndex*1307+branch.id.split('').reduce((n,c)=>n+c.charCodeAt(0),0)*17);
  const map=buildFieldMap({...s,seed:s.seed+segmentSeed,fieldZoneId:branch.id,fieldSegmentIndex:f.segmentIndex},f.route,branch.target);
- for(const key of ['spawn','x','y','steps','worldW','worldH','visitedHazards','nodes','obstacles','hazards'])f[key]=map[key];
+ for(const key of ['region','biome','bossSpawn','spawn','x','y','steps','worldW','worldH','visitedHazards','nodes','obstacles','hazards'])f[key]=map[key];
  f.action=false;f.target=branch.target;f.harvestProgress=0;f.harvestNode=null;f.activeEvent=null;
  // HP, bag, bento, skill cooldown and equipped cookware persist across all three segments.
  return true;
@@ -772,43 +773,7 @@ export function buyBagUpgrade(s){const price=bagUpgradePrice(s);if(s.phase!=='up
 // v0.3 walkable, deterministic field. Each node is claimed once, and nothing
 // reaches restaurant inventory until settleField() records the unique transaction.
 export function buildFieldMap(s,route,target){
- const springs=route.startsWith('spring'),risky=route==='risk'||route==='spring_risk';
- const seed=rand(s.seed+s.cycle*301+s.day*37+(risky?997:0)+(springs?1381:0));
- const extras=springs?['chili','garlic','potato','beef','onion']:['mushroom','cabbage','onion','garlic','chicken','potato'];
- const bonus=extras[seed%extras.length];
- const used=new Set([target]);const pool=springs?['chili','garlic','beef','potato','onion','chicken','mushroom','cabbage']:['mushroom','cabbage','onion','garlic','chicken','potato','chili','beef'];
- const pick=(wanted)=>{const id=(!used.has(wanted)&&wanted)||pool.find(id=>!used.has(id));used.add(id);return id};
- // Two distinct reusable maps, not simply a recolor of the same 9x11 board.
- const nodes=springs?[
-  {key:'target',id:target,x:2,y:8,n:2,type:'gather',claimed:false},
-  {key:'grove',id:pick(bonus),x:6,y:7,n:2,type:'gather',claimed:false},
-  {key:'branch',id:pick(risky?'beef':extras[(seed>>>9)%extras.length]),x:7,y:3,n:risky?2:1,type:risky?'danger':'gather',claimed:false},
-  {key:'cache',id:pick(extras[(seed>>>15)%extras.length]),x:3,y:2,n:1,type:'event',claimed:false}
- ]:[
-  {key:'target',id:target,x:4,y:6,n:2,type:'gather',claimed:false},
-  {key:'grove',id:pick(bonus),x:1,y:4,n:2,type:'gather',claimed:false},
-  {key:'branch',id:pick(risky?'beef':extras[(seed>>>9)%extras.length]),x:7,y:2,n:risky?2:1,type:risky?'danger':'gather',claimed:false},
-  {key:'cache',id:pick(extras[(seed>>>15)%extras.length]),x:4,y:1,n:1,type:'event',claimed:false}
- ];
- // Branch entry has its own terrain arrangement, not only a different name
- // on the same forest/hot-spring board. Keep target and spawn positions clear.
- const zoneVariant=s.fieldSegmentIndex===3?2:s.fieldSegmentIndex===2?1:0;
- const forestObstacleSets=[
-  [{x:2,y:6},{x:6,y:5},{x:2,y:2},{x:6,y:8}],
-  [{x:1,y:6},{x:6,y:6},{x:3,y:2},{x:7,y:8}],
-  [{x:1,y:5},{x:7,y:6},{x:3,y:3},{x:5,y:8}]
- ];
- const springObstacleSets=[
-  [{x:4,y:8},{x:5,y:5},{x:1,y:5},{x:4,y:3},{x:7,y:9}],
-  [{x:3,y:8},{x:5,y:5},{x:1,y:4},{x:6,y:3},{x:7,y:9}],
-  [{x:4,y:7},{x:6,y:6},{x:1,y:6},{x:5,y:3},{x:7,y:8}]
- ];
- const zoneObstacles=springs?springObstacleSets[zoneVariant]:forestObstacleSets[zoneVariant];
- const spots=springs?[[0,8],[8,5],[1,3],[6,9]]:[[0,6],[8,6],[2,9],[6,1]];
- for(const [i,[x,y]] of spots.entries())nodes.push({key:`side-${i}`,id:pick(pool.find(id=>!used.has(id))),x,y,n:1,type:'gather',claimed:false});
- return {region:springs?'spring':'forest',spawn:springs?{x:2.5,y:10.1}:{x:4.5,y:9.4},x:springs?2:4,y:9,steps:0,worldW:9,worldH:11,visitedHazards:[],nodes,
-  obstacles:zoneObstacles,
-  hazards:springs?[{x:3,y:5},{x:6,y:4},{x:7,y:6}]:risky?[{x:5,y:5},{x:6,y:3}]:[{x:6,y:3}]};
+ return generateBiomeMap(s,route,target);
 }
 
 export function moveExplorer(s,dx,dy){
