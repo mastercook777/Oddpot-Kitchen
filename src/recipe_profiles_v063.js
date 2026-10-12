@@ -1051,7 +1051,7 @@ export const RECIPE_PROFILES = {
     ],
     "crewSpecific": null,
     "bentoSpecific": {
-      "type": "first_enemy_hit",
+      "type": "spore_shield",
       "base": "首次孢子伤害 -1，仅一次。",
       "preferredStyle": "reduced",
       "enhance": "收汁版可抵御首次孢子与一般怪物伤害，共享一次。"
