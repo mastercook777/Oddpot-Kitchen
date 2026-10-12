@@ -1857,7 +1857,7 @@ const RECIPE_PROFILES = {
     ],
     "crewSpecific": null,
     "bentoSpecific": {
-      "type": "first_enemy_hit",
+      "type": "spore_shield",
       "base": "首次孢子伤害 -1，仅一次。",
       "preferredStyle": "reduced",
       "enhance": "收汁版可抵御首次孢子与一般怪物伤害，共享一次。"
@@ -2072,7 +2072,7 @@ function liveIngredientState(drop,t,actions,vessel){
  if(ratio<.65)return '偏生';
  if(ratio<1)return '受热中';
  if((ratio>3.4&&['beef','chicken','potato'].includes(drop.id))||
-    age>(['garlic','chili','onion','ember_pepper'].includes(drop.id)?14:16))return '焦糊';
+    age>(drop.id==='ember_pepper'&&vessel==='POT'?19:['garlic','chili','onion','ember_pepper'].includes(drop.id)?14:16))return '焦糊';
  return '熟透';
 }
 function readCookFacts(ids,vessel,drops,actions,t){
@@ -2567,6 +2567,7 @@ function enterField(s,route){
  s.route=route;
  s.field={route,hp:3,node:0,bag:{},bagStacks:[],capacity:s.bagSlots||8,sequence,
   segmentIndex:1,segmentStatus:'active',zoneId:route.startsWith('spring')?'hot_spring_shallows':'herb_path',
+  zoneTitle:route.startsWith('spring')?'热泉浅滩':'香草小径',
   dangerCommitment:risk,selectedBranches:[],choices:[],weapon:fieldWeaponSnapshot(s),
   finished:false,...buildFieldMap(s,route,target),bento:s.bento?.day===kitchenDayKey(s)?clone(s.bento):null};
  return true;
@@ -2588,10 +2589,10 @@ function chooseFieldBranch(s,choiceId){
  const branch=f.choices?.find(a=>a.choiceId===choiceId);
  if(!branch)return false;
  f.selectedBranches.push(branch.choiceId);f.dangerCommitment ||=branch.danger;
- f.segmentIndex++;f.zoneId=branch.id;f.segmentStatus='active';f.choices=[];
+ f.segmentIndex++;f.zoneId=branch.id;f.zoneTitle=branch.name;f.segmentStatus='active';f.choices=[];
  f.route=f.region==='spring'?(f.dangerCommitment?'spring_risk':'spring_safe'):(f.dangerCommitment?'risk':'safe');
  const segmentSeed=(f.segmentIndex*1307+branch.id.split('').reduce((n,c)=>n+c.charCodeAt(0),0)*17);
- const map=buildFieldMap({...s,seed:s.seed+segmentSeed},f.route,branch.target);
+ const map=buildFieldMap({...s,seed:s.seed+segmentSeed,fieldZoneId:branch.id,fieldSegmentIndex:f.segmentIndex},f.route,branch.target);
  for(const key of ['spawn','x','y','steps','worldW','worldH','visitedHazards','nodes','obstacles','hazards'])f[key]=map[key];
  f.action=false;f.target=branch.target;f.harvestProgress=0;f.harvestNode=null;f.activeEvent=null;
  // HP, bag, bento, skill cooldown and equipped cookware persist across all three segments.
@@ -3102,10 +3103,24 @@ function buildFieldMap(s,route,target){
   {key:'branch',id:pick(risky?'beef':extras[(seed>>>9)%extras.length]),x:7,y:2,n:risky?2:1,type:risky?'danger':'gather',claimed:false},
   {key:'cache',id:pick(extras[(seed>>>15)%extras.length]),x:4,y:1,n:1,type:'event',claimed:false}
  ];
+ // Branch entry has its own terrain arrangement, not only a different name
+ // on the same forest/hot-spring board. Keep target and spawn positions clear.
+ const zoneVariant=s.fieldSegmentIndex===3?2:s.fieldSegmentIndex===2?1:0;
+ const forestObstacleSets=[
+  [{x:2,y:6},{x:6,y:5},{x:2,y:2},{x:6,y:8}],
+  [{x:1,y:6},{x:6,y:6},{x:3,y:2},{x:7,y:8}],
+  [{x:1,y:5},{x:7,y:6},{x:3,y:3},{x:5,y:8}]
+ ];
+ const springObstacleSets=[
+  [{x:4,y:8},{x:5,y:5},{x:1,y:5},{x:4,y:3},{x:7,y:9}],
+  [{x:3,y:8},{x:5,y:5},{x:1,y:4},{x:6,y:3},{x:7,y:9}],
+  [{x:4,y:7},{x:6,y:6},{x:1,y:6},{x:5,y:3},{x:7,y:8}]
+ ];
+ const zoneObstacles=springs?springObstacleSets[zoneVariant]:forestObstacleSets[zoneVariant];
  const spots=springs?[[0,8],[8,5],[1,3],[6,9]]:[[0,6],[8,6],[2,9],[6,1]];
  for(const [i,[x,y]] of spots.entries())nodes.push({key:`side-${i}`,id:pick(pool.find(id=>!used.has(id))),x,y,n:1,type:'gather',claimed:false});
  return {region:springs?'spring':'forest',spawn:springs?{x:2.5,y:10.1}:{x:4.5,y:9.4},x:springs?2:4,y:9,steps:0,worldW:9,worldH:11,visitedHazards:[],nodes,
-  obstacles:springs?[{x:4,y:8},{x:5,y:5},{x:1,y:5},{x:4,y:3},{x:7,y:9}]:[{x:2,y:6},{x:6,y:5},{x:2,y:2},{x:6,y:8}],
+  obstacles:zoneObstacles,
   hazards:springs?[{x:3,y:5},{x:6,y:4},{x:7,y:6}]:risky?[{x:5,y:5},{x:6,y:3}]:[{x:6,y:3}]};
 }
 
@@ -3343,7 +3358,8 @@ function hurt(s,amount=1,source='enemy'){
  if(b&&!b.used){
   const enemyShield=b.kind==='first_enemy_hit'&&(source==='enemy'||(b.enhanced&&source==='pepper'));
   const springShield=b.kind==='spring_shield'&&(source==='vent'||(b.enhanced&&source==='pepper'));
-  if(enemyShield||springShield){amount=Math.max(0,amount-1);b.used=true;protectedHit=true}
+  const sporeShield=b.kind==='spore_shield'&&(source==='spore'||(b.enhanced&&source==='enemy'));
+  if(enemyShield||springShield||sporeShield){amount=Math.max(0,amount-1);b.used=true;protectedHit=true}
  }
  f.hp=Math.max(0,f.hp-amount);f.damageCd=1.15;f.hurtFx=.46;
  pushMsg(f,protectedHit?'🍱 便当生效！这一次抵御了 1 点伤害。':`受伤 -${amount}，可随时撤离保住收获。`);
@@ -3427,16 +3443,16 @@ function stepActionField(s,axisX,axisY,dt){
    if(e.kind==='chicken'){e.lungeFx=.22;if(dist(f.pos,e)<.95)hurt(s,1,'enemy')}
    else{
     const a=e.aim||f.pos,ang=Math.atan2(a.y-e.y,a.x-e.x);
-    const spreads=e.isBoss?[-.34,0,.34]:[0];
+    const spreads=e.isBoss?e.kind==='boss_spore'?[-.55,0,.55]:[-.27,0,.27]:[0];
     for(const spread of spreads){
-     const theta=ang+spread,speed=e.isBoss?2.55:2.8;
+     const theta=ang+spread,speed=e.kind==='boss_spore'?1.9:e.isBoss?3.1:2.8;
      f.projectiles.push({x:e.x,y:e.y,vx:Math.cos(theta)*speed,
-       vy:Math.sin(theta)*speed,life:3});
+       vy:Math.sin(theta)*speed,life:3,source:e.kind==='boss_spore'?'spore':'pepper'});
     }
    }
   }}
  }
- for(const p of f.projectiles){p.x+=p.vx*dt;p.y+=p.vy*dt;p.life-=dt;if(dist(f.pos,p)<.28){p.life=0;hurt(s,1,'pepper')}}f.projectiles=f.projectiles.filter(p=>p.life>0&&!blocked(f,p,0));
+ for(const p of f.projectiles){p.x+=p.vx*dt;p.y+=p.vy*dt;p.life-=dt;if(dist(f.pos,p)<.28){p.life=0;hurt(s,1,p.source||'pepper')}}f.projectiles=f.projectiles.filter(p=>p.life>0&&!blocked(f,p,0));
  advancePlayerProjectiles(s,dt);
  if(f.attackCd<=0){
   const isPot=f.weapon?.type==='POT',range=isPot?3.5:1.25;
@@ -4481,7 +4497,9 @@ function field(){
    <div class="target-scroller" role="group" aria-label="目标食材">${Object.entries(ING).filter(([id,ing])=>ing.acquisitionPolicy!=='BOSS_ONLY').map(([id,ing])=>`<button class="target-chip ${game.selectedTarget===id?'chosen':''}" data-target="${id}" aria-pressed="${game.selectedTarget===id}">${ing.emoji} ${ing.name}</button>`).join('')}</div>
    <div class="ux-field-label"><strong>探索区域</strong></div>
    <div class="region-tabs" role="group" aria-label="探索区域"><button data-region="forest" class="${selectedRegion==='forest'?'current':''}" aria-pressed="${selectedRegion==='forest'}">晨露森林</button><button data-region="spring" class="${selectedRegion==='spring'?'current':''}" aria-pressed="${selectedRegion==='spring'}">热泉峡谷</button></div>
-   <div class="ux-field-label"><strong>携带厨具</strong><span>升级也会影响探索</span></div>\n   <div class="v08-weapon-picks">${ensureKitchen(game).slots.map((slot,i)=>`<button class="v08-weapon-pick ${game.selectedWeaponSlot===i?'chosen':''}" data-weapon="${i}">${slot.type==='WOK'?'🛡️ 炒锅剑盾':'🧅 汤锅投弹'} · Lv${slot.level}<small>${i?'右':'左'}厨位</small></button>`).join('')}</div>\n   <div class="ux-field-label"><strong>路线</strong><span>点击出发</span></div>
+   <div class="ux-field-label"><strong>携带厨具</strong><span>升级也会影响探索</span></div>
+   <div class="v08-weapon-picks">${ensureKitchen(game).slots.map((slot,i)=>`<button class="v08-weapon-pick ${game.selectedWeaponSlot===i?'chosen':''}" data-weapon="${i}">${slot.type==='WOK'?'🛡️ 炒锅剑盾':'🧅 汤锅投弹'} · Lv${slot.level}<small>${i?'右':'左'}厨位</small></button>`).join('')}</div>
+   <div class="ux-field-label"><strong>路线</strong><span>点击出发</span></div>
    <div class="route-options">${activeRoutes.map(r=>`<button class="route-card ${/risk/.test(r.id)?'route-risk':'route-safe'}" data-route="${r.id}"><span class="route-emoji" aria-hidden="true">${r.emoji}</span><div><strong>${r.name}</strong><small>${r.subtitle}</small></div><span class="route-risk-label">${/risk/.test(r.id)?'高风险':'安全'}</span><b aria-hidden="true">›</b></button>`).join('')}</div>
   </div></div>`,
  `<div class="dock-head"><span>最多三段探索 · 可随时回店</span><span>背包 ${game.bagSlots||8} 格</span></div><div class="action-row">${b('bento','🍱 便当','secondary')}${b('skip-field','暂不探索 · 去研发','secondary wide')}</div>`]
