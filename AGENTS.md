@@ -1,3 +1,13 @@
+## v0.7.8 角色化闲聊、负面反馈、员工对白与日报标题修复（2026-10-12）
+
+- 权威交接：`docs/V0.7.8_CHARACTER_BANTER_AND_REPORT_FIX.md`。已落地 `src/diner_ambience_v077.js` 对四种真实客群（冒险者/家庭/街坊/评论家）按看菜单、点餐、制作、上菜、用餐、催单/愤怒离场、缺料与菜单不符分类的丰富短对白。文字来源 `order.id+segment+state` 的稳定选择；**不许每帧随机换句**。
+- `src/engine.js` 保存 `rejectReason`（食材不足/菜单不匹配）及真实 `missingIngredients`、`leftReason`（等待超时/做菜失败/营业结束）与 `carriedAt`，仅作表现证据，不改变真实顾客/交易规则。缺料说真实 ING.name，例如「火椒都没了？」；耐心快耗尽先催单再离场，不允许都演成菜单不合适。
+- **关键 renderer**：原本离场顾客处于 `a.walk===true` 而看不到气泡；`src/scenes_v04.js` 已允许 `left/rejected` 行走 NPC 附带短暂抱怨和不满动作。气泡锚定真实人物，同桌最多一条、全场最多两条，低优先级员工短对话让位给负面顾客/实际点评，无额外 HTML 弹窗、摇杆命中层或放大人物。
+- 阿火/小芽仅在真实员工雇佣、厨房工单/出餐/送菜及少量间歇对话时发言；同一时间最多一位员工讲话，防刷屏。
+- 日结 UI 标题 bug：`src/app.js` 报表标题由 DIV 改语义化 `<h2 class="report-header">`；`src/diner_polish_v078.css` 将 `.stage.report>.report-scene` 改为顶部起始、内部可滚、标题安全换行且无畸形盒子。修复后不要恢复 `justify-content:center/space-evenly` 导致矮屏标题被裁切。
+- **版本**：当前 v0.7.8。对齐游戏内、设置、浏览器 title、`package.json`、`index.html` Safari script 缓存键及 `standalone.html`，并在 `scripts/build-standalone.py` 持续包含新 report CSS。
+- 回归：`tests/v078_living_diner.test.js` 及旧 v075/v076/v077 tests；自动测试绿灯不替代 iPhone 真机关于气泡重叠、餐厅走位、日报长列表顶部显示的验收。
+
 ## v0.7.7 顾客对话与餐厅环境氛围（2026-10-12）
 
 - 权威交接：`docs/V0.7.7_LIVING_DINER_AMBIENCE.md`。用户确认 v0.7.6 移动经营方向变得更有趣，但希望恢复 v0.7.5 全 Canvas 重绘时丢失的顾客对话气泡。当前代码 **已经接回新餐厅渲染器**，旧版自动经营代码不动。
