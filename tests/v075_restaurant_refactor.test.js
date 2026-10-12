@@ -23,7 +23,7 @@ const order=(s,status='pickup',tableId=0)=>{
 };
 const dwell=(s,secs)=>{for(let t=0;t<secs;t+=.04)advanceWalkableInteraction(s,.04)};
 
-test('package, main website, and in-game visible brand agree on current release v0.7.7',()=>{
+test('package, main website, and in-game visible brand agree on current release v0.7.8',()=>{
  const pkg=JSON.parse(read('../package.json')),html=read('../index.html');
  assert.equal(pkg.version,'0.7.7');
  assert.match(html,/<title>怪味食堂 · Oddpot Kitchen v0\.7\.7<\/title>/);
