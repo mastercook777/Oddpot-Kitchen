@@ -11,9 +11,9 @@ export function startActionField(s){
  f.projectiles=[];f.playerProjectiles=[];f.attackFx=null;f.skillFx=0;f.hurtFx=0;f.popFx=[];f.facing={x:0,y:-1};f.moving=false;f.actionMessage='移动寻找食材。靠近目标会自动采集。';f.actionMessageTTL=4;
  const profile=f.biome||{},mix=profile.enemyMix||[f.region==='spring'?'pepper':'chicken'];
  const enemyPos=[{x:6.85,y:6.6},{x:2.1,y:3.3},{x:7.1,y:2.9},{x:1.8,y:6.3}];
- const count=Math.min(4,profile.enemyCount||(/risk/.test(f.route)?2:1));
+ const count=Math.min(4,Math.max(profile.enemyCount||1,/risk/.test(f.route)?2:1));
  f.enemies=Array.from({length:count},(_,i)=>{
-  const kind=mix[i%mix.length],p=enemyPos[(i+(profile.flipped?1:0))%enemyPos.length];
+  const kind=mix[i%mix.length],p=!/risk/.test(f.route)&&profile.style==='meadow'&&i===0?{x:7.2,y:4.8}:enemyPos[(i+(profile.flipped?1:0))%enemyPos.length];
   const hp=kind==='chicken'?3:2;
   return {id:kind+'-'+i+'-'+(f.segmentIndex||1),kind,x:p.x,y:p.y,hp,maxHp:hp,
    cooldown:1.7+i*.4,phase:i};
