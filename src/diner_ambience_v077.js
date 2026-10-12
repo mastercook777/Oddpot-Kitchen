@@ -6,11 +6,11 @@ import {RECIPES,ING} from './data.js?v=0.6.3';
 const clampSpeech=x=>Math.max(0,Math.min(1,x));
 const speechWhen=(t,start,duration)=>Number.isFinite(start)&&t>=start&&t<start+duration;
 const speechWaiting=new Set(['queued','cooking','pickup','carried','delivering']);
-// The four customer segments in CUSTOMERS have distinguishable, restrained voices.
+// Four fantastical guest factions: dwarves, mushroom kin, slime neighbors and ghost critics.
 // Choices use only order-id and cue name: save/load/RAF cannot re-roll dialogue.
 export const DINER_VOICES={
  adventurer:{
-  order:['来份硬菜，赶路呢！','有辣的吗？来一份！','这一餐得吃饱！'],
+  order:['矿洞干活累！来份喷火肉！','铁角头盔都闻香啦！','这餐比龙鳞还扎实吗？'],
   choose:['闻着香，先瞧菜单！','探险前得吃顿好的。','战利品不如美食香！'],
   kitchen:['锅里可真热闹！','这火候有冒险味！','香味比藏宝图靠谱！'],
   ready:['哇，开饭喽！','香气都飘到我这了！','这份闻着够劲！'],
@@ -22,7 +22,7 @@ export const DINER_VOICES={
   mismatch:['菜单里没硬菜啊…','竟然没有辣味料理？','先去别处吃饱吧。']
  },
  family:{
-  order:['给家人来份热乎的。','孩子想吃这道菜！','麻烦做得温和些呀。'],
+  order:['小蘑菇们想喝热汤。','孩子的菌帽都馋歪啦！','麻烦不要把我们煮了呀。'],
   choose:['看看有什么家常菜。','小朋友也想点菜呢。','今晚一起吃顿好的。'],
   kitchen:['孩子闻到香味啦。','炖得香香的真好。','厨房看起来好忙呀。'],
   ready:['闻着就很温暖！','热乎乎的，真好呀。','孩子都望向厨房了。'],
@@ -34,7 +34,7 @@ export const DINER_VOICES={
   mismatch:['没有适合孩子的菜。','想找些温和的菜呀。','菜单不太适合全家。']
  },
  regular:{
-  order:['今天就吃这道了！','老样子，来一份！','今天有什么好味道？'],
+  order:['咕噜！老板，还有菌锅舞吗？','史莱姆也能吃辣吗？','闻着香就弹进来啦！'],
   choose:['街坊邻居又来捧场。','今儿菜单有新花样？','闻着香就进来了。'],
   kitchen:['老板今天手挺忙呀。','听着锅声就有食欲。','熟悉的香味回来了！'],
   ready:['这味儿我熟！','菜快好了吧，嘿嘿。','嘿，还是这股香！'],
@@ -46,7 +46,7 @@ export const DINER_VOICES={
   mismatch:['今天没我爱吃的呀。','想念那道招牌菜了。','菜单换得有点突然。']
  },
  critic:{
-  order:['让我看看这道的火候。','这菜，值得一试。','期待工艺上的巧思。'],
+  order:['生前没吃到过这样的菜。','这股香气竟穿透灵界。','让我品鉴怪味的真正奥义。'],
   choose:['今晚来做一次测评。','菜单搭配值得研究。','先观察一下出餐效率。'],
   kitchen:['锅气处理值得一看。','节奏，也是厨艺的一环。','这火候有些看头。'],
   ready:['香气层次出来了。','闻起来值得期待。','收汁倒是很有章法。'],
