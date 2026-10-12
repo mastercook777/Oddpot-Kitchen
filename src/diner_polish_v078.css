@@ -43,3 +43,8 @@
  .stage.report .report-stats{gap:6px}
  .stage.report .report-stats>div{min-height:51px;padding:7px 5px}
 }
+
+
+/* v0.9: persistent diner growth is reported separately from the daily margin. */
+.v09-growth-report{border:1px solid #d2b17d;border-radius:10px;background:#203d30;padding:9px;display:flex;flex-direction:column;gap:5px;font-size:11px;line-height:1.35;color:#f2e4bf}
+.v09-growth-report b{color:#ffe09f;font-size:12px}
