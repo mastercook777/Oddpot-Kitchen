@@ -15,8 +15,8 @@ test('floating joystick starts from any touch point, deadzone and clamped magnit
 test('auto-attack creates visible swing and enemy hit reaction; effects expire',()=>{
  const s=explore(),f=s.field;
  const enemy=f.enemies[0];enemy.x=f.pos.x+.6;enemy.y=f.pos.y;enemy.cooldown=9;
- stepActionField(s,0,0,.03);
- assert.equal(enemy.hp,2);assert.ok(f.attackFx?.ttl>0);assert.ok(enemy.hurtFx>0);assert.ok(f.popFx.length);
+ const initial=enemy.hp;stepActionField(s,0,0,.03);
+ assert.equal(enemy.hp,initial-1);assert.ok(f.attackFx?.ttl>0);assert.ok(enemy.hurtFx>0);assert.ok(f.popFx.length);
  for(let i=0;i<12;i++)stepActionField(s,0,0,.03);
  assert.equal(f.attackFx,null);
 });
