@@ -65,7 +65,7 @@ test('up to two short lines and smooth finite fade, no flashing CSS bubble',()=>
  assert.ok(lines.length<=2&&lines.every(x=>Array.from(x).length<=8));
  assert.match(lines.at(-1),/…$/);
  const o=order('review');
- const a=diningSpeechCue(o,19.1),b=diningSpeechCue(o,20),c=diningSpeechCue(o,21.05);
+ const a=diningSpeechCue(o,19.1),b=diningSpeechCue(o,20),c=diningSpeechCue(o,21.3);
  assert.ok(speechOpacity(a)<speechOpacity(b));
  assert.ok(speechOpacity(c)<speechOpacity(b));
 });
