@@ -34,7 +34,7 @@ export function liveIngredientState(drop,t,actions,vessel){
  if(ratio<.65)return '偏生';
  if(ratio<1)return '受热中';
  if((ratio>3.4&&['beef','chicken','potato'].includes(drop.id))||
-    age>(['garlic','chili','onion','ember_pepper'].includes(drop.id)?14:16))return '焦糊';
+    age>(drop.id==='ember_pepper'&&vessel==='POT'?19:['garlic','chili','onion','ember_pepper'].includes(drop.id)?14:16))return '焦糊';
  return '熟透';
 }
 export function readCookFacts(ids,vessel,drops,actions,t){
