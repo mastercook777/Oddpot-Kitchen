@@ -8,7 +8,7 @@ const clone=x=>structuredClone(x);
 export const clamp=(n,a,b)=>Math.min(b,Math.max(a,n));
 export function rand(seed){return (Math.imul(1664525,seed>>>0)+1013904223)>>>0}
 export function uniqueAdd(ledger,id,type,extra={}){if(ledger.some(x=>x.id===id))return false;ledger.push({id,type,...extra});return true}
-export function newGame(seed=20261009){return {version:4,seed,cycle:1,day:1,phase:'forecast',coins:120,reputation:0,inventory:{...DEFAULT_INVENTORY},recipes:{chicken_stew:76,mushroom_stir:76,veg_stir:72},learned:{},recipeVariants:{},activeVariantIds:{},tech:false,upgrade:false,crew:{helper:{hired:false,station:0,meals:0,feed:null},waiter:{hired:false,meals:0,feed:null}},staffFoodCost:0,kitchen:{slots:[{type:'WOK',level:1},{type:'POT',level:1}],refitDay:null,freeRefitUsed:false,extraRefits:0},bagSlots:8,selectedWeaponSlot:0,bento:null,selectedTarget:'chili',route:null,field:null,cook:null,menu:['chicken_stew','mushroom_stir','veg_stir'],prep:{},prepVariants:{},prepCost:0,manualCost:0,service:null,report:null,lastCook:null,researchReceipt:false,ledger:[],logs:[],result:null,step:0};}
+export function newGame(seed=20261009){return {version:4,seed,cycle:1,day:1,phase:'forecast',coins:120,reputation:0,inventory:{...DEFAULT_INVENTORY},recipes:{chicken_stew:76,mushroom_stir:76,veg_stir:72},learned:{},recipeVariants:{},activeVariantIds:{},tech:false,upgrade:false,crew:{helper:{hired:false,station:0,meals:0,feed:null},waiter:{hired:false,meals:0,feed:null}},staffFoodCost:0,kitchen:{slots:[{type:'WOK',level:1},{type:'POT',level:1}],refitDay:null,freeRefitUsed:false,extraRefits:0},bagSlots:8,_bagMigrated:true,_v08Save:true,selectedWeaponSlot:0,bento:null,selectedTarget:'chili',route:null,field:null,cook:null,menu:['chicken_stew','mushroom_stir','veg_stir'],prep:{},prepVariants:{},prepCost:0,manualCost:0,service:null,report:null,lastCook:null,researchReceipt:false,ledger:[],logs:[],result:null,step:0};}
 // Kitchen station IDs remain WOK/POT for compatibility with 0.4 saves,
 // but now denote PHYSICAL positions (left/right), not stove types.
 export const KITCHEN_POSITIONS=['WOK','POT'];
@@ -286,9 +286,7 @@ export function chooseFieldBranch(s,choiceId){
 }
 export function bagCount(bag){return Object.values(bag).reduce((a,n)=>a+n,0)}
 export function collectNode(s,choice='collect'){const f=s.field;if(!f||f.finished||f.node>=f.sequence.length)return {ok:false,message:'探索已结束'};const n=f.sequence[f.node];if(choice==='skip'){f.node++;return {ok:true,message:'绕过当前节点'};}if(n.type==='danger'){const hit=rand(s.seed+s.cycle*100+s.day*10+f.node)%3===0?2:1;f.hp-=hit;if(f.hp<=0){f.finished=true;return settleField(s,'faint')} }
-if(f.bag[n.id]>=3)return {ok:false,message:'单格堆叠已满，先撤离'};
-if(Object.keys(f.bag).length>=(f.capacity||6)&&!f.bag[n.id])return {ok:false,message:'背包六格已满，先撤离'};
-const gain=Math.min(n.n,3-(f.bag[n.id]||0));f.bag[n.id]=(f.bag[n.id]||0)+gain;f.node++;if(f.node>=f.sequence.length)f.finished=true;return {ok:true,message:`收获 ${ING[n.id].name} ×${gain}${n.type==='danger'?' · 遭遇受伤':''}`};}
+const gain=addFieldBag(f,n.id,n.n);if(!gain)return {ok:false,message:'野外背包已满，先整理或撤离'};f.node++;if(f.node>=f.sequence.length)f.finished=true;return {ok:true,message:`收获 ${ING[n.id].name} ×${gain}${n.type==='danger'?' · 遭遇受伤':''}`};}
 export function discardFieldStack(s,id){
  const f=s.field;if(s.phase!=='field'||!f||f.settled||f.finished)return false;
  const parts=String(id).split('-'),ingredient=ING[id]?id:parts.slice(0,-1).join('-');
