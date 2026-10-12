@@ -250,7 +250,8 @@ export function stepActionField(s,axisX,axisY,dt){
   }
   if(e.warning>0){e.warning-=dt;if(e.warning<=0){
    if(melee){
-    const original={x:e.x,y:e.y},aim=e.aim||{...f.pos};
+    e.aim??={...f.pos};e.attackOrigin??={x:e.x,y:e.y};
+    const original={x:e.x,y:e.y},aim=e.aim;
     const dirX=aim.x-(e.attackOrigin?.x??original.x),dirY=aim.y-(e.attackOrigin?.y??original.y);
     const n=Math.hypot(dirX,dirY)||1;
     // Small readable forward strike; obstacles still apply.
