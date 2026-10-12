@@ -26,9 +26,9 @@ export const RECIPES = {
 };
 export const CUSTOMERS={adventurer:{name:'铁甲矮人',emoji:'⛏️',likes:['辣','肉','饱腹'],budget:40,patience:24},family:{name:'菌帽一家',emoji:'🍄',likes:['温和','菌香','甜香'],budget:28,patience:32},regular:{name:'史莱姆街坊',emoji:'🟢',likes:['清爽','菌香','鲜'],budget:26,patience:27},critic:{name:'幽灵鉴味师',emoji:'👻',likes:['辣','香','爆香'],budget:50,patience:26}};
 export const FORECAST=[
-  {name:'菌帽家族的晚餐',hint:'家庭食客爱温和菜，菌香与炖煮受欢迎',segments:['family','regular','family','adventurer','regular','family','critic']},
-  {name:'矮人探险团集会',hint:'冒险者涌入小镇，辛辣肉食和饱腹菜热卖',segments:['adventurer','family','adventurer','adventurer','regular','adventurer','critic']},
-  {name:'爆炎厨王的怪味试炼',hint:'最后一桌是评委！辛辣或爆香的高品质料理更出彩',segments:['adventurer','family','adventurer','adventurer','regular','adventurer','critic']}
+  {name:'菌帽家族的晚餐',hint:'菌帽一家偏爱暖汤与菌香，温和料理更受欢迎',segments:['family','regular','family','adventurer','regular','family','critic']},
+  {name:'矮人探险团集会',hint:'矿井收工的矮人偏爱辛辣肉食，饱腹料理热卖',segments:['adventurer','family','adventurer','adventurer','regular','adventurer','critic']},
+  {name:'爆炎厨王的怪味试炼',hint:'今晚会有幽灵鉴味师登门；他尤其在意爆香工艺',segments:['adventurer','family','adventurer','adventurer','regular','adventurer','critic']}
 ];
 // v0.8: sources are authoritative for both warehouse controls and domain purchases.
 for(const [id,ing] of Object.entries(ING))ing.acquisitionPolicy=
