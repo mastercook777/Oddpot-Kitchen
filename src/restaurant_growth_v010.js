@@ -50,7 +50,7 @@ export function buildGrowthGuestPlan(s,originalGuests,seed,day,challenge=false){
    regulars[t.id].lastVisitDay<day);
  const returning=known.find((t,i)=>seededRoll(seed,day*97+i*701+t.id.length)<GROWTH_TEST_VALUES.returnChance);
  const sign=null;
- const fresh=REGULAR_GUEST_TEMPLATES.find(t=>!regulars[t.id]&&guests.includes(t.segment));
+ const fresh=g.hiddenMenuRecipeId?REGULAR_GUEST_TEMPLATES.find(t=>!regulars[t.id]&&guests.includes(t.segment)):null;
  const target=returning||fresh;
  if(target){
   const index=guests.findIndex((segment,i)=>segment===target.segment&&!(challenge&&i===guests.length-1));
