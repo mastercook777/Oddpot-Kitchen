@@ -45,6 +45,12 @@
 - 已实现的智能库存检查**只是需求估计**，不能宣称预测了真实具体顾客的菜品选择。
 - 现有 3 日 `cycle/day` 用于存档兼容，UI 显示累积营业天数；后续系统应兼容该机制，不随意重置玩家已运营多天的餐馆。
 
+## 独立开发分支进行中：v0.10-A（不是 main 当前功能）
+
+2026-10-13 建立 `feat/v010-signature-regulars`，草稿 [PR #28](https://github.com/mastercook777/Oddpot-Kitchen/pull/28)。实现方案：`src/restaurant_growth_v010.js` 承担纯客源/关系规则；`src/engine.js` 延伸真实 `serviceDayPlan/createService/review/closeService`；`src/app.js` 在现有菜单及日报展示；`src/restaurant_growth_v010.css` 小屏样式；`tests/v010_signature_regulars.test.js` 测试；`scripts/build-standalone.py` 保持离线包更新。
+
+分支 `package.json` 使用 `0.10.0-rc.1`；保留 `version:4` 和 `oddpot-prototype-v04`，存档仅新增 `restaurantGrowth`，读旧档空初始化。原稿 v0.10 的招牌数量、回访概率和推荐阈值均属于**原型测试假设**，不是正式调优结论。需要完成 CI 与 iPhone Safari 真实体验后才能合并并更新 main 当前权威版本。不得因为 PR 存在就宣称线上版本已经有熟客玩法。
+
 ## 尚未实装（必须先设计，不能在对外介绍中声称已支持）
 
 **招牌菜的长期口碑与推广、具名持久熟客、真实推荐传播、VIP 预约/独立隐藏菜单、神秘商人专供与供应链合作、第三个实际工作厨位、更大规模经营团队、宴席活动。**
