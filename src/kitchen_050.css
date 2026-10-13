@@ -117,3 +117,7 @@
  .v010-premium-actions button{min-width:80px;padding:6px}
  .v010-prep-premium{font-size:10px}
 }
+
+.v010-regular-report,.v010-premium-report{margin:7px 0;padding:8px 10px;border:1px solid #bfad81;border-radius:8px;background:#ead9b7;color:#4b3925;font-size:12px;line-height:1.45}
+.v010-premium-report{display:flex;flex-direction:column;gap:3px}
+.v010-premium-report span{color:#58452d;font-size:11px}
