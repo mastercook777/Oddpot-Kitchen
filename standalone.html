@@ -5279,12 +5279,12 @@ function herbPaintGrass(ctx,variant=0){
  herbPaintRect(ctx,0,0,16,16,PH.grass);
  // Six or fewer CLUSTERED marks per tile, down from 18 ungrouped specks.
  // Variant zero is nearly calm; remaining patches use two-pixel group shapes.
- const groups=[[[3,4],[11,11]],[[2,10],[10,4],[12,12]],[[5,5],[10,11],[2,14]],[[2,2],[8,7],[12,13],[5,12]]][variant]||[];
+ const groups=[[[11,10]],[[2,10],[10,4]],[[5,5],[10,11]],[[2,2],[10,12],[6,8]]][variant]||[];
  for(const [i,[x,y]] of groups.entries()){
   const shade=i===0?PH.deep:i%2?PH.grassLight:PH.leaf;
   herbPaintRect(ctx,x,y,i%3===0?3:2,i%2===0?2:1,shade);
  }
- if(variant===3)herbPaintRect(ctx,9,7,2,1,PH.sun);
+ if(variant===3)herbPaintRect(ctx,7,8,2,1,PH.sun);
 }
 function herbPaintTrail(ctx,mask,variant){
  herbPaintGrass(ctx,variant);
