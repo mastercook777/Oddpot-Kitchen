@@ -42,7 +42,7 @@ test('one main button and three small shortcuts retain real action handlers',()=
   assert.equal((screen.match(new RegExp('data-act="'+action+'"','g'))||[]).length,1);
  }
  assert.match(app,/if\(act==='to-field'\)\{nextPhase\(game,'field'\)/);
- assert.match(app,/if\(act==='stock'\|\|act==='book'\|\|act==='settings'/);
+ assert.match(app,/if\(act==='stock'\|\|act==='premium'\|\|act==='book'\|\|act==='settings'/);
  const s=newGame();
  assert.equal(s.phase,'forecast');
  assert.ok(serviceDayPlan(s).goal.label.length>0);
