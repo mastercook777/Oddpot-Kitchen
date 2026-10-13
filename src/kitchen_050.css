@@ -85,3 +85,35 @@
  .v095-stock-action{min-height:34px}
  .v095-stock-copy{gap:1px}
 }
+
+
+/* v0.10: one low-priority invitation underneath the familiar three menu rows. */
+.v010-premium-entry{display:flex;align-items:center;gap:8px;width:100%;margin:8px 0;
+ padding:9px 10px;border:1px dashed #d6aa73;border-radius:9px;
+ background:#493e30;color:#ffebc6;text-align:left;font-size:12px}
+.v010-premium-entry>span:first-child{white-space:nowrap;font-weight:800}
+.v010-premium-entry strong{flex:1;min-width:0;overflow:hidden;white-space:nowrap;text-overflow:ellipsis;font-weight:650}
+.v010-premium-entry>span:last-child{font-size:18px}
+.v010-premium-options{display:flex;flex-direction:column;gap:8px}
+.v010-premium-option{border-bottom:1px solid #c0a376;padding:9px 3px;display:flex;flex-direction:column;gap:8px}
+.v010-premium-meta{display:flex;align-items:center;gap:9px;min-width:0;color:#493621}
+.v010-premium-meta>span{font-size:25px;flex:0 0 auto}
+.v010-premium-meta>div{display:flex;flex-direction:column;gap:3px;min-width:0}
+.v010-premium-meta strong{font-size:14px;line-height:1.3}
+.v010-premium-meta small{color:#59462f;font-size:11px;line-height:1.5}
+.v010-premium-actions{display:flex;gap:8px;justify-content:flex-end}
+.v010-premium-actions button,.v010-premium-selected button{min-height:39px;min-width:92px;border:1px solid #a7ac7b;
+ border-radius:8px;background:#3e6a53;color:#fff4db;font-size:12px;font-weight:850}
+.v010-premium-actions button:disabled{opacity:.45}
+.v010-premium-selected{display:flex;align-items:start;flex-direction:column;gap:4px;
+ padding:10px;background:#e7d2a7;border:1px solid #b79962;border-radius:9px;
+ color:#493621;margin-bottom:9px}
+.v010-premium-selected small{color:#59462f;font-size:12px}
+.v010-premium-selected button{align-self:flex-end;min-height:32px;background:#6d5947}
+.v010-prep-premium{font-size:11px;line-height:1.35;color:#ffe8b5; background:#415443;
+ padding:6px 9px;border-radius:7px;max-width:100%;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+@media(max-width:350px){
+ .v010-premium-entry{padding:7px;font-size:11px}
+ .v010-premium-actions button{min-width:80px;padding:6px}
+ .v010-prep-premium{font-size:10px}
+}
