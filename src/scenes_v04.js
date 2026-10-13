@@ -2,6 +2,7 @@ import {fieldWokPose,fieldPotPose} from './field_pose_v083.js?v=0.8.5';
 import {hazardPhase,fieldTilePath} from './field_rules_v011a.js';
 import {fieldCamera} from './field_camera_v011b1.js';
 import {drawExpandedLandscape,drawExpandedObstacle} from './field_world_render_v011b1.js';
+import {isHerbPixelSlice,drawHerbPixelGround,drawHerbPixelObstacle,drawHerbPixelNode,drawHerbPixelHazard} from './field_pixel_herb_v011c.js';
 import {meleeProfile,meleeWindupProgress} from './field_combat_feedback_v084.js?v=0.8.4';
 import {pixelActor,pixelEnemy,pixelImpact} from './pixels_v041.js?v=0.9.0';
 // Lightweight procedural game graphics: original Canvas shapes, no art pack.
@@ -197,16 +198,18 @@ export function drawField(canvas,s,clock){const size=setCanvas(canvas);if(!size|
  const shake=(f.hitShake||0)/.24,shakeX=shake?Math.sin(f.elapsed*151)*4*shake:0;
  const shakeY=shake?Math.cos(f.elapsed*117)*2.4*shake:0;
  c.save();c.translate(left+shakeX,top+shakeY);c.scale(sc,sc);
- if(camera.expanded)drawExpandedLandscape(c,f,clock);else drawBiomeLandscape(c,f,clock);
+ const herbPixelArt=isHerbPixelSlice(f);
+ if(herbPixelArt)drawHerbPixelGround(c,f);else if(camera.expanded)drawExpandedLandscape(c,f,clock);else drawBiomeLandscape(c,f,clock);
  // This faint route follows the REAL passable cells; artwork never fakes a blocked path.
  const goal=f.nodes.find(n=>n.key==='target'&&!n.claimed);
- if(goal){const trail=fieldTilePath(f,f.spawn||f.pos,goal,{avoidHazards:true});
+ if(goal&&!herbPixelArt){const trail=fieldTilePath(f,f.spawn||f.pos,goal,{avoidHazards:true});
   if(trail.length>1){c.save();c.beginPath();c.moveTo(trail[0].x,trail[0].y);
    for(const pt of trail.slice(1))c.lineTo(pt.x,pt.y);
    c.strokeStyle='#f2e6b082';c.lineWidth=.11;c.setLineDash([.12,.23]);c.stroke();c.restore();}}
 
  if(f.hazards?.length)for(const hz of f.hazards){
    const p=hazardPhase(hz,f.elapsed,f.biome),x=hz.x+.5,y=hz.y+.5;
+   if(herbPixelArt){drawHerbPixelHazard(c,hz,p,clock);continue;}
    const roots=f.biome?.style==='roots',ember=f.biome?.style==='ember';
    c.save();c.translate(x,y);
    // Jagged fracture: dangerous even at rest, unlike raised edible pickup sprites.
@@ -228,7 +231,7 @@ export function drawField(canvas,s,clock){const size=setCanvas(canvas);if(!size|
    }
    c.restore();
   }
-  for(const o of f.obstacles){if(camera.expanded){drawExpandedObstacle(c,o,f.biome?.style,clock);continue;}c.save();c.translate(o.x+.5,o.y+.5);c.scale(1/sc,1/sc);if(f.biome?.style==='glow'){
+  for(const [i,o] of f.obstacles.entries()){if(herbPixelArt){drawHerbPixelObstacle(c,o,i);continue;}if(camera.expanded){drawExpandedObstacle(c,o,f.biome?.style,clock);continue;}c.save();c.translate(o.x+.5,o.y+.5);c.scale(1/sc,1/sc);if(f.biome?.style==='glow'){
   circle(c,0,4,14,'#263d48');circle(c,0,-6,17,'#6ebaaa');circle(c,-7,-9,8,'#c5e8d1');
  }else if(f.biome?.style==='roots'){
   circle(c,0,5,17,'#242430');circle(c,0,-5,19,'#75505f');
@@ -239,6 +242,7 @@ export function drawField(canvas,s,clock){const size=setCanvas(canvas);if(!size|
  }else if(springs){circle(c,0,3,15,'#8c5940');circle(c,-5,-4,14,'#625d59');circle(c,5,-6,9,'#817875');rect(c,-4,-18,8,3,'#be9a78')}
  else tree(c,0,0);c.restore()}
  for(const n of f.nodes){if(n.claimed)continue;
+   if(herbPixelArt){drawHerbPixelNode(c,n,clock);continue;}
    if(n.type==='event'){
     // Small traveling cook with a pack: clearly an NPC, not a glowing dot.
     c.save();c.translate(n.x,n.y);c.scale(1/sc,1/sc);
