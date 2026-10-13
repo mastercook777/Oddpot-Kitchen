@@ -94,7 +94,7 @@ test('mobile UI grades each chronological step and updates heat without changing
  assert.match(app,/v103-heat-status/);
  assert.match(app,/data-heat-fill/);
  assert.match(app,/liveHeatSummary\(indicators\)/);
- assert.match(app,/data-act="live-finish"/);
+ assert.match(app,/b\('live-finish'/);
  assert.match(css,/\.v103-recap-step\.warning/);
  assert.match(css,/\.v103-recap-step\.bad/);
  assert.match(css,/\.v103-heat-meter/);
