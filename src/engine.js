@@ -3,14 +3,14 @@ import {LIVE_ACTIONS,evaluateLiveCook,liveIngredientState,legacyVariant,makeLive
 import {RECIPE_PROFILES} from './recipe_profiles_v063.js?v=0.8.0';
 import {generateBiomeMap} from './field_biomes_v081.js?v=0.8.2';
 import {newServiceHero,heroZone} from './walkable_restaurant_v07.js?v=0.9.2';
-import {ensureRestaurantGrowth,buildGrowthGuestPlan,markPlannedReferralsUsed,applyRealRegularReview,summarizeGrowthService} from './restaurant_growth_v010.js?v=0.10.0';
+import {ensureRestaurantGrowth,buildGrowthGuestPlan,markPlannedReferralsUsed,applyRealRegularReview,summarizeGrowthService,isRareRecipe,eligibleForHidden,hiddenRemaining,markHiddenSold} from './restaurant_growth_v010.js?v=0.10.0';
 export const PHASES=['forecast','field','research','menu','prep','service','report','upgrade'];
 export const SAVE_KEY='oddpot-prototype-v04'; // v0.2 兼容先前试玩存档
 const clone=x=>structuredClone(x);
 export const clamp=(n,a,b)=>Math.min(b,Math.max(a,n));
 export function rand(seed){return (Math.imul(1664525,seed>>>0)+1013904223)>>>0}
 export function uniqueAdd(ledger,id,type,extra={}){if(ledger.some(x=>x.id===id))return false;ledger.push({id,type,...extra});return true}
-export function newGame(seed=20261009){return {version:4,seed,cycle:1,day:1,dining:{tableCount:2},history:[],market:null,restaurantGrowth:{signatureRecipeId:null,regulars:{},referrals:[]},phase:'forecast',coins:120,reputation:0,inventory:{...DEFAULT_INVENTORY},recipes:{chicken_stew:76,mushroom_stir:76,veg_stir:72},learned:{},recipeVariants:{},activeVariantIds:{},tech:false,upgrade:false,crew:{helper:{hired:false,station:0,meals:0,feed:null},waiter:{hired:false,meals:0,feed:null}},staffFoodCost:0,kitchen:{slots:[{type:'WOK',level:1},{type:'POT',level:1}],refitDay:null,freeRefitUsed:false,extraRefits:0},bagSlots:8,_bagMigrated:true,_v08Save:true,selectedWeaponSlot:0,bento:null,selectedTarget:'chili',route:null,field:null,cook:null,menu:['chicken_stew','mushroom_stir','veg_stir'],prep:{},prepVariants:{},prepCost:0,manualCost:0,service:null,report:null,lastCook:null,researchReceipt:false,ledger:[],logs:[],result:null,step:0};}
+export function newGame(seed=20261009){return {version:4,seed,cycle:1,day:1,dining:{tableCount:2},history:[],market:null,restaurantGrowth:{hiddenMenuRecipeId:null,regulars:{},referrals:[],hiddenSoldDay:-1,hiddenSoldCount:0},phase:'forecast',coins:120,reputation:0,inventory:{...DEFAULT_INVENTORY},recipes:{chicken_stew:76,mushroom_stir:76,veg_stir:72},learned:{},recipeVariants:{},activeVariantIds:{},tech:false,upgrade:false,crew:{helper:{hired:false,station:0,meals:0,feed:null},waiter:{hired:false,meals:0,feed:null}},staffFoodCost:0,kitchen:{slots:[{type:'WOK',level:1},{type:'POT',level:1}],refitDay:null,freeRefitUsed:false,extraRefits:0},bagSlots:8,_bagMigrated:true,_v08Save:true,selectedWeaponSlot:0,bento:null,selectedTarget:'chili',route:null,field:null,cook:null,menu:['chicken_stew','mushroom_stir','veg_stir'],prep:{},prepVariants:{},prepCost:0,manualCost:0,service:null,report:null,lastCook:null,researchReceipt:false,ledger:[],logs:[],result:null,step:0};}
 // Kitchen station IDs remain WOK/POT for compatibility with 0.4 saves,
 // but now denote PHYSICAL positions (left/right), not stove types.
 // Room size and market stock are persistent economic state, not scene-only buffs.
@@ -456,10 +456,12 @@ export function selectArrivalDish(s,o){
  // Only select food when the customer reaches the door: changing a menu at
  // intermission affects future orders, never rewrites an already seated order.
  const syn=synergyFor(s.menu),options=s.menu.filter(id=>s.recipes[id]&&RECIPES[id]).map(id=>{const craft=recipeCraftSnapshot(s,id);return {id,craft,score:customerFit(RECIPES[id],o.segment,syn,craft),price:craft.price}}).sort((a,b)=>b.score-a.score||a.price-b.price);
+ const hiddenId=s.service?.hiddenMenuRecipeId;
+ const hidden=hiddenId&&isRareRecipe(hiddenId)&&eligibleForHidden(o,s.restaurantGrowth)&&hiddenRemaining(s,totalBusinessDay(s))>0&&s.recipes[hiddenId]&&canUse(s,recipeCraftSnapshot(s,hiddenId).ingredientIds)?(()=>{const craft=recipeCraftSnapshot(s,hiddenId);return {id:hiddenId,craft,score:Math.max(55,customerFit(RECIPES[hiddenId],o.segment,syn,craft)),price:craft.price};})():null;
  const themed=firstChallenge(s)&&o.id===(s.service?.judgeOrderId||s.service?.orders?.[6]?.id)?options.filter(x=>RECIPES[x.id].tags.some(t=>['辣','爆香'].includes(t))):[];
  const preferred=o.visitor?.favoriteRecipeId;
  const known=preferred?options.find(x=>x.id===preferred&&x.score>=45):null;
- const best=themed[0]||known||options[0];o.recipeId=best?.id||null;o.fit=best?.score||0;o.craft=best?.craft?clone(best.craft):null;
+ const best=hidden||themed[0]||known||options[0];o.recipeId=best?.id||null;o.fit=best?.score||0;o.craft=best?.craft?clone(best.craft):null;
  return best;
 }
 // v0.5C: seeded nightly scenarios. Save/restore does not reroll guests or goals.
@@ -551,7 +553,7 @@ export function createService(s,options={}){if(s.phase!=='service'||s.service||!
  }
  const planEvents={1:SERVICE_EVENT_POOL[1][(plan.seed>>>2)%SERVICE_EVENT_POOL[1].length],
                    2:SERVICE_EVENT_POOL[2][(plan.seed>>>4)%SERVICE_EVENT_POOL[2].length]};
- s.service={orders,time:0,scenario:plan.pressure,scenarioSeed:plan.seed,signatureRecipeId:s.restaurantGrowth?.signatureRecipeId||null,goal:clone(plan.goal),eventPlan:planEvents,
+ s.service={orders,time:0,scenario:plan.pressure,scenarioSeed:plan.seed,hiddenMenuRecipeId:s.restaurantGrowth?.hiddenMenuRecipeId||null,goal:clone(plan.goal),eventPlan:planEvents,
   judgeOrderId:firstChallenge(s)?orders.at(-1)?.id:null,
   crew:clone(crewEffects(s)),staffStats:{helperSeconds:0,helperOrders:0,waiterBonus:0,waiterOrders:0,waiterSaved:0},
   stations:{WOK:null,POT:null},kitchenSnapshot:clone(ensureKitchen(s).slots),stationStats:{WOK:{count:0,secondsSaved:0},POT:{count:0,secondsSaved:0}},
@@ -773,7 +775,7 @@ function advanceGuestMeals(s){
   if(o.status==='flying'&&v.time-o.flightAt>=DINER_TIMING.flight){
    o.status='eating';o.landedAt=v.time;o.served=v.time;
    const price=o.craft?.price??RECIPES[o.recipeId]?.price??0;
-   if(transact(s,`sale-${o.id}`,'sale',{},price))v.income+=price;
+   if(transact(s,`sale-${o.id}`,'sale',{},price)){v.income+=price;if(o.recipeId===v.hiddenMenuRecipeId)markHiddenSold(s,totalBusinessDay(s));}
    record(s,{type:'landed',order:o.id,recipeId:o.recipeId});
   }
   if(o.status==='eating'&&v.time-o.landedAt>=DINER_TIMING.eat){
@@ -858,6 +860,7 @@ if((s.prep[o.recipeId]||0)>0&&(match>=0||!prepared.length)){
  finishOrder(s,o,o.craft?.quality||s.recipes[o.recipeId]);continue;
 }
 const materialIds=o.craft?.ingredientIds||r.ids;
+if(o.recipeId===v.hiddenMenuRecipeId&&hiddenRemaining(s,totalBusinessDay(s))<=0){o.status='rejected';o.rejectReason='隐藏料理售罄';o.leftAt=v.time;record(s,{type:'rejected',order:id,reason:'隐藏料理售罄'});continue;}
 if(!canUse(s,materialIds)){o.status='rejected';o.rejectReason='食材不足';o.leftAt=v.time;const shortage=materialIds.filter(x=>(s.inventory[x]||0)<materialIds.filter(y=>y===x).length);o.missingIngredients=[...new Set(shortage)];record(s,{type:'rejected',order:id,reason:'食材不足',recipeId:o.recipeId,missing:o.missingIngredients});continue;}
 consume(s,materialIds,`service-cook-${id}`);v.cost+=materialCost(materialIds);o.status='cooking';o.started=v.time;v.stations[st]={orderId:id,left:stationDuration(s,st,r,v,o),quality:o.craft?.quality||s.recipes[o.recipeId]||72};v.stationStats[st].count++;v.stationStats[st].secondsSaved+=Math.max(0,r.time-v.stations[st].left);const helper=v.crew?.helper;if(helper?.hired&&helper.station===(st==='WOK'?0:1)){const withoutHelper=Math.max(1,r.time+(o.craft?.timeDelta||0)-(ensureKitchen(s).slots[st==='WOK'?0:1].level-1)*2-(v.eventEffects?.[r.station]||0));v.staffStats.helperSeconds+=withoutHelper-v.stations[st].left;v.staffStats.helperOrders++;}record(s,{type:'started',order:id,station:st,cookType:r.station,level:ensureKitchen(s).slots[st==='WOK'?0:1].level});}
 if(v.orders.every(o=>['served','left','rejected'].includes(o.status))&&Object.values(v.stations).every(x=>!x)&&v.time>=44){v.done=true;break}if(v.time>=100){for(const o of v.orders)if(!['served','left','rejected'].includes(o.status)){o.status='left';o.leftReason='营业结束';o.leftAt=v.time;record(s,{type:'left',order:o.id,reason:'营业结束'})}v.done=true;break}
