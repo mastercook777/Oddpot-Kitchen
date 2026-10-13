@@ -10,7 +10,7 @@ const scenario=(kind='boar',weapon=1)=>{
  nextPhase(s,'field');s.selectedWeaponSlot=weapon;
  assert.equal(enterField(s,'risk'),true);
  assert.equal(startActionField(s),true);
- const f=s.field;f.enemies=[];f.hazards=[];
+ const f=s.field;f.enemies=[];f.hazards=[];f.obstacles=[];
  f.pos={x:4.5,y:5};f.x=4.5;f.y=5;f.attackCd=120;
  const e={id:'test-'+kind,kind,x:4.5,y:4.12,hp:8,maxHp:8,cooldown:0,warning:0,phase:0};
  f.enemies.push(e);return {s,f,e};
