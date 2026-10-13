@@ -11,7 +11,7 @@ const index=source('../index.html'),pkg=JSON.parse(source('../package.json'));
 test('the internal, browser, offline and package versions all target v0.10.4',()=>{
  assert.equal(pkg.version,'0.10.4');
  assert.match(index,/<title>怪味食堂 · Oddpot Kitchen v0\.10\.4<\/title>/);
- assert.match(index,/src\/app\.js\?v=0\.10\.4-research/);
+ assert.match(index,/src\/app\.js\?v=0\.10\.4-guests/);
  assert.match(index,/forecast_home_v076\.css\?v=0\.9\.3/);
  assert.match(app,/ODDPOT · v0\.10\.4/);
  assert.match(app,/版本 v0\.10\.4/);
