@@ -20,6 +20,7 @@ export const DINER_FLOOR={
  expandedTableWork:[{x:.385,y:.752},{x:.615,y:.752},{x:.385,y:.562}],
  entrance:{x:.50,y:.930},
  waitLane:{x:.50,y:.620},
+ doorwayView:{left:.185,right:.815,top:.857,bottom:.985},
  helper:[{x:.120,y:.325},{x:.880,y:.325}],
  margin:{left:.075,right:.925,top:.165,bottom:.945},
  geometry:{tableHalfX:.088,tableHalfY:.046,stoveHalfX:.085,stoveHalfY:.046,
@@ -28,7 +29,8 @@ export const DINER_FLOOR={
 export function dinerSeatPoint(table,seat,s=null){
  const g=dinerFloor(s),pt=g.tables[table];
  if(!pt)return null;
- return {x:pt.x+(seat===0?-.102:.102),y:pt.y+.042};
+ // The sprite's feet land ON the chair; a +.042 offset placed guests on the floor below it.
+ return {x:pt.x+(seat===0?-.102:.102),y:pt.y+.002};
 }
 export function dinerGuestRoute(table,seat,s=null){
  const g=dinerFloor(s),target=dinerSeatPoint(table,seat,s);
@@ -99,3 +101,16 @@ export function dinerWaiterRoute(s,simTime){
  return {...point,moving:true,plate,returning,table:target};
 }
 export function dinerPickupTarget(table,s=null){const g=dinerFloor(s);return g.tableWork[table]||g.pass}
+
+// A deterministic *in-game* weather vignette. This is decorative only and
+// never claims to represent real-world weather or change game difficulty.
+export function dinerWeather(s){
+ const scenario=s?.service?.scenario||'';
+ if(scenario==='雨夜暖汤')return 'rain';
+ const day=(s?.cycle||1)*11+(s?.day||1)*19,seed=Number(s?.seed)||0;
+ const mixed=(Math.imul((seed^day)>>>0,1664525)+1013904223)>>>0;
+ return ['clear','clear','mist','breeze','rain'][mixed%5];
+}
+export function dinerQueueGuests(s,at=s?.service?.time||0){
+ return (s?.service?.orders||[]).filter(o=>o.status==='waiting'&&o.arrival<=at);
+}
