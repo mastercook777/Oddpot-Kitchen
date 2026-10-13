@@ -37,6 +37,33 @@ export function liveIngredientState(drop,t,actions,vessel){
     age>(drop.id==='ember_pepper'&&vessel==='POT'?19:['garlic','chili','onion','ember_pepper'].includes(drop.id)?14:16))return '焦糊';
  return '熟透';
 }
+// Presentation ONLY. Uses the exact maturity/burning rules above; its percent
+// describes progress to readiness, not an invented power/temperature stat.
+export function liveIngredientHeatFeedback(drop,t,actions,vessel){
+ if(!drop)return {state:'待下锅',baseState:'待下锅',progress:0,tone:'idle',nearBurn:false};
+ const divisor=REQUIRE[drop.id]*(vessel==='POT'?1.18:1);
+ const ratio=liveCookAmount(drop,t,actions,vessel)/divisor,age=Math.max(0,t-drop.t);
+ const baseState=liveIngredientState(drop,t,actions,vessel);
+ const ageLimit=drop.id==='ember_pepper'&&vessel==='POT'?19:
+  ['garlic','chili','onion','ember_pepper'].includes(drop.id)?14:16;
+ const dense=['beef','chicken','potato'].includes(drop.id);
+ const nearBurn=baseState==='熟透'&&(age>=ageLimit-2||(dense&&ratio>=2.9));
+ const state=nearBurn?'将焦':baseState;
+ const tone=baseState==='焦糊'?'bad':nearBurn?'warning':baseState==='熟透'?'good':'warming';
+ return {state,baseState,progress:Math.max(0,Math.min(100,Math.round(ratio*100))),tone,nearBurn};
+}
+export function liveHeatSummary(indicators){
+ const active=(indicators||[]).filter(i=>i.dropped),total=(indicators||[]).length;
+ if(!active.length)return {tone:'idle',label:'尚未下料',details:'观察每种食材的成熟进度'};
+ if(active.some(i=>i.baseState==='焦糊'))return {tone:'bad',label:'已焦糊',details:'及时结束或重新尝试'};
+ if(active.some(i=>i.nearBurn))return {tone:'warning',label:'接近焦糊',details:'注意及时起锅'};
+ if(active.length<total)return {tone:'warming',label:`已下 ${active.length}/${total} 种`,details:'继续投料并观察熟度'};
+ const raw=active.filter(i=>i.baseState==='偏生').length;
+ if(raw)return {tone:'warming',label:`${raw} 种仍偏生`,details:'还需要加热'};
+ const almost=active.filter(i=>i.baseState==='受热中').length;
+ if(almost)return {tone:'warming',label:`${almost} 种正在熟化`,details:'略等一会再起锅'};
+ return {tone:'good',label:'全部熟透',details:'可以起锅鉴定'};
+}
 export function readCookFacts(ids,vessel,drops,actions,t){
  const ds=[...drops].sort((a,b)=>a.t-b.t||a.index-b.index);
  const leader=MAIN_PRIORITY.find(id=>ids.includes(id));
@@ -104,6 +131,58 @@ export function evaluateLiveCook(ids,vessel,drops,actions,elapsed){
   doneness:[...doneness,...missing.map(id=>({id,label:'未下锅'}))],
   reason:!sellable?finishState:(slight.length?'可以出售，但部分食材欠火，品质偏低。':technique.reason),
   facts};
+}
+// Read-only recap: color means a real verdict. Missed OPTIONAL bonuses are
+// amber, not fabricated "mistakes"; only actual raw/burnt/missing food is red.
+export function reviewLiveCook(result){
+ if(!result)return {steps:[],maxQuality:0,atReachableMax:false};
+ const events=result.events||[],actions=result.actions||[],facts=result.facts||
+  readCookFacts(result.ids||[],result.vessel,events,actions,result.duration||0);
+ const main=events.find(d=>d.id===facts.primaryIngredient);
+ const states=new Map((result.doneness||[]).map(d=>[d.id,d.label]));
+ const steps=[];
+ for(const d of events){
+  const state=states.get(d.id)||'待判定';
+  let grade='good',detail='食材最终熟透';
+  if(state==='偏生'||state==='焦糊'||state==='未下锅'){
+   grade='bad';detail=state==='焦糊'?'食材已经焦糊，导致本锅失败':'食材未熟，导致本锅失败';
+  }else if(state==='受热中'){
+   grade='warning';detail='还差一点火候，当前品质每份扣 16 分';
+  }else if(d.id!==main?.id&&PRIMARY_AROMATIC[d.id]){
+   const lead=!!(main&&d.t<=main.t-1.05);
+   grade=lead?'good':'warning';
+   detail=lead?'比主食材提前至少 1.05 秒，提供底香 +4':'未提前至少 1.05 秒，未触发底香加分';
+  }
+  steps.push({type:'drop',time:d.t,grade,label:`下 ${ING[d.id]?.name||d.id}`,detail});
+ }
+ for(const a of actions){
+  let grade='good',detail='';
+  if(a.type==='flip')detail='有效翻炒，受热加分 +5';
+  else if(a.type==='gentle')detail='有效轻搅，受热加分 +5';
+  else if(a.type==='toss'){
+   const hit=!!(facts.burst&&main&&a.t>=main.t&&a.t-main.t<=3.8&&(a.with||[]).length>=2);
+   grade=hit?'good':'warning';
+   detail=hit?'主食材入锅后 3.8 秒内、至少两料同锅，锅气 +6':'本次颠勺未触发锅气：需主食材下锅后 3.8 秒内，至少两料同锅';
+  }else if(a.type==='reduce'){
+   const hit=!!(a.t>=4&&(a.with||[]).length>=2);
+   grade=hit?'good':'warning';
+   detail=hit?'4 秒后两料同锅收汁，浓香加分 +5':'本次收汁未触发加分：需 4 秒后且两料同锅';
+  }else{grade='warning';detail='未产生对应工艺加成'}
+  const actionName={flip:'翻炒',toss:'颠勺',gentle:'轻搅',reduce:'收汁'}[a.type]||a.type;
+  steps.push({type:'action',time:a.t,grade,label:actionName,detail});
+ }
+ const missing=(result.doneness||[]).filter(d=>d.label==='未下锅');
+ for(const d of missing)steps.push({type:'missing',time:result.duration||0,grade:'bad',
+  label:`漏下 ${ING[d.id]?.name||d.id}`,detail:'没有投料，导致本锅失败'});
+ const tones=(result.doneness||[]).map(d=>d.label);
+ const grade=tones.some(x=>['偏生','焦糊','未下锅'].includes(x))?'bad':
+  tones.includes('受热中')?'warning':'good';
+ steps.push({type:'finish',time:result.duration||0,grade,label:'起锅鉴定',
+  detail:grade==='good'?'所有已下食材成熟':grade==='warning'?'至少一种食材略欠火，品质受到实际扣分':'存在真实夹生、焦糊或漏料问题'});
+ steps.sort((a,b)=>a.time-b.time||({drop:0,action:1,missing:2,finish:3}[a.type]-{drop:0,action:1,missing:2,finish:3}[b.type]));
+ // The global cap is 90, but the reachable theoretical maximum is lower.
+ const maxQuality=result.vessel==='WOK'?87:86;
+ return {steps,maxQuality,atReachableMax:!!(result.sellable&&result.quality>=maxQuality)};
 }
 export function legacyVariant(recipeId,quality){
  const r=RECIPES[recipeId];if(!r)return null;
