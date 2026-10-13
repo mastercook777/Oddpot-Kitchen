@@ -13,7 +13,7 @@ test('two regions have genuinely distinct collectible, rock and hazard layouts',
  assert.ok(startActionField(a));assert.ok(startActionField(b));
  assert.ok(['chicken','boar'].includes(a.field.enemies[0].kind));
  assert.ok(['steam_crab','pepper'].includes(b.field.enemies[0].kind));
- assert.ok(Math.hypot(b.field.pos.x-2.5,b.field.pos.y-10.1)<.01);
+ assert.ok(Math.hypot(b.field.pos.x-b.field.spawn.x,b.field.pos.y-b.field.spawn.y)<.01);
 });
 test('both region routes keep a reliably discoverable target source',()=>{
  for(const route of ['safe','risk','spring_safe','spring_risk']){
