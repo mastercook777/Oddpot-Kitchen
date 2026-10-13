@@ -198,6 +198,8 @@ export function herbPixelGroundPlan(f){
  const seed=f.biome?.encounterSeed||1;
  // Real B1 scenery is intentionally thinned to avoid grass noise.
  for(const a of f.scenery||[]){
+  // Cap total foliage decoration density even on unusually lush seeds.
+  if(props.length>=16)break;
   const x=Math.floor(a.x),y=Math.floor(a.y),k=herbTileKey(x,y);
   if(herbHash(seed+x*71+y*107)%5!==0||blocked.has(k)||trail.has(k))continue;
   if(Math.hypot(a.x-f.spawn.x,a.y-f.spawn.y)<1.7)continue;
