@@ -1,5 +1,6 @@
 // v0.11-B1: original procedural world art. World-space objects have a grounded
 // relationship to real collision tiles and are drawn beneath usable pickups.
+import {fieldTilePath} from './field_rules_v011a.js';
 const PALETTE={
  meadow:['#436944','#628252','#9ba769','#cfbf86','#d1e5a2'],
  glow:['#203c47','#315b63','#558a80','#99dfbe','#d6ffd3'],
@@ -25,18 +26,11 @@ export function drawExpandedLandscape(c,f,t){
   if(h%5===0){c.fillStyle=p[1];c.globalAlpha=.28;c.fillRect(x+.12,y+.2,.50,.22);c.globalAlpha=1;}
   if(h%9===0){c.fillStyle=p[2];c.globalAlpha=.24;c.fillRect(x+.5,y+.58,.29,.12);c.globalAlpha=1;}
  }
- // Trails are painted using the same physical BFS as pickups. They never lead
- // the player straight into an invented wall or inactive fake passage.
+ // Worn dirt follows an actually walkable tile path instead of a fake ribbon.
  const goal=f.nodes.find(n=>n.key==='target'&&!n.claimed)||f.nodes.find(n=>n.key==='target');
- if(goal){ // use actual map path; no fixed decorative ribbon as in old 9x11.
-  // Imported lazily in the calling module? No - geometry isn't required here:
-  // draw short worn ground tiles around existing passable, nonhazard cells.
-  const blocked=new Set([...f.obstacles,...f.hazards].map(n=>n.x+','+n.y));
-  const mid=Math.floor(f.worldW/2);
-  for(let y=2;y<f.worldH-1;y++){const x=Math.max(1,Math.min(f.worldW-2,mid+Math.round(Math.sin(y*.69+seed%4))));
-   if(blocked.has(x+','+y))continue;
-   c.globalAlpha=.20;worldArtEllipse(c,x+.5,y+.5,.54,.31,p[3]);c.globalAlpha=1;
-  }
+ if(goal){
+  const path=fieldTilePath(f,f.spawn,{x:goal.x+.5,y:goal.y+.5},{avoidHazards:true});
+  for(const pt of path){c.globalAlpha=.17;worldArtEllipse(c,pt.x,pt.y,.43,.32,p[3]);c.globalAlpha=1;}
  }
  if(style==='garden'){
   for(let y=2;y<14;y+=3){for(let x=1;x<11;x+=3){
