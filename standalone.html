@@ -4452,6 +4452,29 @@ function pixelImpact(c,x,y,size=13,accent='#fff0a1'){
  c.save();c.translate(x,y);r(c,-2,-size-3,4,size*2+6,accent);r(c,-size-3,-2,size*2+6,4,accent);
  c.rotate(Math.PI/4);r(c,-1,-size+2,2,size*2-4,'#fff9d8');r(c,-size+2,-1,size*2-4,2,'#fff9d8');c.restore();
 }
+// v0.10.4 - Guest encyclopedia portraits use the EXACT actor renderer
+// already used by live restaurant guests; never duplicate pixel art.
+
+const GUEST_KINDS=new Set(['adventurer','family','regular','critic']);
+function drawGuestPortrait(canvas,kind){
+ if(!GUEST_KINDS.has(kind)||!canvas||typeof canvas.getContext!=='function')return false;
+ const c=canvas.getContext('2d');
+ if(!c)return false;
+ c.imageSmoothingEnabled=false;
+ c.clearRect(0,0,canvas.width,canvas.height);
+ // 64x80-native thumbnail; the actor's original 16x24-ish raster silhouette
+ // is reproduced pixel-for-pixel at a fixed, integer-positioned scale.
+ pixelActor(c,kind,Math.round(canvas.width/2),Math.round(canvas.height/2)+7,2.45,{face:1,walk:0,attack:false});
+ return true;
+}
+function drawGuestPortraits(root){
+ if(!root||typeof root.querySelectorAll!=='function')return 0;
+ let drawn=0;
+ for(const node of root.querySelectorAll('canvas[data-guest-portrait]')){
+  if(drawGuestPortrait(node,node.dataset.guestPortrait))drawn++;
+ }
+ return drawn;
+}
 // Shared pure pointer math; platform-independent so it can be unit-tested.
 function joystickVector(originX,originY,pointerX,pointerY,radius=54,deadZone=9){
  const dx=pointerX-originX,dy=pointerY-originY,d=Math.hypot(dx,dy);
