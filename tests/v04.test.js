@@ -7,11 +7,11 @@ const service=()=>{const s=newGame();nextPhase(s,'service');createService(s);set
 
 test('v04 field uses continuous motion not instant grid teleports',()=>{
  const s=explore(),f=s.field;const y=f.pos.y;stepActionField(s,0,-1,.05);
- assert.ok(f.pos.y<y&&f.pos.y>y-1);assert.equal(f.pos.x,4.5);
+ assert.ok(f.pos.y<y&&f.pos.y>y-1);assert.equal(f.pos.x,f.spawn.x);
 });
 test('target is harvested after dwelling near it; retreat transfers once',()=>{
- const s=explore();const f=s.field;f.pos={x:4.5,y:7};f.x=f.pos.x;f.y=f.pos.y;
- // x 4.5 / y 6.5 goal is 0.5 away: 17 frames of 0.05 seconds.
+ const s=explore();const f=s.field;const target=f.nodes.find(n=>n.key==='target');f.enemies=[];f.pos={x:target.x,y:target.y};f.x=f.pos.x;f.y=f.pos.y;
+ // Stand at actual centered target: harvesting dwell uses 17+ frames.
  for(let i=0;i<22;i++)stepActionField(s,0,0,.05);
  assert.equal(f.nodes.find(n=>n.key==='target').claimed,true);
  assert.equal(f.bag.chili,2);
@@ -19,7 +19,9 @@ test('target is harvested after dwelling near it; retreat transfers once',()=>{
  assert.equal(settleField(s),true);assert.equal(s.inventory.chili,stock+2);assert.equal(settleField(s),false);
 });
 test('safe line can collect target without engaging optional enemy',()=>{
- const s=explore('safe'),f=s.field;f.pos={x:4.5,y:7};for(let i=0;i<22;i++)stepActionField(s,0,0,.05);
+ const s=explore('safe'),f=s.field;const target=f.nodes.find(n=>n.key==='target');
+  f.pos={x:target.x,y:target.y};f.enemies[0].x=f.spawn.x;f.enemies[0].y=f.spawn.y;
+  for(let i=0;i<22;i++)stepActionField(s,0,0,.05);
  assert.equal(f.hp,3);assert.equal(f.enemies[0].hp,f.enemies[0].maxHp);assert.equal(f.bag.chili,2);
 });
 test('risk path includes two enemies and skill cooldown damage',()=>{
