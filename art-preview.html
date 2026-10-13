@@ -1,6 +1,6 @@
 <!doctype html><html lang="zh-CN"><head>
 <meta charset="utf-8"/><meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover"/>
-<title>Oddpot Kitchen - Herb Path Pixel Art</title>
+<title>Oddpot Kitchen - Hybrid Meadow Canvas Art</title>
 <style>
 html,body{margin:0;min-height:100%;background:#18251c;color:#f0e9d5;font:14px/1.5 system-ui,-apple-system,sans-serif}
 .shell{width:min(100vw,440px);margin:auto;padding:16px 12px 22px;box-sizing:border-box}
@@ -14,11 +14,11 @@ button[aria-pressed="true"]{background:#a3bd75;color:#1b2c20;font-weight:700}
 .foot{font-size:12px;color:#b5c7aa}
 </style></head><body>
 <div class="shell">
- <div class="top"><span>ODDPOT · HERB PATH</span><span class="tag">16px PIXEL ART</span></div>
+ <div class="top"><span>ODDPOT · HERB PATH</span><span class="tag">HYBRID CANVAS ART</span></div>
  <div class="sub">Actual in-game Canvas render · feat/herb-path-pixel-art-slice</div>
  <canvas id="scene"></canvas>
- <div class="controls"><button data-view="spawn" aria-pressed="false">Entrance</button><button data-view="harvest" aria-pressed="true">Gathering</button><button data-view="original" aria-pressed="false">Before</button></div>
- <div class="foot">Real drawField output, not concept art. Gameplay HUD is hidden in this capture; run index.html on the branch to play.</div>
+ <div class="controls"><button data-view="harvest" aria-pressed="true">Hybrid · Gathering</button><button data-view="spawn" aria-pressed="false">Hybrid · Entrance</button><button data-view="pixel" aria-pressed="false">Pixel Before</button><button data-view="original" aria-pressed="false">B1 Before</button></div>
+ <div class="foot">Real drawField output, not concept art. Painted Canvas terrain + pixel sprites. Compare exactly the same map in Hybrid / Pixel / B1 legacy modes. Gameplay HUD not shown.</div>
 </div>
 <script type="module">
 import {newGame,enterField} from './src/engine.js';
@@ -38,7 +38,8 @@ function chooseView(name){
  s=makeState();
  const f=s.field;
  if(name==='original') f.biome.zoneId='herb_path_original_comparison';
- if(name==='harvest'){
+ if(name==='pixel') f.artPreviewMode='pixel';
+ if(name==='harvest'||name==='pixel'||name==='original'){
   const node=f.nodes.find(n=>n.key==='target');
   const route=fieldTilePath(f,f.spawn,{x:node.x+.5,y:node.y+.5},{avoidHazards:true});
   const step=route[Math.max(0,Math.floor(route.length*.70))];
