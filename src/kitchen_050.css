@@ -177,3 +177,41 @@
  .v102-guest-detail strong{font-size:13px}
  .v102-guest-detail small{font-size:10px}
 }
+
+
+/* v0.10.4: guest compendium actors match LIVE restaurant pixelActor, not emoji. */
+.v104-book-sheet .sheet-header{
+ height:57px;min-height:57px;flex:0 0 57px;position:relative;
+ border-bottom:1px solid #cfb992;
+}
+.v104-book-sheet .sheet-handle{align-self:flex-start;margin-top:12px}
+.v104-book-sheet .sheet-close{
+ position:absolute;z-index:3;right:11px;top:6px;
+ width:44px;min-width:44px;height:44px;min-height:44px;
+ padding:0;display:flex;align-items:center;justify-content:center;
+ border:1px solid #916e47;border-radius:11px;box-shadow:0 2px 0 #9d835a;
+ background:#c8a77b;color:#382b1f;font-size:17px;line-height:1;
+}
+.v104-book-sheet .sheet-body{padding-top:8px;min-height:0;overflow-y:auto}
+.v104-book-sheet .v102-book-tabs{
+ position:sticky;top:0;z-index:2;margin-top:0;margin-bottom:10px;
+ padding:2px 0 8px;background:#f1e2bc;
+}
+.v104-book-sheet .v102-book-tabs button{min-height:41px}
+.v104-book-sheet .v104-portrait-frame{
+ width:68px;min-width:68px;height:84px;padding:2px;
+ border:2px solid #b69872;border-radius:10px;background:#d6bd91;
+ display:flex;align-items:center;justify-content:center;overflow:hidden;
+}
+.v104-book-sheet .v104-guest-portrait{
+ display:block;width:64px;height:80px;object-fit:contain;flex:none;
+ image-rendering:pixelated;image-rendering:crisp-edges;
+}
+.v104-book-sheet .v104-guest-unknown{color:#776349;font-size:29px;font-weight:900;line-height:1}
+.v104-book-sheet .v102-guest-detail{padding-top:1px}
+@media(max-width:350px){
+ .v104-book-sheet .sheet-header{height:55px;min-height:55px;flex-basis:55px}
+ .v104-book-sheet .sheet-close{right:9px;top:5px}
+ .v104-book-sheet .v104-portrait-frame{width:62px;min-width:62px;height:78px}
+ .v104-book-sheet .v104-guest-portrait{width:58px;height:73px}
+}
