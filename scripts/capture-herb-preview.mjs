@@ -24,7 +24,7 @@ try{
  const page=await browser.newPage({viewport:{width:430,height:932},deviceScaleFactor:2,locale:'zh-CN',isMobile:true,hasTouch:true});
  const errors=[];
  page.on('pageerror',e=>errors.push(e.message));
- const shots=[['harvest','herb-path-pixel-harvest-mobile.png'],['spawn','herb-path-pixel-entry-mobile.png'],['original','herb-path-original-comparison-mobile.png']];
+ const shots=[['harvest','herb-path-hybrid-gather-mobile.png'],['spawn','herb-path-hybrid-entry-mobile.png'],['pixel','herb-path-pixel-before-mobile.png'],['original','herb-path-original-comparison-mobile.png']];
  for(const [view,name] of shots){
   await page.goto('http://127.0.0.1:5173/art-preview.html?view='+view,{waitUntil:'domcontentloaded',timeout:15000});
   await page.waitForFunction("window.__oddpotPreview?.rendered===true",{timeout:12000});
