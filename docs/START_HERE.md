@@ -10,7 +10,7 @@
 
 1. [PROJECT_STATE.md](PROJECT_STATE.md)——**已实装**、真实代码入口、机制边界、已知约束；版本变化后必须更新。
 2. [ROADMAP.md](ROADMAP.md)——**准备做 / 候选 / 暂缓**，含设计文档链接与状态，禁止把规划当作已开发。
-3. [V0.10_SIGNATURE_REGULARS_DESIGN.md](V0.10_SIGNATURE_REGULARS_DESIGN.md)——下一轮「招牌菜 / 熟客 / 口碑与招徕」的**设计草案，尚未实现**，需按最终确认的范围编码。
+3. [V0.10_SIGNATURE_REGULARS_DESIGN.md](V0.10_SIGNATURE_REGULARS_DESIGN.md)——下一轮「独立限量稀有隐藏菜单 / 特殊食客 / 熟客关系」的**修订设计讨论稿，尚未实现**，需按最终确认的范围编码。
 4. [FEATURE_SPEC_TEMPLATE.md](FEATURE_SPEC_TEMPLATE.md)——后续每一个新功能必须先用的规划模板。
 5. 仓库根目录 [AGENTS.md](../AGENTS.md)——开发注意事项；**优先读文件开头的最新协作规则**，以下 v0.7.x 长篇内容是历史，不是当前版本。
 6. 按涉及模块看现有实现和各版交接文档：例如 [v0.9.5 已实现库存检查](V0.9.5_PREOPEN_INVENTORY.md)、[v0.9.2 座椅和门外视窗](V0.9.2_SEATING_DOORWAY.md)。
