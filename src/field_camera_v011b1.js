@@ -10,7 +10,7 @@ export function fieldCamera(f,width,height){
  }
  // Hold roughly the original on-screen actor/tile size instead of shrinking
  // all sprites to fit 12x16. Clamp to map edges; center if viewport is larger.
- const scale=Math.min(w/7.6,h/10);
+ const scale=Math.max(Math.min(w/7.6,h/10),w/mapW,h/mapH);
  const viewW=w/scale,viewH=h/scale;
  const center=f?.pos||f?.spawn||{x:mapW/2,y:mapH/2};
  const limit=(n,max)=>Math.max(0,Math.min(n,Math.max(0,max)));
