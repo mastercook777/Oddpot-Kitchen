@@ -47,3 +47,10 @@
 .v09-room-upgrade{border:1px solid #d6b77a;border-radius:10px;background:#203e32ee;padding:8px;display:flex;flex-direction:column;gap:5px;color:#f6ddaa}
 .v09-room-upgrade strong{font-size:12px}.v09-room-upgrade span{font-size:10px;line-height:1.4;color:#e7d9b4}
 .v09-room-upgrade .game-btn{width:100%;min-height:35px}
+
+/* v0.9.3: two bulk-buy choices fit small phone overlays without hiding the stock. */
+.stock-line{flex-wrap:wrap;row-gap:5px}
+.stock-line>small{flex:1 0 100%;color:#e0d5b8;font-size:11px}
+.stock-line .v093-buy-actions{display:flex;gap:6px;flex:1 0 100%;justify-content:flex-end}
+.v093-buy-actions .game-btn.small{min-height:34px;min-width:90px;padding:5px 8px}
+@media(max-width:350px){.stock-line>span{font-size:12px}.v093-buy-actions .game-btn.small{min-width:78px}}
