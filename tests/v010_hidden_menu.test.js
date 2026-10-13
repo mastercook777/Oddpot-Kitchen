@@ -108,6 +108,29 @@ test('premium daily plan does not auto-sell; reports use actual served orders on
  assert.equal(report.premium.ordered,0);
  assert.equal(s.inventory.ember_pepper,2);
 });
+test('rare ingredients are consumed through the original order and sale ledger, no bonus sale occurs',()=>{
+ const s=ownRare(9921);
+ assert.equal(setPremiumMenu(s,'ember_pepper_wok',2),true);
+ s.phase='service';assert.equal(createService(s),true);
+ const v=s.service,o=v.orders.find(x=>x.segment==='critic');
+ assert.equal(selectArrivalDish(s,o).premium,true);
+ for(const other of v.orders)if(other!==o)other.status='served';
+ o.status='queued';o.arrival=0;o.patience=160;o.seatedAt=0;v.queued=[o.id];v.paused=false;
+ const before=s.inventory.ember_pepper,cash=s.coins;
+ tick(s,19);
+ assert.equal(o.status,'served','the premium dish was physically prepared, landed, eaten and reviewed');
+ assert.equal(s.inventory.ember_pepper,before-1);
+ assert.equal(v.premiumConsumed,1);
+ assert.equal(s.ledger.filter(t=>t.id==='sale-'+o.id).length,1);
+ assert.equal(v.income,o.craft.price);
+ assert.equal(s.coins,cash+o.craft.price);
+ v.done=true;
+ const report=closeService(s);
+ assert.equal(report.premium.sold,1);
+ assert.equal(report.premium.ordered,1);
+ assert.equal(report.premium.revenue,o.craft.price);
+ assert.equal(report.revenue,v.income);
+});
 test('future source types can be registered as rare recipes without Boss-only requirement',()=>{
  const s=ownRare();assert.ok(RECIPES.ember_pepper_pot.rare);
  // Availability depends on the rare recipe flag and learned/owned ingredients,
