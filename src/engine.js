@@ -408,6 +408,40 @@ let synergy=effects.length>=2?25:effects.length?18:10;let technique=id?15:0;let 
 export function finishCook(s){const c=s.cook;if(!c||c.beats!==3)return false;const r=cookOutcome(c,s.tech);const fee=c.context==='research';const ok=consume(s,r.ids,c.txn);if(!ok)return false;s.lastCook=r;s.cook=null;if(fee&&r.sellable){s.recipes[r.recipeId]=Math.max(s.recipes[r.recipeId]||0,Math.min(r.quality,90));s.learned[r.recipeId]=true;}if(!fee&&s.service){s.manualCost+=materialCost(r.ids);const order=s.service.orders.find(o=>o.id===c.orderId);if(order&&order.status==='queued'){order.manual={quality:r.quality,sellable:r.sellable,recipeId:r.recipeId};order.manualMaterialsConsumed=true;order.manualTimePaid=false;}}return r;}
 export function synergyFor(menu){const rs=[...new Set(menu)].map(id=>RECIPES[id]).filter(Boolean);if(rs.some(r=>r.tags.includes('辣')&&r.tags.includes('肉'))&&rs.some(r=>r.station==='POT'))return '辛香暖胃';if(rs.filter(r=>r.tags.includes('菌香')).length>=2)return '菌香组合';return null}
 export function canMenu(s){return s.menu.length===3&&s.menu.every(id=>s.recipes[id]&&RECIPES[id]);}
+// A *forecast*, not a reservation: distribute expected guests evenly across
+// the three selected dishes. Dishes may be duplicated in menu slots.
+// Pre-cooked meals count as already supplied; their ingredients are not needed
+// again. No material, gold, customer or save ledger mutations occur here.
+export function prepStockForecast(s){
+ const plan=serviceDayPlan(s),guestCount=plan.count;
+ const menu=Array.isArray(s.menu)?s.menu:[];
+ const planned={};
+ if(menu.length){
+  const base=Math.floor(guestCount/menu.length),extra=guestCount%menu.length;
+  menu.forEach((id,i)=>{if(RECIPES[id])planned[id]=(planned[id]||0)+base+(i<extra?1:0)});
+ }
+ const required={};let afterPrep=0,coveredByPrep=0;
+ for(const [id,plannedPortions] of Object.entries(planned)){
+  const already=Math.min(plannedPortions,Math.max(0,s.prep?.[id]||0));
+  coveredByPrep+=already;
+  const toCook=Math.max(0,plannedPortions-already),craft=recipeCraftSnapshot(s,id);
+  if(!craft)continue;
+  afterPrep+=toCook;
+  for(const ingredient of craft.ingredientIds)
+   required[ingredient]=(required[ingredient]||0)+toCook;
+ }
+ const ingredients=Object.entries(required).map(([id,needed])=>{
+  const have=Math.max(0,s.inventory?.[id]||0),short=Math.max(0,needed-have);
+  return {id,have,needed,short,remaining:have-needed};
+ }).sort((a,b)=>b.short-a.short||b.needed-a.needed||a.id.localeCompare(b.id));
+ const shortages=ingredients.filter(x=>x.short>0);
+ const market=ensureDailyMarket(s);
+ const purchasableShortages=shortages.filter(x=>
+  ING[x.id]?.acquisitionPolicy==='SHOP_STAPLE'&&(market.goods[x.id]?.stock||0)>0);
+ return {guestCount,portionsToCook:afterPrep,coveredByPrep,ingredients,shortages,
+  shortageCount:shortages.length,purchasableShortages,purchasableCount:purchasableShortages.length,
+  estimated:true};
+}
 export function prepDish(s,id){
  if(s.phase!=='prep'||!s.menu.includes(id)||!s.recipes[id])return false;
  const craft=recipeCraftSnapshot(s,id);if(!craft||!canUse(s,craft.ingredientIds))return false;
