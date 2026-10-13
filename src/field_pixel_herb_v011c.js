@@ -14,8 +14,8 @@ const PH=HERB_PIXEL_PALETTE;
 const herbHash=n=>(Math.imul(1664525,n>>>0)+1013904223)>>>0;
 const herbSprites=new Map();
 const herbTileKey=(x,y)=>x+','+y;
-const p=(ctx,x,y,w,h,color)=>{ctx.fillStyle=color;ctx.fillRect(x,y,w,h)};
-const dot=(ctx,x,y,color)=>p(ctx,x,y,1,1,color);
+const herbPaintRect=(ctx,x,y,w,h,color)=>{ctx.fillStyle=color;ctx.fillRect(x,y,w,h)};
+const herbPaintDot=(ctx,x,y,color)=>herbPaintRect(ctx,x,y,1,1,color);
 
 export function isHerbPixelSlice(f){
  return !!(f?.worldVersion==='0.11-B1' && f?.biome?.zoneId==='herb_path');
@@ -32,115 +32,115 @@ export function herbPixelSpriteSize(name){
   name==='traveler'?{width:20,height:28}:{width:16,height:16};
 }
 function herbPaintGrass(ctx,variant=0){
- p(ctx,0,0,16,16,PH.grass);
+ herbPaintRect(ctx,0,0,16,16,PH.grass);
  const seed=herbHash(variant*1817+739);
  // Small intentional clusters; colors are shared with chef and monster art.
  for(let i=0;i<18;i++){
   const z=herbHash(seed+i*173),x=z%15,y=(z>>>8)%15;
-  p(ctx,x,y,i%4===0?2:1,1,i%3===0?PH.deep:i%3===1?PH.grassLight:PH.leaf);
+  herbPaintRect(ctx,x,y,i%4===0?2:1,1,i%3===0?PH.deep:i%3===1?PH.grassLight:PH.leaf);
  }
- if(variant===2){p(ctx,2,9,4,2,PH.deep);p(ctx,3,8,2,1,PH.grassLight);}
- if(variant===3){p(ctx,10,4,3,2,PH.grassLight);p(ctx,11,3,1,1,PH.sun);}
+ if(variant===2){herbPaintRect(ctx,2,9,4,2,PH.deep);herbPaintRect(ctx,3,8,2,1,PH.grassLight);}
+ if(variant===3){herbPaintRect(ctx,10,4,3,2,PH.grassLight);herbPaintRect(ctx,11,3,1,1,PH.sun);}
 }
 function herbPaintTrail(ctx,mask,variant){
  herbPaintGrass(ctx,variant);
  const d=PH.dirt,d2=PH.dirtLight;
  // Connected trail arms are drawn only toward real adjacent walkable trail cells.
- p(ctx,4,4,8,8,d);p(ctx,5,4,6,2,d2);
- if(mask&1){p(ctx,4,0,8,6,d);p(ctx,5,0,6,2,d2);}
- if(mask&2){p(ctx,10,4,6,8,d);p(ctx,11,5,5,2,d2);}
- if(mask&4){p(ctx,4,10,8,6,d);p(ctx,5,11,6,2,d2);}
- if(mask&8){p(ctx,0,4,6,8,d);p(ctx,0,5,5,2,d2);}
- p(ctx,6,8,2,1,PH.bark);p(ctx,10,11,1,1,PH.rockLight);
+ herbPaintRect(ctx,4,4,8,8,d);herbPaintRect(ctx,5,4,6,2,d2);
+ if(mask&1){herbPaintRect(ctx,4,0,8,6,d);herbPaintRect(ctx,5,0,6,2,d2);}
+ if(mask&2){herbPaintRect(ctx,10,4,6,8,d);herbPaintRect(ctx,11,5,5,2,d2);}
+ if(mask&4){herbPaintRect(ctx,4,10,8,6,d);herbPaintRect(ctx,5,11,6,2,d2);}
+ if(mask&8){herbPaintRect(ctx,0,4,6,8,d);herbPaintRect(ctx,0,5,5,2,d2);}
+ herbPaintRect(ctx,6,8,2,1,PH.bark);herbPaintRect(ctx,10,11,1,1,PH.rockLight);
 }
 function herbPaintTree(ctx,variant){
  // 24x30: stout, blocky canopy; trunk remains visibly anchored inside solid tile.
- p(ctx,8,18,9,11,PH.outline);p(ctx,10,18,5,9,PH.bark);
- p(ctx,11,21,2,5,PH.barkLight);
- p(ctx,5,10,16,13,PH.outline);p(ctx,3,12,20,7,PH.outline);
- p(ctx,7,5,12,17,PH.deep);p(ctx,4,11,17,8,PH.deep);
- p(ctx,6,7,15,12,PH.grass);p(ctx,4,13,17,4,PH.grass);
- p(ctx,8,3,10,12,PH.deep);p(ctx,9,4,8,12,PH.grass);
- p(ctx,3,13,7,4,PH.grassLight);p(ctx,7,7,10,4,PH.grassLight);
- p(ctx,10,4,6,3,PH.leaf);p(ctx,6,11,5,3,PH.leaf);
- p(ctx,15,10,4,5,PH.grassLight);p(ctx,16,11,2,2,PH.sun);
- if(variant){p(ctx,11,6,5,3,PH.sun);p(ctx,4,15,4,2,PH.leaf);}
- else {p(ctx,6,8,3,2,PH.sun);p(ctx,14,6,2,2,PH.leaf);}
- p(ctx,4,17,4,2,PH.outline);p(ctx,18,18,3,2,PH.outline);
+ herbPaintRect(ctx,8,18,9,11,PH.outline);herbPaintRect(ctx,10,18,5,9,PH.bark);
+ herbPaintRect(ctx,11,21,2,5,PH.barkLight);
+ herbPaintRect(ctx,5,10,16,13,PH.outline);herbPaintRect(ctx,3,12,20,7,PH.outline);
+ herbPaintRect(ctx,7,5,12,17,PH.deep);herbPaintRect(ctx,4,11,17,8,PH.deep);
+ herbPaintRect(ctx,6,7,15,12,PH.grass);herbPaintRect(ctx,4,13,17,4,PH.grass);
+ herbPaintRect(ctx,8,3,10,12,PH.deep);herbPaintRect(ctx,9,4,8,12,PH.grass);
+ herbPaintRect(ctx,3,13,7,4,PH.grassLight);herbPaintRect(ctx,7,7,10,4,PH.grassLight);
+ herbPaintRect(ctx,10,4,6,3,PH.leaf);herbPaintRect(ctx,6,11,5,3,PH.leaf);
+ herbPaintRect(ctx,15,10,4,5,PH.grassLight);herbPaintRect(ctx,16,11,2,2,PH.sun);
+ if(variant){herbPaintRect(ctx,11,6,5,3,PH.sun);herbPaintRect(ctx,4,15,4,2,PH.leaf);}
+ else {herbPaintRect(ctx,6,8,3,2,PH.sun);herbPaintRect(ctx,14,6,2,2,PH.leaf);}
+ herbPaintRect(ctx,4,17,4,2,PH.outline);herbPaintRect(ctx,18,18,3,2,PH.outline);
 }
 function herbPaintRock(ctx){
- p(ctx,3,11,12,4,PH.outline);p(ctx,1,8,15,5,PH.outline);
- p(ctx,3,5,12,7,PH.rock);p(ctx,5,3,7,2,PH.rock);
- p(ctx,5,4,5,4,PH.rockLight);p(ctx,10,6,3,4,PH.grassLight);
- p(ctx,4,10,9,2,'#52615b');p(ctx,8,5,1,2,PH.cream);
- p(ctx,2,14,5,1,PH.deep);
+ herbPaintRect(ctx,3,11,12,4,PH.outline);herbPaintRect(ctx,1,8,15,5,PH.outline);
+ herbPaintRect(ctx,3,5,12,7,PH.rock);herbPaintRect(ctx,5,3,7,2,PH.rock);
+ herbPaintRect(ctx,5,4,5,4,PH.rockLight);herbPaintRect(ctx,10,6,3,4,PH.grassLight);
+ herbPaintRect(ctx,4,10,9,2,'#52615b');herbPaintRect(ctx,8,5,1,2,PH.cream);
+ herbPaintRect(ctx,2,14,5,1,PH.deep);
 }
 function herbPaintFood(ctx,id){
  // All pickups occupy the same 16px silhouette frame, distinct at ~25px on phone.
  // Shared dark outline, single warm highlight, and a colored upper leaf/stem.
  if(id==='garlic'){
-  p(ctx,7,1,3,4,PH.deep);p(ctx,6,2,2,4,PH.leaf);p(ctx,9,2,2,4,PH.leaf);
-  p(ctx,4,7,9,7,PH.outline);p(ctx,5,6,7,8,PH.cream);
-  p(ctx,6,8,2,4,PH.shine);p(ctx,9,9,2,4,'#d6b98b');p(ctx,7,13,3,1,PH.outline);
+  herbPaintRect(ctx,7,1,3,4,PH.deep);herbPaintRect(ctx,6,2,2,4,PH.leaf);herbPaintRect(ctx,9,2,2,4,PH.leaf);
+  herbPaintRect(ctx,4,7,9,7,PH.outline);herbPaintRect(ctx,5,6,7,8,PH.cream);
+  herbPaintRect(ctx,6,8,2,4,PH.shine);herbPaintRect(ctx,9,9,2,4,'#d6b98b');herbPaintRect(ctx,7,13,3,1,PH.outline);
  }else if(id==='cabbage'){
-  p(ctx,3,5,11,9,PH.outline);p(ctx,5,3,7,11,PH.deep);
-  p(ctx,4,7,9,6,PH.grassLight);p(ctx,6,4,5,8,PH.leaf);
-  p(ctx,7,6,4,3,PH.sun);p(ctx,5,10,3,2,PH.leaf);
-  p(ctx,9,10,3,2,PH.grass);p(ctx,8,12,1,2,PH.cream);
+  herbPaintRect(ctx,3,5,11,9,PH.outline);herbPaintRect(ctx,5,3,7,11,PH.deep);
+  herbPaintRect(ctx,4,7,9,6,PH.grassLight);herbPaintRect(ctx,6,4,5,8,PH.leaf);
+  herbPaintRect(ctx,7,6,4,3,PH.sun);herbPaintRect(ctx,5,10,3,2,PH.leaf);
+  herbPaintRect(ctx,9,10,3,2,PH.grass);herbPaintRect(ctx,8,12,1,2,PH.cream);
  }else if(id==='onion'){
-  p(ctx,7,1,2,5,PH.deep);p(ctx,6,3,2,3,PH.leaf);p(ctx,9,2,2,4,PH.leaf);
-  p(ctx,5,5,7,8,PH.outline);p(ctx,3,8,11,5,PH.outline);
-  p(ctx,4,8,9,4,'#d6a764');p(ctx,6,6,5,7,'#e7bc78');
-  p(ctx,6,7,2,3,PH.shine);p(ctx,8,13,2,2,PH.bark);
+  herbPaintRect(ctx,7,1,2,5,PH.deep);herbPaintRect(ctx,6,3,2,3,PH.leaf);herbPaintRect(ctx,9,2,2,4,PH.leaf);
+  herbPaintRect(ctx,5,5,7,8,PH.outline);herbPaintRect(ctx,3,8,11,5,PH.outline);
+  herbPaintRect(ctx,4,8,9,4,'#d6a764');herbPaintRect(ctx,6,6,5,7,'#e7bc78');
+  herbPaintRect(ctx,6,7,2,3,PH.shine);herbPaintRect(ctx,8,13,2,2,PH.bark);
  }else if(id==='potato'){
-  p(ctx,3,8,11,5,PH.outline);p(ctx,4,5,9,9,PH.bark);
-  p(ctx,6,5,6,7,PH.dirtLight);p(ctx,5,8,2,2,PH.shine);
-  dot(ctx,10,9,PH.bark);dot(ctx,8,12,PH.bark);
+  herbPaintRect(ctx,3,8,11,5,PH.outline);herbPaintRect(ctx,4,5,9,9,PH.bark);
+  herbPaintRect(ctx,6,5,6,7,PH.dirtLight);herbPaintRect(ctx,5,8,2,2,PH.shine);
+  herbPaintDot(ctx,10,9,PH.bark);herbPaintDot(ctx,8,12,PH.bark);
  }else if(id==='mushroom'){
-  p(ctx,7,8,4,6,PH.outline);p(ctx,8,8,2,5,PH.cream);
-  p(ctx,2,7,13,3,PH.outline);p(ctx,4,3,9,6,PH.mushroom);
-  p(ctx,5,4,6,4,'#de8864');p(ctx,5,5,2,2,PH.cream);
-  p(ctx,10,6,2,2,PH.cream);p(ctx,3,9,11,1,PH.shine);
+  herbPaintRect(ctx,7,8,4,6,PH.outline);herbPaintRect(ctx,8,8,2,5,PH.cream);
+  herbPaintRect(ctx,2,7,13,3,PH.outline);herbPaintRect(ctx,4,3,9,6,PH.mushroom);
+  herbPaintRect(ctx,5,4,6,4,'#de8864');herbPaintRect(ctx,5,5,2,2,PH.cream);
+  herbPaintRect(ctx,10,6,2,2,PH.cream);herbPaintRect(ctx,3,9,11,1,PH.shine);
  }else if(id==='chili'){
-  p(ctx,9,2,4,2,PH.deep);p(ctx,10,3,1,3,PH.leaf);
-  p(ctx,5,5,7,4,PH.outline);p(ctx,5,7,5,5,PH.outline);
-  p(ctx,3,11,5,3,PH.outline);p(ctx,6,6,5,4,PH.chili);
-  p(ctx,5,9,4,3,'#e88b51');p(ctx,4,12,3,1,PH.shine);
+  herbPaintRect(ctx,9,2,4,2,PH.deep);herbPaintRect(ctx,10,3,1,3,PH.leaf);
+  herbPaintRect(ctx,5,5,7,4,PH.outline);herbPaintRect(ctx,5,7,5,5,PH.outline);
+  herbPaintRect(ctx,3,11,5,3,PH.outline);herbPaintRect(ctx,6,6,5,4,PH.chili);
+  herbPaintRect(ctx,5,9,4,3,'#e88b51');herbPaintRect(ctx,4,12,3,1,PH.shine);
  }else{
-  p(ctx,3,6,11,8,PH.outline);p(ctx,4,5,9,8,id==='beef'?'#9e584a':'#e0bd84');
-  p(ctx,6,6,6,4,id==='beef'?'#d98a71':'#f0dfad');
-  p(ctx,5,9,3,2,PH.cream);p(ctx,11,11,2,2,PH.bark);
+  herbPaintRect(ctx,3,6,11,8,PH.outline);herbPaintRect(ctx,4,5,9,8,id==='beef'?'#9e584a':'#e0bd84');
+  herbPaintRect(ctx,6,6,6,4,id==='beef'?'#d98a71':'#f0dfad');
+  herbPaintRect(ctx,5,9,3,2,PH.cream);herbPaintRect(ctx,11,11,2,2,PH.bark);
  }
 }
 function herbPaintTraveler(ctx){
  // Same readable 20x28 proportions as pixelActor's 18x24 character.
- p(ctx,5,23,5,4,PH.outline);p(ctx,13,23,4,4,PH.outline);
- p(ctx,4,13,14,12,PH.outline);p(ctx,5,14,12,10,'#648377');
- p(ctx,2,15,4,8,PH.outline);p(ctx,3,16,2,6,'#648377');
- p(ctx,17,15,3,8,PH.outline);p(ctx,17,17,2,4,PH.barkLight);
- p(ctx,5,7,12,8,PH.outline);p(ctx,6,7,10,7,'#e7b58d');
- p(ctx,8,9,2,2,PH.outline);p(ctx,13,9,2,2,PH.outline);
- p(ctx,3,5,16,3,PH.outline);p(ctx,6,1,10,6,PH.bark);
- p(ctx,7,2,8,3,PH.barkLight);p(ctx,4,5,14,2,PH.rockLight);
- p(ctx,15,15,3,8,'#c99955');p(ctx,15,17,3,2,PH.shine);
- p(ctx,8,15,4,4,PH.cream);p(ctx,10,16,1,3,PH.chili);
+ herbPaintRect(ctx,5,23,5,4,PH.outline);herbPaintRect(ctx,13,23,4,4,PH.outline);
+ herbPaintRect(ctx,4,13,14,12,PH.outline);herbPaintRect(ctx,5,14,12,10,'#648377');
+ herbPaintRect(ctx,2,15,4,8,PH.outline);herbPaintRect(ctx,3,16,2,6,'#648377');
+ herbPaintRect(ctx,17,15,3,8,PH.outline);herbPaintRect(ctx,17,17,2,4,PH.barkLight);
+ herbPaintRect(ctx,5,7,12,8,PH.outline);herbPaintRect(ctx,6,7,10,7,'#e7b58d');
+ herbPaintRect(ctx,8,9,2,2,PH.outline);herbPaintRect(ctx,13,9,2,2,PH.outline);
+ herbPaintRect(ctx,3,5,16,3,PH.outline);herbPaintRect(ctx,6,1,10,6,PH.bark);
+ herbPaintRect(ctx,7,2,8,3,PH.barkLight);herbPaintRect(ctx,4,5,14,2,PH.rockLight);
+ herbPaintRect(ctx,15,15,3,8,'#c99955');herbPaintRect(ctx,15,17,3,2,PH.shine);
+ herbPaintRect(ctx,8,15,4,4,PH.cream);herbPaintRect(ctx,10,16,1,3,PH.chili);
 }
 function herbPaintGroundObject(ctx,id){
  if(id==='flower'){
-  p(ctx,7,7,2,8,PH.deep);p(ctx,4,10,4,2,PH.leaf);
-  p(ctx,9,11,3,2,PH.leaf);p(ctx,5,4,6,6,PH.outline);
-  p(ctx,7,3,2,8,PH.shine);p(ctx,4,6,8,2,PH.shine);
-  p(ctx,7,6,2,2,PH.chili);
+  herbPaintRect(ctx,7,7,2,8,PH.deep);herbPaintRect(ctx,4,10,4,2,PH.leaf);
+  herbPaintRect(ctx,9,11,3,2,PH.leaf);herbPaintRect(ctx,5,4,6,6,PH.outline);
+  herbPaintRect(ctx,7,3,2,8,PH.shine);herbPaintRect(ctx,4,6,8,2,PH.shine);
+  herbPaintRect(ctx,7,6,2,2,PH.chili);
  }else if(id==='tuft'){
-  p(ctx,3,11,11,2,PH.deep);p(ctx,5,7,2,6,PH.leaf);
-  p(ctx,8,5,2,8,PH.grassLight);p(ctx,11,8,2,5,PH.leaf);
+  herbPaintRect(ctx,3,11,11,2,PH.deep);herbPaintRect(ctx,5,7,2,6,PH.leaf);
+  herbPaintRect(ctx,8,5,2,8,PH.grassLight);herbPaintRect(ctx,11,8,2,5,PH.leaf);
  }else if(id==='spark'){
-  p(ctx,7,1,2,13,PH.shine);p(ctx,2,6,12,2,PH.shine);
-  p(ctx,6,5,4,4,PH.cream);
+  herbPaintRect(ctx,7,1,2,13,PH.shine);herbPaintRect(ctx,2,6,12,2,PH.shine);
+  herbPaintRect(ctx,6,5,4,4,PH.cream);
  }else{
-  p(ctx,3,7,11,6,PH.outline);
-  p(ctx,6,4,6,9,PH.bark);p(ctx,8,2,2,8,PH.chili);
-  p(ctx,5,8,5,2,PH.shine);p(ctx,9,12,4,2,PH.deep);
+  herbPaintRect(ctx,3,7,11,6,PH.outline);
+  herbPaintRect(ctx,6,4,6,9,PH.bark);herbPaintRect(ctx,8,2,2,8,PH.chili);
+  herbPaintRect(ctx,5,8,5,2,PH.shine);herbPaintRect(ctx,9,12,4,2,PH.deep);
  }
 }
 function herbGetSprite(name){
