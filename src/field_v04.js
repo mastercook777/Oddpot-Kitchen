@@ -4,6 +4,7 @@ import {ING} from './data.js?v=0.8.0';
 import {meleeProfile,meleeAttackWouldHit} from './field_combat_feedback_v084.js?v=0.8.4';
 import {clamp, rand, settleField,addFieldBag} from './engine.js?v=0.8.4';
 import {hazardPhase} from './field_rules_v011a.js';
+import {fieldEnemySpawnCandidates} from './field_world_v011b1.js';
 const dist=(a,b)=>Math.hypot(a.x-b.x,a.y-b.y);
 const pushMsg=(f,message)=>{f.actionMessage=message;f.actionMessageTTL=2.7;};
 export function startActionField(s){
@@ -19,7 +20,7 @@ export function startActionField(s){
  const random=i=>(Math.imul(1664525,((encounterSeed+i*7919)>>>0))+1013904223)>>>0;
  const base=profile.enemyCount||1,shift=((random(3)>>>12)%3)-1;
  const count=Math.min(4,Math.max(risk?1:1,base+shift+(risk&&wave>1?1:0)));
- const positions=[
+ const positions=f.worldVersion==='0.11-B1'?fieldEnemySpawnCandidates(f,encounterSeed,count+4):[
   {x:6.85,y:6.6},{x:2.1,y:3.3},{x:7.1,y:2.9},{x:1.8,y:6.3},
   {x:6.9,y:4.25},{x:2.8,y:7.1},{x:5.8,y:2.4},{x:1.6,y:4.6}
  ];
@@ -27,6 +28,7 @@ export function startActionField(s){
  for(let i=0;i<count;i++){
   const pick=mix[((random(i+19)>>>8)+i)%mix.length],kind=pick||'chicken';
   const candidates=positions.slice();
+  if(!candidates.length)continue;
   const start=((random(i+47)>>>9)+i)%candidates.length;
   let p=null;
   for(let c=0;c<candidates.length;c++){
@@ -37,7 +39,8 @@ export function startActionField(s){
    if(f.enemies.some(e=>dist(e,candidate)<1.1))continue;
    p=candidate;break;
   }
-  if(!p)p={x:7-i*.8,y:3+i*.55};
+  if(!p){const available=positions.find(q=>!blocked(f,q,.16)&&f.enemies.every(e=>dist(e,q)>1.1));
+   if(!available)continue;p={...available};}
   const hp=kind==='boar'?4:kind==='chicken'||kind==='steam_crab'?3:2;
   f.enemies.push({id:kind+'-'+i+'-'+wave,kind,x:p.x,y:p.y,hp,maxHp:hp,
    cooldown:1.55+((random(i+81)>>>8)%10)*.12,phase:i});

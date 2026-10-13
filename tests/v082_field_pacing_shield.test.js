@@ -41,7 +41,8 @@ test('the manually activated lid parry blocks one attack without consuming the p
 });
 test('a wok shield does not protect against ground steam or lava-like environmental hazards',()=>{
  const s=field(23,'spring_safe'),f=s.field;f.enemies=[];f.facing={x:0,y:-1};
- f.hazards=[{x:2,y:10}];f.elapsed=3.58;
+ const vent={x:Math.floor(f.pos.x),y:Math.floor(f.pos.y)};
+  f.hazards=[vent];f.elapsed=3.55-(vent.x%2)*1.7;
  stepActionField(s,0,0,.05);
  assert.equal(f.hp,2);
  assert.equal(f.shieldCharge,true);
