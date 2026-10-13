@@ -1,6 +1,6 @@
 # 怪味食堂 v0.10.4 · 客人图鉴像素头像与面板布局修复
 
-> **修复先前遗漏的手机 UI 反馈**：已认识的四类客人在图鉴中使用和营业现场**同一套**程序像素小人，不再使用 emoji 代替；未认识的客人仍保密。图鉴关闭按钮独占 57px 头部的 44px 点击区，不再遮住「菜谱 / 客人」页签。仅 UI 变更，不改研发、关系、库存或经济。见 [设计与验收](docs/V0.10.4_GUEST_PORTRAITS_SHEET_FIX.md) · [代码 PR #38](https://github.com/mastercook777/Oddpot-Kitchen/pull/38)。
+> **修复先前遗漏的手机 UI 反馈**：已认识的四类客人在图鉴中使用和营业现场**同一套**程序像素小人，不再使用 emoji 代替；未认识的客人仍保密。图鉴关闭按钮独占 57px 头部的 44px 点击区，不再遮住「菜谱 / 客人」页签。仅 UI 变更，不改研发、关系、库存或经济。**自动回归及构建已通过，iPhone 真机待验收。**见 [设计与验收](docs/V0.10.4_GUEST_PORTRAITS_SHEET_FIX.md) · [代码 PR #38](https://github.com/mastercook777/Oddpot-Kitchen/pull/38)。
 
 ---
 
