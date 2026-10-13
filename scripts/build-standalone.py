@@ -9,6 +9,6 @@ for path in ('recipe_profiles_v063.js','data.js','cooking_v063.js','cook_motion_
  s=s.replace('export const ','const ').replace('export function ','function ')
  code.append(s)
 script='\n'.join(code).replace('</script>','<\\/script>')
-markup='''<!doctype html><html lang="zh-CN"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1.0,maximum-scale=1.0,viewport-fit=cover,user-scalable=no"><meta name="apple-mobile-web-app-capable" content="yes"><meta name="theme-color" content="#1b3c2b"><title>怪味食堂 · v0.9.1 离线版</title><style>'''+css+'''</style></head><body><div id="app"></div><script>'''+script+'''</script></body></html>'''
+markup='''<!doctype html><html lang="zh-CN"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1.0,maximum-scale=1.0,viewport-fit=cover,user-scalable=no"><meta name="apple-mobile-web-app-capable" content="yes"><meta name="theme-color" content="#1b3c2b"><title>怪味食堂 · v0.9.2 离线版</title><style>'''+css+'''</style></head><body><div id="app"></div><script>'''+script+'''</script></body></html>'''
 (root/'standalone.html').write_text(markup)
 print('Standalone bytes:',len(markup.encode('utf-8')))
