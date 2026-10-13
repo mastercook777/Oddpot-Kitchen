@@ -4,13 +4,13 @@ import {readFileSync} from 'node:fs';
 import {execFileSync} from 'node:child_process';
 import {newGame,load,save,serviceDayPlan,createService,setServicePaused,tick,
  resumeBreak,closeService,advanceDay,totalBusinessDay} from '../src/engine.js';
-import {setSignatureRecipe,clearUnavailableSignature,buildGrowthGuestPlan,
+import {setHiddenMenuRecipe,isRareRecipe,buildGrowthGuestPlan,
  applyRealRegularReview,markPlannedReferralsUsed,summarizeGrowthService} from '../src/restaurant_growth_v010.js';
 
 function loadedRestaurant(seed=101){
  const s=newGame(seed);for(const id of Object.keys(s.inventory))s.inventory[id]=100;
  s.recipes.chicken_stew=100;
- s.phase='menu';assert.equal(setSignatureRecipe(s,'chicken_stew'),true);
+ s.phase='menu';
  return s;
 }
 function simulateNight(s){
@@ -33,21 +33,20 @@ test('default v0.9.5 gameplay has no invented guests or sales',()=>{
  assert.ok(plan.visitors.every(x=>x===null));
  const a=JSON.parse(JSON.stringify(s));
  assert.deepEqual(serviceDayPlan(a),plan);
- assert.equal(s.restaurantGrowth.signatureRecipeId,null);
+ assert.equal(s.restaurantGrowth.hiddenMenuRecipeId,null);
  assert.equal(s.restaurantGrowth.referrals.length,0);
 });
 
-test('signature is one learned dish actually on the three-slot menu; changing it costs no coins',()=>{
- const s=newGame();
- s.phase='menu';const coins=s.coins;
- assert.equal(setSignatureRecipe(s,'chili_meat'),false); // unlearned
- assert.equal(setSignatureRecipe(s,'chicken_stew'),true);
- assert.equal(setSignatureRecipe(s,'chicken_stew'),false);
- assert.equal(setSignatureRecipe(s,'mushroom_stir'),true);
- assert.equal(s.coins,coins);
- s.menu=['chicken_stew','chicken_stew','veg_stir'];clearUnavailableSignature(s);
- assert.equal(s.restaurantGrowth.signatureRecipeId,null);
- assert.equal(s.restaurantGrowth.regulars.constructor,Object);
+test('hidden menu is a separate learned rare recipe slot',()=>{
+ const s=newGame();s.phase='menu';
+ assert.equal(setHiddenMenuRecipe(s,'chicken_stew'),false);
+ assert.equal(isRareRecipe('mushroom_heart_wok'),true);
+ assert.equal(setHiddenMenuRecipe(s,'mushroom_heart_wok'),false);
+ s.recipes.mushroom_heart_wok=85;
+ assert.equal(setHiddenMenuRecipe(s,'mushroom_heart_wok'),true);
+ assert.equal(s.menu.length,3);
+ assert.ok(!s.menu.includes('mushroom_heart_wok'));
+ assert.equal(setHiddenMenuRecipe(s,null),true);
 });
 
 test('regular arrives on existing order and must finish actual meal before relationship/recommendation',()=>{
@@ -149,8 +148,8 @@ test('growth module, menu button, old 320px-safe UI and offline build are wired'
  const file=p=>readFileSync(new URL(p,import.meta.url),'utf8');
  const app=file('../src/app.js'),css=file('../src/restaurant_growth_v010.css');
  const script=file('../scripts/build-standalone.py'),index=file('../index.html');
- assert.match(app,/data-act="signature:\$\{id\}"/);
- assert.match(app,/clearUnavailableSignature\(game\)/);
+ assert.match(app,/data-act="hidden-menu"/);
+ assert.match(app,/data-hidden-pick/);
  assert.match(app,/visitorCue/);
  assert.match(app,/growthReport\(game\)/);
  assert.match(css,/@media\(max-width:355px\)/);
