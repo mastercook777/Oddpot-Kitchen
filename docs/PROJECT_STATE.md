@@ -2,7 +2,7 @@
 
 **状态**：`已实装（部分尚待玩家真机验收）`  
 **基准**：GitHub `main` v0.11.0-alpha.3（v0.11-B1 扩展生态地图与镜头第一批合并后；真机仍待验收）。后续每版合并应更新本页，不应仅向 README 顶部累加旧版本内容。  
-> **分支实验提示（仅 feat/herb-path-pixel-art-slice，不代表 main 已实装）**：Draft PR #44 提供首张「香草小径」16px 原生像素 Tile/树石/食材/旅人美术切片，完整游戏可在该分支运行和下载离线 `standalone.html`；其他地区、餐馆未修改。设计与运行见 [像素美术 Vertical Slice](V0.11C_HERB_PATH_PIXEL_ART_SLICE.md)。在用户实测之前保持试验状态，不合并、不改变主线 alpha.3 版本号。
+> **分支实验提示（仅 feat/herb-path-pixel-art-slice，不代表 main 已实装）**：Draft PR #44 已完成「香草小径」16px 低饱和低噪点草地、BFS 可走道路支线、树石/食材/旅人/敌人局部像素化、缓存与实机浏览器截图，完整游戏可在该分支运行和下载离线 `standalone.html`；其他地区、餐馆未修改。设计与运行见 [像素美术 Vertical Slice](V0.11C_HERB_PATH_PIXEL_ART_SLICE.md)。在用户实测之前保持试验状态，不合并、不改变主线 alpha.3 版本号。
 
 **验证权威**：`package.json`、`src/` 实现、自动测试、实际用户试玩反馈；旧 GDD v0.1/v0.2 与 AGENTS.md 中 v0.7.x 的“当前”措辞仅作为历史材料。
 
