@@ -3,6 +3,7 @@
 import {ING} from './data.js?v=0.8.0';
 import {meleeProfile,meleeAttackWouldHit} from './field_combat_feedback_v084.js?v=0.8.4';
 import {clamp, rand, settleField,addFieldBag} from './engine.js?v=0.8.4';
+import {hazardPhase} from './field_rules_v011a.js';
 const dist=(a,b)=>Math.hypot(a.x-b.x,a.y-b.y);
 const pushMsg=(f,message)=>{f.actionMessage=message;f.actionMessageTTL=2.7;};
 export function startActionField(s){
@@ -213,11 +214,10 @@ export function stepActionField(s,axisX,axisY,dt){
  // Hot springs vent on a visible, deterministic cycle. The warning pool can
  // be crossed safely if the player pays attention; forest has no vent pulse.
  if((f.region==='spring'||f.biome?.style==='roots')&&f.hp>0){
-  const spore=f.biome?.style==='roots';
   for(const vent of f.hazards){
-   const phase=(f.elapsed+(vent.x%2)*1.7)%4.2;
-   if(phase>(spore?3.15:3.45)&&Math.hypot(f.pos.x-(vent.x+.5),f.pos.y-(vent.y+.5))<.55){
-    hurt(s,1,spore?'spore':'vent');break;
+   const phase=hazardPhase(vent,f.elapsed,f.biome);
+   if(phase.active&&Math.hypot(f.pos.x-(vent.x+.5),f.pos.y-(vent.y+.5))<phase.radius){
+    hurt(s,1,phase.source);break;
    }
   }
  }
