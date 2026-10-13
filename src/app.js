@@ -52,10 +52,11 @@ function overlayMarkup(){if(!overlay)return '';
   const stockLine=id=>{
    const ing=ING[id],shop=ing.acquisitionPolicy==='SHOP_STAPLE',offer=market.goods[id],owned=game.inventory[id]||0;
    if(!shop)return `<div class="stock-line"><span>${ing.emoji} ${ing.name}</span><b>×${owned}</b><small class="v08-source-only">${ing.acquisitionPolicy==='BOSS_ONLY'?'首领掉落':'野外采集'}</small></div>`;
+   if(!offer)return `<div class="stock-line"><span>${ing.emoji} ${ing.name}</span><b>×${owned}</b><small>今日缺货 · 可探索补充</small></div>`;
    return `<div class="stock-line"><span>${ing.emoji} ${ing.name}</span><b>×${owned}</b><small>${offer.price} 金币/份 · 今日剩余 ${offer.stock}</small><div class="v093-buy-actions">${b('buy:'+id,offer.stock?'买 1 份':'售罄','small',!canShop||!offer.stock||game.coins<offer.price)}${b('buy:'+id+':3','买 3 份','small',!canShop||offer.stock<3||game.coins<offer.price*3)}</div></div>`;
   };
-  body=`<h2>食材采购</h2><p class="sheet-lead">四种基础食材每天都能补货，每种至少 ${DAILY_STAPLE_MIN_PURCHASES} 份。价格略有变化，售完次日恢复；珍稀材料仍需探索取得。</p>
-  <h3>每日基础补货 · ${Object.keys(market.goods).length} 种</h3><div class="stock-list">${ids.filter(id=>ING[id].acquisitionPolicy==='SHOP_STAPLE').map(stockLine).join('')}</div>
+  body=`<h2>食材采购</h2><p class="sheet-lead">四种基础食材每天随机上架 3–4 种基础食材；上架的每种至少可买 ${DAILY_STAPLE_MIN_PURCHASES} 份。售罄或缺货可等次日，也可去野外取材。</p>
+  <h3>今日上架 ${Object.keys(market.goods).length} / 4 种</h3><div class="stock-list">${ids.filter(id=>ING[id].acquisitionPolicy==='SHOP_STAPLE').map(stockLine).join('')}</div>
   <h3>探索获取</h3><div class="stock-list">${ids.filter(id=>ING[id].acquisitionPolicy!=='SHOP_STAPLE').map(stockLine).join('')}</div>`;
  }else if(overlay.startsWith('menu:')){
   const slot=Number(overlay.split(':')[1]);body=`<h2>更换第 ${slot+1} 道上架菜</h2><p class="sheet-lead">每晚三道菜，不是价格越高越好；两口锅的负载会影响等待。</p><div class="book-list">${Object.keys(game.recipes).map(id=>{const r=RECIPES[id];return `<button data-menu-pick="${slot}:${id}" class="book-item"><span class="book-icon">${r.emoji}</span><div><strong>${r.name} · ${r.station}</strong><small>${r.time+(recipeCraftSnapshot(game,id)?.timeDelta||0)}s · ${recipeCraftSnapshot(game,id)?.price}金币 · ${recipeCraftSnapshot(game,id)?.ingredientIds.map(onlyName).join(' + ')}</small></div><span>›</span></button>`}).join('')}</div>`;
