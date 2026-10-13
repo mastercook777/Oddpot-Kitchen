@@ -45,7 +45,7 @@ test('hybrid meadow retains existing safe reachable real paths for 96 seeds',()=
   assert.ok(plan);
   assert.equal(plan.width,12);assert.equal(plan.height,16);
   const goal=f.nodes.find(n=>n.key==='target');
-  const road=fieldTilePath(f,f.spawn,{x:goal.x+.5,y:goal.y+.5},{avoidHazards:true});
+  const road=fieldTilePath(f,f.spawn,goal,{avoidHazards:true});
   assert.ok(road.length>=3);
   for(const pt of road)assert.ok(plan.trail.has(Math.floor(pt.x)+','+Math.floor(pt.y)));
   for(const o of f.obstacles)assert.ok(!plan.trail.has(o.x+','+o.y));
