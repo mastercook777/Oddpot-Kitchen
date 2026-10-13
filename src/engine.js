@@ -1,5 +1,5 @@
 import {ING,RECIPES,CUSTOMERS,FORECAST,DEFAULT_INVENTORY,SHOP_STAPLES} from './data.js?v=0.9.1';
-import {LIVE_ACTIONS,evaluateLiveCook,liveIngredientState,legacyVariant,makeLiveVariant,resolveTechnique} from './cooking_v063.js?v=0.8.0';
+import {LIVE_ACTIONS,evaluateLiveCook,liveIngredientState,liveIngredientHeatFeedback,legacyVariant,makeLiveVariant,resolveTechnique} from './cooking_v063.js?v=0.10.3';
 import {RECIPE_PROFILES} from './recipe_profiles_v063.js?v=0.8.0';
 import {generateBiomeMap} from './field_biomes_v081.js?v=0.8.2';
 import {newServiceHero,heroZone} from './walkable_restaurant_v07.js?v=0.9.2';
@@ -1118,7 +1118,7 @@ export function liveCookPreview(s){
  const c=s.cook;if(c?.mode!=='v063-live')return null;
  const indicators=c.ids.map(id=>{
   const d=c.dropped.find(x=>x.id===id);
-  return {id,state:liveIngredientState(d,c.elapsed,c.actions,c.vessel),
+  return {id,...liveIngredientHeatFeedback(d,c.elapsed,c.actions,c.vessel),
     dropped:!!d};
  });
  return {indicators,elapsed:c.elapsed,actions:c.actions};

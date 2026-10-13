@@ -86,13 +86,13 @@ test('speech calculations do not mutate real inventory, orders, money or service
 test('all visible game versions, entrypoint and offline build are aligned',()=>{
  const html=src('../index.html'),script=src('../scripts/build-standalone.py'),
  app=src('../src/app.js'),pkg=JSON.parse(src('../package.json'));
- assert.equal(pkg.version,'0.10.2');
- assert.match(html,/Oddpot Kitchen v0\.10\.2/);
- assert.match(html,/app\.js\?v=0\.10\.2-guest-book/);
- assert.match(app,/ODDPOT · v0\.10\.2/);
- assert.match(app,/版本 v0\.10\.2/);
+ assert.equal(pkg.version,'0.10.3');
+ assert.match(html,/Oddpot Kitchen v0\.10\.3/);
+ assert.match(html,/app\.js\?v=0\.10\.3-research/);
+ assert.match(app,/ODDPOT · v0\.10\.3/);
+ assert.match(app,/版本 v0\.10\.3/);
  assert.match(script,/diner_ambience_v077\.js/);
- assert.match(script,/v0\.10\.2 离线版/);
+ assert.match(script,/v0\.10\.3 离线版/);
  for(const name of ['../src/diner_ambience_v077.js','../src/scenes_v04.js']){
   const check=spawnSync(process.execPath,['--check',new URL(name,import.meta.url).pathname],{encoding:'utf8'});
   assert.equal(check.status,0,check.stderr);
