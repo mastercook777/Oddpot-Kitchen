@@ -34,7 +34,7 @@ try{
    return {pixel:[...a],size:[canvas.width,canvas.height]};
   });
   if(drawCalls.pixel[3]===0)throw new Error('Transparent center rendered in '+view);
-  await page.screenshot({path:out+'/'+name,fullPage:true,animations:'disabled',timeout:15000});
+  await page.locator('.shell').screenshot({path:out+'/'+name,animations:'disabled',timeout:15000});
   console.log('Saved '+name+' '+JSON.stringify(drawCalls));
  }
 }finally{
