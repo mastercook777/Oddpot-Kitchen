@@ -418,7 +418,7 @@ export function purchase(s,id,n=1){
  if(!transact(s,`buy-${s.cycle}-${s.day}-${s.step++}`,'purchase',{[id]:n},-item.price*n))return false;
  item.stock-=n;return true;
 }
-export function startCook(s,ids,method='stir',context='research',orderId=null){if(!['research','service'].includes(s.phase)||s.cook||ids.length<2||ids.length>3||!canUse(s,ids))return false;const txn=`cook-${s.cycle}-${s.day}-${s.step++}`;if(context==='research'&&s.phase!=='research')return false;const tiles=Array(9).fill(null);const defaults=[0,1,4];ids.forEach((id,i)=>tiles[defaults[i]]={id,heat:0});s.cook={context,orderId,method,tiles,movedThisBeat:false,beats:0,adj:{spice:0,umami:0},effects:[],flame:0,txn};return true}
+export function startCook(s,ids,method='stir',context='research',orderId=null){const premium=!!(context==='service'&&s.service?.orders?.find(o=>o.id===orderId)?.premium);if(!['research','service'].includes(s.phase)||s.cook||ids.length<2||ids.length>3||!canUse(s,ids,premium))return false;const txn=`cook-${s.cycle}-${s.day}-${s.step++}`;if(context==='research'&&s.phase!=='research')return false;const tiles=Array(9).fill(null);const defaults=[0,1,4];ids.forEach((id,i)=>tiles[defaults[i]]={id,heat:0});s.cook={context,orderId,method,tiles,movedThisBeat:false,beats:0,adj:{spice:0,umami:0},effects:[],flame:0,txn};return true}
 export function moveTile(s,from,to){const c=s.cook;if(!c||c.beats>=3||(c.beats>0&&c.movedThisBeat)||from<0||from>8||to<0||to>8)return false;[c.tiles[from],c.tiles[to]]=[c.tiles[to],c.tiles[from]];if(c.beats>0)c.movedThisBeat=true;return true}
 const neighbors=(p,q)=>Math.abs(Math.floor(p/3)-Math.floor(q/3))+Math.abs(p%3-q%3)===1;
 export function setFlame(s,flame){
@@ -451,7 +451,7 @@ else for(const [key,r] of Object.entries(RECIPES)){if(key==='flame_beef'||r.meth
 let heatScore=tiles.reduce((v,x)=>{let h=x.heat;if(tech&&c.method==='stir'&&h>ING[x.id].hi)h--;let distance=h<ING[x.id].lo?ING[x.id].lo-h:Math.max(0,h-ING[x.id].hi);return v+(distance===0?60/k:distance===1?35/k:distance===2?15/k:0)},0);
 const effects=[...new Set([...c.effects,...(c.adj.spice>=2&&good.every(Boolean)?['辛香入味']:[]),...(c.adj.umami>=2&&good.every(Boolean)?['浓鲜融合']:[]),...(ids.includes('cabbage')&&good[ids.indexOf('cabbage')]?['爽脆']:[])])];
 let synergy=effects.length>=2?25:effects.length?18:10;let technique=id?15:0;let quality=clamp(Math.round(heatScore+synergy+technique),0,100);const sellable=Boolean(id)&&!undersafe&&quality>=40;return {recipeId:id,quality,heatScore:Math.round(heatScore),effects,ids,tiles:clone(c.tiles),sellable,reason:!id?'未匹配已开放的料理配方':undersafe?'肉类未达到安全熟度':quality<40?'火候偏差过大':'成功',heat:tiles.map(t=>({id:t.id,heat:t.heat,ideal:`${ING[t.id].lo}–${ING[t.id].hi}`}))};}
-export function finishCook(s){const c=s.cook;if(!c||c.beats!==3)return false;const r=cookOutcome(c,s.tech);const fee=c.context==='research';const ok=consume(s,r.ids,c.txn);if(!ok)return false;s.lastCook=r;s.cook=null;if(fee&&r.sellable){s.recipes[r.recipeId]=Math.max(s.recipes[r.recipeId]||0,Math.min(r.quality,90));s.learned[r.recipeId]=true;}if(!fee&&s.service){s.manualCost+=materialCost(r.ids);const order=s.service.orders.find(o=>o.id===c.orderId);if(order&&order.status==='queued'){order.manual={quality:r.quality,sellable:r.sellable,recipeId:r.recipeId};order.manualMaterialsConsumed=true;order.manualTimePaid=false;}}return r;}
+export function finishCook(s){const c=s.cook;if(!c||c.beats!==3)return false;const r=cookOutcome(c,s.tech);const fee=c.context==='research',premium=!!(!fee&&s.service?.orders?.find(o=>o.id===c.orderId)?.premium);const ok=consume(s,r.ids,c.txn,premium);if(!ok)return false;if(premium)s.service.premiumConsumed=(s.service.premiumConsumed||0)+1;s.lastCook=r;s.cook=null;if(fee&&r.sellable){s.recipes[r.recipeId]=Math.max(s.recipes[r.recipeId]||0,Math.min(r.quality,90));s.learned[r.recipeId]=true;}if(!fee&&s.service){s.manualCost+=materialCost(r.ids);const order=s.service.orders.find(o=>o.id===c.orderId);if(order&&order.status==='queued'){order.manual={quality:r.quality,sellable:r.sellable,recipeId:r.recipeId};order.manualMaterialsConsumed=true;order.manualTimePaid=false;}}return r;}
 export function synergyFor(menu){const rs=[...new Set(menu)].map(id=>RECIPES[id]).filter(Boolean);if(rs.some(r=>r.tags.includes('辣')&&r.tags.includes('肉'))&&rs.some(r=>r.station==='POT'))return '辛香暖胃';if(rs.filter(r=>r.tags.includes('菌香')).length>=2)return '菌香组合';return null}
 export function canMenu(s){return s.menu.length===3&&s.menu.every(id=>s.recipes[id]&&RECIPES[id]);}
 // A *forecast*, not a reservation: distribute expected guests evenly across
@@ -477,7 +477,7 @@ export function prepStockForecast(s){
    required[ingredient]=(required[ingredient]||0)+toCook;
  }
  const ingredients=Object.entries(required).map(([id,needed])=>{
-  const have=Math.max(0,s.inventory?.[id]||0),short=Math.max(0,needed-have);
+  const have=Math.max(0,(s.inventory?.[id]||0)-(premiumReserved(s)[id]||0)),short=Math.max(0,needed-have);
   return {id,have,needed,short,remaining:have-needed};
  }).sort((a,b)=>b.short-a.short||b.needed-a.needed||a.id.localeCompare(b.id));
  const shortages=ingredients.filter(x=>x.short>0);
@@ -887,7 +887,7 @@ function advanceGuestOrders(s){
  }
 }
 export function expedite(s,orderId){const v=s.service;if(!v||s.phase!=='service')return false;const i=v.queued.indexOf(orderId);if(i<0)return false;v.queued.splice(i,1);v.queued.unshift(orderId);return true}
-export function markManual(s,orderId){const v=s.service;if(!v||v.manualUsed>=2||s.cook)return false;const o=v.orders.find(x=>x.id===orderId);if(!o||o.status!=='queued'||o.manual||!s.recipes[o.recipeId])return false;const r=RECIPES[o.recipeId];if(!canUse(s,r.ids))return false;const started=startCook(s,r.ids,r.method,'service',orderId);if(started)v.manualUsed++;return started}
+export function markManual(s,orderId){const v=s.service;if(!v||v.manualUsed>=2||s.cook)return false;const o=v.orders.find(x=>x.id===orderId);if(!o||o.status!=='queued'||o.manual||!s.recipes[o.recipeId])return false;const r=RECIPES[o.recipeId];if(!canUse(s,r.ids,!!o.premium))return false;const started=startCook(s,r.ids,r.method,'service',orderId);if(started)v.manualUsed++;return started}
 function spawnArrivals(s){
  const v=s.service;
  for(const o of v.orders){
