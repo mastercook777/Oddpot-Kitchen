@@ -24,18 +24,27 @@ export function expandDiningRoom(s){
  if(!transact(s,'expand-third-table','room_upgrade',{},-ROOM_EXPANSION_COST))return false;
  s.dining={tableCount:3};return true;
 }
+// The day still randomly stocks 3–4 of the four common staples.
+// Each listed staple has at least six purchase units; rare goods stay field-only.
+export const DAILY_STAPLE_MIN_PURCHASES=6;
 export function ensureDailyMarket(s){
  const key=`${s.cycle}-${s.day}`;
- if(s.market?.dayKey===key)return s.market;
+ if(s.market?.dayKey===key&&s.market.schema===2)return s.market;
+ const previous=s.market?.dayKey===key?s.market.goods||{}:{};
  const selection=SHOP_STAPLES.map((id,i)=>({id,roll:rand((s.seed^(s.cycle*7919)^(s.day*65521)^Math.imul(i+1,1103515245))>>>0)}))
-   .sort((a,b)=>a.roll-b.roll||a.id.localeCompare(b.id));
+  .sort((a,b)=>a.roll-b.roll||a.id.localeCompare(b.id));
+ // Preserve the original v0.9 random availability: only 3 or 4 of 4 staples
+ // are listed each day. Increase the offered quantity, not the item variety.
  const count=3+((rand(s.seed+s.cycle*101+s.day*109)>>>21)%2);
  const goods={};
  for(const {id,roll} of selection.slice(0,count)){
-  const stock=3+((roll>>>16)%5),pct=85+((roll>>>10)%51);
-  goods[id]={stock,initialStock:stock,price:Math.max(1,Math.round(ING[id].cost*pct/100))};
+  const old=previous[id],bought=old?Math.max(0,(old.initialStock||0)-(old.stock||0)):0;
+  const initialStock=Math.max(DAILY_STAPLE_MIN_PURCHASES+((roll>>>16)%4),bought);
+  // Migrated games keep all purchases and the same daily price as before.
+  const price=old?.price||Math.max(1,Math.round(ING[id].cost*(85+((roll>>>10)%51))/100));
+  goods[id]={stock:initialStock-bought,initialStock,price};
  }
- s.market={dayKey:key,goods};
+ s.market={dayKey:key,goods,schema:2};
  return s.market;
 }
 export const KITCHEN_POSITIONS=['WOK','POT'];

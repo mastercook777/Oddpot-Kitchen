@@ -4,7 +4,7 @@ import {LIVE_ACTIONS,LIVE_STYLES,LIVE_AFFINITY,liveRecipeId} from './cooking_v06
 import {RECIPE_PROFILES} from './recipe_profiles_v063.js?v=0.8.0';
 import {livePanMotion} from './cook_motion_v063.js?v=0.6.3';
 import {walkServiceHero} from './walkable_restaurant_v07.js?v=0.9.2';
-import {PHASES,newGame,save,load,beginLiveResearch,dropLiveIngredient,performLiveAction,finishLiveResearch,stepLiveResearch,liveCookPreview,ensureRecipeVariants,activeRecipeVariant,chooseRecipeVariant,recipeCraftSnapshot,availableBento,prepareBento,today,serviceDayPlan,tableSeatState,enterField,settleField,discardFieldStack,fieldBagSlotsUsed,completeFieldSegment,chooseFieldBranch,selectFieldWeapon,fieldWeaponChoices,selectedFieldWeaponType,skipField,purchase,startCook,moveTile,beat,finishCook,synergyFor,canMenu,prepDish,createService,tick,expedite,walkableSpecial,activateWalkableSpecial,advanceWalkableInteraction,closeService,nextPhase,advanceDay,buyUpgrade,buyKitchenUpgrade,kitchenUpgradeCost,configureKitchenSlot,kitchenPreview,kitchenRefitCost,kitchenHasMenuCoverage,ensureKitchen,ensureCrew,CREW_ROLES,hireCrew,assignCrew,feedCrew,activeCrewMeal,crewEffects,buyBagUpgrade,bagUpgradePrice,canUse,setServicePaused,resumeBreak,breakPrep,setFlame,tossWok,previewHeat,moveExplorer,interactExplorer,sootheGuest,newRecipeLead,currentServiceEvent,chooseServiceEvent,swapBreakMenu,serviceGoalResult,serviceSupplyStatus,ensureDailyMarket,expandDiningRoom,ROOM_EXPANSION_COST,roomExpansionAvailable,totalBusinessDay,firstChallenge,tableCapacity} from './engine.js?v=0.9.2';
+import {PHASES,newGame,save,load,beginLiveResearch,dropLiveIngredient,performLiveAction,finishLiveResearch,stepLiveResearch,liveCookPreview,ensureRecipeVariants,activeRecipeVariant,chooseRecipeVariant,recipeCraftSnapshot,availableBento,prepareBento,today,serviceDayPlan,tableSeatState,enterField,settleField,discardFieldStack,fieldBagSlotsUsed,completeFieldSegment,chooseFieldBranch,selectFieldWeapon,fieldWeaponChoices,selectedFieldWeaponType,skipField,purchase,startCook,moveTile,beat,finishCook,synergyFor,canMenu,prepDish,createService,tick,expedite,walkableSpecial,activateWalkableSpecial,advanceWalkableInteraction,closeService,nextPhase,advanceDay,buyUpgrade,buyKitchenUpgrade,kitchenUpgradeCost,configureKitchenSlot,kitchenPreview,kitchenRefitCost,kitchenHasMenuCoverage,ensureKitchen,ensureCrew,CREW_ROLES,hireCrew,assignCrew,feedCrew,activeCrewMeal,crewEffects,buyBagUpgrade,bagUpgradePrice,canUse,setServicePaused,resumeBreak,breakPrep,setFlame,tossWok,previewHeat,moveExplorer,interactExplorer,sootheGuest,newRecipeLead,currentServiceEvent,chooseServiceEvent,swapBreakMenu,serviceGoalResult,serviceSupplyStatus,ensureDailyMarket,DAILY_STAPLE_MIN_PURCHASES,expandDiningRoom,ROOM_EXPANSION_COST,roomExpansionAvailable,totalBusinessDay,firstChallenge,tableCapacity} from './engine.js?v=0.9.3';
 import {startActionField,stepActionField,useFieldSkill,resolveFieldEvent} from './field_v04.js?v=0.8.4';
 import {drawField,drawDiner} from './scenes_v04.js?v=0.9.2';
 
@@ -26,7 +26,7 @@ const itemCount=()=>Object.keys(game.recipes).length;
 
 function hud(){
  const home=game.phase==='forecast';
- return `<div class="hud ${home?'v076-home-hud':''}"><div class="brand"><span class="logo" aria-hidden="true">🍳</span><div><strong>怪味食堂</strong><small>${home?'今日营业':'ODDPOT · v0.9.2'}</small></div></div><div class="hud-meta"><span aria-label="金币">🪙 ${game.coins}</span><span aria-label="声望">⭐ ${game.reputation}</span></div><button class="hud-gear" data-act="settings" aria-label="设置">⚙</button></div><div class="day-strip ${home?'v076-home-day':''}"><b>营业第 ${totalBusinessDay(game)} 天 · ${tableCapacity(game)} 座</b><span class="day-phase">${home?'☀ 开店前':phaseLabels[game.phase]}</span>${home?'':`<span class="day-recipes">图鉴 ${itemCount()}/${Object.keys(RECIPES).length}</span>`}</div>`;
+ return `<div class="hud ${home?'v076-home-hud':''}"><div class="brand"><span class="logo" aria-hidden="true">🍳</span><div><strong>怪味食堂</strong><small>${home?'今日营业':'ODDPOT · v0.9.3'}</small></div></div><div class="hud-meta"><span aria-label="金币">🪙 ${game.coins}</span><span aria-label="声望">⭐ ${game.reputation}</span></div><button class="hud-gear" data-act="settings" aria-label="设置">⚙</button></div><div class="day-strip ${home?'v076-home-day':''}"><b>营业第 ${totalBusinessDay(game)} 天 · ${tableCapacity(game)} 座</b><span class="day-phase">${home?'☀ 开店前':phaseLabels[game.phase]}</span>${home?'':`<span class="day-recipes">图鉴 ${itemCount()}/${Object.keys(RECIPES).length}</span>`}</div>`;
 }
 function toast(){return `<div class="game-toast" role="status"><span>${esc(message)}</span></div>`}
 function playablePhase(){return game.phase==='service'||(game.phase==='field'&&!!game.field?.action)}
@@ -49,11 +49,15 @@ function overlayMarkup(){if(!overlay)return '';
   <div class="book-list">${f.bagStacks.map(st=>`<button class="book-item" data-discard="${st.stackId}"><span class="book-icon">${ING[st.ingredientId].emoji}</span><div><strong>${ING[st.ingredientId].name} ×${st.quantity}</strong><small>${ING[st.ingredientId].acquisitionPolicy==='BOSS_ONLY'?'★ Mini Boss 专属':'点击丢弃这一格'}</small></div><span>✕</span></button>`).join('')||'背包是空的'}</div>`;
  }else if(overlay==='stock'){
   const ids=Object.keys(ING),market=ensureDailyMarket(game),canShop=['forecast','field','research','menu','prep'].includes(game.phase)&&(!game.field||game.field.settled);
-  const stockLine=id=>{const ing=ING[id],shop=ing.acquisitionPolicy==='SHOP_STAPLE',offer=market.goods[id];
-   return `<div class="stock-line"><span>${ing.emoji} ${ing.name}</span><b>仓库 ×${game.inventory[id]||0}</b>${shop?(offer?`<small>${offer.price}币 · 余${offer.stock}/${offer.initialStock}</small>${b('buy:'+id,offer.stock?'买 1 份':'售罄','small',!canShop||!offer.stock||game.coins<offer.price)}`:'<small>今日未上架 · 可探索补充</small>'):`<small class="v08-source-only">${ing.acquisitionPolicy==='BOSS_ONLY'?'魔物首领遗珍':'野外采集'}</small>`}</div>`;};
-  body=`<h2>食材采购</h2><p class="sheet-lead">每天供货不同，限量且价格浮动。今晚缺的食材可以去魔物栖息地寻找。已采购数量存档，刷新页面不会补货。</p>
-  <h3>今日基础供应 · ${Object.keys(market.goods).length} / 4 种</h3><div class="stock-list">${ids.filter(id=>ING[id].acquisitionPolicy==='SHOP_STAPLE').map(stockLine).join('')}</div>
-  <h3>魔物栖息地的特产</h3><div class="stock-list">${ids.filter(id=>ING[id].acquisitionPolicy!=='SHOP_STAPLE').map(stockLine).join('')}</div>`;
+  const stockLine=id=>{
+   const ing=ING[id],shop=ing.acquisitionPolicy==='SHOP_STAPLE',offer=market.goods[id],owned=game.inventory[id]||0;
+   if(!shop)return `<div class="stock-line"><span>${ing.emoji} ${ing.name}</span><b>×${owned}</b><small class="v08-source-only">${ing.acquisitionPolicy==='BOSS_ONLY'?'首领掉落':'野外采集'}</small></div>`;
+   if(!offer)return `<div class="stock-line"><span>${ing.emoji} ${ing.name}</span><b>×${owned}</b><small>今日缺货 · 可探索补充</small></div>`;
+   return `<div class="stock-line"><span>${ing.emoji} ${ing.name}</span><b>×${owned}</b><small>${offer.price} 金币/份 · 今日剩余 ${offer.stock}</small><div class="v093-buy-actions">${b('buy:'+id,offer.stock?'买 1 份':'售罄','small',!canShop||!offer.stock||game.coins<offer.price)}${b('buy:'+id+':3','买 3 份','small',!canShop||offer.stock<3||game.coins<offer.price*3)}</div></div>`;
+  };
+  body=`<h2>食材采购</h2><p class="sheet-lead">四种基础食材每天随机上架 3–4 种基础食材；上架的每种至少可买 ${DAILY_STAPLE_MIN_PURCHASES} 份。售罄或缺货可等次日，也可去野外取材。</p>
+  <h3>今日上架 ${Object.keys(market.goods).length} / 4 种</h3><div class="stock-list">${ids.filter(id=>ING[id].acquisitionPolicy==='SHOP_STAPLE').map(stockLine).join('')}</div>
+  <h3>探索获取</h3><div class="stock-list">${ids.filter(id=>ING[id].acquisitionPolicy!=='SHOP_STAPLE').map(stockLine).join('')}</div>`;
  }else if(overlay.startsWith('menu:')){
   const slot=Number(overlay.split(':')[1]);body=`<h2>更换第 ${slot+1} 道上架菜</h2><p class="sheet-lead">每晚三道菜，不是价格越高越好；两口锅的负载会影响等待。</p><div class="book-list">${Object.keys(game.recipes).map(id=>{const r=RECIPES[id];return `<button data-menu-pick="${slot}:${id}" class="book-item"><span class="book-icon">${r.emoji}</span><div><strong>${r.name} · ${r.station}</strong><small>${r.time+(recipeCraftSnapshot(game,id)?.timeDelta||0)}s · ${recipeCraftSnapshot(game,id)?.price}金币 · ${recipeCraftSnapshot(game,id)?.ingredientIds.map(onlyName).join(' + ')}</small></div><span>›</span></button>`}).join('')}</div>`;
  }else if(overlay==='bento'){
@@ -74,7 +78,7 @@ function overlayMarkup(){if(!overlay)return '';
    };
    body=`<h2>👩‍🍳 食堂伙伴</h2><p class="sheet-lead">雇员永久留下；每人每天最多吃 1 道料理。员工餐真实扣料并增加当日效率，也积累最多 3 点熟练。</p><div class="staff-roster">${row('helper')}${row('waiter')}</div>`;
  }else if(overlay==='settings'){
-  body=`<h2>⚙ 试玩设置</h2><p class="sheet-lead">版本 v0.9.2 · 固定 9:16 竖屏 · 单机 localStorage 存档</p>${b('reset','重置存档，从 DAY 1 重新开始','danger')}<p class="sheet-lead">切到后台时营业会自动暂停。更换设备不会同步存档。</p>`;
+  body=`<h2>⚙ 试玩设置</h2><p class="sheet-lead">版本 v0.9.3 · 固定 9:16 竖屏 · 单机 localStorage 存档</p>${b('reset','重置存档，从 DAY 1 重新开始','danger')}<p class="sheet-lead">切到后台时营业会自动暂停。更换设备不会同步存档。</p>`;
  }else if(overlay==='details'){
   const r=game.report;body=r?`<h2>营业账本详情</h2><p class="sheet-lead">本日订单由真实食材库存、工位工作秒数和顾客等待事件计算。</p><div class="book-list">${Object.entries(r.byDish).map(([id,d])=>`<div class="detail-row">${RECIPES[id].emoji} ${RECIPES[id].name}：售出 ${d.count} 份 · 满意 ${Math.round(d.totalSat/d.count)}</div>`).join('')}<div class="detail-row">WOK 占用 ${r.congestion.WOK} 秒 / POT ${r.congestion.POT} 秒</div><div class="detail-row">食材耗用估值 ${r.cost} · 招待支出 ${r.hospitalityCost||0} · 收入 ${r.revenue} · 贡献利润 ${r.profit}</div></div>`:'';
  }
@@ -97,7 +101,7 @@ function restaurantView(interactive=false){
 }
 function sceneTag(title,sub=''){return `<div class="scene-tag"><strong>${title}</strong>${sub?`<small>${sub}</small>`:''}</div>`}
 function forecast(){
- const plan=serviceDayPlan(game),kitchen=ensureKitchen(game);
+ const plan=serviceDayPlan(game);
  const stock=Object.values(game.inventory).reduce((sum,n)=>sum+n,0);
  const bentoReady=game.bento?.day===game.cycle+'-'+game.day;
  const title=firstChallenge(game)?'爆炎厨王踢馆':plan.pressure;
@@ -110,15 +114,11 @@ function forecast(){
     <p><span aria-hidden="true">🎯</span> ${esc(plan.goal.label)}</p>
     <small>${brief}</small>
   </section>
-  <section class="v076-preview" aria-label="餐馆准备状态预览">
+  <section class="v076-preview" aria-label="餐厅当前布局">
     ${restaurantView(false)}
-    <div class="v076-preview-info" aria-label="当前厨房与餐桌配置">
-     <span>${kitchen.slots.map(x=>x.type==='WOK'?'🍳':'🍲').join(' ')} 两口厨位</span>
-     <span>🪑 ${game.dining?.tableCount||2} 桌 · ${tableCapacity(game)} 席</span>
-    </div>
   </section>
   <section class="v076-home-controls" aria-label="开店前可用操作">
-    <div class="v076-home-resources"><strong>出发准备 · 名声 ${game.reputation}</strong><span>🎒 食材 ${stock} 份 · 集市今日 ${Object.keys(ensureDailyMarket(game).goods).length} 种</span></div>
+    <div class="v076-home-resources"><strong>出发准备</strong><span>🎒 食材 ${stock} 份 · 可补货 ${Object.values(ensureDailyMarket(game).goods).reduce((sum,x)=>sum+x.stock,0)} 份</span></div>
     <div class="v076-home-shortcuts">
       <button type="button" data-act="stock"><span aria-hidden="true">🎒</span> 仓库</button>
       <button type="button" data-act="bento"><span aria-hidden="true">🍱</span> 便当${bentoReady?' ✓':''}</button>
@@ -333,7 +333,8 @@ function action(act){
  if(act==='field-bag'){if(game.phase==='field'&&game.field){releaseStick();overlay='field-bag';render()}return}
  if(act==='stock'||act==='book'||act==='settings'||act==='details'||act==='bento'){overlay=act;render();return}
  if(act==='reset'){if(confirm('清空本设备的 v0.4 试玩存档？')){localStorage.removeItem('oddpot-prototype-v04');game=newGame();selectedIngredients=['chicken','chili'];overlay='';note('新旅程开始，祝你研究出奇味料理！')}return}
- if(act.startsWith('buy:')){note(purchase(game,act.slice(4))?'采购成功，材料已经进入食堂仓库。':'当前金币或购买条件不足。');return}
+ if(act.startsWith('buy:')){const [,id,n]=act.split(':'),count=n?Number(n):1;
+  note(purchase(game,id,count)?'已采购 '+count+' 份，食材进入仓库。':'金币不足、当日售罄或当前阶段不能采购。');return}
  if(act==='to-field'){nextPhase(game,'field');note('想做什么菜，就去寻找那道菜缺少的食材。');return}
  if(act==='skip-field'){skipField(game);note('跳过探索，直接开始今天的料理研发。');return}
  if(act==='skill'){if(useFieldSkill(game)){message=game.field.actionMessage;render()}return}
