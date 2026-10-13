@@ -2,7 +2,7 @@ import {fieldWokPose,fieldPotPose} from './field_pose_v083.js?v=0.8.5';
 import {hazardPhase,fieldTilePath} from './field_rules_v011a.js';
 import {fieldCamera} from './field_camera_v011b1.js';
 import {drawExpandedLandscape,drawExpandedObstacle} from './field_world_render_v011b1.js';
-import {isHerbPixelSlice,drawHerbPixelGround,drawHerbPixelObstacle,drawHerbPixelNode,drawHerbPixelHazard} from './field_pixel_herb_v011c.js';
+import {isHerbPixelSlice,drawHerbPixelGround,drawHerbPixelObstacle,drawHerbPixelNode,drawHerbPixelHazard,drawHerbPixelEnemy,drawHerbPixelProjectile} from './field_pixel_herb_v011c.js';
 import {meleeProfile,meleeWindupProgress} from './field_combat_feedback_v084.js?v=0.8.4';
 import {pixelActor,pixelEnemy,pixelImpact} from './pixels_v041.js?v=0.9.0';
 // Lightweight procedural game graphics: original Canvas shapes, no art pack.
@@ -194,7 +194,7 @@ function drawMeleeWarnings(c,f){
  }
 }
 export function drawField(canvas,s,clock){const size=setCanvas(canvas);if(!size||!s.field?.action)return;const {c,w,h}=size,f=s.field;const springs=f.region==='spring';const camera=fieldCamera(f,w,h),sc=camera.scale,left=camera.offsetX,top=camera.offsetY;
- c.fillStyle=springs?'#9c674c':'#305a40';c.fillRect(0,0,w,h);
+ c.fillStyle=isHerbPixelSlice(f)?'#485e4c':springs?'#9c674c':'#305a40';c.fillRect(0,0,w,h);
  const shake=(f.hitShake||0)/.24,shakeX=shake?Math.sin(f.elapsed*151)*4*shake:0;
  const shakeY=shake?Math.cos(f.elapsed*117)*2.4*shake:0;
  c.save();c.translate(left+shakeX,top+shakeY);c.scale(sc,sc);
@@ -231,7 +231,7 @@ export function drawField(canvas,s,clock){const size=setCanvas(canvas);if(!size|
    }
    c.restore();
   }
-  for(const [i,o] of f.obstacles.entries()){if(herbPixelArt){drawHerbPixelObstacle(c,o,i);continue;}if(camera.expanded){drawExpandedObstacle(c,o,f.biome?.style,clock);continue;}c.save();c.translate(o.x+.5,o.y+.5);c.scale(1/sc,1/sc);if(f.biome?.style==='glow'){
+  for(const [i,o] of f.obstacles.entries()){if(herbPixelArt){if(o.y+.5<=f.pos.y)drawHerbPixelObstacle(c,o,i);continue;}if(camera.expanded){drawExpandedObstacle(c,o,f.biome?.style,clock);continue;}c.save();c.translate(o.x+.5,o.y+.5);c.scale(1/sc,1/sc);if(f.biome?.style==='glow'){
   circle(c,0,4,14,'#263d48');circle(c,0,-6,17,'#6ebaaa');circle(c,-7,-9,8,'#c5e8d1');
  }else if(f.biome?.style==='roots'){
   circle(c,0,5,17,'#242430');circle(c,0,-5,19,'#75505f');
@@ -252,21 +252,26 @@ export function drawField(canvas,s,clock){const size=setCanvas(canvas);if(!size|
     text(c,'?',13,-28,'#ffe9b1',12);c.restore();
    }else{c.save();c.translate(n.x,n.y);c.scale(1/sc,1/sc);plant(c,{...n,x:0,y:0},clock);c.restore();}
   }
-  for(const p of f.projectiles||[]){circle(c,p.x,p.y,.12,'#ef9c4e');circle(c,p.x,p.y,.05,'#ffe5a3')}
+  for(const p of f.projectiles||[]){if(herbPixelArt)drawHerbPixelProjectile(c,p);else {circle(c,p.x,p.y,.12,'#ef9c4e');circle(c,p.x,p.y,.05,'#ffe5a3')}}
  for(const p of f.playerProjectiles||[]){
   const arc=Math.sin(Math.PI*Math.min(1,p.time/p.duration))*.37;
+  if(herbPixelArt){drawHerbPixelProjectile(c,{x:p.x,y:p.y-arc},'player');continue;}
   circle(c,p.x,p.y,.18,'#eac69b');circle(c,p.x,p.y-arc,.16,'#c68c55');
   circle(c,p.x-.045,p.y-arc-.04,.04,'#fff0ca');
   line(c,p.x,p.y-arc-.17,p.x+.08,p.y-arc-.22,'#7ca26a',.06);
  }
  drawMeleeWarnings(c,f);
- for(const e of f.enemies||[]){if(e.hp>0||e.deathFx>0){c.save();c.translate(e.x,e.y);c.scale(1/sc,1/sc);monster(c,{...e,x:0,y:0},clock);c.restore()}}
+ for(const e of f.enemies||[]){if(e.hp>0||e.deathFx>0){if(herbPixelArt&&!e.isBoss){drawHerbPixelEnemy(c,e,clock,sc,pixelEnemy);continue;}c.save();c.translate(e.x,e.y);c.scale(1/sc,1/sc);monster(c,{...e,x:0,y:0},clock);c.restore()}}
  // Attack swipe uses the *same* direction and trigger as combat hit detection.
  if(f.attackFx?.ttl>0&&!f.attackFx.pot){
   const fx=f.attackFx,progress=1-fx.ttl/fx.duration,angle=Math.atan2(fx.dy,fx.dx);
   c.save();c.translate(f.pos.x,f.pos.y);c.rotate(angle);c.globalAlpha=Math.min(1,fx.ttl*4);
-  c.strokeStyle='#ffe6a1';c.lineWidth=.15;c.beginPath();c.arc(0,0,.79,-.93+progress*.7,.52+progress*.7);c.stroke();
-  c.strokeStyle='#fff9e0';c.lineWidth=.07;c.beginPath();c.arc(0,0,1.05,-.65+progress*.65,.30+progress*.65);c.stroke();c.restore();
+  if(herbPixelArt){c.fillStyle='#ffe6a1';for(let i=0;i<6;i++)c.fillRect(.32+i*.12,-.38+i*.12,.16,.13);
+   c.fillStyle='#fff9e0';for(let i=0;i<4;i++)c.fillRect(.45+i*.12,-.48+i*.11,.08,.08);
+  }else{
+   c.strokeStyle='#ffe6a1';c.lineWidth=.15;c.beginPath();c.arc(0,0,.79,-.93+progress*.7,.52+progress*.7);c.stroke();
+   c.strokeStyle='#fff9e0';c.lineWidth=.07;c.beginPath();c.arc(0,0,1.05,-.65+progress*.65,.30+progress*.65);c.stroke();}
+  c.restore();
  }
  if(f.skillFx>0){c.save();c.strokeStyle=`rgba(255,231,151,${Math.min(.95,f.skillFx*2.4)})`;c.lineWidth=.12;c.beginPath();c.arc(f.pos.x,f.pos.y,(.42-f.skillFx)*3+.35,0,Math.PI*2);c.stroke();c.restore();}
  for(const e of f.enemies||[]){if(e.hurtFx>0&&e.hp>0){c.save();c.translate(e.x,e.y);c.scale(1/sc,1/sc);pixelImpact(c,0,-5,8);c.restore()}}
@@ -349,6 +354,11 @@ export function drawField(canvas,s,clock){const size=setCanvas(canvas);if(!size|
   c.restore();
  }
  c.restore();
+ // Foreground tree canopies overlap actors only when their foot is farther
+ // down screen. Physical obstacles/AI remain completely unchanged.
+ if(herbPixelArt)for(const [i,o] of f.obstacles.entries()){
+  if(o.y+.5>f.pos.y)drawHerbPixelObstacle(c,o,i);
+ }
  if(f.harvestNode){const n=f.nodes.find(n=>n.key===f.harvestNode);if(n){capsule(c,n.x-.40,n.y-.49,.8,.10,'#304d39');capsule(c,n.x-.40,n.y-.49,.8*(f.harvestProgress/.82),.10,'#f3dd7e')}}
  c.restore();
  // Real HP loss briefly lights the screen edges without adding UI controls.
