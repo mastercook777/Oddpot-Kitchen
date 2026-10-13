@@ -5,14 +5,16 @@ import {fieldTilePath} from './field_rules_v011a.js';
 
 export const HERB_PIXEL_TILE=16;
 export const HERB_PIXEL_PALETTE=Object.freeze({
- outline:'#26352e',deep:'#304932',grass:'#527546',grassLight:'#688c52',
- leaf:'#80a75d',sun:'#a5b96b',dirt:'#96734d',dirtLight:'#c49a67',
+ outline:'#29352f',deep:'#485e4c',grass:'#63775d',grassLight:'#74886c',
+ leaf:'#899b78',sun:'#abb793',dirt:'#96734d',dirtLight:'#c49a67',
  bark:'#75523d',barkLight:'#a47a50',rock:'#697871',rockLight:'#acb5a0',
  shine:'#f7dfa1',cream:'#f0e5c7',chili:'#d96142',mushroom:'#bd654c'
 });
 const PH=HERB_PIXEL_PALETTE;
 const herbHash=n=>(Math.imul(1664525,n>>>0)+1013904223)>>>0;
 const herbSprites=new Map();
+// One weakly-cached authored layout per real field object: never BFS every frame.
+const herbGroundPlans=new WeakMap();
 const herbTileKey=(x,y)=>x+','+y;
 const herbPaintRect=(ctx,x,y,w,h,color)=>{ctx.fillStyle=color;ctx.fillRect(x,y,w,h)};
 const herbPaintDot=(ctx,x,y,color)=>herbPaintRect(ctx,x,y,1,1,color);
@@ -33,14 +35,14 @@ export function herbPixelSpriteSize(name){
 }
 function herbPaintGrass(ctx,variant=0){
  herbPaintRect(ctx,0,0,16,16,PH.grass);
- const seed=herbHash(variant*1817+739);
- // Small intentional clusters; colors are shared with chef and monster art.
- for(let i=0;i<18;i++){
-  const z=herbHash(seed+i*173),x=z%15,y=(z>>>8)%15;
-  herbPaintRect(ctx,x,y,i%4===0?2:1,1,i%3===0?PH.deep:i%3===1?PH.grassLight:PH.leaf);
+ // Six or fewer CLUSTERED marks per tile, down from 18 ungrouped specks.
+ // Variant zero is nearly calm; remaining patches use two-pixel group shapes.
+ const groups=[[[3,4],[11,11]],[[2,10],[10,4],[12,12]],[[5,5],[10,11],[2,14]],[[2,2],[8,7],[12,13],[5,12]]][variant]||[];
+ for(const [i,[x,y]] of groups.entries()){
+  const shade=i===0?PH.deep:i%2?PH.grassLight:PH.leaf;
+  herbPaintRect(ctx,x,y,i%3===0?3:2,i%2===0?2:1,shade);
  }
- if(variant===2){herbPaintRect(ctx,2,9,4,2,PH.deep);herbPaintRect(ctx,3,8,2,1,PH.grassLight);}
- if(variant===3){herbPaintRect(ctx,10,4,3,2,PH.grassLight);herbPaintRect(ctx,11,3,1,1,PH.sun);}
+ if(variant===3)herbPaintRect(ctx,9,7,2,1,PH.sun);
 }
 function herbPaintTrail(ctx,mask,variant){
  herbPaintGrass(ctx,variant);
@@ -51,7 +53,9 @@ function herbPaintTrail(ctx,mask,variant){
  if(mask&2){herbPaintRect(ctx,10,4,6,8,d);herbPaintRect(ctx,11,5,5,2,d2);}
  if(mask&4){herbPaintRect(ctx,4,10,8,6,d);herbPaintRect(ctx,5,11,6,2,d2);}
  if(mask&8){herbPaintRect(ctx,0,4,6,8,d);herbPaintRect(ctx,0,5,5,2,d2);}
- herbPaintRect(ctx,6,8,2,1,PH.bark);herbPaintRect(ctx,10,11,1,1,PH.rockLight);
+ // Sparse path texture: a single pebble/footprint per connected tile.
+ if(variant===2)herbPaintRect(ctx,6,8,2,1,PH.bark);
+ if(variant===3)herbPaintRect(ctx,10,11,2,1,PH.dirtLight);
 }
 function herbPaintTree(ctx,variant){
  // 24x30: stout, blocky canopy; trunk remains visibly anchored inside solid tile.
@@ -163,15 +167,46 @@ function herbGetSprite(name){
  return cv;
 }
 function herbRealTrail(f){
- const goal=f.nodes?.find(n=>n.key==='target'&&!n.claimed)||
-  f.nodes?.find(n=>n.key==='target');
- if(!goal)return new Set();
- const path=fieldTilePath(f,f.spawn,{x:Math.floor(goal.x)+.5,y:Math.floor(goal.y)+.5},{avoidHazards:true});
- return new Set(path.map(point=>herbTileKey(Math.floor(point.x),Math.floor(point.y))));
+ const main=f.nodes?.find(n=>n.key==='target')||f.nodes?.[0];
+ const trail=new Set(),add=path=>path.forEach(pt=>trail.add(herbTileKey(Math.floor(pt.x),Math.floor(pt.y))));
+ if(!main)return trail;
+ add(fieldTilePath(f,f.spawn,{x:Math.floor(main.x)+.5,y:Math.floor(main.y)+.5},{avoidHazards:true}));
+ // Secondary paths branch from the shortest already-paved connection,
+ // rather than repainting the whole map into a brown checkerboard.
+ const candidates=(f.nodes||[]).filter(n=>n!==main&&!n.claimed&&(n.type==='event'||n.type==='gather'))
+  .sort((a,b)=>Number(b.type==='event')-Number(a.type==='event')||a.key.localeCompare(b.key));
+ let branches=0;
+ for(const n of candidates){
+  if(branches>=2||trail.has(herbTileKey(Math.floor(n.x),Math.floor(n.y))))continue;
+  let best=null;
+  for(const key of trail){
+   const [x,y]=key.split(',').map(Number);
+   const path=fieldTilePath(f,{x:x+.5,y:y+.5},{x:Math.floor(n.x)+.5,y:Math.floor(n.y)+.5},{avoidHazards:true});
+   if(path.length>1&&(!best||path.length<best.length))best=path;
+  }
+  if(best&&best.length<=7){add(best);branches++;}
+ }
+ return trail;
 }
 export function herbPixelGroundPlan(f){
  if(!isHerbPixelSlice(f))return null;
- return {width:f.worldW,height:f.worldH,trail:herbRealTrail(f)};
+ const cached=herbGroundPlans.get(f);
+ if(cached)return cached;
+ const trail=herbRealTrail(f),blocked=new Set([...f.obstacles,...f.hazards,...f.nodes]
+  .map(n=>herbTileKey(Math.floor(n.x),Math.floor(n.y))));
+ const props=[];
+ const seed=f.biome?.encounterSeed||1;
+ // Real B1 scenery is intentionally thinned to avoid grass noise.
+ for(const a of f.scenery||[]){
+  const x=Math.floor(a.x),y=Math.floor(a.y),k=herbTileKey(x,y);
+  if(herbHash(seed+x*71+y*107)%5!==0||blocked.has(k)||trail.has(k))continue;
+  if(Math.hypot(a.x-f.spawn.x,a.y-f.spawn.y)<1.7)continue;
+  if((f.nodes||[]).some(n=>Math.hypot(a.x-n.x,a.y-n.y)<1.35))continue;
+  props.push({...a,name:(a.kind%5===0?'flower':'tuft')});
+ }
+ const plan={width:f.worldW,height:f.worldH,trail,blocked,props};
+ herbGroundPlans.set(f,plan);
+ return plan;
 }
 export function drawHerbPixelGround(c,f){
  const plan=herbPixelGroundPlan(f);
@@ -192,14 +227,9 @@ export function drawHerbPixelGround(c,f){
   }
   c.drawImage(herbGetSprite(sprite),x,y,1.001,1.001);
  }
- const blocked=new Set([...f.obstacles,...f.hazards,...f.nodes]
-  .map(n=>herbTileKey(Math.floor(n.x),Math.floor(n.y))));
- for(const a of f.scenery||[]){
-  const x=Math.floor(a.x),y=Math.floor(a.y);
-  if(blocked.has(herbTileKey(x,y))||plan.trail.has(herbTileKey(x,y)))continue;
-  const name=a.kind%4===0?'flower':'tuft';
-  const s=.22+(a.scale||1)*.13;
-  c.drawImage(herbGetSprite(name),a.x-s/2,a.y-s/2,s,s);
+ for(const a of plan.props){
+  const size=a.name==='flower'?.34:.31;
+  c.drawImage(herbGetSprite(a.name),a.x-size/2,a.y-size/2,size,size);
  }
  return true;
 }
@@ -248,4 +278,37 @@ export function drawHerbPixelHazard(c,hz,phase,time=0){
   }
   c.restore();
  }
+}
+
+// Actual battlefield uses existing actor pixels, replacing meadow-only circles
+// with sharp angular health / wind-up marks. Bosses in other biomes stay original.
+export function drawHerbPixelEnemy(c,e,t,sc,pixelEnemyFn){
+ const alive=e.hp>0;
+ c.save();c.translate(e.x,e.y);c.scale(1/sc,1/sc);
+ if(alive||e.deathFx>0){
+  c.save();
+  if(!alive)c.globalAlpha=Math.min(1,(e.deathFx||0)/.27);
+  const crouch=e.warning>0&&!e.isBoss;
+  c.translate(0,crouch?Math.min(2,e.warning*1.1):0);
+  pixelEnemyFn(c,e.kind,0,0,1.8,{face:e.face||1,walk:crouch?0:t,hurt:e.hurtFx||0});
+  c.restore();
+ }
+ if(e.warning>0){
+  const col='#ffe0a2';
+  herbPaintRect(c,-11,-31,22,2,PH.outline);
+  herbPaintRect(c,-9,-31,18*Math.min(1,e.warning/1.25),2,'#f5ad70');
+  herbPaintRect(c,-2,-37,4,4,col);
+ }
+ if(alive){
+  const ratio=Math.max(0,Math.min(1,e.hp/Math.max(1,e.maxHp)));
+  herbPaintRect(c,-12,-25,24,5,PH.outline);
+  herbPaintRect(c,-11,-24,22*ratio,3,'#edc581');
+ }
+ c.restore();
+}
+export function drawHerbPixelProjectile(c,projectile,type='enemy'){
+ c.fillStyle=type==='enemy'?'#e99053':PH.dirtLight;
+ c.fillRect(projectile.x-.115,projectile.y-.115,.23,.23);
+ c.fillStyle=PH.shine;
+ c.fillRect(projectile.x-.055,projectile.y-.055,.11,.11);
 }
