@@ -12,7 +12,7 @@ export function expandFieldMap(source,seed=0){
  if(!source||source.worldVersion==='0.11-B1'||source.worldW!==9||source.worldH!==11)return source;
  const map={...source,worldVersion:'0.11-B1',worldW:12,worldH:16,
   nodes:source.nodes.map(n=>({...n,...worldTilePoint(n)})),
-  obstacles:source.obstacles.map(point),hazards:source.hazards.map(point),
+  obstacles:source.obstacles.map(worldTilePoint),hazards:source.hazards.map(worldTilePoint),
   spawn:worldSpawnPos(source.spawn),bossSpawn:worldSpawnPos(source.bossSpawn),
   biome:{...source.biome}};
  map.x=Math.floor(map.spawn.x);map.y=Math.floor(map.spawn.y);
