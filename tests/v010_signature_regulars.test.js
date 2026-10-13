@@ -137,8 +137,7 @@ test('existing v4 saves migrate without fictitious visits or losing old assets',
  const store=new Map([['oddpot-prototype-v04',JSON.stringify(s)]]);
  globalThis.localStorage={getItem:k=>store.get(k)||null,setItem:(k,v)=>store.set(k,v)};
  try{
-  const loaded=load();assert.ok(loaded);assert.deepEqual(loaded.restaurantGrowth,
-   {signatureRecipeId:null,regulars:{},referrals:[]});
+  const loaded=load();assert.ok(loaded);assert.equal(loaded.restaurantGrowth.hiddenMenuRecipeId,null);assert.deepEqual(loaded.restaurantGrowth.regulars,{});assert.deepEqual(loaded.restaurantGrowth.referrals,[]);
   assert.equal(loaded.coins,307);assert.equal(loaded.inventory.mushroom,21);
   assert.equal(loaded.dining.tableCount,3);assert.equal(loaded.history.length,1);
   save(loaded);assert.equal(load().restaurantGrowth.referrals.length,0);
