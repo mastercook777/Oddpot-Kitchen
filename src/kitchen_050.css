@@ -50,7 +50,8 @@
 
 /* v0.9.3: two bulk-buy choices fit small phone overlays without hiding the stock. */
 .stock-line{flex-wrap:wrap;row-gap:5px}
-.stock-line>small{flex:1 0 100%;color:#e0d5b8;font-size:11px}
+/* Light parchment sheet requires dark text, not the old dark-panel cream. */
+.sheet .stock-line>small{flex:1 0 100%;color:#59462f;font-size:12px;font-weight:650;line-height:1.4}
 .stock-line .v093-buy-actions{display:flex;gap:6px;flex:1 0 100%;justify-content:flex-end}
 .v093-buy-actions .game-btn.small{min-height:34px;min-width:90px;padding:5px 8px}
 @media(max-width:350px){.stock-line>span{font-size:12px}.v093-buy-actions .game-btn.small{min-width:78px}}
