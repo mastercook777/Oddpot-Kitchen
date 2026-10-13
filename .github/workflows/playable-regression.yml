@@ -14,6 +14,7 @@ on:
       - feature/v0.10.2-guest-compendium
       - feature/v0.10.3-research-review-heat
       - fix/v0.10.4-guest-pixels-sheet-header
+      - fix/v0.10.4-offline-guest-portraits
   pull_request:
     branches:
       - main
@@ -36,12 +37,12 @@ jobs:
       - name: Build web assets
         run: npm run build
       - name: Commit rebuilt offline bundle for this feature branch
-        if: github.event_name == 'push' && github.ref == 'refs/heads/fix/v0.10.4-guest-pixels-sheet-header'
+        if: github.event_name == 'push' && github.ref == 'refs/heads/fix/v0.10.4-offline-guest-portraits'
         run: |
           if ! git diff --quiet -- standalone.html; then
             git config user.name "github-actions[bot]"
             git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
             git add standalone.html
             git commit -m "build(v0.9): synchronize offline gameplay bundle"
-            git push origin HEAD:fix/v0.10.4-guest-pixels-sheet-header
+            git push origin HEAD:fix/v0.10.4-offline-guest-portraits
           fi
