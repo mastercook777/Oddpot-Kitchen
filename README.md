@@ -1,6 +1,6 @@
 # 怪味食堂 · 新对话与规划入口
 
-> **优先阅读：** [快速接手 / START HERE](docs/START_HERE.md) · [当前实装状态](docs/PROJECT_STATE.md) · [经营成长路线图](docs/ROADMAP.md) · [v0.10 招牌菜与熟客设计草案](docs/V0.10_SIGNATURE_REGULARS_DESIGN.md)
+> **优先阅读：** [快速接手 / START HERE](docs/START_HERE.md) · [当前实装状态](docs/PROJECT_STATE.md) · [经营成长路线图](docs/ROADMAP.md) · [v0.10 稀有隐藏菜单与特殊食客讨论稿](docs/V0.10_SIGNATURE_REGULARS_DESIGN.md)
 >
 > **团队规则：** 以后新功能**先在 GitHub 写好设计稿再实现**，在新聊天中可以直接引用仓库规划，不需要重述历史。下面是从最新到较旧的开发版本记录，不能把规划版本当成已上线。
 >
