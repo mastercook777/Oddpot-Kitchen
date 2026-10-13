@@ -111,7 +111,8 @@ test('full field canvas stays renderable and advances gameplay on separate sampl
     getContext(){return ctx;}};
    drawField(canvas,s,0.6);
    assert.equal(canvas.width,750);assert.equal(canvas.height,1200);
-   assert.ok(ctx.images>0,'raster actors or tiles should draw');
+   assert.ok(ctx.images>0||ctx.pixels.length>0,'pixel actors or terrain should draw');
+   if(isHerbPixelSlice(s.field))assert.ok(ctx.images>=s.field.worldW*s.field.worldH,'herb scene uses pixel-tile canvas texture');
    const before=s.field.elapsed;stepActionField(s,0,-1,.05);
    assert.ok(s.field.elapsed>before,'render never disables gameplay');
   }
