@@ -42,5 +42,7 @@ jobs:
           git add docs/screenshots/
           if ! git diff --staged --quiet; then
             git commit -m "preview: capture actual herb-path mobile Canvas screenshots [skip ci]"
+            git fetch origin feat/herb-path-pixel-art-slice
+            git rebase origin/feat/herb-path-pixel-art-slice
             git push origin HEAD:feat/herb-path-pixel-art-slice
           fi
