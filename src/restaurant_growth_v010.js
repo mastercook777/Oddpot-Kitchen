@@ -1,5 +1,5 @@
 // v0.10-A: business relationships use the existing order engine, never a second sales ledger.
-import {CUSTOMERS,RECIPES} from './data.js?v=0.9.1';
+import {CUSTOMERS,RECIPES,ING} from './data.js?v=0.9.1';
 
 export const REGULAR_GUEST_TEMPLATES=[
  {id:'dwarf_amu',name:'铜须阿穆',segment:'adventurer'},
@@ -12,20 +12,28 @@ export function ensureRestaurantGrowth(s){
  const g=s.restaurantGrowth;
  if(!g.regulars||typeof g.regulars!=='object')g.regulars={};
  if(!Array.isArray(g.referrals))g.referrals=[];
- if(!RECIPES[g.signatureRecipeId])g.signatureRecipeId=null;
+ if(!RECIPES[g.hiddenMenuRecipeId]?.rare)g.hiddenMenuRecipeId=null;
+ g.signatureRecipeId=null; // deprecated: never promote one of the three ordinary dishes
+ if(!Number.isInteger(g.hiddenSoldDay))g.hiddenSoldDay=-1;
+ if(!Number.isInteger(g.hiddenSoldCount))g.hiddenSoldCount=0;
  return g;
 }
-export function setSignatureRecipe(s,recipeId){
- if(s.phase!=='menu'||!s.menu.includes(recipeId)||!s.recipes[recipeId]||!RECIPES[recipeId])return false;
- const g=ensureRestaurantGrowth(s);
- if(g.signatureRecipeId===recipeId)return false;
- g.signatureRecipeId=recipeId;
- return true;
+export const HIDDEN_DAILY_LIMIT=2;
+export function isRareRecipe(id){return !!RECIPES[id]?.rare&&RECIPES[id].ids.some(ing=>ING[ing]?.acquisitionPolicy==='BOSS_ONLY');}
+export function setHiddenMenuRecipe(s,id){
+ if(s.phase!=='menu'||(id!==null&&(!s.recipes?.[id]||!isRareRecipe(id))))return false;
+ const g=ensureRestaurantGrowth(s);if(g.hiddenMenuRecipeId===id)return false;
+ g.hiddenMenuRecipeId=id;return true;
 }
-export function clearUnavailableSignature(s){
- const g=ensureRestaurantGrowth(s);
- if(g.signatureRecipeId&&!s.menu.includes(g.signatureRecipeId))g.signatureRecipeId=null;
+export function eligibleForHidden(order,g){
+ if(order.segment==='critic')return true;
+ const reg=g?.regulars?.[order.visitor?.regularId];
+ return !!reg&&reg.qualifiedVisits>=2;
 }
+export function hiddenRemaining(s,day){const g=s.restaurantGrowth||{};return Math.max(0,HIDDEN_DAILY_LIMIT-(g.hiddenSoldDay===day?g.hiddenSoldCount:0));}
+export function markHiddenSold(s,day){const g=ensureRestaurantGrowth(s);if(g.hiddenSoldDay!==day){g.hiddenSoldDay=day;g.hiddenSoldCount=0;}g.hiddenSoldCount++;}
+export function setSignatureRecipe(){return false;} // compatibility: deprecated old API
+export function clearUnavailableSignature(s){ensureRestaurantGrowth(s);}
 export const regularGuestName=id=>REGULAR_GUEST_TEMPLATES.find(g=>g.id===id)?.name||null;
 function seededRoll(seed,salt){
  let x=(seed^salt)>>>0;
@@ -39,11 +47,10 @@ export function buildGrowthGuestPlan(s,originalGuests,seed,day,challenge=false){
  const regulars=g.regulars||{};
  const guests=[...originalGuests],visitors=guests.map(()=>null);
  const known=REGULAR_GUEST_TEMPLATES.filter(t=>regulars[t.id]?.visits>0&&
-   regulars[t.id].lastVisitDay<day&&s.menu.includes(regulars[t.id].favoriteRecipeId));
+   regulars[t.id].lastVisitDay<day);
  const returning=known.find((t,i)=>seededRoll(seed,day*97+i*701+t.id.length)<GROWTH_TEST_VALUES.returnChance);
- const sign=RECIPES[g.signatureRecipeId]&&s.menu.includes(g.signatureRecipeId)?g.signatureRecipeId:null;
- const fresh=sign?REGULAR_GUEST_TEMPLATES.find(t=>!regulars[t.id]&&
-   RECIPES[sign].tags.some(tag=>CUSTOMERS[t.segment].likes.includes(tag))):null;
+ const sign=null;
+ const fresh=REGULAR_GUEST_TEMPLATES.find(t=>!regulars[t.id]&&guests.includes(t.segment));
  const target=returning||fresh;
  if(target){
   const index=guests.findIndex((segment,i)=>segment===target.segment&&!(challenge&&i===guests.length-1));
@@ -68,6 +75,7 @@ export function applyRealRegularReview(s,order,day){
  const g=ensureRestaurantGrowth(s),prior=g.regulars[id];
  g.regulars[id]={id,name:template.name,segment:template.segment,
   favoriteRecipeId:prior?.favoriteRecipeId||order.recipeId,visits:(prior?.visits||0)+1,
+  qualifiedVisits:(prior?.qualifiedVisits||0)+(order.sat>=GROWTH_TEST_VALUES.goodReview?1:0),
   affinity:Math.max(0,(prior?.affinity||0)+(order.sat>=GROWTH_TEST_VALUES.goodReview?1:0)),
   lastVisitDay:day,lastSatisfaction:order.sat};
  const issuedToday=g.referrals.filter(r=>r.createdDay===day).length;
@@ -89,7 +97,7 @@ export function summarizeGrowthService(s,service,day){
  const arrived=orders.filter(o=>o.doorAt!==null&&o.doorAt!==undefined);
  const counted=source=>arrived.filter(o=>o.visitor?.source===source);
  const referrals=counted('referral');
- return {signatureRecipeId:service?.signatureRecipeId||null,
+ return {hiddenMenuRecipeId:service?.hiddenMenuRecipeId||null,
   firstArrived:counted('first').length,returned:counted('return').length,
   referralArrived:referrals.length,referralServed:referrals.filter(o=>o.status==='served').length,
   newReferrals:(s.restaurantGrowth?.referrals||[]).filter(r=>r.createdDay===day).length,
