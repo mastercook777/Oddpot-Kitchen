@@ -5562,8 +5562,8 @@ function drawHerbPixelProjectile(c,projectile,type='enemy'){
 
 const HYBRID_MEADOW_PALETTE=Object.freeze({
  grass:'#75896f',grassShade:'#607763',grassLight:'#9baa8d',
- grassGlaze:'#b8c3a3',trailRim:'#7b795e',trail:'#b6a181',
- trailLight:'#cbb99a',trunk:'#755840',trunkLight:'#a17b54',
+ grassGlaze:'#b8c3a3',trailRim:'#7b795e',trail:'#b09d82',
+ trailLight:'#c6b699',trunk:'#755840',trunkLight:'#a17b54',
  foliageDark:'#355d4c',foliage:'#59806a',foliageLight:'#86a587',
  highlight:'#bad0a3',rockDark:'#626e69',rock:'#85928b',
  rockLight:'#b5bdb1',moss:'#789374'
@@ -5597,10 +5597,16 @@ function hybridMeadowTrail(c,plan){
   if(trail.has(hybridMeadowKey(x,y+1)))segs.push([x+.5,y+.5,x+.5,y+1.5]);
  }
  // Stacked continuous rounded ribbons: never paint isolated square tiles.
- for(const [width,col] of [[.94,'#6b755c55'],[.82,HM.trailRim],[.73,HM.trail],[.55,HM.trailLight]]){
+ for(const [width,col] of [[.82,'#6b755c55'],[.75,HM.trailRim],[.68,HM.trail],[.49,HM.trailLight]]){
   c.strokeStyle=col;c.lineWidth=width;c.lineCap='round';c.lineJoin='round';
   c.beginPath();
-  for(const [x1,y1,x2,y2] of segs){c.moveTo(x1,y1);c.lineTo(x2,y2);}
+  for(const [x1,y1,x2,y2] of segs){
+   // Subtle local bend breaks up ruler-straight grid corridors without
+   // drifting away from their genuinely walkable tiles.
+   const sway=((hybridMeadowHash(Math.floor(x1*31+y1*97))>>>16)%5-2)*.023;
+   const dx=x2-x1,dy=y2-y1;
+   c.moveTo(x1,y1);c.quadraticCurveTo((x1+x2)/2-dy*sway,(y1+y2)/2+dx*sway,x2,y2);
+  }
   c.stroke();
   // Road dots fill junctions and each endpoint, without checkerboard borders.
   for(const key of trail){
@@ -5672,6 +5678,7 @@ function drawHybridMeadowGround(c,f){
 function hybridMeadowTree(c,o,index){
  const alt=index%3,ox=o.x+.5,oy=o.y+.5;
  c.save();c.translate(ox,oy);
+ c.scale(alt===1?.94:alt===2?1.07:1,alt===1?1.04:alt===2?.94:1);
  hybridMeadowEllipse(c,.03,.27,.70,.27,'#354d3e55');
  hybridMeadowEllipse(c,-.04,.33,.46,.15,'#293e3355');
  // Trunk with soft tapered outline and warm bark-facing edge.
@@ -5688,7 +5695,7 @@ function hybridMeadowTree(c,o,index){
  const sway=alt===1?-.12:alt===2?.10:0;
  hybridMeadowLeaf(c,-.54+sway,-.79,.63,.54,HM.foliageDark);
  hybridMeadowLeaf(c,.40+sway,-.95,.72,.56,'#426b55');
- hybridMeadowLeaf(c,-.07+sway,-1.23,.69,.55,HM.foliage);
+ hybridMeadowLeaf(c,-.07+sway,-1.23,.69,.55,alt===2?'#648873':HM.foliage);
  hybridMeadowLeaf(c,-.49+sway,-.94,.44,.35,HM.foliage);
  hybridMeadowLeaf(c,.31+sway,-1.10,.49,.40,HM.foliageLight);
  hybridMeadowLeaf(c,-.09+sway,-1.40,.47,.31,'#719678');
