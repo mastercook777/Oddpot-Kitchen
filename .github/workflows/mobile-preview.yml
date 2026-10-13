@@ -1,0 +1,23 @@
+name: Mobile hidden-menu preview
+on:
+  push:
+    branches: [feat/v010-signature-regulars]
+  workflow_dispatch:
+jobs:
+  mobile-preview:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Verify gameplay
+        run: node --test tests/*.test.js
+      - name: Build self-contained mobile HTML
+        run: python3 scripts/build-standalone.py
+      - name: Upload phone-playable build
+        uses: actions/upload-artifact@v4
+        with:
+          name: oddpot-v010-mobile-preview
+          path: standalone.html
+          retention-days: 14
