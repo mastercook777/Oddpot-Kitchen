@@ -20,7 +20,7 @@ async function available(){
 let browser;
 try{
  await available();
- browser=await chromium.launch({headless:true,executablePath:'/usr/bin/google-chrome',timeout:20000,args:['--no-sandbox','--disable-dev-shm-usage']});
+ browser=await chromium.launch({headless:true,executablePath:'/usr/bin/google-chrome',timeout:65000,args:['--no-sandbox','--disable-dev-shm-usage']});
  const page=await browser.newPage({viewport:{width:430,height:932},deviceScaleFactor:2,locale:'zh-CN',isMobile:true,hasTouch:true});
  const errors=[];
  page.on('pageerror',e=>errors.push(e.message));
