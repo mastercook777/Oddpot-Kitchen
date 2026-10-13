@@ -31,8 +31,7 @@ export function premiumMenuActive(s){
 export function premiumMenuOptions(s){
  return Object.entries(RECIPES).filter(([id,r])=>r.rare&&s.recipes?.[id]&&!s.menu.includes(id))
   .map(([id,r])=>{const craft=recipeCraftSnapshot(s,id);
-   const counts=countIds(craft.ingredientIds);
-   const stock=Math.min(...Object.entries(counts).map(([ing,n])=>Math.floor((s.inventory[ing]||0)/n)));
+   const stock=recipeAvailableServings(s,id,{ignorePremium:true});
    return {id,name:r.name,stock,price:Math.round(craft.price*PREMIUM_PRICE_FACTOR),quality:craft.quality,recipe:r};});
 }
 export function setPremiumMenu(s,id,limit=1){
@@ -50,6 +49,15 @@ export function premiumReserved(s){
  if(!craft)return {};
  const remaining=Math.max(0,p.limit-(s.service?.premiumConsumed||0));
  return Object.fromEntries(Object.entries(countIds(craft.ingredientIds)).map(([id,n])=>[id,n*remaining]));
+}
+// Single source of truth for menu stock visibility; figures describe one
+// recipe at a time. Distinct menu dishes can compete for the same ingredients.
+export function recipeAvailableServings(s,recipeId,{ignorePremium=false}={}){
+ const craft=recipeCraftSnapshot(s,recipeId);
+ if(!craft?.ingredientIds?.length)return 0;
+ const required=countIds(craft.ingredientIds),reserved=ignorePremium?{}:premiumReserved(s);
+ return Math.max(0,Math.min(...Object.entries(required).map(([id,n])=>
+  Math.floor(Math.max(0,(s.inventory?.[id]||0)-(reserved[id]||0))/n))));
 }
 export function premiumGuestEligible(s,o){
  if(o.segment==='critic')return true;
