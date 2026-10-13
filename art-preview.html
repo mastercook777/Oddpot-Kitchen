@@ -1,24 +1,24 @@
 <!doctype html><html lang="zh-CN"><head>
 <meta charset="utf-8"/><meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover"/>
-<title>怪味食堂 · 香草小径像素样板真实场景预览</title>
+<title>Oddpot Kitchen - Herb Path Pixel Art</title>
 <style>
 html,body{margin:0;min-height:100%;background:#18251c;color:#f0e9d5;font:14px/1.5 system-ui,-apple-system,sans-serif}
 .shell{width:min(100vw,440px);margin:auto;padding:16px 12px 22px;box-sizing:border-box}
 .top{display:flex;align-items:center;justify-content:space-between;gap:12px;font-weight:700}
 .tag{font-weight:600;font-size:11px;border:1px solid #9ac179;padding:3px 8px;border-radius:30px;color:#d9e8ae}
 .sub{font-size:12px;color:#a4b99c;margin:7px 0 12px}
-#scene{display:block;width:100%;height:600px;background:#436944;image-rendering:pixelated;border:3px solid #526a49;border-radius:8px;box-sizing:border-box}
+#scene{display:block;width:100%;height:600px;background:#63775d;image-rendering:pixelated;border:3px solid #526a49;border-radius:8px;box-sizing:border-box}
 .controls{display:flex;gap:8px;margin:12px 0;flex-wrap:wrap}
 button{border:1px solid #73876b;background:#2f4833;color:#f0e9d5;border-radius:7px;padding:10px 12px;font-size:13px;cursor:pointer}
 button[aria-pressed="true"]{background:#a3bd75;color:#1b2c20;font-weight:700}
 .foot{font-size:12px;color:#b5c7aa}
 </style></head><body>
 <div class="shell">
- <div class="top"><span>怪味食堂 · 香草小径</span><span class="tag">16px 像素美术样板</span></div>
- <div class="sub">由游戏引擎真实 drawField 绘制 · feat/herb-path-pixel-art-slice</div>
+ <div class="top"><span>ODDPOT · HERB PATH</span><span class="tag">16px PIXEL ART</span></div>
+ <div class="sub">Actual in-game Canvas render · feat/herb-path-pixel-art-slice</div>
  <canvas id="scene"></canvas>
- <div class="controls"><button data-view="spawn" aria-pressed="false">营地入口</button><button data-view="harvest" aria-pressed="true">采集区域</button><button data-view="original" aria-pressed="false">原版对比</button></div>
- <div class="foot">这是实际 Canvas 场景渲染预览（不包含正式游戏 UI 和摇杆），非概念美术。正式游戏需运行该分支的 index.html。</div>
+ <div class="controls"><button data-view="spawn" aria-pressed="false">Entrance</button><button data-view="harvest" aria-pressed="true">Gathering</button><button data-view="original" aria-pressed="false">Before</button></div>
+ <div class="foot">Real drawField output, not concept art. Gameplay HUD is hidden in this capture; run index.html on the branch to play.</div>
 </div>
 <script type="module">
 import {newGame,enterField} from './src/engine.js';
