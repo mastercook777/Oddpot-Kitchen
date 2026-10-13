@@ -31,12 +31,7 @@
  background:#72543a;box-shadow:0 3px 10px #091f1873}
 .v076-preview .diner-world{position:absolute;inset:0;width:100%;height:100%}
 .v076-preview .diner-canvas{position:absolute;inset:0;width:100%;height:100%;display:block}
-.v076-preview-info{position:absolute;bottom:7px;left:8px;right:8px;z-index:3;
- display:flex;gap:7px;justify-content:center;pointer-events:none}
-.v076-preview-info span{background:#17382cbf;color:#fff0d0;min-width:0;
- padding:5px 9px;border:1px solid #e3c1838c;border-radius:999px;
- font-size:10px;font-weight:850;text-align:center;white-space:nowrap;
- box-shadow:0 2px 4px #071b1460}
+
 .v076-home-controls{flex:0 0 auto;display:flex;flex-direction:column;gap:8px}
 .v076-home-resources{display:flex;justify-content:space-between;align-items:center;
  padding:0 3px;color:#f9e3b2;font-size:12px}
@@ -62,8 +57,7 @@
  .v076-mission{padding:8px 10px}
  .v076-home-shortcuts{gap:5px}
  .v076-home-shortcuts button{min-height:41px;font-size:11px}
- .v076-preview-info{gap:4px;left:4px;right:4px}
- .v076-preview-info span{font-size:9px;padding:4px 6px}
+ 
 }
 @media(max-height:700px){
  .v076-home{gap:6px;padding-top:6px;padding-bottom:calc(5px + env(safe-area-inset-bottom))}
@@ -84,7 +78,8 @@
  .v076-mission{padding:6px 10px}
  .v076-mission h1{font-size:15px}
  .v076-preview{min-height:90px}
- .v076-preview-info span{font-size:9px;padding:3px 6px}
  .v076-home-shortcuts button{min-height:34px}
  .v076-home-primary{min-height:40px}
 }
+
+/* The preview is the restaurant itself: no duplicated text badges over the window. */
