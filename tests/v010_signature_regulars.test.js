@@ -10,7 +10,8 @@ import {setHiddenMenuRecipe,isRareRecipe,buildGrowthGuestPlan,
 function loadedRestaurant(seed=101){
  const s=newGame(seed);for(const id of Object.keys(s.inventory))s.inventory[id]=100;
  s.recipes.chicken_stew=100;
- s.phase='menu';
+ s.recipes.mushroom_heart_wok=92;s.inventory.mushroom_heart=5;
+ s.phase='menu';assert.equal(setHiddenMenuRecipe(s,'mushroom_heart_wok'),true);
  return s;
 }
 function simulateNight(s){
