@@ -1,6 +1,6 @@
 import {joystickVector} from './controls_v041.js?v=0.5.5';
 import {ING,RECIPES,FORECAST,ROUTES,CUSTOMERS} from './data.js?v=0.9.1';
-import {LIVE_ACTIONS,LIVE_STYLES,LIVE_AFFINITY,liveRecipeId} from './cooking_v063.js?v=0.8.0';
+import {LIVE_ACTIONS,LIVE_STYLES,LIVE_AFFINITY,liveRecipeId,reviewLiveCook,liveHeatSummary} from './cooking_v063.js?v=0.8.0';
 import {RECIPE_PROFILES} from './recipe_profiles_v063.js?v=0.8.0';
 import {livePanMotion} from './cook_motion_v063.js?v=0.6.3';
 import {walkServiceHero} from './walkable_restaurant_v07.js?v=0.9.2';
@@ -199,7 +199,7 @@ function researchReceipt(){
  const record=game.recipeVariants?.[result?.recipeId]?.find(v=>v.variantId===result?.variantId);
  const craft=ok?recipeCraftSnapshot(game,result.recipeId,record):null;
  const recipe=RECIPES[result?.recipeId];
- const opNames={flip:'翻炒',toss:'颠勺',gentle:'轻搅',reduce:'收汁'};
+ const review=reviewLiveCook(result);
  const guests=craft?Object.entries(craft.guestFitDelta).filter(([,n])=>n!==0).map(([id,n])=>`${CUSTOMERS[id]?.name||id} ${n>0?'+':''}${n}`).join(' · '):'';
  const crew=profile?.crewSpecific?.style===result.style?`${profile.crewSpecific.role==='helper'?'阿火':'小芽'}专项适配（受岗位及原有上限限制）`:'使用菜品原有员工餐风味收益';
  const bento=profile?.bentoSpecific?`可制作「${esc(recipe?.name)}」探索便当${profile.bentoSpecific.preferredStyle===result.style?' · 本工艺特别契合':''}；次日出发前制作`:'当前无专属探索便当';
@@ -211,10 +211,10 @@ function researchReceipt(){
     </div>
     <div class="v063-receipt-scroll">
       ${ok?`<div class="v063-receipt-tags"><b>${esc(result.styleLabel)}</b><span>${esc(result.secondaryTrait||'自然烹制')}</span><span>${esc(result.affinityLabel)}</span></div>
-      <div class="v063-receipt-metrics"><div><small>完成品质</small><b>${result.quality}</b></div><div><small>自动制作</small><b>${recipe.time+(craft?.timeDelta||0)}s</b></div><div><small>售卖价格</small><b>${craft.price} 🪙</b></div></div>`:''}
-      <section><strong>🥘 本锅烹饪记录</strong><p>${esc(result.ids.map(id=>ING[id].emoji+' '+ING[id].name).join(' + '))} · ${result.vessel==='WOK'?'炒锅':'深锅'} · ${result.duration.toFixed(1)} 秒</p>
-       <div class="v063-receipt-line">${result.events.map(d=>`<span>${d.t.toFixed(1)}s 下 ${esc(ING[d.id].name)}</span>`).join('')}</div>
-       <div class="v063-receipt-line">${result.actions.length?result.actions.map(a=>`<span>${a.t.toFixed(1)}s ${opNames[a.type]||a.type}</span>`).join(''):'<span>自然烹饪，未使用特别动作</span>'}</div>
+      <div class="v063-receipt-metrics"><div><small>完成品质</small><b>${result.quality}</b><small>${review.atReachableMax?'已达到当前机制最高品质':'当前机制上限 '+review.maxQuality}</small></div><div><small>自动制作</small><b>${recipe.time+(craft?.timeDelta||0)}s</b></div><div><small>售卖价格</small><b>${craft.price} 🪙</b></div></div>`:''}
+      <section><strong>🥘 操作复盘</strong><p>${esc(result.ids.map(id=>ING[id].emoji+' '+ING[id].name).join(' + '))} · ${result.vessel==='WOK'?'炒锅':'深锅'} · ${result.duration.toFixed(1)} 秒</p>
+       <small class="v103-recap-legend">● 绿：判定有效　◆ 黄：可优化　✕ 红：确实失误</small>
+       <div class="v103-recap-steps">${review.steps.map(step=>`<div class="v103-recap-step ${step.grade}"><span class="v103-recap-dot" aria-hidden="true">${step.grade==='good'?'✓':step.grade==='bad'?'✕':'!'}</span><time>${step.time.toFixed(1)}s</time><div><strong>${esc(step.label)}</strong><small>${esc(step.detail)}</small></div></div>`).join('')}</div>
       </section>
       <section><strong>🌡 熟度与结果</strong><div class="v063-receipt-line">${result.doneness.map(d=>`<span>${ING[d.id].emoji} ${esc(d.label)}</span>`).join('')}</div>
         <p>${esc(result.reason)} · 食材估值 ${result.ingredientCost||0} 金币（已消耗真实库存）</p></section>
@@ -233,7 +233,7 @@ function research(){const c=game.cook;
  if(!c&&game.researchReceipt&&game.lastCook?.events)return researchReceipt();
  if(!c||c.mode==='v063-live'){
   if(c){
-   const p=liveCookPreview(game),acts=LIVE_ACTIONS[c.vessel],order=c.dropped.map(d=>d.id),icons=c.dropped.map(d=>`<span class="v063-food-icon" data-live-icon="${d.id}">${ING[d.id].emoji}</span>`).join('');
+   const p=liveCookPreview(game),heat=liveHeatSummary(p.indicators),acts=LIVE_ACTIONS[c.vessel],order=c.dropped.map(d=>d.id),icons=c.dropped.map(d=>`<span class="v063-food-icon" data-live-icon="${d.id}">${ING[d.id].emoji}</span>`).join('');
    return [`<div class="v063-live-scene">
      <div class="v063-live-head"><b>${c.vessel==='WOK'?'🍳 炒锅 · 连续实时':'🍲 深锅 · 连续实时'}</b><span id="v063-clock">${p.elapsed.toFixed(1)}s / 19s</span></div>
      <div class="v063-live-pan ${c.vessel==='POT'?'pot':''}" data-live-pan="true">
@@ -243,8 +243,8 @@ function research(){const c=game.cook;
        <div class="v063-food-layer">${icons||'<span class="v063-pan-hint">轻点下方食材下锅</span>'}</div>
        <div class="v063-action-indicator" aria-live="off"></div>
        <div class="v063-steam">♨</div></div>
-     <div class="v063-live-msg" id="v063-live-msg">${!c.live?'先下第一份食材，之后锅会持续加热。':`已下 ${order.length}/${c.ids.length} 种食材 · ${c.dropped.length===c.ids.length?'看看熟度，决定何时起锅':'继续按感觉下料'}`}</div>
-     <div class="v063-live-tray">${c.ids.map(id=>{const d=p.indicators.find(x=>x.id===id);return `<button class="v063-drop ${d.dropped?'added':''}" data-live-drop="${id}" ${d.dropped?'disabled':''}><span>${ING[id].emoji}</span><b>${ING[id].name}</b><small data-live-status="${id}">${d.state}</small></button>`}).join('')}</div>
+     <div class="v063-live-msg v103-heat-status" id="v103-heat-status" data-heat-tone="${heat.tone}"><span aria-hidden="true">🌡</span><b id="v103-heat-label">${heat.label}</b><small id="v103-heat-detail">${heat.details}</small></div>
+     <div class="v063-live-tray">${c.ids.map(id=>{const d=p.indicators.find(x=>x.id===id);return `<button class="v063-drop ${d.dropped?'added':''}" data-live-drop="${id}" data-heat-tone="${d.tone}" ${d.dropped?'disabled':''}><span>${ING[id].emoji}</span><b>${ING[id].name}</b><small data-live-status="${id}">${d.state}</small><i class="v103-heat-meter" aria-hidden="true"><i data-heat-fill="${id}" style="width:${d.progress}%"></i></i></button>`}).join('')}</div>
    </div>`,
    `<div class="v063-live-actions"><div class="action-row">${acts.map(a=>b('live-action:'+a.id,a.emoji+' '+a.name,c.actions.some(x=>x.type===a.id)?'chosen':'secondary',!c.dropped.length||c.actions.some(x=>x.type===a.id))).join('')}</div><div class="action-row">${b('live-finish','🍽️ 起锅鉴定','primary wide',!c.dropped.length||c.elapsed<1.2)}</div></div>`];
   }
@@ -517,7 +517,16 @@ function frame(now){const delta=Math.min(.045,(now-(lastFrame||now))/1000);lastF
    const c=game.cook,clock=app.querySelector('#v063-clock');if(clock)clock.textContent=c.elapsed.toFixed(1)+'s / 19s';
    const finish=app.querySelector('[data-act="live-finish"]');if(finish)finish.disabled=c.elapsed<1.2||!c.dropped.length;
    const indicators=liveCookPreview(game)?.indicators||[];
-   for(const item of indicators){const node=app.querySelector('[data-live-status="'+item.id+'"]');if(node)node.textContent=item.state}
+   for(const item of indicators){
+     const node=app.querySelector('[data-live-status="'+item.id+'"]');
+     if(node){node.textContent=item.state;node.closest('[data-heat-tone]')?.setAttribute('data-heat-tone',item.tone)}
+     const fill=app.querySelector('[data-heat-fill="'+item.id+'"]');if(fill)fill.style.width=item.progress+'%';
+   }
+   const summary=liveHeatSummary(indicators),cue=app.querySelector('#v103-heat-status');
+   if(cue){cue.dataset.heatTone=summary.tone;
+     const label=app.querySelector('#v103-heat-label'),detail=app.querySelector('#v103-heat-detail');
+     if(label)label.textContent=summary.label;if(detail)detail.textContent=summary.details;
+   }
    const pan=app.querySelector('.v063-live-pan');
    if(pan){
      const motion=livePanMotion(c,{width:pan.clientWidth||310,height:pan.clientHeight||180});
