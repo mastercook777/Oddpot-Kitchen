@@ -6,7 +6,7 @@
 **线上试玩**：https://mastercook777.github.io/Oddpot-Kitchen/  
 **仓库当前已实现版本（v0.11-B1 合并后）**：v0.11.0-alpha.3（大地图 + 跟随镜头 + 八生态程序地形第一批；B2 敌人行为/数量、C 专供交易/料理仍未开发）；以仓库主分支 `package.json`、源码和最新提交为实际版本依据，**本文的日期不是未来版本的自动更新**。
 
-> **隔离试玩分支**：`feat/herb-path-pixel-art-slice`（Draft PR #44）正在试做 [香草小径 16px 像素美术样板](V0.11C_HERB_PATH_PIXEL_ART_SLICE.md)，不要把实验当成 main 已发布内容；无用户确认禁止合并。
+> **隔离试玩分支**：`feat/herb-path-pixel-art-slice`（Draft PR #44）已实现、尚待玩家 iPhone 验收的 [香草小径 16px 完整草地美术](V0.11D_COMPLETE_MEADOW_ART_PLAN.md)，不要把实验当成 main 已发布内容；无用户确认禁止合并。
 
 ## 阅读顺序
 
