@@ -8,16 +8,16 @@ const source=p=>readFileSync(new URL(p,import.meta.url),'utf8');
 const app=source('../src/app.js'),css=source('../src/forecast_home_v076.css');
 const index=source('../index.html'),pkg=JSON.parse(source('../package.json'));
 
-test('the internal, browser, offline and package versions all target v0.9.5',()=>{
- assert.equal(pkg.version,'0.9.5');
- assert.match(index,/<title>怪味食堂 · Oddpot Kitchen v0\.9\.5<\/title>/);
- assert.match(index,/src\/app\.js\?v=0\.9\.5-stock-check/);
+test('the internal, browser, offline and package versions all target v0.10.0',()=>{
+ assert.equal(pkg.version,'0.10.0');
+ assert.match(index,/<title>怪味食堂 · Oddpot Kitchen v0\.10\.0<\/title>/);
+ assert.match(index,/src\/app\.js\?v=0\.10\.0-premium/);
  assert.match(index,/forecast_home_v076\.css\?v=0\.9\.3/);
- assert.match(app,/ODDPOT · v0\.9\.5/);
- assert.match(app,/版本 v0\.9\.5/);
+ assert.match(app,/ODDPOT · v0\.10\.0/);
+ assert.match(app,/版本 v0\.10\.0/);
  const script=source('../scripts/build-standalone.py');
  assert.match(script,/forecast_home_v076\.css/);
- assert.match(script,/v0\.9\.5 离线版/);
+ assert.match(script,/v0\.10\.0 离线版/);
 });
 test('home is its own phase UI, without historical large message bar or old bottom dock',()=>{
  const s=app.slice(app.indexOf('function shell('),app.indexOf('\nfunction overlayMarkup(',app.indexOf('function shell(')));
@@ -42,7 +42,7 @@ test('one main button and three small shortcuts retain real action handlers',()=
   assert.equal((screen.match(new RegExp('data-act="'+action+'"','g'))||[]).length,1);
  }
  assert.match(app,/if\(act==='to-field'\)\{nextPhase\(game,'field'\)/);
- assert.match(app,/if\(act==='stock'\|\|act==='book'\|\|act==='settings'/);
+ assert.match(app,/if\(act==='stock'\|\|act==='premium'\|\|act==='book'\|\|act==='settings'/);
  const s=newGame();
  assert.equal(s.phase,'forecast');
  assert.ok(serviceDayPlan(s).goal.label.length>0);

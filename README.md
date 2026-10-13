@@ -1,3 +1,13 @@
+# 怪味食堂 · Oddpot Kitchen v0.10.0 · 限量稀有隐藏菜单
+
+> **正式功能**：原三道日常菜单之外可设置一款稀有隐藏料理，1–2 份真实限量，售价为当前工艺价 ×1.7（首版测试值）。幽灵鉴味师天然有资格、具名熟客至少两次真实高满意消费后也能看到；上架且有货时当夜原客流中至少一名合资格潜在食客，但**不保证点单或收入**。
+>
+> **经济与视觉原则**：隐藏菜与正常经营使用同一个厨具、实际库存、就餐与订单收款账本；稀有材料先做逻辑保留，在实际开工时扣减。只在菜单加入一个低调的入口，不添加新的营业浮窗、不展示无功能的奇幻区域设定名字。已通过 GitHub 回归测试，**仍待 iPhone Safari 试玩验收**。
+>
+> [当前项目状态](docs/PROJECT_STATE.md) · [v0.10 已确认设计与实现说明](docs/V0.10_SIGNATURE_REGULARS_DESIGN.md) · [线上试玩](https://mastercook777.github.io/Oddpot-Kitchen/)
+
+---
+
 # 怪味食堂 · 新对话与规划入口
 
 > **优先阅读：** [快速接手 / START HERE](docs/START_HERE.md) · [当前实装状态](docs/PROJECT_STATE.md) · [经营成长路线图](docs/ROADMAP.md) · [v0.10 稀有隐藏菜单与特殊食客讨论稿](docs/V0.10_SIGNATURE_REGULARS_DESIGN.md)
