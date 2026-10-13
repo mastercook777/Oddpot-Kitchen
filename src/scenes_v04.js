@@ -1,5 +1,7 @@
 import {fieldWokPose,fieldPotPose} from './field_pose_v083.js?v=0.8.5';
 import {hazardPhase,fieldTilePath} from './field_rules_v011a.js';
+import {fieldCamera} from './field_camera_v011b1.js';
+import {drawExpandedLandscape,drawExpandedObstacle} from './field_world_render_v011b1.js';
 import {meleeProfile,meleeWindupProgress} from './field_combat_feedback_v084.js?v=0.8.4';
 import {pixelActor,pixelEnemy,pixelImpact} from './pixels_v041.js?v=0.9.0';
 // Lightweight procedural game graphics: original Canvas shapes, no art pack.
@@ -190,12 +192,12 @@ function drawMeleeWarnings(c,f){
   }
  }
 }
-export function drawField(canvas,s,clock){const size=setCanvas(canvas);if(!size||!s.field?.action)return;const {c,w,h}=size,f=s.field;const springs=f.region==='spring';const sc=Math.min(w/f.worldW,h/f.worldH),left=(w-sc*f.worldW)/2,top=(h-sc*f.worldH)/2;
+export function drawField(canvas,s,clock){const size=setCanvas(canvas);if(!size||!s.field?.action)return;const {c,w,h}=size,f=s.field;const springs=f.region==='spring';const camera=fieldCamera(f,w,h),sc=camera.scale,left=camera.offsetX,top=camera.offsetY;
  c.fillStyle=springs?'#9c674c':'#305a40';c.fillRect(0,0,w,h);
  const shake=(f.hitShake||0)/.24,shakeX=shake?Math.sin(f.elapsed*151)*4*shake:0;
  const shakeY=shake?Math.cos(f.elapsed*117)*2.4*shake:0;
  c.save();c.translate(left+shakeX,top+shakeY);c.scale(sc,sc);
- drawBiomeLandscape(c,f,clock);
+ if(camera.expanded)drawExpandedLandscape(c,f,clock);else drawBiomeLandscape(c,f,clock);
  // This faint route follows the REAL passable cells; artwork never fakes a blocked path.
  const goal=f.nodes.find(n=>n.key==='target'&&!n.claimed);
  if(goal){const trail=fieldTilePath(f,f.spawn||f.pos,goal,{avoidHazards:true});
@@ -226,7 +228,7 @@ export function drawField(canvas,s,clock){const size=setCanvas(canvas);if(!size|
    }
    c.restore();
   }
-  for(const o of f.obstacles){c.save();c.translate(o.x+.5,o.y+.5);c.scale(1/sc,1/sc);if(f.biome?.style==='glow'){
+  for(const o of f.obstacles){if(camera.expanded){drawExpandedObstacle(c,o,f.biome?.style,clock);continue;}c.save();c.translate(o.x+.5,o.y+.5);c.scale(1/sc,1/sc);if(f.biome?.style==='glow'){
   circle(c,0,4,14,'#263d48');circle(c,0,-6,17,'#6ebaaa');circle(c,-7,-9,8,'#c5e8d1');
  }else if(f.biome?.style==='roots'){
   circle(c,0,5,17,'#242430');circle(c,0,-5,19,'#75505f');
