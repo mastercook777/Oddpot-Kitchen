@@ -86,11 +86,10 @@ export function generateBiomeMap(s,route,target){
   const quantity=i===0?2:i===1&&biome.count>=5?2:1;
   nodes.push({key:'pocket-'+i,id,x,y,n:quantity,type:i===chosen.length-1&&biome.enemyCount>=3?'danger':'gather',claimed:false});
  }
- // Non-dangerous story encounters are infrequent, not a guaranteed filler
- // node repeated in identical map positions.
- if(sourceCount>=4&&seed%5===0){
-  const spot=spots[sourceCount];if(spot)nodes.push({key:'flavor-cache',id:'mushroom',x:spot[0],y:spot[1],n:1,type:'event',claimed:false});
- }
+ // Encounters now use a once-per-run plan in engine.js (v0.11-B0).
+ // Old seed%5 plus sourceCount>=4 skipped whole biomes and often three full maps.
+ // No event belongs to a random gathering pocket; the game must place a real,
+ // reachable traveler near the mandatory traversal path in a chosen segment.
  const originalObstacles=biome.obstacles.map(([x,y])=>({x:flip(x),y}));
  const hazards=biome.hazards.map(([x,y])=>({x:flip(x),y}));
  const spawn=springs?{x:2.5,y:10.1}:{x:4.5,y:9.4};
