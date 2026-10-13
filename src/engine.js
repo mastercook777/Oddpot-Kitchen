@@ -457,7 +457,8 @@ export function selectArrivalDish(s,o){
  // intermission affects future orders, never rewrites an already seated order.
  const syn=synergyFor(s.menu),options=s.menu.filter(id=>s.recipes[id]&&RECIPES[id]).map(id=>{const craft=recipeCraftSnapshot(s,id);return {id,craft,score:customerFit(RECIPES[id],o.segment,syn,craft),price:craft.price}}).sort((a,b)=>b.score-a.score||a.price-b.price);
  const hiddenId=s.service?.hiddenMenuRecipeId;
- const hidden=hiddenId&&isRareRecipe(hiddenId)&&eligibleForHidden(o,s.restaurantGrowth)&&hiddenRemaining(s,totalBusinessDay(s))>0&&s.recipes[hiddenId]&&canUse(s,recipeCraftSnapshot(s,hiddenId).ingredientIds)?(()=>{const craft=recipeCraftSnapshot(s,hiddenId);return {id:hiddenId,craft,score:Math.max(55,customerFit(RECIPES[hiddenId],o.segment,syn,craft)),price:craft.price};})():null;
+ const alreadyCommitted=(s.service?.orders||[]).filter(x=>x.hiddenOrder&&x.recipeId===hiddenId&&!['rejected','left'].includes(x.status)&&x.id!==o.id).length;
+ const hidden=hiddenId&&isRareRecipe(hiddenId)&&eligibleForHidden(o,s.restaurantGrowth)&&hiddenRemaining(s,totalBusinessDay(s))>alreadyCommitted&&s.recipes[hiddenId]&&canUse(s,recipeCraftSnapshot(s,hiddenId).ingredientIds)?(()=>{const craft=recipeCraftSnapshot(s,hiddenId);return {id:hiddenId,craft,score:Math.max(55,customerFit(RECIPES[hiddenId],o.segment,syn,craft)),price:craft.price};})():null;
  const themed=firstChallenge(s)&&o.id===(s.service?.judgeOrderId||s.service?.orders?.[6]?.id)?options.filter(x=>RECIPES[x.id].tags.some(t=>['辣','爆香'].includes(t))):[];
  const preferred=o.visitor?.favoriteRecipeId;
  const known=preferred?options.find(x=>x.id===preferred&&x.score>=45):null;
