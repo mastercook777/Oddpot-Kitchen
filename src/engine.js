@@ -24,18 +24,27 @@ export function expandDiningRoom(s){
  if(!transact(s,'expand-third-table','room_upgrade',{},-ROOM_EXPANSION_COST))return false;
  s.dining={tableCount:3};return true;
 }
+// Common, shop-eligible staples are an operational safety net, never a
+// daily lottery. Exploration/Boss ingredients remain exclusive to their source.
+export const DAILY_STAPLE_MIN_PURCHASES=6;
 export function ensureDailyMarket(s){
  const key=`${s.cycle}-${s.day}`;
- if(s.market?.dayKey===key)return s.market;
- const selection=SHOP_STAPLES.map((id,i)=>({id,roll:rand((s.seed^(s.cycle*7919)^(s.day*65521)^Math.imul(i+1,1103515245))>>>0)}))
-   .sort((a,b)=>a.roll-b.roll||a.id.localeCompare(b.id));
- const count=3+((rand(s.seed+s.cycle*101+s.day*109)>>>21)%2);
+ if(s.market?.dayKey===key&&s.market.schema===2&&
+    SHOP_STAPLES.every(id=>s.market.goods?.[id]&&Number.isInteger(s.market.goods[id].stock)))return s.market;
+ const previous=s.market?.dayKey===key?s.market.goods||{}:{};
  const goods={};
- for(const {id,roll} of selection.slice(0,count)){
-  const stock=3+((roll>>>16)%5),pct=85+((roll>>>10)%51);
-  goods[id]={stock,initialStock:stock,price:Math.max(1,Math.round(ING[id].cost*pct/100))};
+ for(const [i,id] of SHOP_STAPLES.entries()){
+  const roll=rand((s.seed^(s.cycle*7919)^(s.day*65521)^Math.imul(i+1,1103515245))>>>0);
+  const offered=previous[id];
+  // Existing v0.9 market saves retain all already-purchased quantities.
+  // Migrating a 3-unit offer used twice grants 4-7 additional chances, not
+  // a new unlimited supply or a refund of spent coins.
+  const bought=offered?Math.max(0,(offered.initialStock||0)-(offered.stock||0)):0;
+  const initialStock=Math.max(DAILY_STAPLE_MIN_PURCHASES+(roll>>>16)%4,bought);
+  const price=Math.max(1,Math.round(ING[id].cost*(90+((roll>>>10)%21))/100));
+  goods[id]={stock:Math.max(0,initialStock-bought),initialStock,price};
  }
- s.market={dayKey:key,goods};
+ s.market={dayKey:key,goods,schema:2};
  return s.market;
 }
 export const KITCHEN_POSITIONS=['WOK','POT'];
