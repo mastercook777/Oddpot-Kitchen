@@ -11,9 +11,9 @@ const PALETTE={
  oasis:['#788775','#a3ac96','#6eaba7','#c3e6d7','#d8fbf4']
 };
 const worldArtHash=n=>(Math.imul(1664525,n>>>0)+1013904223)>>>0;
-const worldArtPoly=(c,points,fill,stroke=null,width=.04)=>{c.beginPath();points.forEach(([x,y],i)=>i?c.lineTo(x,y):c.moveTo(x,y));c.closePath();c.fillStyle=fill;c.fill();if(stroke){c.lineWidth=width;c.strokeStyle=stroke;c.worldArtStroke()}};
-const worldArtEllipse=(c,x,y,rx,ry,fill)=>{c.beginPath();c.worldArtEllipse(x,y,rx,ry,0,0,Math.PI*2);c.fillStyle=fill;c.fill()};
-const worldArtStroke=(c,points,col,w=.06)=>{c.beginPath();points.forEach(([x,y],i)=>i?c.lineTo(x,y):c.moveTo(x,y));c.strokeStyle=col;c.lineWidth=w;c.lineCap='round';c.lineJoin='round';c.worldArtStroke()};
+const worldArtPoly=(c,points,fill,stroke=null,width=.04)=>{c.beginPath();points.forEach(([x,y],i)=>i?c.lineTo(x,y):c.moveTo(x,y));c.closePath();c.fillStyle=fill;c.fill();if(stroke){c.lineWidth=width;c.strokeStyle=stroke;c.stroke()}};
+const worldArtEllipse=(c,x,y,rx,ry,fill)=>{c.beginPath();c.ellipse(x,y,rx,ry,0,0,Math.PI*2);c.fillStyle=fill;c.fill()};
+const worldArtStroke=(c,points,col,w=.06)=>{c.beginPath();points.forEach(([x,y],i)=>i?c.lineTo(x,y):c.moveTo(x,y));c.strokeStyle=col;c.lineWidth=w;c.lineCap='round';c.lineJoin='round';c.stroke()};
 export function drawExpandedLandscape(c,f,t){
  const style=f.biome?.style||'meadow',p=PALETTE[style]||PALETTE.meadow,
   seed=f.biome?.encounterSeed||1;
