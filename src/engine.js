@@ -9,7 +9,7 @@ const clone=x=>structuredClone(x);
 export const clamp=(n,a,b)=>Math.min(b,Math.max(a,n));
 export function rand(seed){return (Math.imul(1664525,seed>>>0)+1013904223)>>>0}
 export function uniqueAdd(ledger,id,type,extra={}){if(ledger.some(x=>x.id===id))return false;ledger.push({id,type,...extra});return true}
-export function newGame(seed=20261009){return {version:4,seed,cycle:1,day:1,dining:{tableCount:2},premiumMenu:null,guestRelationships:{},history:[],market:null,phase:'forecast',coins:120,reputation:0,inventory:{...DEFAULT_INVENTORY},recipes:{chicken_stew:76,mushroom_stir:76,veg_stir:72},learned:{},recipeVariants:{},activeVariantIds:{},tech:false,upgrade:false,crew:{helper:{hired:false,station:0,meals:0,feed:null},waiter:{hired:false,meals:0,feed:null}},staffFoodCost:0,kitchen:{slots:[{type:'WOK',level:1},{type:'POT',level:1}],refitDay:null,freeRefitUsed:false,extraRefits:0},bagSlots:8,_bagMigrated:true,_v08Save:true,selectedWeaponSlot:0,bento:null,selectedTarget:'chili',route:null,field:null,cook:null,menu:['chicken_stew','mushroom_stir','veg_stir'],prep:{},prepVariants:{},prepCost:0,manualCost:0,service:null,report:null,lastCook:null,researchReceipt:false,ledger:[],logs:[],result:null,step:0};}
+export function newGame(seed=20261009){return {version:4,seed,cycle:1,day:1,dining:{tableCount:2},premiumMenu:null,guestRelationships:{},guestDex:{seenSegments:{},metGuests:{}},history:[],market:null,phase:'forecast',coins:120,reputation:0,inventory:{...DEFAULT_INVENTORY},recipes:{chicken_stew:76,mushroom_stir:76,veg_stir:72},learned:{},recipeVariants:{},activeVariantIds:{},tech:false,upgrade:false,crew:{helper:{hired:false,station:0,meals:0,feed:null},waiter:{hired:false,meals:0,feed:null}},staffFoodCost:0,kitchen:{slots:[{type:'WOK',level:1},{type:'POT',level:1}],refitDay:null,freeRefitUsed:false,extraRefits:0},bagSlots:8,_bagMigrated:true,_v08Save:true,selectedWeaponSlot:0,bento:null,selectedTarget:'chili',route:null,field:null,cook:null,menu:['chicken_stew','mushroom_stir','veg_stir'],prep:{},prepVariants:{},prepCost:0,manualCost:0,service:null,report:null,lastCook:null,researchReceipt:false,ledger:[],logs:[],result:null,step:0};}
 // Kitchen station IDs remain WOK/POT for compatibility with 0.4 saves,
 // but now denote PHYSICAL positions (left/right), not stove types.
 // Room size and market stock are persistent economic state, not scene-only buffs.
@@ -22,6 +22,32 @@ export const REGULAR_GUESTS=Object.freeze({
  family:{id:'mushroom_ami',name:'阿米',segment:'family'},
  regular:{id:'slime_popo',name:'啵啵',segment:'regular'}
 });
+// Separate meeting a guest (real arrival) from gaining favor (real meal).
+export function ensureGuestDex(s){
+ s.guestDex??={seenSegments:{},metGuests:{}};
+ s.guestDex.seenSegments??={};s.guestDex.metGuests??={};
+ // Legacy real meals prove these guests have been met, but do not infer
+ // unrecorded earlier visits or generate fake relationship scores.
+ for(const [guestId,rel] of Object.entries(s.guestRelationships||{})){
+  if((rel?.visits||0)>0&&CUSTOMERS[rel.segment]){
+   s.guestDex.seenSegments[rel.segment]=true;
+   s.guestDex.metGuests[guestId]=true;
+  }
+ }
+ return s.guestDex;
+}
+export function guestBookEntries(s){
+ const dex=ensureGuestDex(s);
+ return Object.entries(CUSTOMERS).map(([segment,data])=>{
+  const guest=REGULAR_GUESTS[segment],rel=guest?s.guestRelationships?.[guest.id]:null;
+  const seen=!!dex.seenSegments[segment]||!!(rel?.visits);
+  const met=!!(guest&&dex.metGuests[guest.id])||!!(rel?.visits);
+  return {segment,name:data.name,emoji:data.emoji,likes:[...data.likes],seen,
+   guestId:guest?.id||null,guestName:guest?.name||null,met,
+   visits:Math.max(0,rel?.visits||0),happyMeals:Math.max(0,rel?.happyMeals||0),
+   premiumEligible:segment==='critic'||!!(guest&&rel?.happyMeals>=2)};
+ });
+}
 export const currentPremiumDay=s=>`${s.cycle}-${s.day}`;
 export function premiumMenuActive(s){
  const p=s.premiumMenu;
@@ -239,7 +265,7 @@ if(s.service){s.service.walkable??=false;if(s.service.walkable){s.service.hero??
  const taken=new Set(active.map(o=>o.tableId).filter(x=>x!==undefined));
  for(const o of active){if(o.tableId==null){const n=[0,1].find(i=>!taken.has(i));if(n!==undefined){o.tableId=n;taken.add(n)}}o.seatId??=0;}
  }
-ensureKitchen(s);ensureCrew(s);ensureRecipeVariants(s);s.prepVariants??={};s.dining??={tableCount:2};s.premiumMenu??=null;s.guestRelationships??={};s.history??=[];if(s.market?.dayKey!==kitchenDayKey(s))s.market=null;if(s.service)s.service.tableCount??=s.dining.tableCount;
+ensureKitchen(s);ensureCrew(s);ensureRecipeVariants(s);s.prepVariants??={};s.dining??={tableCount:2};s.premiumMenu??=null;s.guestRelationships??={};ensureGuestDex(s);s.history??=[];if(s.market?.dayKey!==kitchenDayKey(s))s.market=null;if(s.service)s.service.tableCount??=s.dining.tableCount;
 s.bagSlots = s.bagSlots===6?8:s.bagSlots===7?10:s.bagSlots===8&&s._bagMigrated!==true&&s._v08Save!==true?12:s.bagSlots;
 s._bagMigrated=true;s._v08Save=true;s.selectedWeaponSlot??=0;
 if(s.field){s.field.capacity??=s.bagSlots;s.field.capacity=Math.max(s.field.capacity,s.bagSlots);syncFieldBagStacks(s.field);s.field.weapon??=fieldWeaponSnapshot(s);if(!s.field.segmentIndex){s.field.segmentIndex=3;s.field.segmentStatus='active';s.field.legacyField=true;}}
@@ -912,6 +938,9 @@ function spawnArrivals(s){
     const candidate=[0,1].find(j=>!used.has(j));if(candidate!==undefined){table=i;seat=candidate;break;}}}
   if(table===null)continue;
   o.status='entering';o.doorAt=v.time;o.tableId=table;o.seatId=seat;
+  const dex=ensureGuestDex(s);
+  dex.seenSegments[o.segment]=true;
+  if(o.guestId)dex.metGuests[o.guestId]=true;
   record(s,{type:'arrived',order:o.id,table,seat});
  }
 }
