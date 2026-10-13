@@ -18,7 +18,7 @@ function field(route='safe'){
 }
 test('herb pixel atlas has 16px native tiles, coherent role scale and bounded distinct palette',()=>{
  assert.equal(HERB_PIXEL_TILE,16);
- assert.equal(HERB_PIXEL_PALETTE.grass,'#527546');
+ assert.equal(HERB_PIXEL_PALETTE.grass,'#63775d');
  const sprites=herbPixelSpriteNames(),unique=new Set(sprites);
  assert.equal(sprites.length,unique.size);
  for(const name of sprites){
