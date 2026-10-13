@@ -1,4 +1,5 @@
 import {fieldWokPose,fieldPotPose} from './field_pose_v083.js?v=0.8.5';
+import {hazardPhase,fieldTilePath} from './field_rules_v011a.js';
 import {meleeProfile,meleeWindupProgress} from './field_combat_feedback_v084.js?v=0.8.4';
 import {pixelActor,pixelEnemy,pixelImpact} from './pixels_v041.js?v=0.9.0';
 // Lightweight procedural game graphics: original Canvas shapes, no art pack.
@@ -42,14 +43,14 @@ function monster(c,e,t){
  if(e.hp>0){capsule(c,x-12,y-27,24,4,'#28352f');capsule(c,x-12,y-27,24*e.hp/e.maxHp,4,'#e3b65d')}
 }
 function plant(c,n,t){const x=n.x,y=n.y;if(n.claimed)return;
- circle(c,x,y+6,13,'#274a3677');circle(c,x,y,n.key?.startsWith('boss-reward')?16:11,n.key==='target'?'#f3d27d':n.key?.startsWith('boss-reward')?'#ffd06d':'#8ba87a');
+ c.fillStyle='#203b3188';c.beginPath();c.ellipse(x,y+9,12,4,0,0,Math.PI*2);c.fill();
  if(n.id==='mushroom_heart'){circle(c,x,y-5,9,'#bb89e8');circle(c,x,y-10,5,'#f9dcff');text(c,'★',x,y,'#fff6df',11)}
  else if(n.id==='ember_pepper'){circle(c,x,y,10,'#db653e');circle(c,x,y-6,5,'#ffe6a1');text(c,'★',x,y,'#fff6df',11)}
  else if(n.id==='mushroom'){rect(c,x-2,y-2,4,13,'#e8d3ad');circle(c,x,y-4,9,'#a75f56');circle(c,x-3,y-6,2,'#f7e4b7')}
  else if(n.id==='chili'){line(c,x-2,y+8,x+3,y-8,'#d85e37',7);line(c,x+3,y-8,x+7,y-11,'#376b38',3)}
  else if(n.id==='beef'||n.id==='chicken'){circle(c,x,y,9,'#b36656');circle(c,x-2,y-1,5,'#d99171')}
  else {circle(c,x-4,y,6,'#6c9862');circle(c,x+4,y-3,5,'#c3ba68');rect(c,x-1,y+1,3,9,'#6f553e')}
- if(n.key==='target'){c.strokeStyle='#ffe09c';c.lineWidth=2;c.beginPath();c.arc(x,y,16+Math.sin(t*3)*2,0,Math.PI*2);c.stroke()}
+ if(n.key==='target'){c.strokeStyle='#ffe09c';c.lineWidth=2;c.beginPath();c.ellipse(x,y+8,16+Math.sin(t*3),6,0,0,Math.PI*2);c.stroke()}
 }
 // Landmark painting is expressed in actual 9x11 world coordinates.
 // It stays below combatants and pickups, and is purely presentational.
@@ -195,16 +196,37 @@ export function drawField(canvas,s,clock){const size=setCanvas(canvas);if(!size|
  const shakeY=shake?Math.cos(f.elapsed*117)*2.4*shake:0;
  c.save();c.translate(left+shakeX,top+shakeY);c.scale(sc,sc);
  drawBiomeLandscape(c,f,clock);
- if(f.hazards?.length){for(const hz of f.hazards){
-  const x=hz.x+.5,y=hz.y+.5,style=f.biome?.style||'spring',roots=style==='roots',ember=style==='ember';
-  circle(c,x,y,.39,roots?'#493450':ember?'#452e30':'#775958');
-  circle(c,x,y,.28,roots?'#ac7dc7':ember?'#c65630':'#66949b');
-  circle(c,x,y,.17,roots?'#efd4ed':ember?'#ffd58a':'#c1e1d9');
-  if(((f.elapsed+(hz.x%2)*1.7)%4.2)>2.8){
-   circle(c,x,y,.45,roots?'#eeb5ef66':ember?'#ffad6b55':'#f7dcb355');
+ // This faint route follows the REAL passable cells; artwork never fakes a blocked path.
+ const goal=f.nodes.find(n=>n.key==='target'&&!n.claimed);
+ if(goal){const trail=fieldTilePath(f,f.spawn||f.pos,goal,{avoidHazards:true});
+  if(trail.length>1){c.save();c.beginPath();c.moveTo(trail[0].x,trail[0].y);
+   for(const pt of trail.slice(1))c.lineTo(pt.x,pt.y);
+   c.strokeStyle='#f2e6b082';c.lineWidth=.11;c.setLineDash([.12,.23]);c.stroke();c.restore();}}
+
+ if(f.hazards?.length)for(const hz of f.hazards){
+   const p=hazardPhase(hz,f.elapsed,f.biome),x=hz.x+.5,y=hz.y+.5;
+   const roots=f.biome?.style==='roots',ember=f.biome?.style==='ember';
+   c.save();c.translate(x,y);
+   // Jagged fracture: dangerous even at rest, unlike raised edible pickup sprites.
+   c.beginPath();for(let i=0;i<12;i++){
+    const theta=i*Math.PI/6,r=i%2===0?.43:.25;
+    if(i===0)c.moveTo(Math.cos(theta)*r,Math.sin(theta)*r);
+    else c.lineTo(Math.cos(theta)*r,Math.sin(theta)*r);
+   }
+   c.closePath();c.fillStyle=roots?'#34283c':ember?'#492c30':'#455861';c.fill();
+   c.strokeStyle=roots?'#ddb5e9':ember?'#e49c67':'#e1dbc1';c.lineWidth=.07;c.stroke();
+   for(const theta of [-.8,.6,2.45])line(c,Math.cos(theta)*.05,Math.sin(theta)*.05,Math.cos(theta)*.34,Math.sin(theta)*.34,'#efc797',.04);
+   if(p.warning||p.active){
+    c.beginPath();c.arc(0,0,p.radius,0,Math.PI*2);
+    c.strokeStyle='#fff0b4';c.lineWidth=.08;
+    if(p.warning)c.setLineDash([.16,.10]);c.stroke();c.setLineDash([]);
+    c.fillStyle=p.active?'#ff6d4266':'#ffc66a44';c.fill();
+    if(p.active){for(const dx of [-.18,0,.18])line(c,dx,.05,dx+.05,-.38-Math.sin(f.elapsed*13+dx)*.08,'#ffe5b1',.08);}
+    else text(c,'!',0,-.09,'#fff8d6',.29);
+   }
+   c.restore();
   }
- }}
- for(const o of f.obstacles){c.save();c.translate(o.x+.5,o.y+.5);c.scale(1/sc,1/sc);if(f.biome?.style==='glow'){
+  for(const o of f.obstacles){c.save();c.translate(o.x+.5,o.y+.5);c.scale(1/sc,1/sc);if(f.biome?.style==='glow'){
   circle(c,0,4,14,'#263d48');circle(c,0,-6,17,'#6ebaaa');circle(c,-7,-9,8,'#c5e8d1');
  }else if(f.biome?.style==='roots'){
   circle(c,0,5,17,'#242430');circle(c,0,-5,19,'#75505f');
@@ -214,8 +236,17 @@ export function drawField(canvas,s,clock){const size=setCanvas(canvas);if(!size|
   line(c,-5,-10,1,4,'#df7546',4);
  }else if(springs){circle(c,0,3,15,'#8c5940');circle(c,-5,-4,14,'#625d59');circle(c,5,-6,9,'#817875');rect(c,-4,-18,8,3,'#be9a78')}
  else tree(c,0,0);c.restore()}
- for(const n of f.nodes){if(n.type==='event'&&!n.claimed){circle(c,n.x,n.y,.23,'#ecd597');rect(c,n.x-.11,n.y-.17,.23,.32,'#916b4b');text(c,'?',n.x,n.y-.04,'#4d3d28',.27)}else {c.save();c.translate(n.x,n.y);c.scale(1/sc,1/sc);plant(c,{...n,x:0,y:0},clock);c.restore()}}
- for(const p of f.projectiles||[]){circle(c,p.x,p.y,.12,'#ef9c4e');circle(c,p.x,p.y,.05,'#ffe5a3')}
+ for(const n of f.nodes){if(n.claimed)continue;
+   if(n.type==='event'){
+    // Small traveling cook with a pack: clearly an NPC, not a glowing dot.
+    c.save();c.translate(n.x,n.y);c.scale(1/sc,1/sc);
+    rect(c,-12,-4,8,17,'#99784f');rect(c,-7,-3,16,16,'#54756e');
+    circle(c,1,-12,10,'#dfb58d');rect(c,-12,-22,24,7,'#6f4b39');
+    rect(c,-5,-27,13,8,'#92724f');rect(c,-5,10,5,5,'#4b382d');rect(c,5,10,5,5,'#4b382d');
+    text(c,'?',13,-28,'#ffe9b1',12);c.restore();
+   }else{c.save();c.translate(n.x,n.y);c.scale(1/sc,1/sc);plant(c,{...n,x:0,y:0},clock);c.restore();}
+  }
+  for(const p of f.projectiles||[]){circle(c,p.x,p.y,.12,'#ef9c4e');circle(c,p.x,p.y,.05,'#ffe5a3')}
  for(const p of f.playerProjectiles||[]){
   const arc=Math.sin(Math.PI*Math.min(1,p.time/p.duration))*.37;
   circle(c,p.x,p.y,.18,'#eac69b');circle(c,p.x,p.y-arc,.16,'#c68c55');
