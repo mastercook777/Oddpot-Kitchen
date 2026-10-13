@@ -3,6 +3,7 @@ import {LIVE_ACTIONS,evaluateLiveCook,liveIngredientState,liveIngredientHeatFeed
 import {RECIPE_PROFILES} from './recipe_profiles_v063.js?v=0.8.0';
 import {generateBiomeMap} from './field_biomes_v081.js?v=0.8.2';
 import {makeFieldEncounterPlan,insertPlannedFieldEncounter} from './field_encounter_plan_v011b.js';
+import {expandFieldMap} from './field_world_v011b1.js';
 import {newServiceHero,heroZone} from './walkable_restaurant_v07.js?v=0.9.2';
 export const PHASES=['forecast','field','research','menu','prep','service','report','upgrade'];
 export const SAVE_KEY='oddpot-prototype-v04'; // v0.2 兼容先前试玩存档
@@ -426,7 +427,7 @@ export function chooseFieldBranch(s,choiceId){
  f.route=f.region==='spring'?(f.dangerCommitment?'spring_risk':'spring_safe'):(f.dangerCommitment?'risk':'safe');
  const segmentSeed=(f.segmentIndex*1307+branch.id.split('').reduce((n,c)=>n+c.charCodeAt(0),0)*17);
  const map=insertPlannedFieldEncounter(buildFieldMap({...s,seed:s.seed+segmentSeed,fieldZoneId:branch.id,fieldSegmentIndex:f.segmentIndex},f.route,branch.target),f.encounterPlan,f.segmentIndex);
- for(const key of ['region','biome','bossSpawn','spawn','x','y','steps','worldW','worldH','visitedHazards','nodes','obstacles','hazards'])f[key]=map[key];
+ for(const key of ['region','biome','bossSpawn','spawn','x','y','steps','worldW','worldH','worldVersion','scenery','visitedHazards','nodes','obstacles','hazards'])f[key]=map[key];
  f.action=false;f.target=branch.target;f.harvestProgress=0;f.harvestNode=null;f.activeEvent=null;
  // HP, bag, bento, skill cooldown and equipped cookware persist across all three segments.
  return true;
@@ -1014,7 +1015,7 @@ export function buyBagUpgrade(s){const price=bagUpgradePrice(s);if(s.phase!=='up
 // v0.3 walkable, deterministic field. Each node is claimed once, and nothing
 // reaches restaurant inventory until settleField() records the unique transaction.
 export function buildFieldMap(s,route,target){
- return generateBiomeMap(s,route,target);
+ return expandFieldMap(generateBiomeMap(s,route,target),s.seed||20261009);
 }
 
 export function moveExplorer(s,dx,dy){
