@@ -461,7 +461,7 @@ export function selectArrivalDish(s,o){
  const themed=firstChallenge(s)&&o.id===(s.service?.judgeOrderId||s.service?.orders?.[6]?.id)?options.filter(x=>RECIPES[x.id].tags.some(t=>['辣','爆香'].includes(t))):[];
  const preferred=o.visitor?.favoriteRecipeId;
  const known=preferred?options.find(x=>x.id===preferred&&x.score>=45):null;
- const best=hidden||themed[0]||known||options[0];o.recipeId=best?.id||null;o.fit=best?.score||0;o.craft=best?.craft?clone(best.craft):null;
+ const best=hidden||themed[0]||known||options[0];o.hiddenOrder=!!(hidden&&best===hidden);o.recipeId=best?.id||null;o.fit=best?.score||0;o.craft=best?.craft?clone(best.craft):null;
  return best;
 }
 // v0.5C: seeded nightly scenarios. Save/restore does not reroll guests or goals.
@@ -775,7 +775,7 @@ function advanceGuestMeals(s){
   if(o.status==='flying'&&v.time-o.flightAt>=DINER_TIMING.flight){
    o.status='eating';o.landedAt=v.time;o.served=v.time;
    const price=o.craft?.price??RECIPES[o.recipeId]?.price??0;
-   if(transact(s,`sale-${o.id}`,'sale',{},price)){v.income+=price;if(o.recipeId===v.hiddenMenuRecipeId)markHiddenSold(s,totalBusinessDay(s));}
+   if(transact(s,`sale-${o.id}`,'sale',{},price)){v.income+=price;if(o.hiddenOrder)markHiddenSold(s,totalBusinessDay(s));}
    record(s,{type:'landed',order:o.id,recipeId:o.recipeId});
   }
   if(o.status==='eating'&&v.time-o.landedAt>=DINER_TIMING.eat){
@@ -860,7 +860,7 @@ if((s.prep[o.recipeId]||0)>0&&(match>=0||!prepared.length)){
  finishOrder(s,o,o.craft?.quality||s.recipes[o.recipeId]);continue;
 }
 const materialIds=o.craft?.ingredientIds||r.ids;
-if(o.recipeId===v.hiddenMenuRecipeId&&hiddenRemaining(s,totalBusinessDay(s))<=0){o.status='rejected';o.rejectReason='隐藏料理售罄';o.leftAt=v.time;record(s,{type:'rejected',order:id,reason:'隐藏料理售罄'});continue;}
+if(o.hiddenOrder&&hiddenRemaining(s,totalBusinessDay(s))<=0){o.status='rejected';o.rejectReason='隐藏料理售罄';o.leftAt=v.time;record(s,{type:'rejected',order:id,reason:'隐藏料理售罄'});continue;}
 if(!canUse(s,materialIds)){o.status='rejected';o.rejectReason='食材不足';o.leftAt=v.time;const shortage=materialIds.filter(x=>(s.inventory[x]||0)<materialIds.filter(y=>y===x).length);o.missingIngredients=[...new Set(shortage)];record(s,{type:'rejected',order:id,reason:'食材不足',recipeId:o.recipeId,missing:o.missingIngredients});continue;}
 consume(s,materialIds,`service-cook-${id}`);v.cost+=materialCost(materialIds);o.status='cooking';o.started=v.time;v.stations[st]={orderId:id,left:stationDuration(s,st,r,v,o),quality:o.craft?.quality||s.recipes[o.recipeId]||72};v.stationStats[st].count++;v.stationStats[st].secondsSaved+=Math.max(0,r.time-v.stations[st].left);const helper=v.crew?.helper;if(helper?.hired&&helper.station===(st==='WOK'?0:1)){const withoutHelper=Math.max(1,r.time+(o.craft?.timeDelta||0)-(ensureKitchen(s).slots[st==='WOK'?0:1].level-1)*2-(v.eventEffects?.[r.station]||0));v.staffStats.helperSeconds+=withoutHelper-v.stations[st].left;v.staffStats.helperOrders++;}record(s,{type:'started',order:id,station:st,cookType:r.station,level:ensureKitchen(s).slots[st==='WOK'?0:1].level});}
 if(v.orders.every(o=>['served','left','rejected'].includes(o.status))&&Object.values(v.stations).every(x=>!x)&&v.time>=44){v.done=true;break}if(v.time>=100){for(const o of v.orders)if(!['served','left','rejected'].includes(o.status)){o.status='left';o.leftReason='营业结束';o.leftAt=v.time;record(s,{type:'left',order:o.id,reason:'营业结束'})}v.done=true;break}
