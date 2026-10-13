@@ -11,6 +11,7 @@ on:
       - feature/v0.9.5-preopen-inventory-check
       - feature/v0.10-rare-hidden-menu
       - feature/v0.10.1-menu-stock-ux
+      - feature/v0.10.2-guest-compendium
   pull_request:
     branches:
       - main
@@ -33,12 +34,12 @@ jobs:
       - name: Build web assets
         run: npm run build
       - name: Commit rebuilt offline bundle for this feature branch
-        if: github.event_name == 'push' && github.ref == 'refs/heads/feature/v0.10.1-menu-stock-ux'
+        if: github.event_name == 'push' && github.ref == 'refs/heads/feature/v0.10.2-guest-compendium'
         run: |
           if ! git diff --quiet -- standalone.html; then
             git config user.name "github-actions[bot]"
             git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
             git add standalone.html
             git commit -m "build(v0.9): synchronize offline gameplay bundle"
-            git push origin HEAD:feature/v0.10.1-menu-stock-ux
+            git push origin HEAD:feature/v0.10.2-guest-compendium
           fi
