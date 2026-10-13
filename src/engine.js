@@ -24,8 +24,8 @@ export function expandDiningRoom(s){
  if(!transact(s,'expand-third-table','room_upgrade',{},-ROOM_EXPANSION_COST))return false;
  s.dining={tableCount:3};return true;
 }
-// Common, shop-eligible staples are an operational safety net, never a
-// daily lottery. Exploration/Boss ingredients remain exclusive to their source.
+// The day still randomly stocks 3–4 of the four common staples.
+// Each listed staple has at least six purchase units; rare goods stay field-only.
 export const DAILY_STAPLE_MIN_PURCHASES=6;
 export function ensureDailyMarket(s){
  const key=`${s.cycle}-${s.day}`;
