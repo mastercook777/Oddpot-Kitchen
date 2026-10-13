@@ -4,14 +4,14 @@ import {LIVE_ACTIONS,LIVE_STYLES,LIVE_AFFINITY,liveRecipeId} from './cooking_v06
 import {RECIPE_PROFILES} from './recipe_profiles_v063.js?v=0.8.0';
 import {livePanMotion} from './cook_motion_v063.js?v=0.6.3';
 import {walkServiceHero} from './walkable_restaurant_v07.js?v=0.9.2';
-import {PHASES,newGame,save,load,beginLiveResearch,dropLiveIngredient,performLiveAction,finishLiveResearch,stepLiveResearch,liveCookPreview,ensureRecipeVariants,activeRecipeVariant,chooseRecipeVariant,recipeCraftSnapshot,availableBento,prepareBento,today,serviceDayPlan,tableSeatState,enterField,settleField,discardFieldStack,fieldBagSlotsUsed,completeFieldSegment,chooseFieldBranch,selectFieldWeapon,fieldWeaponChoices,selectedFieldWeaponType,skipField,purchase,startCook,moveTile,beat,finishCook,synergyFor,canMenu,prepDish,createService,tick,expedite,walkableSpecial,activateWalkableSpecial,advanceWalkableInteraction,closeService,nextPhase,advanceDay,buyUpgrade,buyKitchenUpgrade,kitchenUpgradeCost,configureKitchenSlot,kitchenPreview,kitchenRefitCost,kitchenHasMenuCoverage,ensureKitchen,ensureCrew,CREW_ROLES,hireCrew,assignCrew,feedCrew,activeCrewMeal,crewEffects,buyBagUpgrade,bagUpgradePrice,canUse,setServicePaused,resumeBreak,breakPrep,setFlame,tossWok,previewHeat,moveExplorer,interactExplorer,sootheGuest,newRecipeLead,currentServiceEvent,chooseServiceEvent,swapBreakMenu,serviceGoalResult,serviceSupplyStatus,prepStockForecast,premiumMenuOptions,premiumMenuActive,recipeAvailableServings,setPremiumMenu,REGULAR_GUESTS,ensureDailyMarket,DAILY_STAPLE_MIN_PURCHASES,expandDiningRoom,ROOM_EXPANSION_COST,roomExpansionAvailable,totalBusinessDay,firstChallenge,tableCapacity} from './engine.js?v=0.10.1';
+import {PHASES,newGame,save,load,beginLiveResearch,dropLiveIngredient,performLiveAction,finishLiveResearch,stepLiveResearch,liveCookPreview,ensureRecipeVariants,activeRecipeVariant,chooseRecipeVariant,recipeCraftSnapshot,availableBento,prepareBento,today,serviceDayPlan,tableSeatState,enterField,settleField,discardFieldStack,fieldBagSlotsUsed,completeFieldSegment,chooseFieldBranch,selectFieldWeapon,fieldWeaponChoices,selectedFieldWeaponType,skipField,purchase,startCook,moveTile,beat,finishCook,synergyFor,canMenu,prepDish,createService,tick,expedite,walkableSpecial,activateWalkableSpecial,advanceWalkableInteraction,closeService,nextPhase,advanceDay,buyUpgrade,buyKitchenUpgrade,kitchenUpgradeCost,configureKitchenSlot,kitchenPreview,kitchenRefitCost,kitchenHasMenuCoverage,ensureKitchen,ensureCrew,CREW_ROLES,hireCrew,assignCrew,feedCrew,activeCrewMeal,crewEffects,buyBagUpgrade,bagUpgradePrice,canUse,setServicePaused,resumeBreak,breakPrep,setFlame,tossWok,previewHeat,moveExplorer,interactExplorer,sootheGuest,newRecipeLead,currentServiceEvent,chooseServiceEvent,swapBreakMenu,serviceGoalResult,serviceSupplyStatus,prepStockForecast,premiumMenuOptions,premiumMenuActive,recipeAvailableServings,setPremiumMenu,REGULAR_GUESTS,guestBookEntries,ensureDailyMarket,DAILY_STAPLE_MIN_PURCHASES,expandDiningRoom,ROOM_EXPANSION_COST,roomExpansionAvailable,totalBusinessDay,firstChallenge,tableCapacity} from './engine.js?v=0.10.1';
 import {startActionField,stepActionField,useFieldSkill,resolveFieldEvent} from './field_v04.js?v=0.8.4';
 import {drawField,drawDiner} from './scenes_v04.js?v=0.9.2';
 
 let game=load()||newGame();
 let flashUntil=0;
 let message='今天会有怎样的客人上门呢？';
-let overlay='',tileSelected=null,selectedOrderId=null;let servicePanel='';
+let overlay='',bookTab='recipes',tileSelected=null,selectedOrderId=null;let servicePanel='';
 let selectedIngredients=['chicken','chili'],selectedMethod='stir';
 let routeTarget=null,walking=null,drag=null,selectedRegion='forest';let livePanPointer=null;
 const stick={x:0,y:0,pointer:null,originX:0,originY:0};const keys=new Set();let lastFrame=0,lastSave=0;let gameClock=0;let serviceTickAt=0;const touched=new Map();
@@ -38,10 +38,24 @@ function shell(stage,dock){
 function overlayMarkup(){if(!overlay)return '';
  let body='';
  if(overlay==='book'){
+  if(bookTab==='guests'){
+   const entries=guestBookEntries(game),met=entries.filter(x=>x.seen).length;
+   const descriptions={adventurer:'从矿井带来猛烈的胃口，格外偏爱辛辣肉香。',family:'雨林的小菌帽一家，温和暖汤最容易打动他们。',regular:'会跳动的史莱姆街坊，喜欢清爽有弹性的菜。',critic:'飘过灵界只为寻找难忘味道的鉴味师。'};
+   body=`<h2>👥 客人图鉴</h2><p class="sheet-lead">已认识 ${met}/${entries.length} 类食客 · 只有真实到店才会解锁资料。满意用餐 2 次的具名熟客可尝试隐藏菜。</p>
+   <div class="v102-guest-list">${entries.map(g=>`<article class="v102-guest-card ${g.seen?'':'unknown'}">
+     <div class="v102-guest-icon" aria-hidden="true">${g.seen?g.emoji:'❔'}</div>
+     <div class="v102-guest-detail"><strong>${g.seen?esc(g.name):'未遇见的食客'}</strong>
+       ${g.seen?`<small>${esc(descriptions[g.segment])}</small><small>偏好 · ${g.likes.map(esc).join(' / ')}</small>`:'<small>等真正的客人来到餐厅，再了解他们。</small>'}
+       ${g.seen&&g.segment==='critic'?'<span class="v102-guest-status ready">可品尝隐藏菜 · 鉴味师</span>':''}
+       ${g.seen&&g.guestId?`<div class="v102-regular-info"><span>${g.met?`熟客代表 · ${esc(g.guestName)}`:'熟客代表 · 尚未结识'}</span><small>真实用餐 ${g.visits} 次 · 满意用餐 ${Math.min(2,g.happyMeals)}/2</small><span class="v102-guest-status ${g.premiumEligible?'ready':''}">${g.premiumEligible?'✓ 已获隐藏菜资格':'继续积累好评，解锁隐藏菜'}</span></div>`:''}
+     </div></article>`).join('')}</div>`;
+  }else{
   ensureRecipeVariants(game);
   const shown=Object.entries(RECIPES).filter(([id])=>game.recipes[id]||RECIPE_PROFILES[id]);
   body=`<h2>📖 料理工艺图鉴</h2><p class="sheet-lead">已解锁 ${itemCount()} 道料理 · 每道菜可收藏不同做法。<b>当前默认工艺已经影响实际营业；点击版本可以更换。</b></p><div class="book-list v063-book-list">${shown.map(([id,r])=>{const learned=!!game.recipes[id],variants=game.recipeVariants?.[id]||[],active=game.activeVariantIds?.[id];
     return `<div class="v063-book-entry"><button class="book-item" data-book="${id}"><span class="book-icon">${learned?r.emoji:'❔'}</span><div><strong>${learned?esc(r.name):'未发现的料理'}</strong><small>${learned?`${r.ids.map(onlyName).join(' + ')} · ${r.station==='WOK'?'炒锅':'深锅'} · 已知 ${variants.length} 种工艺`:esc(r.hint)}</small></div><span>›</span></button>${learned?`<div class="v063-variant-list">${variants.map(v=>`<button data-choose-variant="${id}::${v.variantId}" class="v063-variant-chip ${active===v.variantId?'active':''}">${active===v.variantId?'✓ ':''}${esc(v.styleLabel||LIVE_STYLES[v.style]||'标准工艺')} · 品质 ${v.quality} · ${recipeCraftSnapshot(game,id,v)?.price}币 / ${r.time+(recipeCraftSnapshot(game,id,v)?.timeDelta||0)}秒${v.secondaryTrait?' · '+esc(v.secondaryTrait):''}</button>`).join('')}</div>`:''}</div>`}).join('')}</div>`;
+  }
+  body=`<div class="v102-book-tabs" role="tablist" aria-label="图鉴分类"><button type="button" role="tab" data-book-tab="recipes" aria-selected="${bookTab==='recipes'}" class="${bookTab==='recipes'?'active':''}">📖 菜谱</button><button type="button" role="tab" data-book-tab="guests" aria-selected="${bookTab==='guests'}" class="${bookTab==='guests'?'active':''}">👥 客人</button></div>`+body;
  }else if(overlay==='field-bag'){
   const f=game.field;
   body=`<h2>🎒 野外背包 · ${fieldBagSlotsUsed(f)}/${f.capacity||8} 格</h2>
@@ -355,7 +369,8 @@ function action(act){
  if(act==='crew'){overlay='crew';render();return}
  if(act.startsWith('hire:')){note(hireCrew(game,act.slice(5))?'伙伴加入食堂！':'金币不足或已经雇佣。');return}
  if(act==='field-bag'){if(game.phase==='field'&&game.field){releaseStick();overlay='field-bag';render()}return}
- if(act==='stock'||act==='premium'||act==='book'||act==='settings'||act==='details'||act==='bento'){overlay=act;render();return}
+ if(act==='book'){bookTab='recipes';overlay='book';render();return}
+ if(act==='stock'||act==='premium'||act==='settings'||act==='details'||act==='bento'){overlay=act;render();return}
  if(act==='reset'){if(confirm('清空本设备的 v0.4 试玩存档？')){localStorage.removeItem('oddpot-prototype-v04');game=newGame();selectedIngredients=['chicken','chili'];overlay='';note('新旅程开始，祝你研究出奇味料理！')}return}
  if(act.startsWith('buy:')){const [,id,n]=act.split(':'),count=n?Number(n):1;
   note(purchase(game,id,count)?'已采购 '+count+' 份，食材进入仓库。':'金币不足、当日售罄或当前阶段不能采购。');return}
@@ -418,6 +433,7 @@ app.addEventListener('click',e=>{
  const route=e.target.closest('[data-route]');if(route){const entered=enterField(game,route.dataset.route);if(entered)startActionField(game);if(entered){message='出发！';flashUntil=0;render()}else note('无法进入路线');return}
  const target=e.target.closest('[data-target]');if(target){game.selectedTarget=target.dataset.target;render();return}
  const item=e.target.closest('[data-ingredient]');if(item){const id=item.dataset.ingredient;if(selectedIngredients.includes(id))selectedIngredients=selectedIngredients.filter(i=>i!==id);else if(selectedIngredients.length<3)selectedIngredients=[...selectedIngredients,id];else message='一锅最多放三种食材。';render();return}
+ const tab=e.target.closest('[data-book-tab]');if(tab){bookTab=tab.dataset.bookTab==='guests'?'guests':'recipes';render();return}
  const book=e.target.closest('[data-book]');if(book){const r=RECIPES[book.dataset.book];selectedIngredients=[...r.ids];selectedMethod=r.method;overlay='';note(`已选择实验线索：${r.hint}`);return}
  const special=e.target.closest('[data-premium-set]');if(special){const [id,n]=special.dataset.premiumSet.split(':');const ok=setPremiumMenu(game,id,Number(n));overlay=ok?'':overlay;note(ok?'已准备隐藏菜（只有合资格食客可能点单），真实稀有原料已预留。':'库存不足或菜谱尚未研发。');return}
  const clear=e.target.closest('[data-premium-clear]');if(clear){if(setPremiumMenu(game,null)){overlay='';note('已撤下今晚的隐藏菜。')}return}
