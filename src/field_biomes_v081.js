@@ -1,4 +1,5 @@
-// v0.8.1 - eight recognizable ecological subarea styles over two world regions.
+import {fieldTilePath} from './field_rules_v011a.js';
+// v0.8.1 base biomes; v0.11-A adds safe, seed-varying actual obstacle layouts.
 // The physical layout, resource concentration and color identity live together.
 const STYLE={
  meadow:{label:'林地草甸',region:'forest',floor:'#51764e',grain:'#67925b',accent:'#ebd38f',
@@ -63,7 +64,14 @@ export function generateBiomeMap(s,route,target){
  const springs=route.startsWith('spring'),id=s.fieldZoneId||(springs?'hot_spring_shallows':'herb_path');
  const biome=getFieldBiome(id,route),turn=biome.flipped,flip=x=>turn?8-x:x;
  const seed=SEED((s.seed||20261009)+s.cycle*301+s.day*37+hash(id)+(route.includes('risk')?991:0));
- const spots=biome.spots.map(([x,y])=>[flip(x),y]);
+ const sourceSpots=biome.spots.map(([x,y])=>[flip(x),y]);
+ // Different seeds change resource clusters and real blocked geometry, not
+ // merely the palette or a horizontal mirror of the same scene.
+ const layoutVariant=(seed>>>15)%3;
+ const pockets=sourceSpots.slice(1);
+ const rotated=layoutVariant===1?pockets.slice().reverse():
+   layoutVariant===2?[...pockets.slice(2),...pockets.slice(0,2)]:pockets;
+ const spots=[sourceSpots[0],...rotated];
  // Three segments share one eight-slot bag: small concentrated deposits leave
  // room for later high-value ingredients. Seed-based +/-1 richness varies runs.
  // Even a fertile map has only four to six points, boss nests only two or three.
@@ -83,14 +91,40 @@ export function generateBiomeMap(s,route,target){
  if(sourceCount>=4&&seed%5===0){
   const spot=spots[sourceCount];if(spot)nodes.push({key:'flavor-cache',id:'mushroom',x:spot[0],y:spot[1],n:1,type:'event',claimed:false});
  }
- const obstacles=biome.obstacles.map(([x,y])=>({x:flip(x),y}));
+ const originalObstacles=biome.obstacles.map(([x,y])=>({x:flip(x),y}));
  const hazards=biome.hazards.map(([x,y])=>({x:flip(x),y}));
  const spawn=springs?{x:2.5,y:10.1}:{x:4.5,y:9.4};
- // Boss encounter position is a level landmark in deep areas, with a clear
- // combat lane toward the player regardless of the artwork around it.
+ // Boss lane is kept reachable, including on seed-variant maps.
  const bossSpawn={x:turn?5.5:4.5,y:1.8};
+ let obstacles=originalObstacles;
+ if(layoutVariant&&originalObstacles.length){
+  const occupied=new Set([...sourceSpots,...hazards.map(h=>[h.x,h.y]),
+   [Math.floor(spawn.x),Math.floor(spawn.y)],[Math.floor(bossSpawn.x),Math.floor(bossSpawn.y)]]
+   .map(p=>p[0]+','+p[1]));
+  const shifts=layoutVariant===1?[[1,0],[0,1],[-1,0],[0,-1]]:
+    [[-1,0],[0,-1],[1,0],[0,1]];
+  search:for(let i=0;i<originalObstacles.length;i++){
+   const index=(i+((seed>>>8)%originalObstacles.length))%originalObstacles.length;
+   for(const [dx,dy] of shifts){
+    const original=originalObstacles[index],x=original.x+dx,y=original.y+dy;
+    if(x<1||x>7||y<1||y>9||occupied.has(x+','+y)||
+     originalObstacles.some((o,j)=>j!==index&&o.x===x&&o.y===y))continue;
+    const candidate=originalObstacles.map((o,j)=>j===index?{x,y}:{...o});
+    const testMap={worldW:9,worldH:11,obstacles:candidate,hazards};
+    if(!fieldTilePath(testMap,spawn,bossSpawn).length||
+       nodes.some(n=>!fieldTilePath(testMap,spawn,n).length))continue;
+    obstacles=candidate;
+    break search;
+   }
+  }
+ }
+ // Fall back to authoritative base obstacles if any seed pattern blocks a
+ // collection target or boss route (tests exercise all eight biomes).
+ const passable={worldW:9,worldH:11,obstacles,hazards};
+ if(!fieldTilePath(passable,spawn,bossSpawn).length||
+    nodes.some(n=>!fieldTilePath(passable,spawn,n).length))obstacles=originalObstacles;
  return {region:biome.region,biome:{zoneId:id,style:biome.style,label:biome.label,
-  floor:biome.floor,grain:biome.grain,accent:biome.accent,flipped:turn,
+  floor:biome.floor,grain:biome.grain,accent:biome.accent,flipped:turn,layoutVariant,
   enemyMix:[...biome.enemyMix],enemyCount:biome.enemyCount,encounterSeed:SEED(seed+8277)},
   spawn,x:Math.floor(spawn.x),y:Math.floor(spawn.y),steps:0,worldW:9,worldH:11,
   visitedHazards:[],nodes,obstacles,hazards,bossSpawn};
