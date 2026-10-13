@@ -1,6 +1,7 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import {ING,RECIPES} from '../src/data.js';
+import {fieldTilePath} from '../src/field_rules_v011a.js';
 import {newGame,enterField,moveExplorer,interactExplorer,settleField,canUse,startCook,moveTile,beat,finishCook,createService,tick,setServicePaused,resumeBreak,closeService,sootheGuest,newRecipeLead,cookOutcome} from '../src/engine.js';
 
 test('v0.3 twelve baseline recipes remain discoverable inside expanded v0.6.3 catalog',()=>{
@@ -44,13 +45,21 @@ test('every non-hidden recipe can be cooked from its intended ingredients with 3
 test('safe map has a playable path to guaranteed selected material, and pays out only once',()=>{
  const s=newGame(789);s.phase='field';s.selectedTarget='onion';
  assert.equal(enterField(s,'safe'),true);
- assert.equal(s.field.worldW,9);assert.equal(s.field.worldH,11);
+ assert.equal(s.field.worldW,12);assert.equal(s.field.worldH,16);
  assert.deepEqual(s.field.nodes[0].id,'onion');
  const before=s.inventory.onion;
- for(let i=0;i<3;i++)assert.equal(moveExplorer(s,0,-1).ok,true);
+ const goal=s.field.nodes.find(n=>n.key==='target');
+  const path=fieldTilePath(s.field,s.field.spawn,{x:goal.x+.5,y:goal.y+.5},{avoidHazards:true});
+  for(let i=1;i<path.length;i++){
+   const prev=path[i-1],next=path[i];
+   const dx=Math.round(next.x-prev.x),dy=Math.round(next.y-prev.y);
+   assert.equal(moveExplorer(s,dx,dy).ok,true);
+  }
+  assert.equal(goal.claimed,true);
  assert.equal(s.field.bag.onion,2);
  assert.equal(s.inventory.onion,before,'material has not been booked into restaurant prematurely');
- assert.equal(interactExplorer(s).ok,false,'cannot claim completed node again');
+ s.field.nodes.filter(n=>n!==goal).forEach(n=>n.claimed=true);
+  assert.equal(interactExplorer(s).ok,false,'cannot claim completed node again');
  assert.equal(settleField(s),true);
  assert.equal(s.inventory.onion,before+2);
  assert.equal(settleField(s),false);
