@@ -64,6 +64,12 @@ try{
    if(await page.evaluate(()=>window.__oddpotPreview.boss)!==view)throw new Error('Wrong boss fixture');
   }
  }
+ // Validate real dropdown entries, including switching away from an NPC fixture.
+ await page.locator('#camera').selectOption('boss_ember');
+ await page.waitForFunction("window.__oddpotPreview?.boss==='boss_ember'");
+ await page.locator('#camera').selectOption('boss_spore');
+ await page.waitForFunction("window.__oddpotPreview?.boss==='boss_spore'");
+ await page.locator('#camera').selectOption('spawn');
  // Keyboard keeps working after a focused pause button, and pointer release stops movement.
  await page.goto('http://127.0.0.1:5173/art-preview.html?view=spawn');
  await page.waitForFunction("window.__oddpotPreview?.rendered===true");
