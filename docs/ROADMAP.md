@@ -4,7 +4,7 @@
 **当前实装基线**：v0.11.0-alpha.3（B1 新地图 12×16、跟随镜头和八生态程序场景已实装；B2 怪群与 C 真实新奇遇/稀有料理待开发）。  
 **本页是规划而非新功能发布日志**。完整交接从 [START_HERE](START_HERE.md) 进入，已实装状态见 [PROJECT_STATE](PROJECT_STATE.md)。
 
-> **隔离美术实验（未进入 main）**：`feat/herb-path-pixel-art-slice` / Draft PR #44 已根据用户反馈将草地背景由全像素改为 **细致 Canvas 场景 + 像素角色/NPC/敌人** 的 Hybrid 版本（独立分支完成，待玩家真机验收），未来是否推进其他七生态以用户体验验收为准。详见 [美术样板规格与运行](V0.11C_HERB_PATH_PIXEL_ART_SLICE.md)。此试验不代表 B2/C 或正式资产量产完成。
+> **隔离美术实验（未进入 main）**：`feat/herb-path-pixel-art-slice` / Draft PR #44 已完成 **Hybrid v0.11-E（细致 Canvas 场景 + 像素角色/NPC/敌人）**，待玩家真机验收；玩家最新认可的草地细节精修 **v0.11-E.1 只有 [版本化设计稿](V0.11E1_HYBRID_MEADOW_DETAIL_POLISH_SPEC.md)（已确认待实现）**，尚无 E.1 代码。只打磨香草小径，未来是否扩展其他生态待视觉验收；[旧样板规格](V0.11C_HERB_PATH_PIXEL_ART_SLICE.md) 供历史对照。本实验不代表 B2/C 或正式资产量产完成。
 
 ## 总体方向（已确认）
 
