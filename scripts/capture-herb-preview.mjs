@@ -90,7 +90,9 @@ try{
  if(Object.keys(stockUrls).length!==10)throw new Error('Missing stock ingredient sprites');
  await page.screenshot({path:out+'/g-stock-320.png'});
  // Isolated test save: research begins through the formal controls, with real inventory.
- await page.evaluate(async()=>{const {newGame,save}=await import('/src/engine.js?v=0.10.4');const s=newGame(20261013);s.phase='research';save(s);});
+ const researchSave=await page.evaluate(async()=>{const {newGame}=await import('/src/engine.js?v=0.10.4');const s=newGame(20261013);s.phase='research';return s;});
+ // Inject after navigation: the departing game's visibility handler legitimately saves its own state.
+ await page.addInitScript(s=>localStorage.setItem('oddpot-prototype-v04',JSON.stringify(s)),researchSave);
  await page.reload();await page.locator('[data-act="start-research"]').waitFor();
  await page.locator('[data-act="start-research"]').click();
  await page.locator('[data-live-drop="chicken"]').click();
