@@ -17,8 +17,9 @@ function pause(value){paused=value;clearInput();$('pause').textContent=paused?'�
 function reset(nextSeed=seed){seed=nextSeed;clearInput();s=createMeadowPreview(seed,biome);maxHp=s.field.hp;s.field.weapon.type=weapon;mode(selectedMode);hudKey='';pause(false);$('camera').value='live';$('seed-label').textContent='种子 '+seed;updateHud();}
 function updateHud(){
  const f=s.field,used=Object.values(f.bag).reduce((a,b)=>a+b,0),skill=Math.ceil(f.skillCd||0);
- const key=[f.hp,used,JSON.stringify(f.bag),skill,paused,f.finished,f.activeEvent,f.harvestNode,f.actionMessage,Math.floor(f.harvestProgress*10)].join('|');
+ const key=[weapon,f.hp,used,JSON.stringify(f.bag),skill,paused,f.finished,f.activeEvent,f.harvestNode,f.actionMessage,Math.floor(f.harvestProgress*10)].join('|');
  if(key===hudKey)return;hudKey=key;
+ document.querySelectorAll('[data-weapon]').forEach(el=>el.setAttribute('aria-pressed',String(el.dataset.weapon===weapon)));
  $('health').textContent='生命 '+f.hp+' / '+maxHp;
  $('bag-count').textContent='背包 '+(f.bagStacks?.length||0)+' / '+f.capacity;
  $('inventory').textContent=used?'本次收获 · '+Object.entries(f.bag).map(([id,n])=>ING[id].name+' ×'+n).join('  '):'本次收获 · 尚未采集（独立试玩，不写入存档）';
