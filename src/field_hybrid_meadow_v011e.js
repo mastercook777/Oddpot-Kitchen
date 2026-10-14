@@ -1,6 +1,6 @@
 // v0.11-E: restaurant-inspired painted Canvas scenery; player/NPC/enemies remain pixel sprites.
 // This module deliberately does not alter any simulation entities, roads or saved data.
-import {isHerbPixelSlice,herbPixelGroundPlan,fieldArtGroundPlan} from './field_pixel_herb_v011c.js';
+import {isHerbPixelSlice,herbPixelGroundPlan,fieldArtGroundPlan} from './field_pixel_herb_v011c.js?v=0.11.0-alpha.5';
 
 export const HYBRID_MEADOW_PALETTE=Object.freeze({
  grass:'#75896f',grassShade:'#607763',grassLight:'#9baa8d',

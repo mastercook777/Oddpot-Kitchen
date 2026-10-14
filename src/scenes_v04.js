@@ -1,11 +1,12 @@
-import {isHybridFieldArt,drawHybridFieldGround,drawHybridFieldObstacle,drawHybridFieldHazard,drawHybridFieldAtmosphere} from './field_hybrid_biomes_v011f.js';
-import {drawFieldImpact,drawFieldProjectile,drawFieldSwipe,drawFieldSkillWave,drawFieldBurst,drawFieldCollection,drawFieldDeath,drawFieldActorIndicators,drawFieldNodeMarkers} from './field_effects_v011e2.js';
+import {drawPixelMiniBoss,drawMiniBossWarning,drawBossZones} from './field_bosses_v011g.js';
+import {isHybridFieldArt,drawHybridFieldGround,drawHybridFieldObstacle,drawHybridFieldHazard,drawHybridFieldAtmosphere} from './field_hybrid_biomes_v011f.js?v=0.11.0-alpha.5';
+import {drawFieldImpact,drawFieldProjectile,drawFieldSwipe,drawFieldSkillWave,drawFieldBurst,drawFieldCollection,drawFieldDeath,drawFieldActorIndicators,drawFieldNodeMarkers} from './field_effects_v011e2.js?v=0.11.0-alpha.5';
 import {fieldWokPose,fieldPotPose} from './field_pose_v083.js?v=0.8.5';
 import {hazardPhase,fieldTilePath} from './field_rules_v011a.js';
 import {fieldCamera} from './field_camera_v011b1.js';
 import {drawExpandedLandscape,drawExpandedObstacle} from './field_world_render_v011b1.js';
-import {isHerbPixelSlice,drawHerbPixelGround,drawHerbPixelObstacle,drawHerbPixelNode,drawHerbPixelHazard,drawHerbPixelEnemy,drawHerbPixelProjectile} from './field_pixel_herb_v011c.js';
-import {isHybridMeadow,drawHybridMeadowGround,drawHybridMeadowObstacle,drawHybridMeadowHazard} from './field_hybrid_meadow_v011e.js';
+import {isHerbPixelSlice,drawHerbPixelGround,drawHerbPixelObstacle,drawHerbPixelNode,drawHerbPixelHazard,drawHerbPixelEnemy,drawHerbPixelProjectile} from './field_pixel_herb_v011c.js?v=0.11.0-alpha.5';
+import {isHybridMeadow,drawHybridMeadowGround,drawHybridMeadowObstacle,drawHybridMeadowHazard} from './field_hybrid_meadow_v011e.js?v=0.11.0-alpha.5';
 import {meleeProfile,meleeWindupProgress} from './field_combat_feedback_v084.js?v=0.8.4';
 import {pixelActor,pixelEnemy,pixelImpact} from './pixels_v041.js?v=0.9.0';
 // Lightweight procedural game graphics: original Canvas shapes, no art pack.
@@ -250,7 +251,7 @@ export function drawField(canvas,s,clock){const size=setCanvas(canvas);if(!size|
  }else if(springs){circle(c,0,3,15,'#8c5940');circle(c,-5,-4,14,'#625d59');circle(c,5,-6,9,'#817875');rect(c,-4,-18,8,3,'#be9a78')}
  else tree(c,0,0);c.restore()}
  for(const n of f.nodes){if(n.claimed)continue;
-   if(fieldSpriteArt){if(smoothFx)drawHerbPixelNode(c,n,clock,false);else drawHerbPixelNode(c,n,clock);continue;}
+   if(fieldSpriteArt){if(smoothFx)drawHerbPixelNode(c,n,clock,false,sc);else drawHerbPixelNode(c,n,clock);continue;}
    if(n.type==='event'){
     // Small traveling cook with a pack: clearly an NPC, not a glowing dot.
     c.save();c.translate(n.x,n.y);c.scale(1/sc,1/sc);
@@ -271,7 +272,9 @@ export function drawField(canvas,s,clock){const size=setCanvas(canvas);if(!size|
   line(c,p.x,p.y-arc-.17,p.x+.08,p.y-arc-.22,'#7ca26a',.06);
  }
  drawMeleeWarnings(c,f);
- for(const e of f.enemies||[]){if(e.hp>0||e.deathFx>0){if(fieldSpriteArt&&!e.isBoss){if(smoothFx){drawHerbPixelEnemy(c,e,clock,sc,pixelEnemy,false);drawFieldActorIndicators(c,e,sc);}else drawHerbPixelEnemy(c,e,clock,sc,pixelEnemy);continue;}c.save();c.translate(e.x,e.y);c.scale(1/sc,1/sc);monster(c,{...e,x:0,y:0},clock);c.restore()}}
+ for(const e of f.enemies||[])if(e.isBoss)drawMiniBossWarning(c,e);
+ drawBossZones(c,f);
+ for(const e of f.enemies||[]){if(e.hp>0||e.deathFx>0){if(e.isBoss){drawPixelMiniBoss(c,e,clock,sc);drawFieldActorIndicators(c,e,sc);continue;}if(fieldSpriteArt&&!e.isBoss){if(smoothFx){drawHerbPixelEnemy(c,e,clock,sc,pixelEnemy,false);drawFieldActorIndicators(c,e,sc);}else drawHerbPixelEnemy(c,e,clock,sc,pixelEnemy);continue;}c.save();c.translate(e.x,e.y);c.scale(1/sc,1/sc);monster(c,{...e,x:0,y:0},clock);c.restore()}}
  if(smoothFx)for(const e of f.enemies||[])drawFieldDeath(c,e);
  // Attack swipe uses the *same* direction and trigger as combat hit detection.
  if(smoothFx)drawFieldSwipe(c,f);
@@ -372,7 +375,7 @@ export function drawField(canvas,s,clock){const size=setCanvas(canvas);if(!size|
  if(fieldSpriteArt)for(const [i,o] of f.obstacles.entries()){
   if(o.y+.5>f.pos.y){if(herbHybridArt)drawHybridMeadowObstacle(c,o,i);else if(fieldHybridArt)drawHybridFieldObstacle(c,o,f.biome.style,i);else drawHerbPixelObstacle(c,o,i);}
  }
- if(smoothFx)for(const n of f.nodes)drawFieldNodeMarkers(c,n,clock);
+ if(smoothFx)for(const n of f.nodes)drawFieldNodeMarkers(c,n,clock,sc);
  if(f.harvestNode){const n=f.nodes.find(n=>n.key===f.harvestNode);if(n){capsule(c,n.x-.40,n.y-.49,.8,.10,'#304d39');capsule(c,n.x-.40,n.y-.49,.8*(f.harvestProgress/.82),.10,'#f3dd7e')}}
  c.restore();
  // Real HP loss briefly lights the screen edges without adding UI controls.

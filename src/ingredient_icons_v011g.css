@@ -1,0 +1,4 @@
+.ingredient-icon{display:inline-block;width:var(--ingredient-size,24px);height:var(--ingredient-size,24px);max-width:none;object-fit:contain;image-rendering:pixelated;vertical-align:-.24em;flex:none;pointer-events:none;user-select:none}
+.stock-line>span .ingredient-icon{margin-right:3px}.target-chip .ingredient-icon{vertical-align:middle}.book-icon .ingredient-icon{display:block}
+.v063-food-icon .ingredient-icon{width:1em;height:1em;vertical-align:top;filter:none}.v063-receipt-line .ingredient-icon{vertical-align:middle}
+.v063-food-picker button>span,.v063-drop>span{line-height:1}.v063-food-picker .ingredient-icon,.v063-drop .ingredient-icon{vertical-align:top}

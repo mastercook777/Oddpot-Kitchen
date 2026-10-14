@@ -53,6 +53,17 @@ try{
   if(!bounds||bounds.y<0||bounds.y+bounds.height>size.height)throw new Error('Joystick outside short screen');
   await page.locator('.shell').screenshot({path:out+'/hybrid-rollout-short-'+size.width+'.png'});
  }
+ // G: formal bodies and controls in the same independent field fixture.
+ for(const view of ['boss_spore','boss_ember','merchant']){
+  await page.setViewportSize({width:390,height:844});
+  await page.goto('http://127.0.0.1:5173/art-preview.html?view='+view+'&zone='+(view==='boss_ember'?'ember_edge':'glow_mushroom'));
+  await page.waitForFunction("window.__oddpotPreview?.rendered===true");
+  await page.locator('.shell').screenshot({path:out+'/g-'+view+'-mobile.png'});
+  if(view!=='merchant'){
+   await page.locator('#pause').click();await page.waitForTimeout(1600);
+   if(await page.evaluate(()=>window.__oddpotPreview.boss)!==view)throw new Error('Wrong boss fixture');
+  }
+ }
  // Keyboard keeps working after a focused pause button, and pointer release stops movement.
  await page.goto('http://127.0.0.1:5173/art-preview.html?view=spawn');
  await page.waitForFunction("window.__oddpotPreview?.rendered===true");
@@ -70,6 +81,31 @@ try{
  await page.goto('http://127.0.0.1:5173/index.html',{waitUntil:'domcontentloaded'});
  await page.locator('#app .hud').waitFor({state:'visible',timeout:15000});
  if(errors.length)throw new Error('Main game browser errors: '+errors.join('; '));
+ // The stock page and real cooking DOM must decode the same ten sprites.
+ await page.setViewportSize({width:320,height:568});
+ await page.locator('[data-act="stock"]').first().click();
+ await page.locator('.ingredient-icon').first().waitFor();
+ await page.waitForFunction(()=>[...document.querySelectorAll('.ingredient-icon')].every(i=>i.complete&&i.naturalWidth>0));
+ const stockUrls=await page.locator('[data-ingredient-icon]').evaluateAll(images=>Object.fromEntries(images.map(i=>[i.dataset.ingredientIcon,i.src])));
+ if(Object.keys(stockUrls).length!==10)throw new Error('Missing stock ingredient sprites');
+ await page.screenshot({path:out+'/g-stock-320.png'});
+ // Isolated test save: research begins through the formal controls, with real inventory.
+ await page.evaluate(async()=>{const {newGame,save}=await import('/src/engine.js?v=0.10.4');const s=newGame(20261013);s.phase='research';save(s);});
+ await page.reload();await page.locator('[data-act="start-research"]').waitFor();
+ await page.locator('[data-act="start-research"]').click();
+ await page.locator('[data-live-drop="chicken"]').click();
+ await page.locator('[data-live-drop="chili"]').click();
+ await page.waitForFunction(()=>document.querySelectorAll('[data-live-icon] .ingredient-icon').length===2);
+ const food=await page.locator('[data-live-icon] .ingredient-icon').evaluateAll(images=>images.map(i=>({id:i.dataset.ingredientIcon,url:i.src,loaded:i.complete&&i.naturalWidth>0})));
+ if(food.some(i=>!i.loaded||i.url!==stockUrls[i.id]))throw new Error('Pan/stock ingredient artwork differs');
+ const identity=await page.locator('[data-live-icon="chicken"]').evaluate(el=>(window.__gFood=el,true));
+ await page.waitForTimeout(350);
+ if(!identity||!await page.locator('[data-live-icon="chicken"]').evaluate(el=>el===window.__gFood))throw new Error('Live food duplicated/replaced every frame');
+ await page.screenshot({path:out+'/g-pan-320.png'});
+ await page.goto('http://127.0.0.1:5173/standalone.html');
+ await page.locator('#app .hud').waitFor();
+ if(errors.length)throw new Error('G browser errors: '+errors.join('; '));
+ console.log('G bosses, merchant, ten stock icons, matching real pan sprites and offline boot passed.');
  console.log('Eight ecology UI scenes, short screens, keyboard, pointer release and formal game boot passed.');
 }finally{
  if(browser)await browser.close();

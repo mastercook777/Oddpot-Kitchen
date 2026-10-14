@@ -247,14 +247,15 @@ export function drawHerbPixelObstacle(c,o,index=0){
  if(isRock)c.drawImage(herbGetSprite(name),o.x+.1,o.y+.10,.82,.87);
  else c.drawImage(herbGetSprite(name),o.x-.12,o.y-.52,1.24,1.46);
 }
-export function drawHerbPixelNode(c,n,time=0,markers=true){
+export function drawHerbPixelNode(c,n,time=0,markers=true,screenScale=null){
  if(n.claimed)return;
  const name=n.type==='event'?'traveler':herbPixelSpriteNames().includes(n.id)?n.id:'mushroom';
  const bob=n.type==='event'?0:Math.sin(time*3+n.x)*.028;
  c.imageSmoothingEnabled=false;
  c.fillStyle='#26352e88';c.fillRect(n.x-.26,n.y+.22,.52,.10);
  if(n.type==='event'){
-  c.drawImage(herbGetSprite(name),n.x-.41,n.y-.80,.82,1.10);
+  if(screenScale){c.save();c.translate(n.x,n.y);c.scale(1/screenScale,1/screenScale);c.drawImage(herbGetSprite(name),-14,-23.8,28,39.2);c.restore();}
+  else c.drawImage(herbGetSprite(name),n.x-.41,n.y-.80,.82,1.10);
   if(markers)c.drawImage(herbGetSprite('spark'),n.x+.28,n.y-.90,.27,.27);
  }else{
   c.drawImage(herbGetSprite(name),n.x-.38,n.y-.49+bob,.76,.76);
@@ -319,4 +320,10 @@ export function drawHerbPixelProjectile(c,projectile,type='enemy'){
  c.fillRect(projectile.x-.115,projectile.y-.115,.23,.23);
  c.fillStyle=PH.shine;
  c.fillRect(projectile.x-.055,projectile.y-.055,.11,.11);
+}
+
+// Shared identity for field and DOM ingredient art: the very same raster cache.
+export function ingredientSpriteCanvas(id){
+ if(!['beef','chicken','chili','garlic','mushroom','cabbage','onion','potato','mushroom_heart','ember_pepper'].includes(id))return null;
+ return herbGetSprite(id);
 }

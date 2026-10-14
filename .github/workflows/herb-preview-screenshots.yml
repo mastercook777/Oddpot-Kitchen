@@ -4,6 +4,7 @@ on:
     branches:
       - feat/herb-path-pixel-art-slice
       - feature/v0.11-hybrid-exploration-rollout
+      - feature/v0.11-boss-npc-food-polish
     paths:
       - 'art-preview.html'
       - 'src/**'
