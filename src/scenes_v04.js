@@ -1,7 +1,11 @@
+import {isHybridFieldArt,drawHybridFieldGround,drawHybridFieldObstacle,drawHybridFieldHazard,drawHybridFieldAtmosphere} from './field_hybrid_biomes_v011f.js';
+import {drawFieldImpact,drawFieldProjectile,drawFieldSwipe,drawFieldSkillWave,drawFieldBurst,drawFieldCollection,drawFieldDeath,drawFieldActorIndicators,drawFieldNodeMarkers} from './field_effects_v011e2.js';
 import {fieldWokPose,fieldPotPose} from './field_pose_v083.js?v=0.8.5';
 import {hazardPhase,fieldTilePath} from './field_rules_v011a.js';
 import {fieldCamera} from './field_camera_v011b1.js';
 import {drawExpandedLandscape,drawExpandedObstacle} from './field_world_render_v011b1.js';
+import {isHerbPixelSlice,drawHerbPixelGround,drawHerbPixelObstacle,drawHerbPixelNode,drawHerbPixelHazard,drawHerbPixelEnemy,drawHerbPixelProjectile} from './field_pixel_herb_v011c.js';
+import {isHybridMeadow,drawHybridMeadowGround,drawHybridMeadowObstacle,drawHybridMeadowHazard} from './field_hybrid_meadow_v011e.js';
 import {meleeProfile,meleeWindupProgress} from './field_combat_feedback_v084.js?v=0.8.4';
 import {pixelActor,pixelEnemy,pixelImpact} from './pixels_v041.js?v=0.9.0';
 // Lightweight procedural game graphics: original Canvas shapes, no art pack.
@@ -193,20 +197,27 @@ function drawMeleeWarnings(c,f){
  }
 }
 export function drawField(canvas,s,clock){const size=setCanvas(canvas);if(!size||!s.field?.action)return;const {c,w,h}=size,f=s.field;const springs=f.region==='spring';const camera=fieldCamera(f,w,h),sc=camera.scale,left=camera.offsetX,top=camera.offsetY;
- c.fillStyle=springs?'#9c674c':'#305a40';c.fillRect(0,0,w,h);
+ c.fillStyle=isHybridMeadow(f)?'#75896f':isHerbPixelSlice(f)?'#485e4c':springs?'#9c674c':'#305a40';c.fillRect(0,0,w,h);
  const shake=(f.hitShake||0)/.24,shakeX=shake?Math.sin(f.elapsed*151)*4*shake:0;
  const shakeY=shake?Math.cos(f.elapsed*117)*2.4*shake:0;
  c.save();c.translate(left+shakeX,top+shakeY);c.scale(sc,sc);
- if(camera.expanded)drawExpandedLandscape(c,f,clock);else drawBiomeLandscape(c,f,clock);
+ const herbPixelArt=isHerbPixelSlice(f),herbHybridArt=isHybridMeadow(f),fieldHybridArt=isHybridFieldArt(f),fieldSpriteArt=herbPixelArt||fieldHybridArt,smoothFx=!['pixel','legacy'].includes(f.artPreviewMode);
+ if(herbHybridArt)drawHybridMeadowGround(c,f);
+ else if(fieldHybridArt)drawHybridFieldGround(c,f);
+ else if(herbPixelArt)drawHerbPixelGround(c,f);
+ else if(camera.expanded)drawExpandedLandscape(c,f,clock);else drawBiomeLandscape(c,f,clock);
  // This faint route follows the REAL passable cells; artwork never fakes a blocked path.
  const goal=f.nodes.find(n=>n.key==='target'&&!n.claimed);
- if(goal){const trail=fieldTilePath(f,f.spawn||f.pos,goal,{avoidHazards:true});
+ if(goal&&!fieldSpriteArt){const trail=fieldTilePath(f,f.spawn||f.pos,goal,{avoidHazards:true});
   if(trail.length>1){c.save();c.beginPath();c.moveTo(trail[0].x,trail[0].y);
    for(const pt of trail.slice(1))c.lineTo(pt.x,pt.y);
    c.strokeStyle='#f2e6b082';c.lineWidth=.11;c.setLineDash([.12,.23]);c.stroke();c.restore();}}
 
  if(f.hazards?.length)for(const hz of f.hazards){
    const p=hazardPhase(hz,f.elapsed,f.biome),x=hz.x+.5,y=hz.y+.5;
+   if(herbHybridArt){drawHybridMeadowHazard(c,hz,p,clock);continue;}
+   if(fieldHybridArt){drawHybridFieldHazard(c,hz,p,f.biome.style,clock);continue;}
+   if(herbPixelArt){drawHerbPixelHazard(c,hz,p,clock);continue;}
    const roots=f.biome?.style==='roots',ember=f.biome?.style==='ember';
    c.save();c.translate(x,y);
    // Jagged fracture: dangerous even at rest, unlike raised edible pickup sprites.
@@ -228,7 +239,7 @@ export function drawField(canvas,s,clock){const size=setCanvas(canvas);if(!size|
    }
    c.restore();
   }
-  for(const o of f.obstacles){if(camera.expanded){drawExpandedObstacle(c,o,f.biome?.style,clock);continue;}c.save();c.translate(o.x+.5,o.y+.5);c.scale(1/sc,1/sc);if(f.biome?.style==='glow'){
+  for(const [i,o] of f.obstacles.entries()){if(fieldSpriteArt){if(o.y+.5<=f.pos.y){if(herbHybridArt)drawHybridMeadowObstacle(c,o,i);else if(fieldHybridArt)drawHybridFieldObstacle(c,o,f.biome.style,i);else drawHerbPixelObstacle(c,o,i);}continue;}if(camera.expanded){drawExpandedObstacle(c,o,f.biome?.style,clock);continue;}c.save();c.translate(o.x+.5,o.y+.5);c.scale(1/sc,1/sc);if(f.biome?.style==='glow'){
   circle(c,0,4,14,'#263d48');circle(c,0,-6,17,'#6ebaaa');circle(c,-7,-9,8,'#c5e8d1');
  }else if(f.biome?.style==='roots'){
   circle(c,0,5,17,'#242430');circle(c,0,-5,19,'#75505f');
@@ -239,6 +250,7 @@ export function drawField(canvas,s,clock){const size=setCanvas(canvas);if(!size|
  }else if(springs){circle(c,0,3,15,'#8c5940');circle(c,-5,-4,14,'#625d59');circle(c,5,-6,9,'#817875');rect(c,-4,-18,8,3,'#be9a78')}
  else tree(c,0,0);c.restore()}
  for(const n of f.nodes){if(n.claimed)continue;
+   if(fieldSpriteArt){if(smoothFx)drawHerbPixelNode(c,n,clock,false);else drawHerbPixelNode(c,n,clock);continue;}
    if(n.type==='event'){
     // Small traveling cook with a pack: clearly an NPC, not a glowing dot.
     c.save();c.translate(n.x,n.y);c.scale(1/sc,1/sc);
@@ -248,25 +260,35 @@ export function drawField(canvas,s,clock){const size=setCanvas(canvas);if(!size|
     text(c,'?',13,-28,'#ffe9b1',12);c.restore();
    }else{c.save();c.translate(n.x,n.y);c.scale(1/sc,1/sc);plant(c,{...n,x:0,y:0},clock);c.restore();}
   }
-  for(const p of f.projectiles||[]){circle(c,p.x,p.y,.12,'#ef9c4e');circle(c,p.x,p.y,.05,'#ffe5a3')}
+  drawHybridFieldAtmosphere(c,f,clock);
+  for(const p of f.projectiles||[]){if(smoothFx)drawFieldProjectile(c,p);else if(herbPixelArt)drawHerbPixelProjectile(c,p);else {circle(c,p.x,p.y,.12,'#ef9c4e');circle(c,p.x,p.y,.05,'#ffe5a3')}}
  for(const p of f.playerProjectiles||[]){
   const arc=Math.sin(Math.PI*Math.min(1,p.time/p.duration))*.37;
+  if(smoothFx){drawFieldProjectile(c,p,'player');continue;}
+  if(herbPixelArt){drawHerbPixelProjectile(c,{x:p.x,y:p.y-arc},'player');continue;}
   circle(c,p.x,p.y,.18,'#eac69b');circle(c,p.x,p.y-arc,.16,'#c68c55');
   circle(c,p.x-.045,p.y-arc-.04,.04,'#fff0ca');
   line(c,p.x,p.y-arc-.17,p.x+.08,p.y-arc-.22,'#7ca26a',.06);
  }
  drawMeleeWarnings(c,f);
- for(const e of f.enemies||[]){if(e.hp>0||e.deathFx>0){c.save();c.translate(e.x,e.y);c.scale(1/sc,1/sc);monster(c,{...e,x:0,y:0},clock);c.restore()}}
+ for(const e of f.enemies||[]){if(e.hp>0||e.deathFx>0){if(fieldSpriteArt&&!e.isBoss){if(smoothFx){drawHerbPixelEnemy(c,e,clock,sc,pixelEnemy,false);drawFieldActorIndicators(c,e,sc);}else drawHerbPixelEnemy(c,e,clock,sc,pixelEnemy);continue;}c.save();c.translate(e.x,e.y);c.scale(1/sc,1/sc);monster(c,{...e,x:0,y:0},clock);c.restore()}}
+ if(smoothFx)for(const e of f.enemies||[])drawFieldDeath(c,e);
  // Attack swipe uses the *same* direction and trigger as combat hit detection.
- if(f.attackFx?.ttl>0&&!f.attackFx.pot){
+ if(smoothFx)drawFieldSwipe(c,f);
+ if(!smoothFx&&f.attackFx?.ttl>0&&!f.attackFx.pot){
   const fx=f.attackFx,progress=1-fx.ttl/fx.duration,angle=Math.atan2(fx.dy,fx.dx);
   c.save();c.translate(f.pos.x,f.pos.y);c.rotate(angle);c.globalAlpha=Math.min(1,fx.ttl*4);
-  c.strokeStyle='#ffe6a1';c.lineWidth=.15;c.beginPath();c.arc(0,0,.79,-.93+progress*.7,.52+progress*.7);c.stroke();
-  c.strokeStyle='#fff9e0';c.lineWidth=.07;c.beginPath();c.arc(0,0,1.05,-.65+progress*.65,.30+progress*.65);c.stroke();c.restore();
+  if(herbPixelArt){c.fillStyle='#ffe6a1';for(let i=0;i<6;i++)c.fillRect(.32+i*.12,-.38+i*.12,.16,.13);
+   c.fillStyle='#fff9e0';for(let i=0;i<4;i++)c.fillRect(.45+i*.12,-.48+i*.11,.08,.08);
+  }else{
+   c.strokeStyle='#ffe6a1';c.lineWidth=.15;c.beginPath();c.arc(0,0,.79,-.93+progress*.7,.52+progress*.7);c.stroke();
+   c.strokeStyle='#fff9e0';c.lineWidth=.07;c.beginPath();c.arc(0,0,1.05,-.65+progress*.65,.30+progress*.65);c.stroke();}
+  c.restore();
  }
- if(f.skillFx>0){c.save();c.strokeStyle=`rgba(255,231,151,${Math.min(.95,f.skillFx*2.4)})`;c.lineWidth=.12;c.beginPath();c.arc(f.pos.x,f.pos.y,(.42-f.skillFx)*3+.35,0,Math.PI*2);c.stroke();c.restore();}
- for(const e of f.enemies||[]){if(e.hurtFx>0&&e.hp>0){c.save();c.translate(e.x,e.y);c.scale(1/sc,1/sc);pixelImpact(c,0,-5,8);c.restore()}}
- for(const fx of f.popFx||[]){c.save();c.translate(fx.x,fx.y-(.76-fx.ttl)*.5);c.scale(1/sc,1/sc);text(c,fx.text,0,-17,fx.color||'#fff1b1',12);c.restore()}
+ if(smoothFx)drawFieldSkillWave(c,f);
+ if(!smoothFx&&f.skillFx>0){c.save();c.strokeStyle=`rgba(255,231,151,${Math.min(.95,f.skillFx*2.4)})`;c.lineWidth=.12;c.beginPath();c.arc(f.pos.x,f.pos.y,(.42-f.skillFx)*3+.35,0,Math.PI*2);c.stroke();c.restore();}
+ for(const e of f.enemies||[]){if(e.hurtFx>0&&e.hp>0){c.save();c.translate(e.x,e.y);c.scale(1/sc,1/sc);if(smoothFx)drawFieldImpact(c,0,-5,e.hurtFx/.36,8);else pixelImpact(c,0,-5,8);c.restore()}}
+ for(const fx of f.popFx||[]){if(smoothFx&&fx.text==='💥'){drawFieldBurst(c,fx);continue;}if(smoothFx&&String(fx.text).startsWith('+'))drawFieldCollection(c,fx);c.save();c.translate(fx.x,fx.y-(.76-fx.ttl)*.5);c.scale(1/sc,1/sc);text(c,fx.text,0,-17,fx.color||'#fff1b1',12);c.restore()}
  c.save();c.translate(f.pos.x,f.pos.y);c.scale(1/sc,1/sc);
  const chefFace=(f.facing?.x||0)<-.15?-1:1;
  const isWok=f.weapon?.type==='WOK';
@@ -341,10 +363,16 @@ export function drawField(canvas,s,clock){const size=setCanvas(canvas);if(!size|
   c.save();c.globalAlpha=ratio;
   c.strokeStyle='#fff5df';c.lineWidth=2.4;
   c.beginPath();c.arc(0,-3,14+(1-ratio)*12,0,Math.PI*2);c.stroke();
-  pixelImpact(c,0,-8,14,'#fff3d4');
+  if(smoothFx)drawFieldImpact(c,0,-8,ratio,14,'#fff3d4');else pixelImpact(c,0,-8,14,'#fff3d4');
   c.restore();
  }
  c.restore();
+ // Foreground tree canopies overlap actors only when their foot is farther
+ // down screen. Physical obstacles/AI remain completely unchanged.
+ if(fieldSpriteArt)for(const [i,o] of f.obstacles.entries()){
+  if(o.y+.5>f.pos.y){if(herbHybridArt)drawHybridMeadowObstacle(c,o,i);else if(fieldHybridArt)drawHybridFieldObstacle(c,o,f.biome.style,i);else drawHerbPixelObstacle(c,o,i);}
+ }
+ if(smoothFx)for(const n of f.nodes)drawFieldNodeMarkers(c,n,clock);
  if(f.harvestNode){const n=f.nodes.find(n=>n.key===f.harvestNode);if(n){capsule(c,n.x-.40,n.y-.49,.8,.10,'#304d39');capsule(c,n.x-.40,n.y-.49,.8*(f.harvestProgress/.82),.10,'#f3dd7e')}}
  c.restore();
  // Real HP loss briefly lights the screen edges without adding UI controls.

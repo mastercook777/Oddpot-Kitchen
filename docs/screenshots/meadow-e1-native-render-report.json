@@ -1,0 +1,389 @@
+{
+  "kind": "native Canvas render; browser/touch unverified",
+  "screens": [
+    {
+      "name": "meadow-hybrid-e1-spawn-430-20261013.png",
+      "width": 430,
+      "height": 667,
+      "seed": 20261013,
+      "pose": "spawn",
+      "mode": "hybrid-e1"
+    },
+    {
+      "name": "meadow-hybrid-e0-spawn-430-20261013.png",
+      "width": 430,
+      "height": 667,
+      "seed": 20261013,
+      "pose": "spawn",
+      "mode": "hybrid-e0"
+    },
+    {
+      "name": "meadow-hybrid-e1-mid-430-20261013.png",
+      "width": 430,
+      "height": 667,
+      "seed": 20261013,
+      "pose": "mid",
+      "mode": "hybrid-e1"
+    },
+    {
+      "name": "meadow-hybrid-e0-mid-430-20261013.png",
+      "width": 430,
+      "height": 667,
+      "seed": 20261013,
+      "pose": "mid",
+      "mode": "hybrid-e0"
+    },
+    {
+      "name": "meadow-hybrid-e1-tree-430-20261013.png",
+      "width": 430,
+      "height": 667,
+      "seed": 20261013,
+      "pose": "tree",
+      "mode": "hybrid-e1"
+    },
+    {
+      "name": "meadow-hybrid-e0-tree-430-20261013.png",
+      "width": 430,
+      "height": 667,
+      "seed": 20261013,
+      "pose": "tree",
+      "mode": "hybrid-e0"
+    },
+    {
+      "name": "meadow-hybrid-e1-harvest-430-20261013.png",
+      "width": 430,
+      "height": 667,
+      "seed": 20261013,
+      "pose": "harvest",
+      "mode": "hybrid-e1"
+    },
+    {
+      "name": "meadow-hybrid-e0-harvest-430-20261013.png",
+      "width": 430,
+      "height": 667,
+      "seed": 20261013,
+      "pose": "harvest",
+      "mode": "hybrid-e0"
+    },
+    {
+      "name": "meadow-hybrid-e1-mid-430-20261150.png",
+      "width": 430,
+      "height": 667,
+      "seed": 20261150,
+      "pose": "mid",
+      "mode": "hybrid-e1"
+    },
+    {
+      "name": "meadow-hybrid-e0-mid-430-20261150.png",
+      "width": 430,
+      "height": 667,
+      "seed": 20261150,
+      "pose": "mid",
+      "mode": "hybrid-e0"
+    },
+    {
+      "name": "meadow-hybrid-e1-harvest-430-20261287.png",
+      "width": 430,
+      "height": 667,
+      "seed": 20261287,
+      "pose": "harvest",
+      "mode": "hybrid-e1"
+    },
+    {
+      "name": "meadow-hybrid-e0-harvest-430-20261287.png",
+      "width": 430,
+      "height": 667,
+      "seed": 20261287,
+      "pose": "harvest",
+      "mode": "hybrid-e0"
+    },
+    {
+      "name": "meadow-hybrid-e1-spawn-390-20261013.png",
+      "width": 390,
+      "height": 579,
+      "seed": 20261013,
+      "pose": "spawn",
+      "mode": "hybrid-e1"
+    },
+    {
+      "name": "meadow-hybrid-e0-spawn-390-20261013.png",
+      "width": 390,
+      "height": 579,
+      "seed": 20261013,
+      "pose": "spawn",
+      "mode": "hybrid-e0"
+    },
+    {
+      "name": "meadow-hybrid-e1-mid-390-20261013.png",
+      "width": 390,
+      "height": 579,
+      "seed": 20261013,
+      "pose": "mid",
+      "mode": "hybrid-e1"
+    },
+    {
+      "name": "meadow-hybrid-e0-mid-390-20261013.png",
+      "width": 390,
+      "height": 579,
+      "seed": 20261013,
+      "pose": "mid",
+      "mode": "hybrid-e0"
+    },
+    {
+      "name": "meadow-hybrid-e1-tree-390-20261013.png",
+      "width": 390,
+      "height": 579,
+      "seed": 20261013,
+      "pose": "tree",
+      "mode": "hybrid-e1"
+    },
+    {
+      "name": "meadow-hybrid-e0-tree-390-20261013.png",
+      "width": 390,
+      "height": 579,
+      "seed": 20261013,
+      "pose": "tree",
+      "mode": "hybrid-e0"
+    },
+    {
+      "name": "meadow-hybrid-e1-harvest-390-20261013.png",
+      "width": 390,
+      "height": 579,
+      "seed": 20261013,
+      "pose": "harvest",
+      "mode": "hybrid-e1"
+    },
+    {
+      "name": "meadow-hybrid-e0-harvest-390-20261013.png",
+      "width": 390,
+      "height": 579,
+      "seed": 20261013,
+      "pose": "harvest",
+      "mode": "hybrid-e0"
+    },
+    {
+      "name": "meadow-hybrid-e1-mid-390-20261150.png",
+      "width": 390,
+      "height": 579,
+      "seed": 20261150,
+      "pose": "mid",
+      "mode": "hybrid-e1"
+    },
+    {
+      "name": "meadow-hybrid-e0-mid-390-20261150.png",
+      "width": 390,
+      "height": 579,
+      "seed": 20261150,
+      "pose": "mid",
+      "mode": "hybrid-e0"
+    },
+    {
+      "name": "meadow-hybrid-e1-harvest-390-20261287.png",
+      "width": 390,
+      "height": 579,
+      "seed": 20261287,
+      "pose": "harvest",
+      "mode": "hybrid-e1"
+    },
+    {
+      "name": "meadow-hybrid-e0-harvest-390-20261287.png",
+      "width": 390,
+      "height": 579,
+      "seed": 20261287,
+      "pose": "harvest",
+      "mode": "hybrid-e0"
+    },
+    {
+      "name": "meadow-hybrid-e1-spawn-375-20261013.png",
+      "width": 375,
+      "height": 402,
+      "seed": 20261013,
+      "pose": "spawn",
+      "mode": "hybrid-e1"
+    },
+    {
+      "name": "meadow-hybrid-e0-spawn-375-20261013.png",
+      "width": 375,
+      "height": 402,
+      "seed": 20261013,
+      "pose": "spawn",
+      "mode": "hybrid-e0"
+    },
+    {
+      "name": "meadow-hybrid-e1-mid-375-20261013.png",
+      "width": 375,
+      "height": 402,
+      "seed": 20261013,
+      "pose": "mid",
+      "mode": "hybrid-e1"
+    },
+    {
+      "name": "meadow-hybrid-e0-mid-375-20261013.png",
+      "width": 375,
+      "height": 402,
+      "seed": 20261013,
+      "pose": "mid",
+      "mode": "hybrid-e0"
+    },
+    {
+      "name": "meadow-hybrid-e1-tree-375-20261013.png",
+      "width": 375,
+      "height": 402,
+      "seed": 20261013,
+      "pose": "tree",
+      "mode": "hybrid-e1"
+    },
+    {
+      "name": "meadow-hybrid-e0-tree-375-20261013.png",
+      "width": 375,
+      "height": 402,
+      "seed": 20261013,
+      "pose": "tree",
+      "mode": "hybrid-e0"
+    },
+    {
+      "name": "meadow-hybrid-e1-harvest-375-20261013.png",
+      "width": 375,
+      "height": 402,
+      "seed": 20261013,
+      "pose": "harvest",
+      "mode": "hybrid-e1"
+    },
+    {
+      "name": "meadow-hybrid-e0-harvest-375-20261013.png",
+      "width": 375,
+      "height": 402,
+      "seed": 20261013,
+      "pose": "harvest",
+      "mode": "hybrid-e0"
+    },
+    {
+      "name": "meadow-hybrid-e1-mid-375-20261150.png",
+      "width": 375,
+      "height": 402,
+      "seed": 20261150,
+      "pose": "mid",
+      "mode": "hybrid-e1"
+    },
+    {
+      "name": "meadow-hybrid-e0-mid-375-20261150.png",
+      "width": 375,
+      "height": 402,
+      "seed": 20261150,
+      "pose": "mid",
+      "mode": "hybrid-e0"
+    },
+    {
+      "name": "meadow-hybrid-e1-harvest-375-20261287.png",
+      "width": 375,
+      "height": 402,
+      "seed": 20261287,
+      "pose": "harvest",
+      "mode": "hybrid-e1"
+    },
+    {
+      "name": "meadow-hybrid-e0-harvest-375-20261287.png",
+      "width": 375,
+      "height": 402,
+      "seed": 20261287,
+      "pose": "harvest",
+      "mode": "hybrid-e0"
+    },
+    {
+      "name": "meadow-hybrid-e1-spawn-320-20261013.png",
+      "width": 320,
+      "height": 303,
+      "seed": 20261013,
+      "pose": "spawn",
+      "mode": "hybrid-e1"
+    },
+    {
+      "name": "meadow-hybrid-e0-spawn-320-20261013.png",
+      "width": 320,
+      "height": 303,
+      "seed": 20261013,
+      "pose": "spawn",
+      "mode": "hybrid-e0"
+    },
+    {
+      "name": "meadow-hybrid-e1-mid-320-20261013.png",
+      "width": 320,
+      "height": 303,
+      "seed": 20261013,
+      "pose": "mid",
+      "mode": "hybrid-e1"
+    },
+    {
+      "name": "meadow-hybrid-e0-mid-320-20261013.png",
+      "width": 320,
+      "height": 303,
+      "seed": 20261013,
+      "pose": "mid",
+      "mode": "hybrid-e0"
+    },
+    {
+      "name": "meadow-hybrid-e1-tree-320-20261013.png",
+      "width": 320,
+      "height": 303,
+      "seed": 20261013,
+      "pose": "tree",
+      "mode": "hybrid-e1"
+    },
+    {
+      "name": "meadow-hybrid-e0-tree-320-20261013.png",
+      "width": 320,
+      "height": 303,
+      "seed": 20261013,
+      "pose": "tree",
+      "mode": "hybrid-e0"
+    },
+    {
+      "name": "meadow-hybrid-e1-harvest-320-20261013.png",
+      "width": 320,
+      "height": 303,
+      "seed": 20261013,
+      "pose": "harvest",
+      "mode": "hybrid-e1"
+    },
+    {
+      "name": "meadow-hybrid-e0-harvest-320-20261013.png",
+      "width": 320,
+      "height": 303,
+      "seed": 20261013,
+      "pose": "harvest",
+      "mode": "hybrid-e0"
+    },
+    {
+      "name": "meadow-hybrid-e1-mid-320-20261150.png",
+      "width": 320,
+      "height": 303,
+      "seed": 20261150,
+      "pose": "mid",
+      "mode": "hybrid-e1"
+    },
+    {
+      "name": "meadow-hybrid-e0-mid-320-20261150.png",
+      "width": 320,
+      "height": 303,
+      "seed": 20261150,
+      "pose": "mid",
+      "mode": "hybrid-e0"
+    },
+    {
+      "name": "meadow-hybrid-e1-harvest-320-20261287.png",
+      "width": 320,
+      "height": 303,
+      "seed": 20261287,
+      "pose": "harvest",
+      "mode": "hybrid-e1"
+    },
+    {
+      "name": "meadow-hybrid-e0-harvest-320-20261287.png",
+      "width": 320,
+      "height": 303,
+      "seed": 20261287,
+      "pose": "harvest",
+      "mode": "hybrid-e0"
+    }
+  ]
+}
