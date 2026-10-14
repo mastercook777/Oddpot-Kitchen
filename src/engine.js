@@ -1,8 +1,9 @@
-import {ING,RECIPES,CUSTOMERS,FORECAST,DEFAULT_INVENTORY,SHOP_STAPLES} from './data.js?v=0.9.1';
-import {LIVE_ACTIONS,evaluateLiveCook,liveIngredientState,liveIngredientHeatFeedback,legacyVariant,makeLiveVariant,resolveTechnique} from './cooking_v063.js?v=0.10.3';
-import {RECIPE_PROFILES} from './recipe_profiles_v063.js?v=0.8.0';
-import {generateBiomeMap} from './field_biomes_v081.js?v=0.8.2';
-import {makeFieldEncounterPlan,insertPlannedFieldEncounter} from './field_encounter_plan_v011b.js';
+import {makeSpecialEncounterPlan,previewSpecialEncounter,SPECIAL_ENCOUNTER_KINDS} from './field_encounters_v011c.js';
+import {ING,RECIPES,CUSTOMERS,FORECAST,DEFAULT_INVENTORY,SHOP_STAPLES} from './data.js?v=0.11.0-alpha.7';
+import {LIVE_ACTIONS,evaluateLiveCook,liveIngredientState,liveIngredientHeatFeedback,legacyVariant,makeLiveVariant,resolveTechnique} from './cooking_v063.js?v=0.11.0-alpha.7';
+import {RECIPE_PROFILES} from './recipe_profiles_v063.js?v=0.11.0-alpha.7';
+import {generateBiomeMap} from './field_biomes_v081.js?v=0.11.0-alpha.7';
+import {makeFieldEncounterPlan,insertPlannedFieldEncounter} from './field_encounter_plan_v011b.js?v=0.11.0-alpha.7';
 import {expandFieldMap} from './field_world_v011b1.js';
 import {newServiceHero,heroZone} from './walkable_restaurant_v07.js?v=0.9.2';
 export const PHASES=['forecast','field','research','menu','prep','service','report','upgrade'];
@@ -394,16 +395,17 @@ export function fieldBranchChoices(f){
 }
 export function enterField(s,route){
  if(s.phase!=='field'||s.field||!['safe','risk','spring_safe','spring_risk'].includes(route))return false;
- const target=ING[s.selectedTarget]?.acquisitionPolicy==='BOSS_ONLY'?'mushroom':s.selectedTarget;
+ const target=['SHOP_STAPLE','FIELD_ONLY'].includes(ING[s.selectedTarget]?.acquisitionPolicy)?s.selectedTarget:'mushroom';
  const risk=route==='risk'||route==='spring_risk';
  const sequence=risk?[{type:'gather',id:target,n:2,label:'定向采集'},{type:'danger',id:'beef',n:2,label:'野牛领地'},{type:'event',id:'mushroom',n:2,label:'菌菇奇遇'}]:
   [{type:'gather',id:target,n:2,label:'目标采集'},{type:'gather',id:s.day===2?'chili':'mushroom',n:3,label:'林间采集'},{type:'event',id:'chicken',n:2,label:'流浪农夫'}];
  s.route=route;
+ const encounterPlan=makeSpecialEncounterPlan(s,route),map=insertPlannedFieldEncounter(buildFieldMap(s,route,target),encounterPlan,1);
  s.field={route,hp:3,node:0,bag:{},bagStacks:[],capacity:s.bagSlots||8,sequence,
-  segmentIndex:1,segmentStatus:'active',encounterPlan:makeFieldEncounterPlan(s,route),zoneId:route.startsWith('spring')?'hot_spring_shallows':'herb_path',
+  segmentIndex:1,segmentStatus:'active',encounterPlan,zoneId:route.startsWith('spring')?'hot_spring_shallows':'herb_path',
   zoneTitle:route.startsWith('spring')?'热泉浅滩':'香草小径',
   dangerCommitment:risk,selectedBranches:[],choices:[],weapon:fieldWeaponSnapshot(s),
-  finished:false,...buildFieldMap(s,route,target),bento:s.bento?.day===kitchenDayKey(s)?clone(s.bento):null};
+  finished:false,...map,bento:s.bento?.day===kitchenDayKey(s)?clone(s.bento):null};
  return true;
 }
 export function completeFieldSegment(s){
@@ -429,6 +431,7 @@ export function chooseFieldBranch(s,choiceId){
  const segmentSeed=(f.segmentIndex*1307+branch.id.split('').reduce((n,c)=>n+c.charCodeAt(0),0)*17);
  const map=insertPlannedFieldEncounter(buildFieldMap({...s,seed:s.seed+segmentSeed,fieldZoneId:branch.id,fieldSegmentIndex:f.segmentIndex},f.route,branch.target),f.encounterPlan,f.segmentIndex);
  for(const key of ['region','biome','bossSpawn','spawn','x','y','steps','worldW','worldH','worldVersion','scenery','visitedHazards','nodes','obstacles','hazards'])f[key]=map[key];
+ if(map.nodes.some(n=>['merchant','traveler'].includes(n.kind)))f.specialNpcOpportunity=true;
  f.action=false;f.target=branch.target;f.harvestProgress=0;f.harvestNode=null;f.activeEvent=null;
  // HP, bag, bento, skill cooldown and equipped cookware persist across all three segments.
  return true;
@@ -450,7 +453,13 @@ function recordEcologySegment(f,reason){
  f.encounterHistory.push({segment:f.segmentIndex,zone:f.biome?.zoneId,seconds:f.elapsed,reason,...f.ecologyStats,discardRate:(f.ecologyStats.carriedIn+f.ecologyStats.collected)?f.ecologyStats.discarded/(f.ecologyStats.carriedIn+f.ecologyStats.collected):0});
 }
 export function settleField(s,reason='retreat'){const f=s.field;if(!f||f.settled)return false;let items={...f.bag};if(reason==='faint')for(const id of Object.keys(items)){items[id]=Math.ceil(items[id]/2);if(items[id]===0)delete items[id]};f.settled=true;f.reason=reason;f.winnings=items;const settled=transact(s,`field-${s.cycle}-${s.day}`,'exploration',items);
- if(settled)recordEcologySegment(f,reason);
+ if(settled){recordEcologySegment(f,reason);
+  if(f.encounterPlan?.version==='0.11-C'){
+   s.encounterProgress??={misses:0};
+   if(f.specialNpcOpportunity)s.encounterProgress.misses=0;
+   else if(reason==='completed'&&f.segmentIndex===3)s.encounterProgress.misses=Math.min(2,(s.encounterProgress.misses||0)+1);
+  }
+ }
  if(settled&&f.bossDefeated&&(items.mushroom_heart||items.ember_pepper)){s.bossCleared??={};s.bossCleared[f.bossDefeated]=true;}
  nextPhase(s,'research');return true}
 export function skipField(s){if(s.phase!=='field'||s.field)return false;nextPhase(s,'research');return true}
@@ -1044,6 +1053,7 @@ export function interactExplorer(s){
  const f=s.field;if(s.phase!=='field'||!f||f.settled||f.finished)return {ok:false,message:'探索已结束'};
  const node=f.nodes.find(n=>!n.claimed&&Math.abs(n.x-f.x)+Math.abs(n.y-f.y)<=1);
  if(!node)return {ok:false,message:'请靠近可采集的食材'};
+ if(node.type==='event'&&node.offer)return {ok:false,message:'请在场内靠近奇遇后选择交易，不能直接采集奇遇货品'};
  if(f.bag[node.id]>=3)return {ok:false,message:'这一食材的背包格已装满，先回店吧'};
  if(Object.keys(f.bag).length>=6&&!f.bag[node.id])return {ok:false,message:'六格背包已满，请先撤离'};
  if(node.type==='danger'){
@@ -1172,4 +1182,21 @@ export function stepLiveResearch(s,seconds=0){
  c.elapsed=Math.min(19,c.elapsed+Math.max(0,Math.min(.1,Number(seconds)||0)));
  if(c.elapsed>=19)return finishLiveResearch(s);
  return null;
+}
+
+// Full preflight precedes the only synchronous commit; UI saves one full snapshot.
+export function resolveSpecialFieldEvent(s,choice){
+ const f=s.field;if(s.phase!=='field'||!f?.action||f.finished||f.settled||!f.activeEvent)return false;
+ const n=f.nodes.find(n=>n.key===f.activeEvent);if(!n||!SPECIAL_ENCOUNTER_KINDS.includes(n.kind))return false;
+ const quote=previewSpecialEncounter(s,n,choice);
+ if(!quote.ok){f.actionMessage=quote.reason;f.actionMessageTTL=3;return false;}
+ const id='encounter-'+n.eventId,type=choice==='leave'?'encounter_decline':n.kind==='merchant'?'field_trade':n.kind==='traveler'?'field_exchange':'field_discovery';
+ if(!transact(s,id,type,{},-quote.coins))return false;
+ f.bag=quote.bag;syncFieldBagStacks(f);f.hp-=quote.hp;
+ if(f.ecologyStats){f.ecologyStats.collected+=Object.values(quote.gain).reduce((a,b)=>a+b,0);f.ecologyStats.damageTaken+=quote.hp;}
+ n.claimed=true;n.status='resolved';n.result={choice,coins:quote.coins,hp:quote.hp,cost:quote.cost,gain:quote.gain};
+ const entry=s.ledger.find(t=>t.id===id);entry.fieldCost={...quote.cost};entry.fieldGain={...quote.gain};entry.hpCost=quote.hp;
+ f.activeEvent=null;f.harvestNode=null;f.harvestProgress=0;
+ f.actionMessage=choice==='leave'?'你告别了这次奇遇，继续赶路。':'获得'+Object.entries(quote.gain).map(([id,q])=>ING[id].name+'×'+q).join('、')+'，仍在野外背包，回店后入库。';
+ f.actionMessageTTL=4;return true;
 }

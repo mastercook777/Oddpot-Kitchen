@@ -1136,3 +1136,16 @@ export const RECIPE_PROFILES = {
   }
 
 };
+
+// C: recipe-specific affinities; no global style price/crew/bento modifiers.
+const encounterRecipeProfiles=[
+ ['sour_chicken_wok','逆潮酸爆鸡',['tide_sour_pulp','chicken','garlic'],'WOK',9,42,['酸','清爽','肉','香'],'burst',{regular:6,critic:4},'酸香与锅气结合，清爽客群和鉴味师更容易认可。','鸡肉、酸浆与蒜瓣同锅，颠勺后充分熟制。'],
+ ['sour_potato_pot','潮酸焖薯',['tide_sour_pulp','potato','onion'],'POT',13,40,['酸','饱腹','温和'],'gentle',{family:5,regular:4},'轻搅保留酸浆的明亮风味，衬出土豆的温和。','土豆需要熟透；用轻搅融合酸浆与洋葱。'],
+ ['nectar_cabbage_wok','星蜜卷卷脆蔬',['starlit_nectar','cabbage'],'WOK',7,40,['花香','甜香','清爽'],'home_even',{regular:6,family:3},'均匀翻炒使花蜜轻裹菜叶，清爽而有甜香。','魔菜与花蜜入锅后翻炒，及时起锅。'],
+ ['nectar_chicken_pot','星露蜜焖鸡',['starlit_nectar','chicken','onion'],'POT',13,44,['花香','甜香','温和','肉'],'gentle',{family:7,regular:3},'轻搅形成柔和蜜香，适合菌帽一家与街坊。','鸡肉熟透，花蜜与洋葱用轻搅缓缓融合。']
+];
+for(const [id,name,ingredients,vessel,baseTimeSeconds,basePriceCoins,baseTasteTags,code,guestFitDelta,reason,cue] of encounterRecipeProfiles){
+ RECIPE_PROFILES[id]={id,name,origin:'v0.11-encounter-curated',ingredients,vessel,baseTimeSeconds,basePriceCoins,baseTasteTags,personality:reason,
+  styles:[{code,affinity:'signature',guestFitDelta,timeDeltaSeconds:0,priceDeltaCoins:0,culinaryReason:reason,playerCue:cue}],
+  crewSpecific:null,bentoSpecific:null,caution:'奇遇专供食材；仅精选配方，不进入普通市场或通用组合。'};
+}

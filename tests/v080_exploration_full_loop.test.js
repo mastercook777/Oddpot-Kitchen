@@ -16,10 +16,10 @@ const clearStage=s=>{
  const target=s.field.nodes.find(n=>n.key==='target');assert.ok(target);
  target.claimed=true;return completeFieldSegment(s);
 };
-test('catalog retains all normal recipes with exactly four curated rare dishes',()=>{
- assert.equal(Object.keys(ING).length,10);
- assert.equal(Object.keys(RECIPE_INDEX).length,172);
- assert.equal(Object.keys(RECIPES).length,171);
+test('catalog retains normal recipes and all four Boss dishes alongside the encounter additions',()=>{
+ assert.equal(Object.keys(ING).length,12);
+ assert.equal(Object.keys(RECIPE_INDEX).length,176);
+ assert.equal(Object.keys(RECIPES).length,175);
  for(const recipe of ['mushroom_heart_wok','mushroom_heart_pot','ember_pepper_wok','ember_pepper_pot'])
   assert.equal(RECIPES[recipe].rare,true);
  assert.equal(liveRecipeId(['mushroom_heart','garlic'],'WOK'),'mushroom_heart_wok');

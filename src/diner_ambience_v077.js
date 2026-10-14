@@ -1,7 +1,7 @@
 // v0.7.7 - transient, state-grounded dining dialogue for real orders.
 // Data only: never mutate gameplay, advance clocks or spend resources.
 // Max one speech per table, max two across the entire restaurant.
-import {RECIPES,ING} from './data.js?v=0.9.1';
+import {RECIPES,ING} from './data.js?v=0.11.0-alpha.7';
 
 const clampSpeech=x=>Math.max(0,Math.min(1,x));
 const speechWhen=(t,start,duration)=>Number.isFinite(start)&&t>=start&&t<start+duration;

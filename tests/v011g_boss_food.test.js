@@ -3,7 +3,7 @@ import assert from 'node:assert/strict';
 import {readFileSync} from 'node:fs';
 import {MINI_BOSS_PATTERNS,stepMiniBoss,stepBossZones,bossChargeEnd,drawPixelMiniBoss,drawMiniBossWarning} from '../src/field_bosses_v011g.js';
 import {ingredientIconHtml,ingredientIconUrl} from '../src/ingredient_icons_v011g.js';
-import {ingredientSpriteCanvas,drawHerbPixelNode} from '../src/field_pixel_herb_v011c.js?v=0.11.0-alpha.6';
+import {ingredientSpriteCanvas,drawHerbPixelNode} from '../src/field_pixel_herb_v011c.js?v=0.11.0-alpha.7';
 import {drawFieldNodeMarkers,drawFieldActorIndicators} from '../src/field_effects_v011e2.js';
 import {ING} from '../src/data.js';
 const boss=kind=>({id:kind,kind,isBoss:true,x:5,y:5,hp:10,maxHp:10,cooldown:0});
@@ -58,9 +58,9 @@ test('boss bodies are detailed pixel primitives; warnings stay smooth and read-o
   drawFieldActorIndicators(c,e,40);assert.ok(c.calls.some(x=>x[0]==='roundRect'&&x[2]===-54));assert.equal(JSON.stringify(e),before);
  }
 });
-test('ten ingredient icons share field raster cache; invalid IDs never emit markup',()=>{
+test('twelve ingredient icons share field raster cache; invalid IDs never emit markup',()=>{
  const old=globalThis.document;let number=0;globalThis.document={createElement(){const id=++number;return {width:0,height:0,getContext:context,toDataURL:()=>`data:image/png;test,${id}`};}};
- try{const urls=[];for(const id of Object.keys(ING)){assert.strictEqual(ingredientSpriteCanvas(id),ingredientSpriteCanvas(id));const url=ingredientIconUrl(id);urls.push(url);assert.equal(url,ingredientSpriteCanvas(id).toDataURL());assert.equal(url,ingredientIconUrl(id));assert.match(ingredientIconHtml(id),new RegExp(`data-ingredient-icon="${id}"`));}assert.equal(new Set(urls).size,10);assert.equal(ingredientIconHtml('invalid'), '');}finally{globalThis.document=old;}
+ try{const urls=[];for(const id of Object.keys(ING)){assert.strictEqual(ingredientSpriteCanvas(id),ingredientSpriteCanvas(id));const url=ingredientIconUrl(id);urls.push(url);assert.equal(url,ingredientSpriteCanvas(id).toDataURL());assert.equal(url,ingredientIconUrl(id));assert.match(ingredientIconHtml(id),new RegExp(`data-ingredient-icon="${id}"`));}assert.equal(new Set(urls).size,12);assert.equal(ingredientIconHtml('invalid'), '');}finally{globalThis.document=old;}
 });
 test('merchant body keeps screen size at both zooms and smooth exclamation has no star glyph',()=>{
  const old=globalThis.document;globalThis.document={createElement:()=>({getContext:context})};

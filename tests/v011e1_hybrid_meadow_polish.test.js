@@ -2,7 +2,7 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import {readFileSync} from 'node:fs';
 import {buildHybridMeadowDetailPlan,drawHybridMeadowGround,isHybridMeadow} from '../src/field_hybrid_meadow_v011e.js';
-import {herbPixelGroundPlan,isHerbPixelSlice} from '../src/field_pixel_herb_v011c.js?v=0.11.0-alpha.6';
+import {herbPixelGroundPlan,isHerbPixelSlice} from '../src/field_pixel_herb_v011c.js?v=0.11.0-alpha.7';
 import {createMeadowPreview,setMeadowPreviewMode,meadowPreviewPose,MEADOW_PREVIEW_MODES} from '../src/meadow_preview_state_e1.js';
 import {stepActionField} from '../src/field_v04.js';
 import {fieldTilePath} from '../src/field_rules_v011a.js';

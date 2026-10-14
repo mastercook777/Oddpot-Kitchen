@@ -5,7 +5,7 @@ import {fieldTilePath} from '../src/field_rules_v011a.js';
 import {newGame,enterField,moveExplorer,interactExplorer,settleField,canUse,startCook,moveTile,beat,finishCook,createService,tick,setServicePaused,resumeBreak,closeService,sootheGuest,newRecipeLead,cookOutcome} from '../src/engine.js';
 
 test('v0.3 twelve baseline recipes remain discoverable inside expanded v0.6.3 catalog',()=>{
- assert.equal(Object.keys(ING).length,10);
+ assert.equal(Object.keys(ING).length,12);
  assert.ok(Object.keys(RECIPES).length>=18,'expanded catalog must retain all original recipes');
  for(const id of ['chili_meat','mushroom_stir','chicken_stew','veg_stir','flame_beef','garlic_beef','spicy_mushroom','onion_chicken','potato_stew','chili_potato','woodland_pot','harvest_stir'])assert.ok(RECIPES[id],id);
  const keys=new Set();

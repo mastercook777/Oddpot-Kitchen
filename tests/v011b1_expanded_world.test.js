@@ -98,7 +98,7 @@ test('new expedition and all branch swaps use expanded worlds while keeping enco
    const f=s.field;
    assert.equal(f.worldVersion,'0.11-B1');
    assert.equal(f.worldW,12);assert.equal(f.worldH,16);
-   assert.equal(f.nodes.filter(n=>n.type==='event').length,segment===plan.segment?1:0);
+   assert.equal(f.nodes.filter(n=>n.type==='event').length,plan.version==='0.11-C'?plan.encounters.filter(e=>e.segment===segment).length:segment===plan.segment?1:0);
    total+=f.nodes.filter(n=>n.type==='event').length;
    assert.equal(startActionField(s),true);
    assert.ok(f.enemies.filter(e=>!e.isBoss).length>=1,'combat still spawns');
@@ -109,7 +109,7 @@ test('new expedition and all branch swaps use expanded worlds while keeping enco
    assert.equal(chooseFieldBranch(s,f.choices[0].choiceId),true);
    assert.deepEqual(f.encounterPlan,plan,'persist encounter plan across branches');
   }
-  assert.equal(total,1,'one and only one traveler per three stages');
+  assert.equal(total,plan.version==='0.11-C'?plan.encounters.length:1,'the saved plan owns the complete run budget');
  }
 });
 

@@ -13,6 +13,7 @@ export function makeFieldEncounterPlan(s,route){
 
 const key=(x,y)=>x+','+y;
 export function insertPlannedFieldEncounter(map,plan,segment){
+ if(plan?.version==='0.11-C'){for(const e of plan.encounters||[])insertPlannedFieldEncounter(map,e,segment);return map;}
  if(!plan||plan.segment!==segment||!map||!Array.isArray(map.nodes))return map;
  if(map.nodes.some(n=>n.key===plan.eventId))return map; // idempotent reload
  const target=map.nodes.find(n=>n.key==='target');
@@ -34,7 +35,8 @@ export function insertPlannedFieldEncounter(map,plan,segment){
  const middle=(path.length-1)/2;
  candidates.sort((a,b)=>Math.abs(a.i+1-middle)-Math.abs(b.i+1-middle));
  const where=candidates[0];
- map.nodes.push({key:plan.eventId,eventId:plan.eventId,kind:plan.kind,
+ map.nodes.push({key:plan.eventId,eventId:plan.eventId,kind:plan.kind,region:plan.region,
+  ...(plan.offer?{offer:structuredClone(plan.offer),status:'available'}:{}),
   id:plan.region==='spring'?'potato':'mushroom',type:'event',
   x:where.x,y:where.y,n:1,claimed:false});
  return map;

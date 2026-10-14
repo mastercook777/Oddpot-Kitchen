@@ -41,11 +41,12 @@ test('each biome finds an accessible event along actual safe route across seeds'
  }
 });
 
-test('real three-stage exploration schedules exactly one traveler without rewarding reruns',()=>{
+test('saved legacy three-stage exploration keeps its one traveler without upgrading the plan',()=>{
  for(const route of ['safe','risk','spring_safe','spring_risk']){
   for(let seed=50;seed<=74;seed++){
    const s=newGame(seed);s.phase='field';
    assert.ok(enterField(s,route));
+   s.field.encounterPlan=makeFieldEncounterPlan(s,route);s.field.nodes=s.field.nodes.filter(n=>n.type!=='event');
    let events=0;
    for(let segment=1;segment<=3;segment++){
     const inMap=s.field.nodes.filter(n=>n.type==='event');

@@ -53,6 +53,28 @@ try{
   if(!bounds||bounds.y<0||bounds.y+bounds.height>size.height)throw new Error('Joystick outside short screen');
   await page.locator('.shell').screenshot({path:out+'/hybrid-rollout-short-'+size.width+'.png'});
  }
+ // C: shared formal quotes and atomic transactions at short mobile viewport.
+ await page.setViewportSize({width:320,height:568});
+ for(const [view,scenario,choice,gain] of [
+  ['merchant_trade','ready','buy','tide_sour_pulp'],['merchant_trade','no-money','buy',null],['merchant_trade','full-bag','buy',null],
+  ['traveler_trade','ready','trade','starlit_nectar'],['traveler_trade','no-material','trade',null],
+  ['ecology_event','low-hp','forage',null],['ecology_event','ready','forage','mushroom']
+ ]){
+  await page.goto('http://127.0.0.1:5173/art-preview.html?view='+view+'&case='+scenario);
+  await page.waitForFunction("window.__oddpotPreview?.rendered===true");
+  const dialog=page.locator('#special-preview [role="dialog"]');await dialog.waitFor();
+  const button=dialog.locator('[data-event="'+choice+'"]');
+  if(await button.isDisabled()!==!gain)throw new Error('C wrong affordability '+view+' '+scenario);
+  await button.scrollIntoViewIfNeeded();const box=await button.boundingBox();if(!box||box.height<44||box.y<0||box.y+box.height>568)throw new Error('C action clipped/too small');
+  await page.screenshot({path:out+'/c-'+view+'-'+scenario+'-320.png'});
+  if(gain){
+   await button.click();await page.waitForFunction("!window.__oddpotPreview.activeEvent");
+   const state=await page.evaluate(()=>window.__oddpotPreview);
+   if(state.bag[gain]!== (view==='ecology_event'?3:2))throw new Error('C real bag quantity wrong');
+   if(view==='merchant_trade'&&state.coins!==84)throw new Error('C gold not charged exactly once');
+  }else {await dialog.locator('[data-event="leave"]').click();await page.waitForFunction("!window.__oddpotPreview.activeEvent");}
+ }
+ console.log('C short-screen merchant/traveler/ecology, blocked offers, HP boundary and real transactions passed.');
  // B2 packs: exact formal controller, new preview entries, no fake save rewards.
  for(const zone of ['forest_garden','old_tree_edge','steam_crack','ember_edge'])for(const risk of [false,true]){
   await page.setViewportSize({width:390,height:844});
@@ -103,16 +125,32 @@ try{
  await page.goto('http://127.0.0.1:5173/index.html',{waitUntil:'domcontentloaded'});
  await page.locator('#app .hud').waitFor({state:'visible',timeout:15000});
  if(errors.length)throw new Error('Main game browser errors: '+errors.join('; '));
- // The stock page and real cooking DOM must decode the same ten sprites.
+ // The stock page and real cooking DOM must decode the same twelve sprites.
  await page.setViewportSize({width:320,height:568});
  await page.locator('[data-act="stock"]').first().click();
  await page.locator('.ingredient-icon').first().waitFor();
  await page.waitForFunction(()=>[...document.querySelectorAll('.ingredient-icon')].every(i=>i.complete&&i.naturalWidth>0));
  const stockUrls=await page.locator('[data-ingredient-icon]').evaluateAll(images=>Object.fromEntries(images.map(i=>[i.dataset.ingredientIcon,i.src])));
- if(Object.keys(stockUrls).length!==10)throw new Error('Missing stock ingredient sprites');
+ if(Object.keys(stockUrls).length!==12)throw new Error('Missing stock ingredient sprites');
  await page.screenshot({path:out+'/g-stock-320.png'});
+ // Formal game uses the same quote and persists one complete transaction snapshot.
+ const formalSave=await page.evaluate(async()=>{const {createMeadowPreview,prepareSpecialPreview}=await import('/src/meadow_preview_state_e1.js?v=0.11.0-alpha.7');const s=createMeadowPreview();prepareSpecialPreview(s,'merchant_trade');return s;});
+ const gamePage=await browser.newPage({viewport:{width:320,height:568},deviceScaleFactor:2,locale:'zh-CN',isMobile:true,hasTouch:true});
+ gamePage.on('pageerror',e=>errors.push(e.message));
+ await gamePage.addInitScript(s=>localStorage.setItem('oddpot-prototype-v04',JSON.stringify(s)),formalSave);
+ await gamePage.goto('http://127.0.0.1:5173/index.html');
+ const formalDialog=gamePage.locator('.special-encounter');await formalDialog.waitFor();
+ await formalDialog.locator('[data-event="buy"]').scrollIntoViewIfNeeded();
+ await gamePage.screenshot({path:out+'/c-formal-merchant-320.png'});
+ await formalDialog.locator('[data-event="buy"]').click();
+ await gamePage.waitForFunction(()=>{const s=JSON.parse(localStorage.getItem('oddpot-prototype-v04'));return s.coins===84&&s.field.bag.tide_sour_pulp===2&&s.ledger.filter(t=>t.type==='field_trade').length===1;});
+ await gamePage.locator('[data-act="field-bag"]').click();
+ await gamePage.locator('[data-ingredient-icon="tide_sour_pulp"]').waitFor();
+ await gamePage.screenshot({path:out+'/c-formal-bag-320.png'});
+ await gamePage.close();
+ console.log('C formal transaction persisted once, field bag icon and compact panel passed.');
  // Isolated test save: research begins through the formal controls, with real inventory.
- const researchSave=await page.evaluate(async()=>{const {newGame}=await import('/src/engine.js?v=0.11.0-alpha.6');const s=newGame(20261013);s.phase='research';return s;});
+ const researchSave=await page.evaluate(async()=>{const {newGame}=await import('/src/engine.js?v=0.11.0-alpha.7');const s=newGame(20261013);s.phase='research';return s;});
  // Inject after navigation: the departing game's visibility handler legitimately saves its own state.
  await page.addInitScript(s=>localStorage.setItem('oddpot-prototype-v04',JSON.stringify(s)),researchSave);
  await page.reload();await page.locator('[data-act="start-research"]').waitFor();
@@ -129,7 +167,7 @@ try{
  await page.goto('http://127.0.0.1:5173/standalone.html');
  await page.locator('#app .hud').waitFor();
  if(errors.length)throw new Error('G browser errors: '+errors.join('; '));
- console.log('G bosses, merchant, ten stock icons, matching real pan sprites and offline boot passed.');
+ console.log('G bosses, merchant, twelve stock icons, matching real pan sprites and offline boot passed.');
  console.log('Eight ecology UI scenes, short screens, keyboard, pointer release and formal game boot passed.');
 }finally{
  if(browser)await browser.close();
