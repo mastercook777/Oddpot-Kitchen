@@ -1,17 +1,19 @@
+import {fieldHitPose,fieldAttackPose} from './field_hit_response_v011h.js?v=0.11.0-alpha.8';
+import {drawFieldHitEffects} from './field_effects_v011e2.js?v=0.11.0-alpha.8';
 import {drawEcologyWarning} from './field_ecology_v011b2.js';
 import {drawPixelMiniBoss,drawMiniBossWarning,drawBossZones} from './field_bosses_v011g.js';
-import {isHybridFieldArt,drawHybridFieldGround,drawHybridFieldObstacle,drawHybridFieldHazard,drawHybridFieldAtmosphere} from './field_hybrid_biomes_v011f.js?v=0.11.0-alpha.7';
-import {drawFieldImpact,drawFieldProjectile,drawFieldSwipe,drawFieldSkillWave,drawFieldBurst,drawFieldCollection,drawFieldDeath,drawFieldActorIndicators,drawFieldNodeMarkers} from './field_effects_v011e2.js?v=0.11.0-alpha.7';
+import {isHybridFieldArt,drawHybridFieldGround,drawHybridFieldObstacle,drawHybridFieldHazard,drawHybridFieldAtmosphere} from './field_hybrid_biomes_v011f.js?v=0.11.0-alpha.8';
+import {drawFieldImpact,drawFieldProjectile,drawFieldSwipe,drawFieldSkillWave,drawFieldBurst,drawFieldCollection,drawFieldDeath,drawFieldActorIndicators,drawFieldNodeMarkers} from './field_effects_v011e2.js?v=0.11.0-alpha.8';
 import {fieldWokPose,fieldPotPose} from './field_pose_v083.js?v=0.8.5';
 import {hazardPhase,fieldTilePath} from './field_rules_v011a.js';
 import {fieldCamera} from './field_camera_v011b1.js';
 import {drawExpandedLandscape,drawExpandedObstacle} from './field_world_render_v011b1.js';
-import {isHerbPixelSlice,drawHerbPixelGround,drawHerbPixelObstacle,drawHerbPixelNode,drawHerbPixelHazard,drawHerbPixelEnemy,drawHerbPixelProjectile} from './field_pixel_herb_v011c.js?v=0.11.0-alpha.7';
-import {isHybridMeadow,drawHybridMeadowGround,drawHybridMeadowObstacle,drawHybridMeadowHazard} from './field_hybrid_meadow_v011e.js?v=0.11.0-alpha.7';
+import {isHerbPixelSlice,drawHerbPixelGround,drawHerbPixelObstacle,drawHerbPixelNode,drawHerbPixelHazard,drawHerbPixelEnemy,drawHerbPixelProjectile} from './field_pixel_herb_v011c.js?v=0.11.0-alpha.8';
+import {isHybridMeadow,drawHybridMeadowGround,drawHybridMeadowObstacle,drawHybridMeadowHazard} from './field_hybrid_meadow_v011e.js?v=0.11.0-alpha.8';
 import {meleeProfile,meleeWindupProgress} from './field_combat_feedback_v084.js?v=0.8.4';
 import {pixelActor,pixelEnemy,pixelImpact} from './pixels_v041.js?v=0.9.0';
 // Lightweight procedural game graphics: original Canvas shapes, no art pack.
-import {ING,RECIPES,CUSTOMERS} from './data.js?v=0.11.0-alpha.7';
+import {ING,RECIPES,CUSTOMERS} from './data.js?v=0.11.0-alpha.8';
 import {heroZone,waiterDeliveryPose,HERO_PASS} from './walkable_restaurant_v07.js?v=0.9.1';
 import {DINER_FLOOR,dinerFloor,dinerGuestRoute,dinerWeather,dinerQueueGuests} from './restaurant_scene_v075.js?v=0.9.2';
 import {selectDiningSpeech,selectStaffSpeech,diningBubbleLines,speechOpacity} from './diner_ambience_v077.js?v=0.9.2';
@@ -200,8 +202,9 @@ function drawMeleeWarnings(c,f){
 }
 export function drawField(canvas,s,clock){const size=setCanvas(canvas);if(!size||!s.field?.action)return;const {c,w,h}=size,f=s.field;const springs=f.region==='spring';const camera=fieldCamera(f,w,h),sc=camera.scale,left=camera.offsetX,top=camera.offsetY;
  c.fillStyle=isHybridMeadow(f)?'#75896f':isHerbPixelSlice(f)?'#485e4c':springs?'#9c674c':'#305a40';c.fillRect(0,0,w,h);
- const shake=(f.hitShake||0)/.24,shakeX=shake?Math.sin(f.elapsed*151)*4*shake:0;
- const shakeY=shake?Math.cos(f.elapsed*117)*2.4*shake:0;
+ const jolt=(f.combatJolt||0)/.09;
+ const shake=(f.hitShake||0)/.24,shakeX=(shake?Math.sin(f.elapsed*151)*4*shake:0)+Math.sin(f.elapsed*137)*1.6*jolt;
+ const shakeY=(shake?Math.cos(f.elapsed*117)*2.4*shake:0)+Math.cos(f.elapsed*103)*.8*jolt;
  c.save();c.translate(left+shakeX,top+shakeY);c.scale(sc,sc);
  const herbPixelArt=isHerbPixelSlice(f),herbHybridArt=isHybridMeadow(f),fieldHybridArt=isHybridFieldArt(f),fieldSpriteArt=herbPixelArt||fieldHybridArt,smoothFx=!['pixel','legacy'].includes(f.artPreviewMode);
  if(herbHybridArt)drawHybridMeadowGround(c,f);
@@ -277,7 +280,16 @@ export function drawField(canvas,s,clock){const size=setCanvas(canvas);if(!size|
  for(const e of f.enemies||[])drawEcologyWarning(c,e);
  for(const e of f.enemies||[])if(e.isBoss)drawMiniBossWarning(c,e);
  drawBossZones(c,f);
- for(const e of f.enemies||[]){if(e.hp>0||e.deathFx>0){if(e.isBoss){drawPixelMiniBoss(c,e,clock,sc);drawFieldActorIndicators(c,e,sc);continue;}if(fieldSpriteArt&&!e.isBoss){if(smoothFx){drawHerbPixelEnemy(c,e,clock,sc,pixelEnemy,false);drawFieldActorIndicators(c,e,sc);}else drawHerbPixelEnemy(c,e,clock,sc,pixelEnemy);continue;}c.save();c.translate(e.x,e.y);c.scale(1/sc,1/sc);monster(c,{...e,x:0,y:0},clock);c.restore()}}
+ for(const e of f.enemies||[]){
+  if(e.hp<=0&&!(e.deathFx>0))continue;
+  const pose=fieldHitPose(e),actor=e.hitResponse?{...e,hurtFx:0}:e;
+  c.save();c.translate(e.x+pose.x/sc,e.y+pose.y/sc);c.scale(pose.sx,pose.sy);c.translate(-e.x,-e.y);
+  if(e.hitResponse&&e.hitResponse.ttl/e.hitResponse.total>.68)c.filter='brightness(1.7)';
+  if(e.isBoss)drawPixelMiniBoss(c,actor,clock,sc);
+  else if(fieldSpriteArt)drawHerbPixelEnemy(c,actor,e.hitResponse?0:clock,sc,pixelEnemy,!smoothFx);
+  else {c.save();c.translate(e.x,e.y);c.scale(1/sc,1/sc);monster(c,{...actor,x:0,y:0},clock);c.restore();}
+  c.restore();if(smoothFx||e.isBoss)drawFieldActorIndicators(c,e,sc);
+ }
  if(smoothFx)for(const e of f.enemies||[])drawFieldDeath(c,e);
  // Attack swipe uses the *same* direction and trigger as combat hit detection.
  if(smoothFx)drawFieldSwipe(c,f);
@@ -291,11 +303,12 @@ export function drawField(canvas,s,clock){const size=setCanvas(canvas);if(!size|
    c.strokeStyle='#fff9e0';c.lineWidth=.07;c.beginPath();c.arc(0,0,1.05,-.65+progress*.65,.30+progress*.65);c.stroke();}
   c.restore();
  }
- if(smoothFx)drawFieldSkillWave(c,f);
+ if(smoothFx){drawFieldSkillWave(c,f);drawFieldHitEffects(c,f);}
  if(!smoothFx&&f.skillFx>0){c.save();c.strokeStyle=`rgba(255,231,151,${Math.min(.95,f.skillFx*2.4)})`;c.lineWidth=.12;c.beginPath();c.arc(f.pos.x,f.pos.y,(.42-f.skillFx)*3+.35,0,Math.PI*2);c.stroke();c.restore();}
- for(const e of f.enemies||[]){if(e.hurtFx>0&&e.hp>0){c.save();c.translate(e.x,e.y);c.scale(1/sc,1/sc);if(smoothFx)drawFieldImpact(c,0,-5,e.hurtFx/.36,8);else pixelImpact(c,0,-5,8);c.restore()}}
+ for(const e of f.enemies||[]){if(e.hurtFx>0&&e.hp>0&&!e.hitResponse){c.save();c.translate(e.x,e.y);c.scale(1/sc,1/sc);if(smoothFx)drawFieldImpact(c,0,-5,e.hurtFx/.36,8);else pixelImpact(c,0,-5,8);c.restore()}}
  for(const fx of f.popFx||[]){if(smoothFx&&fx.text==='💥'){drawFieldBurst(c,fx);continue;}if(smoothFx&&String(fx.text).startsWith('+'))drawFieldCollection(c,fx);c.save();c.translate(fx.x,fx.y-(.76-fx.ttl)*.5);c.scale(1/sc,1/sc);text(c,fx.text,0,-17,fx.color||'#fff1b1',12);c.restore()}
  c.save();c.translate(f.pos.x,f.pos.y);c.scale(1/sc,1/sc);
+ const attackPose=fieldAttackPose(f);c.translate(attackPose.x,attackPose.y);
  const chefFace=(f.facing?.x||0)<-.15?-1:1;
  const isWok=f.weapon?.type==='WOK';
  const posture=isWok?fieldWokPose(f.facing,f.moving,clock,(f.guardTime||0)>0):null;
@@ -303,7 +316,11 @@ export function drawField(canvas,s,clock){const size=setCanvas(canvas);if(!size|
  if(isWok){
   // BACK LAYER: pan handle runs from the rear hand to a compact wok.
   // This replaces the oversized circular pan beside the face.
-  const a=posture.hand,p=posture.weapon;
+  const a=posture.hand,rest=posture.weapon;
+  const swing=f.attackFx&&!f.attackFx.pot?Math.exp(-(1-f.attackFx.ttl/f.attackFx.duration)*6):0;
+  const p={x:rest.x*(1-swing)+(f.attackFx?.dx||0)*25*swing,
+   y:rest.y*(1-swing)+(8+(f.attackFx?.dy||0)*16)*swing,
+   angle:rest.angle+attackPose.angle*posture.shieldSign};
   c.save();
   c.lineCap='round';
   line(c,a.x,a.y,p.x,p.y,'#473e37',4.8);

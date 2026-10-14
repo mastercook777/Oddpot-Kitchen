@@ -4,7 +4,7 @@ import {readFileSync} from 'node:fs';
 import {newGame,enterField} from '../src/engine.js';
 import {startActionField} from '../src/field_v04.js';
 import {fieldTilePath} from '../src/field_rules_v011a.js';
-import {herbPixelGroundPlan,isHerbPixelSlice} from '../src/field_pixel_herb_v011c.js?v=0.11.0-alpha.7';
+import {herbPixelGroundPlan,isHerbPixelSlice} from '../src/field_pixel_herb_v011c.js?v=0.11.0-alpha.8';
 import {HYBRID_MEADOW_PALETTE,isHybridMeadow,hybridMeadowGroundPlan,
  drawHybridMeadowGround,drawHybridMeadowObstacle,drawHybridMeadowHazard} from '../src/field_hybrid_meadow_v011e.js';
 function game(seed=20261014,route='safe'){
@@ -92,7 +92,7 @@ test('entire branch uses hybrid environment but keeps actual chef, enemy and tra
  assert.ok(scene.includes('drawHybridMeadowObstacle(c,o,i)'));
  assert.ok(scene.includes('drawHybridMeadowHazard(c,hz,p,clock)'));
  assert.ok(scene.includes('drawHerbPixelNode(c,n,clock)'), 'forage and travelers remain raster characters');
- assert.ok(scene.includes('drawHerbPixelEnemy(c,e,clock,sc,pixelEnemy)'));
+ assert.ok(scene.includes('drawHerbPixelEnemy(c,actor,e.hitResponse?0:clock,sc,pixelEnemy,!smoothFx)'));
  assert.ok(scene.includes('chef(c,0,Math.sin'), 'player original pixel character preserved');
  assert.ok(!src.includes('Math.random'), 'no unseeded cosmetic random streams');
  assert.ok(bundler.indexOf("'field_hybrid_meadow_v011e.js'")<bundler.indexOf("'scenes_v04.js'"));

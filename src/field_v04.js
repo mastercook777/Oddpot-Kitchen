@@ -1,10 +1,11 @@
+import {beginFieldHit,stepFieldHit,queueFieldImpact} from './field_hit_response_v011h.js?v=0.11.0-alpha.8';
 import {createEcologyEnemies,ecologyEngagedEnemies,stepEcologyEnemy} from './field_ecology_v011b2.js';
 import {stepMiniBoss,stepBossZones} from './field_bosses_v011g.js';
 // v0.4 real-time forest encounter. The underlying kitchen inventory remains
 // governed by engine.settleField; this file only mutates the expedition bag.
-import {ING} from './data.js?v=0.11.0-alpha.7';
+import {ING} from './data.js?v=0.11.0-alpha.8';
 import {meleeProfile,meleeAttackWouldHit} from './field_combat_feedback_v084.js?v=0.8.4';
-import {clamp, rand, settleField,addFieldBag,resolveSpecialFieldEvent} from './engine.js?v=0.11.0-alpha.7';
+import {clamp, rand, settleField,addFieldBag,resolveSpecialFieldEvent} from './engine.js?v=0.11.0-alpha.8';
 import {hazardPhase} from './field_rules_v011a.js';
 import {fieldEnemySpawnCandidates} from './field_world_v011b1.js';
 const dist=(a,b)=>Math.hypot(a.x-b.x,a.y-b.y);
@@ -13,7 +14,7 @@ export function startActionField(s){
  const f=s.field;if(!f||f.action)return false;
  f.action=true;f.pos={...(f.spawn||{x:4.5,y:9.4})};f.x=f.pos.x;f.y=f.pos.y;
  f.elapsed=0;f.harvestProgress=0;f.harvestNode=null;f.attackCd=0;f.skillCd??=0;f.damageCd=0;f.guardTime??=0;f.shieldCharge??=(f.weapon?.type==='WOK');f.shieldCooldown??=0;f.shieldFlash??=0;f.activeEvent=null;
- f.projectiles=[];f.playerProjectiles=[];f.attackFx=null;f.skillFx=0;f.hurtFx=0;f.hitFlash=0;f.hitShake=0;f.hitDir=null;f.popFx=[];f.facing={x:0,y:-1};f.moving=false;f.actionMessage='移动寻找食材。靠近目标会自动采集。';f.actionMessageTTL=4;
+ f.impactFx=[];f.combatJolt=0;f.skillOrigin=null;f.projectiles=[];f.playerProjectiles=[];f.attackFx=null;f.skillFx=0;f.hurtFx=0;f.hitFlash=0;f.hitShake=0;f.hitDir=null;f.popFx=[];f.facing={x:0,y:-1};f.moving=false;f.actionMessage='移动寻找食材。靠近目标会自动采集。';f.actionMessageTTL=4;
  const profile=f.biome||{},mix=profile.enemyMix||[f.region==='spring'?'pepper':'chicken'];
  const risk=/risk/.test(f.route),wave=f.segmentIndex||1;
  // Encounter composition, count and spawn rotate with the run seed and zone,
@@ -62,9 +63,10 @@ export function startActionField(s){
 }
 function blocked(f,p,r=.20){return p.x<r||p.y<r||p.x>f.worldW-r||p.y>f.worldH-r||f.obstacles.some(o=>Math.abs(p.x-(o.x+.5))<.40+r&&Math.abs(p.y-(o.y+.5))<.40+r)}
 export function addBag(f,id,n){return addFieldBag(f,id,n)}
-function damageEnemy(s,e,amount=1){
+function damageEnemy(s,e,amount=1,kind='wok',origin=s.field.pos){
  const f=s.field;if(!e||e.hp<=0)return false;
  e.hp=Math.max(0,e.hp-amount);e.hurtFx=.36;
+ beginFieldHit(f,e,kind,origin);
  f.popFx??=[];f.popFx.push({x:e.x,y:e.y,text:'-'+amount,ttl:.72,color:'#ffeab4'});
  if(e.hp>0||e.lootDropped)return true;
  e.lootDropped=true;e.deathFx=.45;
@@ -96,7 +98,7 @@ function clearLineOfFire(f,a,b){
 function potLaunch(f,target,damage=1,radius=.65,slow=0){
  f.playerProjectiles??=[];
  f.playerProjectiles.push({x:f.pos.x,y:f.pos.y,fromX:f.pos.x,fromY:f.pos.y,
-  targetX:target.x,targetY:target.y,time:0,duration:.38,damage,radius,slow});
+  targetX:target.x,targetY:target.y,time:0,duration:.38,damage,radius,slow,empowered:damage>1});
 }
 function advancePlayerProjectiles(s,dt){
  const f=s.field;
@@ -106,11 +108,11 @@ function advancePlayerProjectiles(s,dt){
   if(factor<1||p.hit)continue;
   p.hit=true;
   for(const e of f.enemies||[]){
-   if(e.hp>0&&dist({x:p.targetX,y:p.targetY},e)<=p.radius){
-    damageEnemy(s,e,p.damage);if(p.slow>0)e.slowTime=Math.max(e.slowTime||0,p.slow);
+   if(e.hp>0&&dist({x:p.targetX,y:p.targetY},e)<=p.radius&&clearLineOfFire(f,{x:p.targetX,y:p.targetY},e)){
+    damageEnemy(s,e,p.damage,p.empowered?'pot_skill':'pot',{x:p.targetX,y:p.targetY,dx:p.targetX-p.fromX,dy:p.targetY-p.fromY});if(p.slow>0)e.slowTime=Math.max(e.slowTime||0,p.slow);
    }
   }
-  f.popFx??=[];f.popFx.push({x:p.targetX,y:p.targetY,text:'💥',ttl:.5,color:'#ffe5ad'});
+  queueFieldImpact(f,{kind:'burst',x:p.targetX,y:p.targetY,radius:p.radius,strong:!!p.empowered,ttl:p.empowered?.48:.34,duration:p.empowered?.48:.34});
  }
  f.playerProjectiles=(f.playerProjectiles||[]).filter(p=>!p.hit);
 }
@@ -179,26 +181,25 @@ function gather(f,n){
  return true;
 }
 export function useFieldSkill(s){
- const f=s.field;if(s.phase!=='field'||!f?.action||f.skillCd>0||f.finished||f.segmentStatus==='choice')return false;
+ const f=s.field;if(s.phase!=='field'||!f?.action||f.skillCd>0||f.finished||f.segmentStatus==='choice'||f.activeEvent)return false;
  if(f.weapon?.type==='POT'){
   const target=f.enemies.filter(e=>e.hp>0&&dist(f.pos,e)<=3.9&&clearLineOfFire(f,f.pos,e))
    .sort((a,b)=>dist(f.pos,a)-dist(f.pos,b))[0];
   if(!target){pushMsg(f,'高压汤锅：附近没有可瞄准的敌人。');return false;}
-  potLaunch(f,target,2,1.1,.8);f.skillCd=6.5;f.skillFx=.42;
+  potLaunch(f,target,2,1.1,.8);f.skillCd=6.5;f.skillFx=.42;f.skillOrigin={...f.pos,type:'POT'};
+  const d=dist(f.pos,target)||1;f.facing={x:(target.x-f.pos.x)/d,y:(target.y-f.pos.y)/d};
+  f.attackFx={ttl:.24,duration:.24,dx:f.facing.x,dy:f.facing.y,pot:true};
   pushMsg(f,'🍲 高压汤锅！投出强化洋葱炸弹。');return true;
  }
- f.skillCd=6.5;f.skillFx=.42;f.guardTime=f.weapon?.level>1?.55:.45;
+ f.skillCd=6.5;f.skillFx=.42;f.skillOrigin={...f.pos,type:'WOK'};f.guardTime=f.weapon?.level>1?.55:.45;
  let hits=0;
  for(const e of f.enemies){
-  if(e.hp<=0||dist(f.pos,e)>1.85)continue;
-  damageEnemy(s,e,2);
-  if(e.brainVersion==='0.11-B2'){
-   e.warning=0;e.ecologyAttack=null;e.ecologyRush=null;e.attackOrigin=null;e.cooldown=Math.max(.6,e.cooldown);
-   const next={x:clamp(e.x+Math.sign(e.x-f.pos.x)*.65,.35,f.worldW-.35),y:clamp(e.y+Math.sign(e.y-f.pos.y)*.65,.35,f.worldH-.35)};
-   if(e.hp>0&&!blocked(f,next,.18)){e.x=next.x;e.y=next.y;}hits++;continue;
+  if(e.hp<=0||dist(f.pos,e)>1.85||!clearLineOfFire(f,f.pos,e))continue;
+  damageEnemy(s,e,2,'wok_skill');
+  if(!e.isBoss){
+   e.warning=0;e.ecologyAttack=null;e.ecologyRush=null;e.attackOrigin=null;e.cooldown=Math.max(.6,e.cooldown||0);
   }
-  e.x=clamp(e.x+Math.sign(e.x-f.pos.x)*.65,.35,f.worldW-.35);
-  e.y=clamp(e.y+Math.sign(e.y-f.pos.y)*.65,.35,f.worldH-.35);hits++;
+  hits++;
  }
  pushMsg(f,hits?'🛡️ 锅盖反击！击退 '+hits+' 个敌人':'🛡️ 举起锅盖！短暂防御迎面攻击。');
  return true;
@@ -219,6 +220,8 @@ export function stepActionField(s,axisX,axisY,dt){
  if(f.segmentStatus==='choice')return null;
  dt=clamp(Number(dt)||0,0,.06); f.elapsed+=dt;f.guardTime=Math.max(0,(f.guardTime||0)-dt);
  f.shieldFlash=Math.max(0,(f.shieldFlash||0)-dt);
+ f.combatJolt=Math.max(0,(f.combatJolt||0)-dt);
+ f.impactFx=(f.impactFx||[]).filter(x=>(x.ttl-=dt)>0);
  f.hitFlash=Math.max(0,(f.hitFlash||0)-dt);f.hitShake=Math.max(0,(f.hitShake||0)-dt);
  if(f.weapon?.type==='WOK'&&!f.shieldCharge){f.shieldCooldown=Math.max(0,(f.shieldCooldown||0)-dt);if(f.shieldCooldown<=0)f.shieldCharge=true;}
  for(const key of ['attackCd','skillCd','damageCd','actionMessageTTL','skillFx','hurtFx'])f[key]=Math.max(0,(f[key]||0)-dt);
@@ -247,18 +250,20 @@ export function stepActionField(s,axisX,axisY,dt){
  const engaged=ecologyEngagedEnemies(f);
  let event=null;
  for(const e of f.enemies){
+  const aiDt=stepFieldHit(f,e,dt,blocked);
   if(e.hp<=0)continue;
-  e.cooldown-=dt;
-  if(e.isBoss){e.slowTime=Math.max(0,(e.slowTime||0)-dt);stepMiniBoss(f,e,dt,{blocked,hurt:(amount,source,attacker)=>hurt(s,amount,source,attacker)});continue;}
-  if(e.brainVersion==='0.11-B2'){e.slowTime=Math.max(0,(e.slowTime||0)-dt);stepEcologyEnemy(f,e,dt,engaged.has(e.id),{blocked,hurt:(amount,source,attacker)=>hurt(s,amount,source,attacker)});continue;}
+  e.cooldown-=dt;e.slowTime=Math.max(0,(e.slowTime||0)-dt);
+  if(aiDt<=0){e.moving=false;continue;}
+  if(e.isBoss){stepMiniBoss(f,e,aiDt,{blocked,hurt:(amount,source,attacker)=>hurt(s,amount,source,attacker)});continue;}
+  if(e.brainVersion==='0.11-B2'){stepEcologyEnemy(f,e,aiDt,engaged.has(e.id),{blocked,hurt:(amount,source,attacker)=>hurt(s,amount,source,attacker)});continue;}
   const d=dist(f.pos,e);
   const profile=meleeProfile(e.kind),melee=!!profile;
-  e.slowTime=Math.max(0,(e.slowTime||0)-dt);
+
   const chase=e.kind==='boar'?1.22:e.kind==='chicken'?1.02:e.kind==='steam_crab'?.78:e.isBoss?.47:.62;
   // Make the wind-up readable and dodgeable: melee enemies stop tracking
   // once their attack starts and aim at the player's LAST locked position.
   if(!(e.warning>0)&&d<3.6&&d>.62){
-   const speed=chase*(e.slowTime>0?.45:1),next={x:e.x+(f.pos.x-e.x)/d*speed*dt,y:e.y+(f.pos.y-e.y)/d*speed*dt};
+   const speed=chase*(e.slowTime>0?.45:1),next={x:e.x+(f.pos.x-e.x)/d*speed*aiDt,y:e.y+(f.pos.y-e.y)/d*speed*aiDt};
    if(!blocked(f,next,.1)){e.x=next.x;e.y=next.y}
   }
   if(d<(melee?profile.trigger:e.isBoss?4:3.2)&&e.cooldown<=0&&!(e.warning>0)){
@@ -269,7 +274,7 @@ export function stepActionField(s,axisX,axisY,dt){
    e.attackOrigin={x:e.x,y:e.y};
    e.intentKind=melee?'melee':'ranged';
   }
-  if(e.warning>0){e.warning-=dt;if(e.warning<=0){
+  if(e.warning>0){e.warning-=aiDt;if(e.warning<=0){
    if(melee){
     e.aim??={...f.pos};e.attackOrigin??={x:e.x,y:e.y};
     const original={x:e.x,y:e.y},aim=e.aim;
@@ -301,7 +306,7 @@ export function stepActionField(s,axisX,axisY,dt){
  advancePlayerProjectiles(s,dt);
  if(f.attackCd<=0){
   const isPot=f.weapon?.type==='POT',range=isPot?3.5:1.25;
-  const target=f.enemies.filter(e=>e.hp>0&&dist(f.pos,e)<range&&(!isPot||clearLineOfFire(f,f.pos,e)))
+  const target=f.enemies.filter(e=>e.hp>0&&dist(f.pos,e)<range&&clearLineOfFire(f,f.pos,e))
    .sort((a,b)=>dist(f.pos,a)-dist(f.pos,b))[0];
   if(target){
    const distance=Math.max(.001,dist(f.pos,target));
@@ -312,11 +317,11 @@ export function stepActionField(s,axisX,axisY,dt){
     f.attackFx={ttl:.24,duration:.24,dx:f.facing.x,dy:f.facing.y,pot:true};
    }else{
     f.attackCd=.70;
-    f.attackFx={ttl:.33,duration:.33,dx:f.facing.x,dy:f.facing.y};
+    f.attackFx={ttl:.33,duration:.33,dx:f.facing.x,dy:f.facing.y,x:f.pos.x,y:f.pos.y};
     const maxHits=2,span=f.weapon?.level>1?1.84:1.57;
     let hit=0;
     for(const enemy of f.enemies){
-     if(enemy.hp<=0||dist(f.pos,enemy)>1.25)continue;
+     if(enemy.hp<=0||dist(f.pos,enemy)>1.25||!clearLineOfFire(f,f.pos,enemy))continue;
      const r=Math.max(.001,dist(f.pos,enemy)),dot=((enemy.x-f.pos.x)*f.facing.x+(enemy.y-f.pos.y)*f.facing.y)/r;
      if(dot<Math.cos(span/2))continue;
      damageEnemy(s,enemy,1);if(++hit>=maxHits)break;
