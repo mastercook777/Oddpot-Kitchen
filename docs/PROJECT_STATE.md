@@ -1,8 +1,8 @@
 # 《怪味食堂》当前已实现状态 / 技术交接
 
-**状态**：`已实装（部分尚待玩家真机验收）`  
-**基准**：GitHub `main` v0.11.0-alpha.3（v0.11-B1 扩展生态地图与镜头第一批合并后；真机仍待验收）。后续每版合并应更新本页，不应仅向 README 顶部累加旧版本内容。  
-> **分支实验提示（非 main）**：`feat/herb-path-pixel-art-slice` / Draft PR #44 的 **[v0.11-E.1](V0.11E1_HYBRID_MEADOW_DETAIL_POLISH_SPEC.md) 已实装待玩家验收**。仅香草小径环境精修，保留原像素角色/食材/NPC/敌人；固定预算组团、平滑路口、树石接地，E/E.1 分别缓存静态地表。独立可玩页 https://oddpot-exploration-art-lab.prettyfinch1.chatgpt.site 复用真实探索引擎，测试状态不读写正式 localStorage。348/348 自动回归与生产/离线构建通过；48 个 native Canvas 对照渲染覆盖四尺寸/三个 seed（不是浏览器或 iPhone 截图）。未执行本轮浏览器触控 QA，真机仍待验收。main 仍 alpha.3，未经玩家同意不合并。
+**状态**：`已实装（部分尚待玩家真机验收）`
+**基准**：GitHub `main` v0.11.0-alpha.3（v0.11-B1 扩展生态地图与镜头第一批合并后；真机仍待验收）。后续每版合并应更新本页，不应仅向 README 顶部累加旧版本内容。
+> **分支实验状态（非 main）**：`feat/herb-path-pixel-art-slice` / Draft PR #44 已实现 E.1，**2026-10-14 玩家认可草地环境精修成立**；原像素角色/食材/NPC/敌人保留，地图/碰撞/采集/经济未改。当前切片仍为 E.1：https://oddpot-exploration-art-lab.prettyfinch1.chatgpt.site；348/348 回归、网页/离线构建通过，后续 GitHub 既有截图工作流已生成移动浏览器截图，不能代替真机操作验收。**新要求 E.2 全部非像素特效与 F 全生态重绘尚未实现**，见 [规范与排期](V0.11E2_F_EXPLORATION_ART_STYLE_AND_ROLLOUT.md)。环境方向认可不等于手机帧率、全部特效与八生态完成验收；main 仍 alpha.3，保持 Draft。
 
 **验证权威**：`package.json`、`src/` 实现、自动测试、实际用户试玩反馈；旧 GDD v0.1/v0.2 与 AGENTS.md 中 v0.7.x 的“当前”措辞仅作为历史材料。
 

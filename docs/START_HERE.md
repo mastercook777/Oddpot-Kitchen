@@ -2,13 +2,15 @@
 
 > **唯一用途：快速接续项目。** 每次新开对话或交给新的开发代理，先读本页与链接的文档，再读 GitHub 当前代码；不要要求用户重新复述历史背景。
 
-**仓库**：https://github.com/mastercook777/Oddpot-Kitchen  
-**线上试玩**：https://mastercook777.github.io/Oddpot-Kitchen/  
+**仓库**：https://github.com/mastercook777/Oddpot-Kitchen
+**线上试玩**：https://mastercook777.github.io/Oddpot-Kitchen/
 **仓库当前已实现版本（v0.11-B1 合并后）**：v0.11.0-alpha.3（大地图 + 跟随镜头 + 八生态程序地形第一批；B2 敌人行为/数量、C 专供交易/料理仍未开发）；以仓库主分支 `package.json`、源码和最新提交为实际版本依据，**本文的日期不是未来版本的自动更新**。
 
-> **本轮接续入口（2026-10-14）**：`feat/herb-path-pixel-art-slice` / Draft PR #44 的 **[v0.11-E.1 Hybrid 草地环境精修](V0.11E1_HYBRID_MEADOW_DETAIL_POLISH_SPEC.md) 已实装待玩家验收**。独立可玩验证页：https://oddpot-exploration-art-lab.prettyfinch1.chatgpt.site；可直接移动/采集/释放锅具技能，同一地图切换 E.1 / E / 全像素 / B1 并暂停对比，支持固定入口/道路/树石/采集镜头。正式 main 仍是 alpha.3，未经确认不合并。本轮不是 B2，敌人/采集/碰撞/经济规则未改。
+> **最新玩家决策 / 下一步（2026-10-14 09:35 上海时间）**：玩家认可 **E.1 草地环境方向成立**，作为其余生态的重绘基准；新增要求 **所有探索特效采用非像素 Canvas**。下一轮先按 [V0.11E2_F_EXPLORATION_ART_STYLE_AND_ROLLOUT.md](V0.11E2_F_EXPLORATION_ART_STYLE_AND_ROLLOUT.md) 做 **E.2 特效统一 → 玩家确认风格定版 → F1/F2/F3 补全八生态/十四 zoneId 的地图重绘**。本轮仅文档，E.2/F 均未开发，当前独立切片仍是 E.1：https://oddpot-exploration-art-lab.prettyfinch1.chatgpt.site。代码留在 `feat/herb-path-pixel-art-slice` / Draft PR #44，main 保持 alpha.3；环境认可不等于整套特效/全部地图/手机性能已经验收，不擅自合并。
 
 ## 阅读顺序
+
+**当前美术任务先读 [E.2 / F 统一规范与排期](V0.11E2_F_EXPLORATION_ART_STYLE_AND_ROLLOUT.md) 和 [E.1 实装/认可记录](V0.11E1_HYBRID_MEADOW_DETAIL_POLISH_SPEC.md)，再按下列资料核对既有探索规则。**
 
 1. [PROJECT_STATE.md](PROJECT_STATE.md)——**已实装**、真实代码入口、机制边界、已知约束；版本变化后必须更新。
 2. [ROADMAP.md](ROADMAP.md)——**准备做 / 候选 / 暂缓**，含设计文档链接与状态，禁止把规划当作已开发。
@@ -33,8 +35,8 @@
 
 《怪味食堂》是**餐馆经营成长 × 料理研发 × 奇幻取材探索**，不是刷更高参数的纯战斗 Roguelite。经营成果必须在真实顾客、实际客流、利润、店面与员工协作中可感知。奇幻感来自 NPC、器物、口吻和行为，**内部空间设定名不要因为强调世界观而出现在玩家 UI**。尽量少浮窗，保持手机竖屏阅读清晰。
 
-下一步：**v0.11-B1 地图空间与镜头已合并 alpha.3**：新生成的地图为 12×16 且按人物位置移动视野，八生态地表和真实障碍明显区分；旧进程中的地图不强制迁移。地图表现为原生 Canvas 绘制第一批，**玩家 iPhone 视觉与行进节奏待验收**。下一阶段应按 [玩家反馈重规划](V0.11_PLAYER_FEEDBACK_REBASE.md) 做 **B2 怪群行为与数量差异**，然后开发 C 真商人与料理，不要把 B1 当作完整 2.0。上一轮 B0 说明：v0.11-B0 已修复原先几乎无法看到奇遇的问题：每次完整三段探索将在第 2/3 段有一位沿真实路径可遇见的旧旅人，但**尚无真正的稀有商人、专供材料**；请实机验证玩家愿不愿意主动走近。**重要：玩家明确认为 v0.11-A 不是完整 2.0**；接下来以 [反馈调整稿](V0.11_PLAYER_FEEDBACK_REBASE.md) 的镜头/空间、场景精度、生态怪群、真实商人/稀有菜为目标。原进度备注：v0.11-A 已按 [交付记录](V0.11A_FIELD_READABILITY_DELIVERY.md) 完成首批规则、Canvas 可读性、离线包及自动回归，iPhone 地图视觉/走位仍需验收。与此同时，v0.10.4 已补修客人图鉴 [程序像素立绘与关闭键排布](V0.10.4_GUEST_PORTRAITS_SHEET_FIX.md)，请优先 iPhone 真机确认人物与营业现场一致、关闭按钮不遮 tab。v0.10.3 研发火候和三色操作回放已按 [专项设计](V0.10.3_RESEARCH_FEEDBACK.md) 落地，需在 iPhone 真机感受火候提示能否清晰指导起锅；另外请先核对 v0.10.1 隐藏菜摘要与菜单可做份数在 iPhone 的可读性；v0.10.2 客人图鉴已按 [专门规划](V0.10.2_GUEST_COMPENDIUM.md) 实现、需真机验收。再核对 v0.10 隐藏菜在 iPhone 的菜单入口、供应份额、贵客到场、实际出售与日报是否清晰；随后按照 ROADMAP 为 v0.11 预约及熟客传播先写设计稿，再开发。
+**当前开发优先级**：E.2 非像素特效先于全生态重绘；F 按森林、水域、危险地貌分批，再做完整两区三段复验。B2 怪群与 C 商人/专供料理仍保留在 v0.11 后续路线，不能混入本次纯美术对照。详细交付、旧档与验收见 [V0.11E2_F_EXPLORATION_ART_STYLE_AND_ROLLOUT.md](V0.11E2_F_EXPLORATION_ART_STYLE_AND_ROLLOUT.md)。B1 空间/镜头已实现，旧 9×11 进程保留原几何；E.1 目前只覆盖香草小径。
 
-## 最新计划提醒（2026-10-13）
+## 探索 2.0 背景（2026-10-13，当前优先级以上方 E.2 / F 为准）
 
 用户已确定先**探索系统 2.0**，而不是原定的 v0.11 贵客预约。下一轮必须先审阅 [v0.11 设计草案](V0.11_EXPLORATION_2_0.md)，包括地图资源/陷阱视觉辨识、原有八生态的空间差异、一次性 NPC 交易以及新稀有食材到研发/隐藏菜的完整承接。**v0.11-B1 地图扩容/跟随镜头/生态程序地貌第一批已实现并通过自动测试；B2 怪群行为与更高密度、C 真奇遇/专供交易/新菜仍未开发**；下一步必须先提升真正的地图内容而不只增加旧 NPC 频率，v0.12 才候选回到经营高级预约与特色营业日。不要把本草案当成 v0.11 游戏更新。
