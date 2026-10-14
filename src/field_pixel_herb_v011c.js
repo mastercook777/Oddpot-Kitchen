@@ -299,7 +299,7 @@ export function drawHerbPixelEnemy(c,e,t,sc,pixelEnemyFn,indicators=true){
   if(!alive)c.globalAlpha=Math.min(1,(e.deathFx||0)/.27);
   const crouch=e.warning>0&&!e.isBoss;
   c.translate(0,crouch?Math.min(2,e.warning*1.1):0);
-  pixelEnemyFn(c,e.kind,0,0,1.8,{face:e.face||1,walk:crouch?0:t,hurt:e.hurtFx||0});
+  pixelEnemyFn(c,e.kind,0,0,1.8,{face:e.face||1,walk:crouch||e.brainVersion==='0.11-B2'&&(!e.moving||e.ecologyRush)?0:t,hurt:e.hurtFx||0});
   c.restore();
  }
  if(indicators&&e.warning>0){

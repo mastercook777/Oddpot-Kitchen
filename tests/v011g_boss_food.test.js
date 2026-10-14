@@ -3,7 +3,7 @@ import assert from 'node:assert/strict';
 import {readFileSync} from 'node:fs';
 import {MINI_BOSS_PATTERNS,stepMiniBoss,stepBossZones,bossChargeEnd,drawPixelMiniBoss,drawMiniBossWarning} from '../src/field_bosses_v011g.js';
 import {ingredientIconHtml,ingredientIconUrl} from '../src/ingredient_icons_v011g.js';
-import {ingredientSpriteCanvas,drawHerbPixelNode} from '../src/field_pixel_herb_v011c.js?v=0.11.0-alpha.5';
+import {ingredientSpriteCanvas,drawHerbPixelNode} from '../src/field_pixel_herb_v011c.js?v=0.11.0-alpha.6';
 import {drawFieldNodeMarkers,drawFieldActorIndicators} from '../src/field_effects_v011e2.js';
 import {ING} from '../src/data.js';
 const boss=kind=>({id:kind,kind,isBoss:true,x:5,y:5,hp:10,maxHp:10,cooldown:0});

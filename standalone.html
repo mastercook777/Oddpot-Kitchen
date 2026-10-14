@@ -1,4 +1,4 @@
-<!doctype html><html lang="zh-CN"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1.0,maximum-scale=1.0,viewport-fit=cover,user-scalable=no"><meta name="apple-mobile-web-app-capable" content="yes"><meta name="theme-color" content="#1b3c2b"><title>怪味食堂 · v0.11.0-alpha.5 离线版</title><style>.ingredient-icon{display:inline-block;width:var(--ingredient-size,24px);height:var(--ingredient-size,24px);max-width:none;object-fit:contain;image-rendering:pixelated;vertical-align:-.24em;flex:none;pointer-events:none;user-select:none}
+<!doctype html><html lang="zh-CN"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1.0,maximum-scale=1.0,viewport-fit=cover,user-scalable=no"><meta name="apple-mobile-web-app-capable" content="yes"><meta name="theme-color" content="#1b3c2b"><title>怪味食堂 · v0.11.0-alpha.6 离线版</title><style>.ingredient-icon{display:inline-block;width:var(--ingredient-size,24px);height:var(--ingredient-size,24px);max-width:none;object-fit:contain;image-rendering:pixelated;vertical-align:-.24em;flex:none;pointer-events:none;user-select:none}
 .stock-line>span .ingredient-icon{margin-right:3px}.target-chip .ingredient-icon{vertical-align:middle}.book-icon .ingredient-icon{display:block}
 .v063-food-icon .ingredient-icon{width:1em;height:1em;vertical-align:top;filter:none}.v063-receipt-line .ingredient-icon{vertical-align:middle}
 .v063-food-picker button>span,.v063-drop>span{line-height:1}.v063-food-picker .ingredient-icon,.v063-drop .ingredient-icon{vertical-align:top}
@@ -3515,7 +3515,7 @@ function addFieldBag(f,id,count){
   const accepted=Math.min(count-gained,3-(n%3));
   f.bag[id]=n+accepted;gained+=accepted;
  }
- syncFieldBagStacks(f);return gained;
+ syncFieldBagStacks(f);if(f.ecologyStats)f.ecologyStats.collected+=gained;return gained;
 }
 function fieldBranchChoices(f){
  const zones=f.region==='spring'?SPRING_ZONES:FOREST_ZONES;
@@ -3548,6 +3548,7 @@ function completeFieldSegment(s){
   if(f.dangerCommitment&&f.enemies?.some(e=>e.isBoss&&e.hp>0))return false;
   return settleField(s,'completed');
  }
+ recordEcologySegment(f,'continued');
  f.segmentStatus='choice';f.choices=fieldBranchChoices(f).map((a,i)=>({...a,choiceId:f.segmentIndex+'-'+i}));
  return true;
 }
@@ -3575,9 +3576,15 @@ function discardFieldStack(s,id){
  const n=f.bag?.[ingredient]||0;if(!n)return false;
  const removing=ING[id]?n:Math.min(3,n);
  if(n<=removing)delete f.bag[ingredient];else f.bag[ingredient]-=removing;
- syncFieldBagStacks(f);return true;
+ syncFieldBagStacks(f);if(f.ecologyStats)f.ecologyStats.discarded+=removing;return true;
+}
+function recordEcologySegment(f,reason){
+ if(!f.ecologyStats)return;f.encounterHistory??=[];
+ if(f.encounterHistory.some(x=>x.segment===f.segmentIndex))return;
+ f.encounterHistory.push({segment:f.segmentIndex,zone:f.biome?.zoneId,seconds:f.elapsed,reason,...f.ecologyStats,discardRate:(f.ecologyStats.carriedIn+f.ecologyStats.collected)?f.ecologyStats.discarded/(f.ecologyStats.carriedIn+f.ecologyStats.collected):0});
 }
 function settleField(s,reason='retreat'){const f=s.field;if(!f||f.settled)return false;let items={...f.bag};if(reason==='faint')for(const id of Object.keys(items)){items[id]=Math.ceil(items[id]/2);if(items[id]===0)delete items[id]};f.settled=true;f.reason=reason;f.winnings=items;const settled=transact(s,`field-${s.cycle}-${s.day}`,'exploration',items);
+ if(settled)recordEcologySegment(f,reason);
  if(settled&&f.bossDefeated&&(items.mushroom_heart||items.ember_pepper)){s.bossCleared??={};s.bossCleared[f.bossDefeated]=true;}
  nextPhase(s,'research');return true}
 function skipField(s){if(s.phase!=='field'||s.field)return false;nextPhase(s,'research');return true}
@@ -4405,6 +4412,132 @@ function drawMiniBossWarning(c,e){
 function drawBossZones(c,f){
  for(const z of f.bossZones||[]){if(z.life<=0)continue;c.save();c.globalAlpha=Math.min(.8,z.life/.25);c.beginPath();c.arc(z.x,z.y,z.radius,0,Math.PI*2);c.strokeStyle=z.source==='spore'?'#d4c0dd':'#f1c08e';c.lineWidth=.10;c.stroke();c.restore();}
 }
+// B2 applies only to newly spawned expanded segments. Existing enemies keep
+// their saved controller. All movement uses the real obstacle grid.
+const ECOLOGY_ENCOUNTERS={
+ meadow:{base:2,mix:['chicken','boar']},glow:{base:3,mix:['chicken','sporeling']},
+ roots:{base:3,mix:['boar','sporeling','chicken']},garden:{base:2,mix:['chicken','boar']},
+ spring:{base:2,mix:['steam_crab','pepper']},steam:{base:3,mix:['steam_crab','pepper','chicken']},
+ ember:{base:3,mix:['pepper','boar','steam_crab']},oasis:{base:2,mix:['steam_crab','chicken']}
+};
+const ecologyDist=(a,b)=>Math.hypot(a.x-b.x,a.y-b.y);
+const ecologyHash=n=>{let h=n>>>0;h=Math.imul(h^(h>>>16),0x45d9f3b);h=Math.imul(h^(h>>>16),0x45d9f3b);return (h^(h>>>16))>>>0;};
+function ecologyHasSight(f,a,b,padding=0){
+ const d=ecologyDist(a,b);
+ for(let n=.12;n<d;n+=.12){const p={x:a.x+(b.x-a.x)*n/d,y:a.y+(b.y-a.y)*n/d};
+  if(f.obstacles.some(o=>Math.abs(p.x-o.x-.5)<.43+padding&&Math.abs(p.y-o.y-.5)<.43+padding))return false;
+ }
+ return true;
+}
+function createEcologyEnemies(f,seed){
+ const config=ECOLOGY_ENCOUNTERS[f.biome?.style]||ECOLOGY_ENCOUNTERS.meadow,wave=f.segmentIndex||1,risk=/risk/.test(f.route);
+ const count=Math.min(risk?7:4,config.base+(risk?2:0)+(risk&&wave>1?1:!risk&&wave===3?1:0)+(ecologyHash(seed)>>>12)%2);
+ const candidates=fieldEnemySpawnCandidates(f,seed,count+10),nodes=f.nodes.filter(n=>n.type==='event'||n.key==='target').map(n=>({x:n.x+.5,y:n.y+.5}));
+ const food=f.nodes.filter(n=>n.type!=='event').map(n=>({x:n.x+.5,y:n.y+.5}));
+ const validCache=new Map();
+ const valid=p=>{const key=p.x+','+p.y;if(!validCache.has(key))validCache.set(key,ecologyDist(p,f.spawn)>=2.7&&nodes.every(n=>ecologyDist(n,p)>=1.2)&&food.every(n=>ecologyDist(n,p)>=.85)&&!f.hazards.some(h=>Math.floor(p.x)===h.x&&Math.floor(p.y)===h.y)&&fieldTilePath(f,f.spawn,p,{avoidHazards:true}).length>0);return validCache.get(key);};
+ // Additional reachable cells avoid forcing a crowded or inaccessible fallback.
+ for(let y=1;y<f.worldH-1;y++)for(let x=1;x<f.worldW-1;x++){
+  const p={x:x+.5,y:y+.5};if(valid(p)&&!candidates.some(q=>ecologyDist(q,p)<.1))candidates.push(p);
+ }
+ const enemies=[],offset=(ecologyHash(seed+71)>>>8)%config.mix.length;let group=-1;
+ for(let i=0;i<count;i++){
+  const previous=i%2?enemies.at(-1):null;
+  const available=candidates.filter(p=>valid(p)&&enemies.every(e=>ecologyDist(p,e)>=1.2));
+  const anchor=food[(ecologyHash(seed+Math.floor(i/2)*913)>>>8)%food.length]||f.bossSpawn;
+  const score=p=>ecologyDist(p,anchor)+ecologyHash(seed+p.x*113+p.y*997)/4294967296*.6;
+  available.sort((a,b)=>previous?ecologyDist(a,previous)-ecologyDist(b,previous):score(a)-score(b));
+  const p=available[0];if(!p)break;
+  if(!previous||ecologyDist(p,previous)>3)group++;
+  const kind=config.mix[(offset+i)%config.mix.length],hp=kind==='boar'?4:['chicken','steam_crab'].includes(kind)?3:2;
+  enemies.push({id:kind+'-'+i+'-'+wave,kind,x:p.x,y:p.y,hp,maxHp:hp,brainVersion:'0.11-B2',groupId:group,
+   home:previous&&ecologyDist(p,previous)<=3?{...previous.home}:{...p},phase:i,patrolSide:ecologyHash(seed+i*97)%4,
+   cooldown:1.5+(ecologyHash(seed+i*719)%10)*.12});
+ }
+ return enemies;
+}
+function ecologyEngagedEnemies(f){
+ const living=f.enemies.filter(e=>e.hp>0),bossNear=living.some(e=>e.isBoss&&(e.warning>0||e.rush||ecologyDist(e,f.pos)<4));
+ const ordinary=living.filter(e=>e.brainVersion==='0.11-B2'),awakened=new Set();
+ for(const e of ordinary)if(e.hurtFx>0||(ecologyDist(e,f.pos)<3.4&&ecologyHasSight(f,e,f.pos)))awakened.add(e.groupId);
+ const candidates=ordinary.filter(e=>{
+  if(e.warning>0||e.ecologyRush)return true;
+  const tether=e.kind==='steam_crab'?2.2:4.5;
+  return ecologyDist(f.pos,e.home)<=tether&&(e.hurtFx>0||ecologyDist(e,f.pos)<3.4||awakened.has(e.groupId))&&ecologyHasSight(f,e,f.pos);
+ });
+ candidates.sort((a,b)=>Number(!!(b.warning>0||b.ecologyRush))-Number(!!(a.warning>0||a.ecologyRush))||ecologyDist(a,f.pos)-ecologyDist(b,f.pos)||a.id.localeCompare(b.id));
+ return new Set(candidates.slice(0,bossNear?2:3).map(e=>e.id));
+}
+function moveEcologyEnemy(f,e,target,speed,dt,blocked){
+ const d=ecologyDist(e,target);if(d<.08)return;
+ const step=Math.min(d,speed*dt),next={x:e.x+(target.x-e.x)/d*step,y:e.y+(target.y-e.y)/d*step};
+ if(ecologyHasSight(f,e,target,.15)&&!blocked(f,next,.18)){e.face=next.x<e.x?-1:1;e.x=next.x;e.y=next.y;e.moving=true;return;}
+ const key=Math.floor(target.x)+','+Math.floor(target.y);
+ e.pathWait=Math.max(0,(e.pathWait||0)-dt);
+ if(e.pathGoal!==key||!e.path||e.pathWait<=0){e.path=fieldTilePath(f,e,target).slice(1);e.pathGoal=key;e.pathWait=.4;}
+ while(e.path?.length&&ecologyDist(e,e.path[0])<.05)e.path.shift();
+ const waypoint=e.path?.[0];if(!waypoint)return;
+ const wd=ecologyDist(e,waypoint),n=Math.min(wd,speed*dt),p={x:e.x+(waypoint.x-e.x)/wd*n,y:e.y+(waypoint.y-e.y)/wd*n};
+ if(!blocked(f,p,.18)){e.face=p.x<e.x?-1:1;e.x=p.x;e.y=p.y;e.moving=true;}
+}
+function ecologyChargeEnd(f,e,aim,blocked){
+ const dx=aim.x-e.x,dy=aim.y-e.y,d=Math.hypot(dx,dy)||1;let end={x:e.x,y:e.y};
+ for(let n=.06;n<=Math.min(1.8,d+.15);n+=.06){const p={x:e.x+dx/d*n,y:e.y+dy/d*n};if(blocked(f,p,.18))break;end=p;}
+ return end;
+}
+function stepEcologyEnemy(f,e,dt,engaged,{blocked,hurt}){
+ if(e.hp<=0){e.ecologyRush=null;e.ecologyAttack=null;e.warning=0;return;}
+ const slow=e.slowTime>0?.45:1,d=ecologyDist(e,f.pos);e.engaged=engaged;e.moving=false;
+ if(!engaged&&(e.warning>0||e.ecologyRush)){e.warning=0;e.ecologyRush=null;e.ecologyAttack=null;e.attackOrigin=null;e.cooldown=Math.max(.5,e.cooldown);}
+ if(e.ecologyRush){
+  const end=e.ecologyRush.end,n=ecologyDist(e,end),step=Math.min(n,3.2*slow*dt);
+  if(n>.001){const p={x:e.x+(end.x-e.x)/n*step,y:e.y+(end.y-e.y)/n*step};if(!blocked(f,p,.18)){e.face=p.x<e.x?-1:1;e.x=p.x;e.y=p.y;e.moving=true;}else {e.ecologyRush=null;e.ecologyAttack=null;}}
+  if(ecologyDist(e,f.pos)<.48&&!f.finished)hurt(1,'enemy',e);
+  if(n<=step+.02){e.ecologyRush=null;e.ecologyAttack=null;}return;
+ }
+ if(e.warning>0){
+  e.warning=Math.max(0,e.warning-dt);if(e.warning>0)return;
+  if(e.kind==='boar'&&e.ecologyAttack){e.ecologyRush={end:{...e.ecologyAttack.end}};e.cooldown=2.4;return;}
+  const melee=meleeProfile(e.kind),origin=e.attackOrigin||e,aim=e.aim||f.pos;
+  const angle=Math.atan2(aim.y-origin.y,aim.x-origin.x);
+  if(melee){
+   const p={x:e.x+Math.cos(angle)*melee.dash,y:e.y+Math.sin(angle)*melee.dash};if(!blocked(f,p,.18)){e.x=p.x;e.y=p.y;}
+   if(ecologyHasSight(f,e,f.pos)&&meleeAttackWouldHit(e,f.pos))hurt(1,'enemy',e);
+   e.strikeFx={ttl:.28,duration:.28,x:e.x,y:e.y,dx:Math.cos(angle),dy:Math.sin(angle)};e.lungeFx=.28;
+   e.cooldown=e.kind==='chicken'?1.7:2.0;if(e.kind==='chicken')e.retreatTime=.65;
+  }else if(ecologyHasSight(f,e,aim)){
+   const spore=e.kind==='sporeling',speed=spore?2.1:2.8;
+   f.projectiles.push({x:e.x,y:e.y,vx:Math.cos(angle)*speed,vy:Math.sin(angle)*speed,ownerX:e.x,ownerY:e.y,ownerId:e.id,life:3,source:spore?'spore':'pepper'});
+   e.cooldown=spore?2.9:2.5;
+  }else e.cooldown=.6;
+  e.attackOrigin=null;return;
+ }
+ if(!engaged){
+  if(ecologyDist(e,e.home)>1.2){moveEcologyEnemy(f,e,e.home,.78*slow,dt,blocked);return;}
+  // Calm short patrol near the real home, with no random draws per frame.
+  const t=Math.floor((f.elapsed||0)/3)+(e.patrolSide||0),offsets=[[.7,0],[0,.7],[-.7,0],[0,-.7]],o=offsets[t%4];
+  moveEcologyEnemy(f,e,{x:e.home.x+o[0],y:e.home.y+o[1]},.32*slow,dt,blocked);return;
+ }
+ if(e.retreatTime>0){e.retreatTime=Math.max(0,e.retreatTime-dt);moveEcologyEnemy(f,e,e.home,1.2*slow,dt,blocked);return;}
+ const ranged=!meleeProfile(e.kind),spacing=e.kind==='sporeling'?2.0:2.5;
+ if(ranged&&d<spacing-.35){
+  const dx=(e.x-f.pos.x)/(d||1),dy=(e.y-f.pos.y)/(d||1),target={x:e.x+dx*.6,y:e.y+dy*.6};
+  if(!blocked(f,target,.18))moveEcologyEnemy(f,e,target,.65*slow,dt,blocked);
+ }else if(d>(ranged?spacing+.35:e.kind==='boar'?1.75:.8))moveEcologyEnemy(f,e,f.pos,(e.kind==='chicken'?.95:e.kind==='boar'?1.05:.68)*slow,dt,blocked);
+ if(e.cooldown>0||!ecologyHasSight(f,e,f.pos))return;
+ const melee=meleeProfile(e.kind),trigger=e.kind==='boar'?2.15:melee?melee.trigger:3.2;
+ if(ecologyDist(e,f.pos)>=trigger)return;
+ e.aim={...f.pos};e.attackOrigin={x:e.x,y:e.y};
+ e.warning=e.kind==='boar'?1:melee?melee.windup:e.kind==='sporeling'?.72:.55;e.windupTotal=e.warning;
+ e.intentKind=melee?'melee':'ranged';
+ if(e.kind==='boar')e.ecologyAttack={origin:{...e.attackOrigin},end:ecologyChargeEnd(f,e,e.aim,blocked)};
+}
+function drawEcologyWarning(c,e){
+ if(e.hp<=0||!e.ecologyAttack)return;const a=e.ecologyAttack;
+ c.save();c.lineCap='round';c.beginPath();c.moveTo(a.origin.x,a.origin.y);c.lineTo(a.end.x,a.end.y);
+ c.strokeStyle='#dc98732e';c.lineWidth=.96;c.stroke();c.strokeStyle='#efcf9b';c.lineWidth=.055;c.stroke();
+ c.beginPath();c.arc(a.end.x,a.end.y,.48,0,Math.PI*2);c.lineWidth=.04;c.stroke();c.restore();
+}
 // v0.4 real-time forest encounter. The underlying kitchen inventory remains
 // governed by engine.settleField; this file only mutates the expedition bag.
 const dist=(a,b)=>Math.hypot(a.x-b.x,a.y-b.y);
@@ -4427,7 +4560,9 @@ function startActionField(s){
   {x:6.9,y:4.25},{x:2.8,y:7.1},{x:5.8,y:2.4},{x:1.6,y:4.6}
  ];
  f.enemies=[];
- for(let i=0;i<count;i++){
+ const ecology=f.worldVersion==='0.11-B1'&&!f.legacyField;
+ if(ecology){f.encounterVersion='0.11-B2';f.ecologyStats={movingSeconds:0,damageTaken:0,collected:0,discarded:0,carriedIn:Object.values(f.bag||{}).reduce((n,v)=>n+v,0)};f.enemies=createEcologyEnemies(f,encounterSeed);}
+ for(let i=0;!ecology&&i<count;i++){
   const pick=mix[((random(i+19)>>>8)+i)%mix.length],kind=pick||'chicken';
   const candidates=positions.slice();
   if(!candidates.length)continue;
@@ -4466,6 +4601,7 @@ function damageEnemy(s,e,amount=1){
  f.popFx??=[];f.popFx.push({x:e.x,y:e.y,text:'-'+amount,ttl:.72,color:'#ffeab4'});
  if(e.hp>0||e.lootDropped)return true;
  e.lootDropped=true;e.deathFx=.45;
+ e.ecologyAttack=null;e.ecologyRush=null;e.warning=0;
  if(e.isBoss){
   e.rush=null;e.bossAttack=null;e.warning=0;
   f.bossZones=(f.bossZones||[]).filter(z=>z.ownerId!==e.id);
@@ -4545,7 +4681,7 @@ function hurt(s,amount=1,source='enemy',attacker=null){
  // Damage feedback is based on the real HP event, never an unrelated
  // animation timer. A bento absorption is a distinct softer visual cue.
  const hpBefore=f.hp;
- f.hp=Math.max(0,f.hp-amount);f.damageCd=1.15;f.hurtFx=amount>0?.62:.30;
+ f.hp=Math.max(0,f.hp-amount);if(f.ecologyStats)f.ecologyStats.damageTaken+=hpBefore-f.hp;f.damageCd=1.15;f.hurtFx=amount>0?.62:.30;
  f.hitFlash=amount>0?.52:.22;f.hitShake=amount>0?.24:0;
  const from=attacker&&Number.isFinite(attacker.x)&&Number.isFinite(attacker.y)?attacker:null;
  const nx=from?f.pos.x-from.x:0,ny=from?f.pos.y-from.y:-1;
@@ -4588,7 +4724,13 @@ function useFieldSkill(s){
  let hits=0;
  for(const e of f.enemies){
   if(e.hp<=0||dist(f.pos,e)>1.85)continue;
-  damageEnemy(s,e,2);e.x=clamp(e.x+Math.sign(e.x-f.pos.x)*.65,.35,f.worldW-.35);
+  damageEnemy(s,e,2);
+  if(e.brainVersion==='0.11-B2'){
+   e.warning=0;e.ecologyAttack=null;e.ecologyRush=null;e.attackOrigin=null;e.cooldown=Math.max(.6,e.cooldown);
+   const next={x:clamp(e.x+Math.sign(e.x-f.pos.x)*.65,.35,f.worldW-.35),y:clamp(e.y+Math.sign(e.y-f.pos.y)*.65,.35,f.worldH-.35)};
+   if(e.hp>0&&!blocked(f,next,.18)){e.x=next.x;e.y=next.y;}hits++;continue;
+  }
+  e.x=clamp(e.x+Math.sign(e.x-f.pos.x)*.65,.35,f.worldW-.35);
   e.y=clamp(e.y+Math.sign(e.y-f.pos.y)*.65,.35,f.worldH-.35);hits++;
  }
  pushMsg(f,hits?'🛡️ 锅盖反击！击退 '+hits+' 个敌人':'🛡️ 举起锅盖！短暂防御迎面攻击。');
@@ -4632,12 +4774,16 @@ function stepActionField(s,axisX,axisY,dt){
  const risk=/risk/.test(f.route);
  const boost=b&&((b.kind==='risk_move'&&risk)||(b.kind==='danger_speed'&&risk))?(b.enhanced?.07:.05):0;
  const speed=2.8*(1+boost);
+ const beforeMove={...f.pos};
  if(len>.08){const px={x:f.pos.x+dx*speed*dt,y:f.pos.y};if(!blocked(f,px))f.pos.x=px.x;const py={x:f.pos.x,y:f.pos.y+dy*speed*dt};if(!blocked(f,py))f.pos.y=py.y;f.x=f.pos.x;f.y=f.pos.y;}
+ if(f.ecologyStats&&len>.08&&(f.pos.x!==beforeMove.x||f.pos.y!==beforeMove.y))f.ecologyStats.movingSeconds+=dt;
+ const engaged=ecologyEngagedEnemies(f);
  let event=null;
  for(const e of f.enemies){
   if(e.hp<=0)continue;
   e.cooldown-=dt;
   if(e.isBoss){e.slowTime=Math.max(0,(e.slowTime||0)-dt);stepMiniBoss(f,e,dt,{blocked,hurt:(amount,source,attacker)=>hurt(s,amount,source,attacker)});continue;}
+  if(e.brainVersion==='0.11-B2'){e.slowTime=Math.max(0,(e.slowTime||0)-dt);stepEcologyEnemy(f,e,dt,engaged.has(e.id),{blocked,hurt:(amount,source,attacker)=>hurt(s,amount,source,attacker)});continue;}
   const d=dist(f.pos,e);
   const profile=meleeProfile(e.kind),melee=!!profile;
   e.slowTime=Math.max(0,(e.slowTime||0)-dt);
@@ -5663,7 +5809,7 @@ function drawHerbPixelEnemy(c,e,t,sc,pixelEnemyFn,indicators=true){
   if(!alive)c.globalAlpha=Math.min(1,(e.deathFx||0)/.27);
   const crouch=e.warning>0&&!e.isBoss;
   c.translate(0,crouch?Math.min(2,e.warning*1.1):0);
-  pixelEnemyFn(c,e.kind,0,0,1.8,{face:e.face||1,walk:crouch?0:t,hurt:e.hurtFx||0});
+  pixelEnemyFn(c,e.kind,0,0,1.8,{face:e.face||1,walk:crouch||e.brainVersion==='0.11-B2'&&(!e.moving||e.ecologyRush)?0:t,hurt:e.hurtFx||0});
   c.restore();
  }
  if(indicators&&e.warning>0){
@@ -6498,7 +6644,7 @@ function drawBiomeLandscape(c,f,time){
 // both remaining wind-up and the direction the player can dodge out of.
 function drawMeleeWarnings(c,f){
  for(const e of f.enemies||[]){
-  const p=meleeProfile(e.kind);if(!p||e.hp<=0)continue;
+  const p=meleeProfile(e.kind);if(!p||e.hp<=0||e.ecologyAttack)continue;
   const fx=e.strikeFx,charging=e.warning>0;
   if(!charging&&!(fx?.ttl>0))continue;
   if(charging){
@@ -6598,6 +6744,7 @@ function drawField(canvas,s,clock){const size=setCanvas(canvas);if(!size||!s.fie
   line(c,p.x,p.y-arc-.17,p.x+.08,p.y-arc-.22,'#7ca26a',.06);
  }
  drawMeleeWarnings(c,f);
+ for(const e of f.enemies||[])drawEcologyWarning(c,e);
  for(const e of f.enemies||[])if(e.isBoss)drawMiniBossWarning(c,e);
  drawBossZones(c,f);
  for(const e of f.enemies||[]){if(e.hp>0||e.deathFx>0){if(e.isBoss){drawPixelMiniBoss(c,e,clock,sc);drawFieldActorIndicators(c,e,sc);continue;}if(fieldSpriteArt&&!e.isBoss){if(smoothFx){drawHerbPixelEnemy(c,e,clock,sc,pixelEnemy,false);drawFieldActorIndicators(c,e,sc);}else drawHerbPixelEnemy(c,e,clock,sc,pixelEnemy);continue;}c.save();c.translate(e.x,e.y);c.scale(1/sc,1/sc);monster(c,{...e,x:0,y:0},clock);c.restore()}}
@@ -7330,7 +7477,7 @@ const itemCount=()=>Object.keys(game.recipes).length;
 
 function hud(){
  const home=game.phase==='forecast';
- return `<div class="hud ${home?'v076-home-hud':''}"><div class="brand"><span class="logo" aria-hidden="true">🍳</span><div><strong>怪味食堂</strong><small>${home?'今日营业':'ODDPOT · v0.11.0-alpha.5'}</small></div></div><div class="hud-meta"><span aria-label="金币">🪙 ${game.coins}</span><span aria-label="声望">⭐ ${game.reputation}</span></div><button class="hud-gear" data-act="settings" aria-label="设置">⚙</button></div><div class="day-strip ${home?'v076-home-day':''}"><b>营业第 ${totalBusinessDay(game)} 天 · ${tableCapacity(game)} 座</b><span class="day-phase">${home?'☀ 开店前':phaseLabels[game.phase]}</span>${home?'':`<span class="day-recipes">图鉴 ${itemCount()}/${Object.keys(RECIPES).length}</span>`}</div>`;
+ return `<div class="hud ${home?'v076-home-hud':''}"><div class="brand"><span class="logo" aria-hidden="true">🍳</span><div><strong>怪味食堂</strong><small>${home?'今日营业':'ODDPOT · v0.11.0-alpha.6'}</small></div></div><div class="hud-meta"><span aria-label="金币">🪙 ${game.coins}</span><span aria-label="声望">⭐ ${game.reputation}</span></div><button class="hud-gear" data-act="settings" aria-label="设置">⚙</button></div><div class="day-strip ${home?'v076-home-day':''}"><b>营业第 ${totalBusinessDay(game)} 天 · ${tableCapacity(game)} 座</b><span class="day-phase">${home?'☀ 开店前':phaseLabels[game.phase]}</span>${home?'':`<span class="day-recipes">图鉴 ${itemCount()}/${Object.keys(RECIPES).length}</span>`}</div>`;
 }
 function toast(){return `<div class="game-toast" role="status"><span>${esc(message)}</span></div>`}
 function playablePhase(){return game.phase==='service'||(game.phase==='field'&&!!game.field?.action)}
@@ -7404,7 +7551,7 @@ function overlayMarkup(){if(!overlay)return '';
    };
    body=`<h2>👩‍🍳 食堂伙伴</h2><p class="sheet-lead">雇员永久留下；每人每天最多吃 1 道料理。员工餐真实扣料并增加当日效率，也积累最多 3 点熟练。</p><div class="staff-roster">${row('helper')}${row('waiter')}</div>`;
  }else if(overlay==='settings'){
-  body=`<h2>⚙ 试玩设置</h2><p class="sheet-lead">版本 v0.11.0-alpha.5 · 固定 9:16 竖屏 · 单机 localStorage 存档</p>${b('reset','重置存档，从 DAY 1 重新开始','danger')}<p class="sheet-lead">切到后台时营业会自动暂停。更换设备不会同步存档。</p>`;
+  body=`<h2>⚙ 试玩设置</h2><p class="sheet-lead">版本 v0.11.0-alpha.6 · 固定 9:16 竖屏 · 单机 localStorage 存档</p>${b('reset','重置存档，从 DAY 1 重新开始','danger')}<p class="sheet-lead">切到后台时营业会自动暂停。更换设备不会同步存档。</p>`;
  }else if(overlay==='details'){
   const r=game.report;body=r?`<h2>营业账本详情</h2><p class="sheet-lead">本日订单由真实食材库存、工位工作秒数和顾客等待事件计算。</p><div class="book-list">${Object.entries(r.byDish).map(([id,d])=>`<div class="detail-row">${RECIPES[id].emoji} ${RECIPES[id].name}：售出 ${d.count} 份 · 满意 ${Math.round(d.totalSat/d.count)}</div>`).join('')}<div class="detail-row">WOK 占用 ${r.congestion.WOK} 秒 / POT ${r.congestion.POT} 秒</div><div class="detail-row">食材耗用估值 ${r.cost} · 招待支出 ${r.hospitalityCost||0} · 收入 ${r.revenue} · 贡献利润 ${r.profit}</div></div>`:'';
  }

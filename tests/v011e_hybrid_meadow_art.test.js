@@ -4,7 +4,7 @@ import {readFileSync} from 'node:fs';
 import {newGame,enterField} from '../src/engine.js';
 import {startActionField} from '../src/field_v04.js';
 import {fieldTilePath} from '../src/field_rules_v011a.js';
-import {herbPixelGroundPlan,isHerbPixelSlice} from '../src/field_pixel_herb_v011c.js?v=0.11.0-alpha.5';
+import {herbPixelGroundPlan,isHerbPixelSlice} from '../src/field_pixel_herb_v011c.js?v=0.11.0-alpha.6';
 import {HYBRID_MEADOW_PALETTE,isHybridMeadow,hybridMeadowGroundPlan,
  drawHybridMeadowGround,drawHybridMeadowObstacle,drawHybridMeadowHazard} from '../src/field_hybrid_meadow_v011e.js';
 function game(seed=20261014,route='safe'){
