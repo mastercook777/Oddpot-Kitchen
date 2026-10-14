@@ -17,19 +17,22 @@ try{
  for(let i=0;i<60;i++){try{if((await fetch('http://127.0.0.1:5173')).ok){ready=true;break;}}catch{}await sleep(500);}
  assert.ok(ready,'Vite startup');
  browser=await chromium.launch({headless:true,executablePath:process.env.CHROME_PATH||'/usr/bin/google-chrome',args:['--no-sandbox','--disable-dev-shm-usage']});
- const page=await browser.newPage({viewport:{width:390,height:844},locale:'zh-CN',deviceScaleFactor:2,isMobile:true,hasTouch:true});
- const errors=[];page.on('pageerror',e=>errors.push(e.message));
+ let page,width=390,height=844;
+ const errors=[];
  const open=async (path,state)=>{
+  if(page)await page.close();
+  page=await browser.newPage({viewport:{width,height},locale:'zh-CN',deviceScaleFactor:2,isMobile:true,hasTouch:true});
+  page.on('pageerror',e=>errors.push(e.message));
+  await page.addInitScript(([k,s])=>localStorage.setItem(k,JSON.stringify(s)),[key,state]);
   await page.goto('http://127.0.0.1:5173/'+path,{waitUntil:'networkidle'});
-  await page.evaluate(([k,s])=>localStorage.setItem(k,JSON.stringify(s)),[key,state]);
-  await page.reload({waitUntil:'networkidle'});
+  assert.equal((await read(page))?.cycle,state.cycle,`fixture loaded for ${path}; errors: ${errors.join('; ')}`);
  };
  const visible=async (selector,width,height)=>{
   const b=await page.locator(selector).boundingBox();
   assert.ok(b&&b.x>=0&&b.y>=0&&b.x+b.width<=width+1&&b.y+b.height<=height+1,selector+' reachable in '+width+'×'+height);
  };
- for(const [width,height] of [[320,568],[375,667],[390,844]]){
-  await page.setViewportSize({width,height});
+ for(const [w,h] of [[320,568],[375,667],[390,844]]){
+  width=w;height=h;
   await open('index.html',base());
   await visible('[data-act="first-star-request"]',width,height);
   await visible('[data-act="to-field"]',width,height);
