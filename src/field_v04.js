@@ -1,11 +1,11 @@
-import {beginFieldHit,stepFieldHit,queueFieldImpact} from './field_hit_response_v011h.js?v=0.11.0-alpha.8';
+import {beginFieldHit,stepFieldHit,queueFieldImpact} from './field_hit_response_v011h.js?v=0.12.0-alpha.1';
 import {createEcologyEnemies,ecologyEngagedEnemies,stepEcologyEnemy} from './field_ecology_v011b2.js';
 import {stepMiniBoss,stepBossZones} from './field_bosses_v011g.js';
 // v0.4 real-time forest encounter. The underlying kitchen inventory remains
 // governed by engine.settleField; this file only mutates the expedition bag.
-import {ING} from './data.js?v=0.11.0-alpha.8';
+import {ING} from './data.js?v=0.12.0-alpha.1';
 import {meleeProfile,meleeAttackWouldHit} from './field_combat_feedback_v084.js?v=0.8.4';
-import {clamp, rand, settleField,addFieldBag,resolveSpecialFieldEvent} from './engine.js?v=0.11.0-alpha.8';
+import {clamp, rand, settleField,addFieldBag,resolveSpecialFieldEvent} from './engine.js?v=0.12.0-alpha.1';
 import {hazardPhase} from './field_rules_v011a.js';
 import {fieldEnemySpawnCandidates} from './field_world_v011b1.js';
 const dist=(a,b)=>Math.hypot(a.x-b.x,a.y-b.y);

@@ -18,6 +18,8 @@ export const DINER_FLOOR={
  // The expansion opens a genuine rear-left alcove, not a third crowded row.
  expandedTables:[{x:.255,y:.745},{x:.745,y:.745},{x:.255,y:.555}],
  expandedTableWork:[{x:.385,y:.752},{x:.615,y:.752},{x:.385,y:.562}],
+ fourTables:[{x:.255,y:.745},{x:.745,y:.745},{x:.255,y:.555},{x:.745,y:.555}],
+ fourTableWork:[{x:.385,y:.752},{x:.615,y:.752},{x:.385,y:.562},{x:.615,y:.562}],
  entrance:{x:.50,y:.930},
  waitLane:{x:.50,y:.620},
  doorwayView:{left:.185,right:.815,top:.857,bottom:.985},
@@ -41,7 +43,8 @@ export function dinerGuestRoute(table,seat,s=null){
 }
 export function dinerFloor(s){
  const count=s?.dining?.tableCount||s?.service?.tableCount||2;
- return count>=3?{...DINER_FLOOR,tables:DINER_FLOOR.expandedTables,tableWork:DINER_FLOOR.expandedTableWork}:DINER_FLOOR;
+ return count>=4?{...DINER_FLOOR,tables:DINER_FLOOR.fourTables,tableWork:DINER_FLOOR.fourTableWork}:
+  count>=3?{...DINER_FLOOR,tables:DINER_FLOOR.expandedTables,tableWork:DINER_FLOOR.expandedTableWork}:DINER_FLOOR;
 }
 const clamp075=(x,a,b)=>Math.max(a,Math.min(b,x));
 const close075=(a,b,rx,ry)=>((a.x-b.x)/rx)**2+((a.y-b.y)/ry)**2<1;

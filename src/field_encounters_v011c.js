@@ -1,5 +1,5 @@
 // Pure planning/quotes. engine.js owns the unique ledger + field commit.
-import {ING} from './data.js?v=0.11.0-alpha.8';
+import {ING} from './data.js?v=0.12.0-alpha.1';
 const encounterHash=n=>{let h=n>>>0;h=Math.imul(h^(h>>>16),0x45d9f3b);h=Math.imul(h^(h>>>16),0x45d9f3b);return (h^(h>>>16))>>>0;};
 export const SPECIAL_ENCOUNTER_KINDS=['merchant','traveler','ecology'];
 export function specialEncounterOffer(kind,region='forest'){
