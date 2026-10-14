@@ -2821,7 +2821,6 @@ function fieldTilePath(map, from, to, { avoidHazards = false } = {}) {
   }
   return [];
 }
-
 // v0.8.1 base biomes; v0.11-A adds safe, seed-varying actual obstacle layouts.
 // The physical layout, resource concentration and color identity live together.
 const STYLE={
@@ -2951,7 +2950,6 @@ function generateBiomeMap(s,route,target){
   spawn,x:Math.floor(spawn.x),y:Math.floor(spawn.y),steps:0,worldW:9,worldH:11,
   visitedHazards:[],nodes,obstacles,hazards,bossSpawn};
 }
-
 // v0.11-B0: give each three-segment expedition one *discoverable* old traveler
 // until v0.11-C delivers the rare merchants and dedicated ingredients.
 // The fixed plan is persisted inside the current field state. No rewards here.
@@ -2992,7 +2990,6 @@ function insertPlannedFieldEncounter(map,plan,segment){
   x:where.x,y:where.y,n:1,claimed:false});
  return map;
 }
-
 // v0.11-B1: expand freshly generated 9x11 ecology maps without migrating
 // already-running 0.11-A/B0 saves. All simulation entities share tile space.
 const seedNext=n=>(Math.imul(1664525,n>>>0)+1013904223)>>>0;
@@ -3092,7 +3089,6 @@ function fieldEnemySpawnCandidates(f,seed,count=4){
  }
  return chosen;
 }
-
 // v0.11-B1: pure, resolution-independent camera for portrait H5 field scenes.
 function fieldCamera(f,width,height){
  const w=Math.max(1,Number(width)||1),h=Math.max(1,Number(height)||1);
@@ -5122,7 +5118,6 @@ function fieldPotPose(facing={x:0,y:1},moving=false,time=0,casting=false){
  const bob=moving?Math.sin(time*11)*1.0:0;
  return {direction,side,hand:{x:side*9,y:7+bob},pot:{x:side*20.5,y:8+bob-(casting?2:0),scale:.98},casting};
 }
-
 // v0.11-B1: original procedural world art. World-space objects have a grounded
 // relationship to real collision tiles and are drawn beneath usable pickups.
 const PALETTE={
@@ -5262,7 +5257,7 @@ const herbPaintRect=(ctx,x,y,w,h,color)=>{ctx.fillStyle=color;ctx.fillRect(x,y,w
 const herbPaintDot=(ctx,x,y,color)=>herbPaintRect(ctx,x,y,1,1,color);
 
 function isHerbPixelSlice(f){
- return !!(f?.worldVersion==='0.11-B1' && f?.biome?.zoneId==='herb_path');
+ return !!(f?.worldVersion==='0.11-B1' && f?.biome?.zoneId==='herb_path' && f?.artPreviewMode!=='legacy');
 }
 
 function herbPixelSpriteNames(){
@@ -5556,7 +5551,6 @@ function drawHerbPixelProjectile(c,projectile,type='enemy'){
  c.fillStyle=PH.shine;
  c.fillRect(projectile.x-.055,projectile.y-.055,.11,.11);
 }
-
 // v0.11-E: restaurant-inspired painted Canvas scenery; player/NPC/enemies remain pixel sprites.
 // This module deliberately does not alter any simulation entities, roads or saved data.
 
@@ -5570,11 +5564,12 @@ const HYBRID_MEADOW_PALETTE=Object.freeze({
 });
 const HM=HYBRID_MEADOW_PALETTE;
 const hybridMeadowGroundCache=new WeakMap();
+const hybridMeadowDetailCache=new WeakMap();
 const hybridMeadowHash=n=>(Math.imul(1664525,n>>>0)+1013904223)>>>0;
 const hybridMeadowKey=(x,y)=>x+','+y;
 
 function isHybridMeadow(f){
- return isHerbPixelSlice(f)&&f?.artPreviewMode!=='pixel';
+ return isHerbPixelSlice(f)&&!['pixel','legacy'].includes(f?.artPreviewMode);
 }
 function hybridMeadowEllipse(c,x,y,rx,ry,color){
  c.beginPath();c.ellipse(x,y,rx,ry,0,0,Math.PI*2);
@@ -5587,7 +5582,7 @@ function hybridMeadowLeaf(c,x,y,sx,sy,fill){
  c.bezierCurveTo(x-sx*.22,y+sy*1.16,x-sx*1.12,y+sy*.63,x-sx,y);
  c.closePath();c.fillStyle=fill;c.fill();
 }
-function hybridMeadowTrail(c,plan){
+function hybridMeadowTrail(c,plan,polished=false){
  const trail=plan.trail;
  if(!trail?.size)return;
  const segs=[];
@@ -5599,6 +5594,23 @@ function hybridMeadowTrail(c,plan){
  // Stacked continuous rounded ribbons: never paint isolated square tiles.
  for(const [width,col] of [[.82,'#6b755c55'],[.75,HM.trailRim],[.68,HM.trail],[.49,HM.trailLight]]){
   c.strokeStyle=col;c.lineWidth=width;c.lineCap='round';c.lineJoin='round';
+  if(polished){
+   // One smooth center line through each genuine cell, including rounded
+   // corners; no stamped junction discs or new walkability topology.
+   for(const key of trail){
+    const [x,y]=key.split(',').map(Number),cx=x+.5,cy=y+.5;
+    const near=[[1,0],[-1,0],[0,1],[0,-1]].filter(([dx,dy])=>trail.has(hybridMeadowKey(x+dx,y+dy)));
+    c.lineWidth=width*(.96+((hybridMeadowHash(x*129+y*337)>>>16)%9)*.01);
+    c.beginPath();
+    if(near.length===2){const [a,b]=near;
+     c.moveTo(cx+a[0]*.5,cy+a[1]*.5);
+     if(a[0]===-b[0]&&a[1]===-b[1])c.lineTo(cx+b[0]*.5,cy+b[1]*.5);
+     else c.quadraticCurveTo(cx,cy,cx+b[0]*.5,cy+b[1]*.5);
+    }else for(const [dx,dy] of near){c.moveTo(cx,cy);c.lineTo(cx+dx*.5,cy+dy*.5);}
+    c.stroke();
+   }
+   continue;
+  }
   c.beginPath();
   for(const [x1,y1,x2,y2] of segs){
    // Subtle local bend breaks up ruler-straight grid corridors without
@@ -5615,7 +5627,7 @@ function hybridMeadowTrail(c,plan){
   }
  }
 }
-function hybridMeadowGroundInto(c,f,plan){
+function hybridMeadowGroundE0Into(c,f,plan){
  const w=plan.width,h=plan.height;
  c.save();c.beginPath();c.rect(0,0,w,h);c.clip();
  const floor=c.createLinearGradient(0,0,w,h);
@@ -5654,21 +5666,146 @@ function hybridMeadowGroundInto(c,f,plan){
  }
  c.restore();
 }
+// E.1 is a read-only, seeded and bounded ground plan. Node positions are
+// already centered after startActionField; pre-action maps use tile coordinates.
+const HYBRID_MEADOW_DETAIL_BUDGET=Object.freeze({free:8,edge:7,root:6,special:1,total:22});
+function buildHybridMeadowDetailPlan(f,groundPlan=herbPixelGroundPlan(f)){
+ if(!isHerbPixelSlice(f)||!groundPlan)return null;
+ const cached=hybridMeadowDetailCache.get(f);if(cached)return cached;
+ const seed=f.biome?.encounterSeed||1,groups=[];
+ const trail=[...groundPlan.trail].map(k=>{const [x,y]=k.split(',').map(Number);return {x:x+.5,y:y+.5};});
+ const center=n=>({x:n.x+(f.action?0:.5),y:n.y+(f.action?0:.5)});
+ const nodes=(f.nodes||[]).map(center),hazards=(f.hazards||[]).map(h=>({x:h.x+.5,y:h.y+.5}));
+ const distance=(a,b)=>Math.hypot(a.x-b.x,a.y-b.y);
+ const roadDistance=p=>trail.reduce((m,t)=>Math.min(m,distance(p,t)),Infinity);
+ const allowed=(p,category)=>{
+  const extent=category==='root'?.32:.25;
+  if(p.x<.55||p.y<.55||p.x>f.worldW-.55||p.y>f.worldH-.55)return false;
+  if(distance(p,f.spawn)<1.5+extent||nodes.some(n=>distance(p,n)<1.15+extent))return false;
+  if(hazards.some(h=>distance(p,h)<.55+.35+extent))return false;
+  if((f.enemies||[]).some(e=>distance(p,e)<1.5+extent))return false;
+  if(groups.some(g=>distance(p,g)<.62))return false;
+  if(f.obstacles.some(o=>Math.abs(p.x-o.x-.5)<.50&&Math.abs(p.y-o.y-.5)<.50))return false;
+  return roadDistance(p)>(category==='edge'?.36:.62);
+ };
+ const rank=(p,i)=>hybridMeadowHash(seed+Math.floor(p.x*193)*911+Math.floor(p.y*181)*353+i*7919);
+ const select=(items,category,budget)=>{
+  const ordered=items.map((p,i)=>({...p,rank:rank(p,i)})).sort((a,b)=>a.rank-b.rank);
+  let count=0;
+  for(const p of ordered){if(count>=budget)break;if(!allowed(p,category))continue;
+   const h=hybridMeadowHash(p.rank+seed);
+   groups.push(Object.freeze({x:p.x,y:p.y,category,kind:category==='special'?2:(h>>>16)%2,
+    scale:.82+((h>>>12)%7)*.05,angle:((h>>>8)%13-6)*.11,
+    alpha:.22+((h>>>22)%5)*.018,obstacleIndex:p.obstacleIndex??null}));count++;
+  }
+ };
+ // Roots belong to actual colliders only; their ground stain is drawn BELOW
+ // moving actors, separately from the existing y-sorted tree/rock silhouettes.
+ const roots=[];
+ f.obstacles.forEach((o,index)=>{for(const side of [-1,1])roots.push({x:o.x+.5+side*.66,y:o.y+.80,obstacleIndex:index});});
+ select(roots,'root',6);
+ const edges=[];
+ for(const t of trail)for(const [dx,dy] of [[-.57,0],[.57,0],[0,-.57],[0,.57]]){
+  const p={x:t.x+dx,y:t.y+dy};
+  if(roadDistance(p)<.36)continue;
+  edges.push(p);
+ }
+ select(edges,'edge',7);
+ const free=[];
+ for(let y=1;y<f.worldH-1;y++)for(let x=1;x<f.worldW-1;x++){
+  const h=hybridMeadowHash(seed+x*811+y*1201);
+  free.push({x:x+.20+((h>>>16)%6)*.10,y:y+.20+((h>>>20)%6)*.10});
+ }
+ select(free,'free',8);select(free,'special',1);
+ const result=Object.freeze({groups:Object.freeze(groups),budget:22,seed});
+ hybridMeadowDetailCache.set(f,result);return result;
+}
+function paintGroundCluster(c,g){
+ c.save();c.translate(g.x,g.y);c.rotate(g.angle);c.scale(g.scale,g.scale);
+ c.globalAlpha=g.alpha;c.lineCap='round';
+ if(g.category==='root'){
+  // A small soil saddle, two roots, then a restrained grass/leaf gathering.
+  hybridMeadowEllipse(c,0,.015,.31,.11,HM.trailRim);
+  c.strokeStyle=HM.trunk;c.lineWidth=.045;c.beginPath();
+  c.moveTo(-.24,.0);c.quadraticCurveTo(-.06,-.07,.19,.02);
+  c.moveTo(-.16,.05);c.quadraticCurveTo(-.05,.01,.17,.09);c.stroke();
+  c.globalAlpha=.28;hybridMeadowLeaf(c,.10,.06,.07,.027,HM.moss);
+  hybridMeadowLeaf(c,-.14,.08,.052,.024,HM.trunkLight);
+ }else if(g.kind===1){
+  // Two long curved brush strokes form ONE coherent ground gesture.
+  c.strokeStyle=HM.grassShade;c.lineWidth=.065;c.beginPath();
+  c.moveTo(-.20,.035);c.quadraticCurveTo(0,-.04,.21,.015);c.stroke();
+  c.strokeStyle=HM.grassGlaze;c.lineWidth=.042;c.beginPath();
+  c.moveTo(-.16,.08);c.quadraticCurveTo(.02,.015,.16,.06);c.stroke();
+ }
+ if(g.kind!==1||g.category==='edge'||g.category==='root'){
+  c.lineWidth=.034;c.strokeStyle=HM.grassShade;
+  for(const [x,tip,height] of [[-.13,-.22,.17],[0,-.02,.24],[.12,.22,.15],[.04,.14,.20]]){
+   c.beginPath();c.moveTo(x,.075);c.quadraticCurveTo(x-.02,-height*.22,tip,-height);c.stroke();
+  }
+  c.strokeStyle=HM.grassGlaze;c.lineWidth=.023;c.beginPath();
+  c.moveTo(-.02,.055);c.quadraticCurveTo(-.06,-.02,-.08,-.13);c.stroke();
+ }
+ if(g.category==='special'){
+  // One muted two-leaf accent per map; never a yellow pickup-like flower.
+  c.globalAlpha=.27;hybridMeadowLeaf(c,-.09,.03,.062,.028,HM.trunkLight);
+  hybridMeadowLeaf(c,.06,.06,.073,.026,HM.moss);
+ }
+ c.restore();
+}
+function hybridMeadowGroundE1Into(c,f,plan){
+ const w=plan.width,h=plan.height,seed=f.biome?.encounterSeed||1;
+ c.save();c.beginPath();c.rect(0,0,w,h);c.clip();
+ const floor=c.createLinearGradient(0,0,w,h);
+ floor.addColorStop(0,HM.grassLight);floor.addColorStop(.45,HM.grass);floor.addColorStop(1,HM.grassShade);
+ c.fillStyle=floor;c.fillRect(0,0,w,h);
+ // Eleven broad light pools are grouped by terrain purpose rather than tile.
+ for(let i=0;i<11;i++){
+  const k=hybridMeadowHash(seed+i*1079),o=f.obstacles[i%Math.max(1,f.obstacles.length)];
+  const shade=i%3!==0,x=shade&&o?o.x+.75:.4+(k%114)/10,
+   y=shade&&o?o.y+.9:.3+((k>>>9)%150)/10,r=shade?1.45+((k>>>21)%12)/10:2.8+((k>>>21)%13)/10;
+  const glaze=c.createRadialGradient(x,y,.08,x,y,r);
+  glaze.addColorStop(0,shade?'#244e4826':'#d1d3a92b');
+  glaze.addColorStop(1,shade?'#244e4800':'#d1d3a900');
+  c.fillStyle=glaze;c.fillRect(x-r,y-r,r*2,r*2);
+ }
+ hybridMeadowTrail(c,plan,true);
+ const detail=buildHybridMeadowDetailPlan(f,plan);
+ for(const g of detail.groups){
+  if(g.category==='edge'){
+   // Soil and grass touch the outer rim; the center line stays uninterrupted.
+   const nearest=[...plan.trail].map(key=>{const [x,y]=key.split(',').map(Number);return {x:x+.5,y:y+.5};})
+    .sort((a,b)=>Math.hypot(a.x-g.x,a.y-g.y)-Math.hypot(b.x-g.x,b.y-g.y))[0];
+   if(nearest){
+    const dx=nearest.x-g.x,dy=nearest.y-g.y,n=Math.hypot(dx,dy)||1;
+    c.save();c.globalAlpha=.24;c.lineCap='round';c.lineWidth=.11;c.strokeStyle=HM.grass;
+    c.beginPath();c.moveTo(g.x,g.y);c.quadraticCurveTo(g.x+dx/n*.16,g.y+dy/n*.16,g.x+dx/n*.25,g.y+dy/n*.25);c.stroke();
+    c.globalAlpha=.19;c.lineWidth=.035;c.strokeStyle=HM.trailRim;c.beginPath();
+    c.moveTo(g.x-dy/n*.17,g.y+dx/n*.17);c.quadraticCurveTo(g.x+dx/n*.18,g.y+dy/n*.18,g.x+dy/n*.13,g.y-dx/n*.13);c.stroke();c.restore();
+   }
+  }
+  paintGroundCluster(c,g);
+ }
+ c.restore();
+}
 function hybridMeadowGroundPlan(f){
  return isHybridMeadow(f)?herbPixelGroundPlan(f):null;
 }
 function drawHybridMeadowGround(c,f){
  const plan=hybridMeadowGroundPlan(f);
  if(!plan)return false;
- let image=hybridMeadowGroundCache.get(f);
+ const mode=f.artPreviewMode==='hybrid-e0'?'hybrid-e0':'hybrid-e1';
+ let images=hybridMeadowGroundCache.get(f);
+ if(!images){images=new Map();hybridMeadowGroundCache.set(f,images);}
+ let image=images.get(mode);
  if(!image){
   image=document.createElement('canvas');
-  // 64 virtual pixels per world tile: smooth restaurant-style scenery on DPR2.
   image.width=plan.width*64;image.height=plan.height*64;
   const g=image.getContext('2d',{alpha:false});
   g.scale(64,64);g.imageSmoothingEnabled=true;
-  hybridMeadowGroundInto(g,f,plan);
-  hybridMeadowGroundCache.set(f,image);
+  if(mode==='hybrid-e0')hybridMeadowGroundE0Into(g,f,plan);
+  else hybridMeadowGroundE1Into(g,f,plan);
+  images.set(mode,image);
  }
  c.save();c.imageSmoothingEnabled=true;
  c.drawImage(image,0,0,plan.width,plan.height);
@@ -5763,7 +5900,6 @@ function drawHybridMeadowHazard(c,hz,phase,time=0){
  }
  c.restore();
 }
-
 // Lightweight procedural game graphics: original Canvas shapes, no art pack.
 const color={ink:'#24382a',leaf:'#386b43',soil:'#806044',stone:'#a6b392',cream:'#f4dfb0',gold:'#dfb873'};
 function rect(c,x,y,w,h,fill){c.fillStyle=fill;c.fillRect(x,y,w,h)}

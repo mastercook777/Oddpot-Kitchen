@@ -14,7 +14,7 @@ function game(seed=20261014,route='safe'){
 function mockPaint(){
  const calls=[],gradient=()=>({addColorStop(){}});
  const base={calls,
-  save(){},restore(){},beginPath(){},closePath(){},rect(){},clip(){},scale(){},translate(){},
+  save(){},restore(){},beginPath(){},closePath(){},rect(){},clip(){},scale(){},translate(){},rotate(){},
   moveTo(){},lineTo(){},arc(){},ellipse(){},bezierCurveTo(){},quadraticCurveTo(){},
   fill(){calls.push('fill')},stroke(){calls.push('stroke')},
   fillRect(){calls.push('fillRect')},drawImage(img){assert.ok(img.width>0&&img.height>0);calls.push('drawImage')},

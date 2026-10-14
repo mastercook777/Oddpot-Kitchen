@@ -6,7 +6,7 @@
 **线上试玩**：https://mastercook777.github.io/Oddpot-Kitchen/  
 **仓库当前已实现版本（v0.11-B1 合并后）**：v0.11.0-alpha.3（大地图 + 跟随镜头 + 八生态程序地形第一批；B2 敌人行为/数量、C 专供交易/料理仍未开发）；以仓库主分支 `package.json`、源码和最新提交为实际版本依据，**本文的日期不是未来版本的自动更新**。
 
-> **隔离试玩分支**：`feat/herb-path-pixel-art-slice`（Draft PR #44）已实现、尚待玩家 iPhone 验收的 [香草小径 Hybrid Canvas 场景 + 像素角色 v0.11-E](V0.11E_HYBRID_MEADOW_ART.md)；玩家新确认的 **[v0.11-E.1「细节更丰富但不脏」设计稿](V0.11E1_HYBRID_MEADOW_DETAIL_POLISH_SPEC.md) 已入仓，状态是「已确认待实现」——**目前仅写文档，E.1 尚未开发**。先前 [全像素 v0.11-D](V0.11D_COMPLETE_MEADOW_ART_PLAN.md) 仅是历史对照，不要把实验当成 main 已发布内容；无用户确认禁止合并。
+> **本轮接续入口（2026-10-14）**：`feat/herb-path-pixel-art-slice` / Draft PR #44 的 **[v0.11-E.1 Hybrid 草地环境精修](V0.11E1_HYBRID_MEADOW_DETAIL_POLISH_SPEC.md) 已实装待玩家验收**。独立可玩验证页：https://oddpot-exploration-art-lab.prettyfinch1.chatgpt.site；可直接移动/采集/释放锅具技能，同一地图切换 E.1 / E / 全像素 / B1 并暂停对比，支持固定入口/道路/树石/采集镜头。正式 main 仍是 alpha.3，未经确认不合并。本轮不是 B2，敌人/采集/碰撞/经济规则未改。
 
 ## 阅读顺序
 

@@ -20,7 +20,7 @@ const herbPaintRect=(ctx,x,y,w,h,color)=>{ctx.fillStyle=color;ctx.fillRect(x,y,w
 const herbPaintDot=(ctx,x,y,color)=>herbPaintRect(ctx,x,y,1,1,color);
 
 export function isHerbPixelSlice(f){
- return !!(f?.worldVersion==='0.11-B1' && f?.biome?.zoneId==='herb_path');
+ return !!(f?.worldVersion==='0.11-B1' && f?.biome?.zoneId==='herb_path' && f?.artPreviewMode!=='legacy');
 }
 
 export function herbPixelSpriteNames(){

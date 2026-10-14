@@ -2,7 +2,7 @@
 
 **状态**：`已实装（部分尚待玩家真机验收）`  
 **基准**：GitHub `main` v0.11.0-alpha.3（v0.11-B1 扩展生态地图与镜头第一批合并后；真机仍待验收）。后续每版合并应更新本页，不应仅向 README 顶部累加旧版本内容。  
-> **分支实验提示（仅 feat/herb-path-pixel-art-slice，不代表 main 已实装）**：Draft PR #44 当前已实现 **Hybrid v0.11-E**：草地/道路/树石是柔和 Canvas，厨师/敌人/NPC/食材仍是像素精灵，BFS 道路/碰撞不变；完整游戏可在该分支及离线 `standalone.html` 运行，详见 [v0.11-E 实装规格](V0.11E_HYBRID_MEADOW_ART.md)。**2026-10-14 新规划 [v0.11-E.1 有组织的草地细节精修](V0.11E1_HYBRID_MEADOW_DETAIL_POLISH_SPEC.md) 已确认待实现，但仅提交了设计文档，尚未写代码、生成 E.1 截图或进行 E.1 验收。**其余生态/餐馆未修改；纯像素仍可对照；原始 [样板说明](V0.11C_HERB_PATH_PIXEL_ART_SLICE.md) 为历史内容。分支仍是 Draft，未经用户验收不合并、不改主线 alpha.3 版本号。
+> **分支实验提示（非 main）**：`feat/herb-path-pixel-art-slice` / Draft PR #44 的 **[v0.11-E.1](V0.11E1_HYBRID_MEADOW_DETAIL_POLISH_SPEC.md) 已实装待玩家验收**。仅香草小径环境精修，保留原像素角色/食材/NPC/敌人；固定预算组团、平滑路口、树石接地，E/E.1 分别缓存静态地表。独立可玩页 https://oddpot-exploration-art-lab.prettyfinch1.chatgpt.site 复用真实探索引擎，测试状态不读写正式 localStorage。348/348 自动回归与生产/离线构建通过；48 个 native Canvas 对照渲染覆盖四尺寸/三个 seed（不是浏览器或 iPhone 截图）。未执行本轮浏览器触控 QA，真机仍待验收。main 仍 alpha.3，未经玩家同意不合并。
 
 **验证权威**：`package.json`、`src/` 实现、自动测试、实际用户试玩反馈；旧 GDD v0.1/v0.2 与 AGENTS.md 中 v0.7.x 的“当前”措辞仅作为历史材料。
 
