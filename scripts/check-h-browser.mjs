@@ -14,6 +14,7 @@ try{
   await page.setViewportSize({width,height});
   for(const view of ['combat_wok','combat_pot','combat_wok_skill','combat_pot_skill','combat_boss']){
    await page.goto('http://127.0.0.1:5173/art-preview.html?view='+view,{waitUntil:'networkidle'});await page.waitForFunction(()=>window.__oddpotPreview?.rendered);
+   assert.equal(await page.locator('[data-weapon="'+(view.includes('pot')?'POT':'WOK')+'"]').getAttribute('aria-pressed'),'true');
    for(const selector of ['#joystick','#skill']){const b=await page.locator(selector).boundingBox();assert.ok(b&&b.x>=0&&b.y>=0&&b.x+b.width<=width+1&&b.y+b.height<=height+1,selector+' reachable at '+width);}
    assert.ok(await page.locator('#scene').evaluate(c=>c.getContext('2d').getImageData(c.width/2|0,c.height/2|0,1,1).data[3]>0));
    await page.screenshot({path:`${out}/${view}-${width}.png`});
