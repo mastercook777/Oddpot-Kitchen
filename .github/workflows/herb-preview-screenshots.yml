@@ -27,6 +27,8 @@ jobs:
       - uses: actions/setup-node@v4
         with:
           node-version: 22
+      - name: Install Chinese screenshot fonts
+        run: sudo apt-get update && sudo apt-get install -y fonts-noto-cjk
       - name: Install game dependencies
         run: npm install --no-package-lock
       - name: Install screenshot driver (branch-only, no lockfile changes)

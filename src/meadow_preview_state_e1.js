@@ -36,6 +36,7 @@ export function prepareGPreview(s,name){
  f.obstacles=f.obstacles.filter(o=>Math.hypot(o.x+.5-6,o.y+.5-8)>3.8);
  f.hazards=f.hazards.filter(o=>Math.hypot(o.x-6,o.y-8)>3.8);
  f.nodes=f.nodes.filter(n=>Math.hypot(n.x-6,n.y-8)>3.8);f.enemies=[];
+ f.activeEvent=null;f.projectiles=[];f.playerProjectiles=[];f.bossZones=[];f.harvestNode=null;f.harvestProgress=0;
  f.hp=3;f.finished=false;f.damageCd=0;f.attackCd=1;f.moving=false;
  if(name==='merchant')f.nodes.push({key:'g-traveler',type:'event',eventId:'legacy_traveler',x:7.2,y:8.5,claimed:false});
  else f.enemies.push({id:'g-'+name,kind:name,isBoss:true,x:6,y:6.7,hp:10,maxHp:10,cooldown:1.2,warning:0,slowTime:0});
