@@ -1,9 +1,11 @@
 # 《怪味食堂》当前已实现状态 / 技术交接
 
 **状态**：`已实装（部分尚待玩家真机验收）`
-**代码基准**：v0.11.0-alpha.4（正式推广）；实际正式分支以 main 当前 package.json / 最新合并提交为准。
+**代码基准**：v0.11.0-alpha.5（正式推广）；实际正式分支以 main 当前 package.json / 最新合并提交为准。
 
 **本轮实现**：E.1 环境经玩家认可后，按授权整合 E.2 平滑特效与 F1/F2/F3 八生态/十四 zoneId 场景重绘。新增 `field_effects_v011e2.js`、`field_hybrid_biomes_v011f.js`，提取共享只读路径/细节计划，静态地面缓存；人物/食材像素保持，模拟/经济/存档没有改变。主线完整游戏与离线版均 alpha.4；`art-preview.html` 可选八生态，纯内存。原独立 E.1 Site 不更新作为基准。详细 [V0.11_HYBRID_MAINLINE_ROLLOUT.md](V0.11_HYBRID_MAINLINE_ROLLOUT.md)；353/353 自动测试通过，旧9×11环境不重建。iPhone视觉/帧率等待实际反馈，不能据此宣称完整探索2.0完成。
+
+**最新G实现**：`field_bosses_v011g.js` 两名详细像素Boss各三种攻击（锁定前摇、扇射/定点爆发/孢环或冲锋）；`field_v04.js`接唯一伤害/盾/掉落，血量10与单次伤害1不变，死亡取消攻击区。商人固定28×39.2屏幕资源框与平滑感叹号。`ingredient_icons_v011g.js/css`复用野外十食材Sprite用于仓库/市场、选材、锅内、复盘、便当和缺料等；锅内仍同一真实DOM元素。版本与离线包alpha.5；362项回归/构建通过。详细 [G规格/交付](V0.11G_BOSSES_NPC_INGREDIENTS.md)。新增Boss轮换并非完整B2普通怪群；旧旅人亦非C真商人。
 
 **验证权威**：`package.json`、`src/` 实现、自动测试、实际用户试玩反馈；旧 GDD v0.1/v0.2 与 AGENTS.md 中 v0.7.x 的“当前”措辞仅作为历史材料。
 

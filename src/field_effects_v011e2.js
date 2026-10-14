@@ -72,23 +72,24 @@ export function drawFieldDeath(c,e){
 export function drawFieldActorIndicators(c,e,sc){
  if(e.hp<=0)return;
  c.save();c.translate(e.x,e.y);c.scale(1/sc,1/sc);
- c.beginPath();c.roundRect(-12,-25,24,4,2);c.fillStyle='#2f423bbb';c.fill();
- const width=22*fieldFxClamp(e.hp/Math.max(1,e.maxHp));
- if(width>0){c.beginPath();c.roundRect(-11,-24,width,2,Math.min(1,width/2));c.fillStyle='#e9cd91';c.fill();}
+ const barW=e.isBoss?52:24,barY=e.isBoss?-54:-25;
+ c.beginPath();c.roundRect(-barW/2,barY,barW,4,2);c.fillStyle='#2f423bbb';c.fill();
+ const width=(barW-2)*fieldFxClamp(e.hp/Math.max(1,e.maxHp));
+ if(width>0){c.beginPath();c.roundRect(-barW/2+1,barY+1,width,2,Math.min(1,width/2));c.fillStyle='#e9cd91';c.fill();}
  if(e.warning>0){
   const q=fieldFxClamp(1-e.warning/(e.windupTotal||.7));
-  c.beginPath();c.arc(0,-34,4,-Math.PI/2,-Math.PI/2+q*Math.PI*2);c.strokeStyle='#f4d9a1';c.lineWidth=1.8;c.stroke();
+  c.beginPath();c.arc(0,barY-9,4,-Math.PI/2,-Math.PI/2+q*Math.PI*2);c.strokeStyle='#f4d9a1';c.lineWidth=1.8;c.stroke();
  }
  c.restore();
 }
-export function drawFieldNodeMarkers(c,n,time){
+export function drawFieldNodeMarkers(c,n,time,screenScale=40){
  if(n.claimed)return;
  c.save();c.lineCap='round';
  if(n.type==='event'){
-  c.translate(n.x+.33,n.y-.88);c.globalAlpha=.75+.15*Math.sin(time*2);
-  c.lineWidth=.035;c.strokeStyle='#f0dab0';
-  for(let i=0;i<4;i++){const a=i*Math.PI/2;
-   c.beginPath();c.moveTo(Math.cos(a)*.04,Math.sin(a)*.04);c.quadraticCurveTo(Math.cos(a)*.08,Math.sin(a)*.08,Math.cos(a)*.14,Math.sin(a)*.14);c.stroke();}
+  c.translate(n.x,n.y);c.scale(1/screenScale,1/screenScale);
+  c.globalAlpha=.86+.08*Math.sin(time*2);c.strokeStyle='#fff0c6';c.lineWidth=2.6;
+  c.beginPath();c.moveTo(0,-39);c.lineTo(0,-32);c.stroke();
+  fieldFxEllipse(c,0,-28,1.4,1.4,'#fff0c6');
  }else if(n.key==='target'){
   const bob=Math.sin(time*3+n.x)*.028;
   c.strokeStyle='#f9e6b0';c.lineWidth=.042;

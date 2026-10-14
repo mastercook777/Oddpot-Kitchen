@@ -4,13 +4,15 @@
 
 **仓库**：https://github.com/mastercook777/Oddpot-Kitchen
 **线上试玩**：https://mastercook777.github.io/Oddpot-Kitchen/
-**仓库当前代码版本**：v0.11.0-alpha.4（Hybrid 八生态环境 + 非像素特效正式推广；B2 敌人行为/数量、C 专供交易/料理仍未开发）；以仓库主分支 `package.json`、源码和最新提交为实际版本依据，**本文的日期不是未来版本的自动更新**。
+**仓库当前代码版本**：v0.11.0-alpha.5（Hybrid 八生态环境 + 非像素特效正式推广；B2 敌人行为/数量、C 专供交易/料理仍未开发）；以仓库主分支 `package.json`、源码和最新提交为实际版本依据，**本文的日期不是未来版本的自动更新**。
 
-> **当前正式推广版本：v0.11.0-alpha.4**。用户已授权在正式版本铺开。**E.1 草地环境、E.2 非像素特效、F1/F2/F3 八生态/十四 zoneId 重绘已实现**；像素角色/旅人/食材保留，攻击/弹体/命中/采集/NPC标记采用平滑 Canvas。实现与验收见 [V0.11_HYBRID_MAINLINE_ROLLOUT.md](V0.11_HYBRID_MAINLINE_ROLLOUT.md)。`index.html` 是正式完整游戏，`art-preview.html` 可直接选择八生态试玩；原独立部署仍保留 E.1 作为历史基准。过去“只隔离/不合并”约定已被 2026-10-14 09:43 用户正式推广授权更新。iPhone 帧率/全部新地图主观视觉仍待实际反馈；B2 怪群/C 商人料理未实施。
+> **当前正式推广版本：v0.11.0-alpha.5**。用户已授权在正式版本铺开。**E.1 草地环境、E.2 非像素特效、F1/F2/F3 八生态/十四 zoneId 重绘已实现**；像素角色/旅人/食材保留，攻击/弹体/命中/采集/NPC标记采用平滑 Canvas。实现与验收见 [V0.11_HYBRID_MAINLINE_ROLLOUT.md](V0.11_HYBRID_MAINLINE_ROLLOUT.md)。`index.html` 是正式完整游戏，`art-preview.html` 可直接选择八生态试玩；原独立部署仍保留 E.1 作为历史基准。过去“只隔离/不合并”约定已被 2026-10-14 09:43 用户正式推广授权更新。iPhone 帧率/全部新地图主观视觉仍待实际反馈；B2 怪群/C 商人料理未实施。
+
+> **最新 G 修正**：[Mini Boss、NPC与食材统一](V0.11G_BOSSES_NPC_INGREDIENTS.md)。两名像素 Boss 各三招；商人固定屏幕比例与平滑感叹号；十食材跨探索/仓库/研发同源。362项自动测试与构建通过；浏览器小屏与发布核验记录见G文档。原血量、单次伤害、掉落与库存交易规则保留；iPhone与新攻击平衡待玩家反馈。
 
 ## 阅读顺序
 
-**当前美术任务先读 [正式推广实现与验收](V0.11_HYBRID_MAINLINE_ROLLOUT.md)，再读 [E.2 / F 统一规范与排期](V0.11E2_F_EXPLORATION_ART_STYLE_AND_ROLLOUT.md) 和 [E.1 实装/认可记录](V0.11E1_HYBRID_MEADOW_DETAIL_POLISH_SPEC.md)，再按下列资料核对既有探索规则。**
+**当前美术任务先读 [G修正规格/交付](V0.11G_BOSSES_NPC_INGREDIENTS.md)，再读 [正式推广实现与验收](V0.11_HYBRID_MAINLINE_ROLLOUT.md)，再读 [E.2 / F 统一规范与排期](V0.11E2_F_EXPLORATION_ART_STYLE_AND_ROLLOUT.md) 和 [E.1 实装/认可记录](V0.11E1_HYBRID_MEADOW_DETAIL_POLISH_SPEC.md)，再按下列资料核对既有探索规则。**
 
 1. [PROJECT_STATE.md](PROJECT_STATE.md)——**已实装**、真实代码入口、机制边界、已知约束；版本变化后必须更新。
 2. [ROADMAP.md](ROADMAP.md)——**准备做 / 候选 / 暂缓**，含设计文档链接与状态，禁止把规划当作已开发。
@@ -35,7 +37,7 @@
 
 《怪味食堂》是**餐馆经营成长 × 料理研发 × 奇幻取材探索**，不是刷更高参数的纯战斗 Roguelite。经营成果必须在真实顾客、实际客流、利润、店面与员工协作中可感知。奇幻感来自 NPC、器物、口吻和行为，**内部空间设定名不要因为强调世界观而出现在玩家 UI**。尽量少浮窗，保持手机竖屏阅读清晰。
 
-**下一步**：正式体验 alpha.4 的两区三段、八生态和两种锅具效果，按实际反馈做视觉/性能修正；E.2/F 不再标为未开发。随后按 v0.11 原规划接 B2 怪群、C 商人/专供料理。旧 9×11 进程保留旧环境几何与新特效兼容，新段使用新母版。[V0.11_HYBRID_MAINLINE_ROLLOUT.md](V0.11_HYBRID_MAINLINE_ROLLOUT.md) 是本轮代码交接。
+**下一步**：正式体验 alpha.5 的两区三段、八生态和两种锅具效果，按实际反馈做视觉/性能修正；E.2/F 不再标为未开发。随后按 v0.11 原规划接 B2 怪群、C 商人/专供料理。旧 9×11 进程保留旧环境几何与新特效兼容，新段使用新母版。[V0.11_HYBRID_MAINLINE_ROLLOUT.md](V0.11_HYBRID_MAINLINE_ROLLOUT.md) 是本轮代码交接。
 
 ## 探索 2.0 背景（2026-10-13，当前优先级以上方 E.2 / F 为准）
 

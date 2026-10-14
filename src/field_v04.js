@@ -1,3 +1,4 @@
+import {stepMiniBoss,stepBossZones} from './field_bosses_v011g.js';
 // v0.4 real-time forest encounter. The underlying kitchen inventory remains
 // governed by engine.settleField; this file only mutates the expedition bag.
 import {ING} from './data.js?v=0.8.0';
@@ -65,6 +66,8 @@ function damageEnemy(s,e,amount=1){
  if(e.hp>0||e.lootDropped)return true;
  e.lootDropped=true;e.deathFx=.45;
  if(e.isBoss){
+  e.rush=null;e.bossAttack=null;e.warning=0;
+  f.bossZones=(f.bossZones||[]).filter(z=>z.ownerId!==e.id);
   const ingredient=e.kind==='boss_ember'?'ember_pepper':'mushroom_heart';
   const first=!s.bossCleared?.[e.id];f.bossDefeated=e.id;
   f.nodes.push({key:'boss-reward-'+f.segmentIndex,id:ingredient,n:first?2:1,
@@ -233,6 +236,7 @@ export function stepActionField(s,axisX,axisY,dt){
  for(const e of f.enemies){
   if(e.hp<=0)continue;
   e.cooldown-=dt;
+  if(e.isBoss){e.slowTime=Math.max(0,(e.slowTime||0)-dt);stepMiniBoss(f,e,dt,{blocked,hurt:(amount,source,attacker)=>hurt(s,amount,source,attacker)});continue;}
   const d=dist(f.pos,e);
   const profile=meleeProfile(e.kind),melee=!!profile;
   e.slowTime=Math.max(0,(e.slowTime||0)-dt);
@@ -278,6 +282,7 @@ export function stepActionField(s,axisX,axisY,dt){
    }
   }}
  }
+ stepBossZones(f,dt,(amount,source,attacker)=>hurt(s,amount,source,attacker));
  for(const p of f.projectiles){p.x+=p.vx*dt;p.y+=p.vy*dt;p.life-=dt;if(dist(f.pos,p)<.28){p.life=0;hurt(s,1,p.source||'pepper',{x:p.ownerX??p.x,y:p.ownerY??p.y})}}f.projectiles=f.projectiles.filter(p=>p.life>0&&!blocked(f,p,0));
  advancePlayerProjectiles(s,dt);
  if(f.attackCd<=0){
