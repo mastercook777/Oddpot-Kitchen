@@ -1,10 +1,10 @@
 <!doctype html><html lang="zh-CN"><head>
 <meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
-<meta name="theme-color" content="#eae8d8"><title>怪味食堂 · v0.11-E.1 草地精修验证</title>
+<meta name="theme-color" content="#eae8d8"><title>怪味食堂 · alpha.4 探索美术验证</title>
 <link rel="stylesheet" href="./src/meadow_preview_e1.css">
 </head><body><main class="shell">
-<header><div><span class="eyebrow">ODDPOT KITCHEN · ART PLAYTEST</span><h1>香草小径 <small>v0.11-E.1</small></h1></div><button id="pause" aria-label="暂停试玩">暂停</button></header>
-<nav class="modes" aria-label="同场景美术对比"><button data-mode="hybrid-e1" aria-pressed="true">E.1 精修</button><button data-mode="hybrid-e0" aria-pressed="false">E 原版</button><button data-mode="pixel" aria-pressed="false">全像素</button><button data-mode="legacy" aria-pressed="false">B1 对照</button></nav>
+<header><div><span class="eyebrow">ODDPOT KITCHEN · ART PLAYTEST</span><h1><select id="biome" aria-label="切换生态"><option value="herb_path">林地草甸</option><option value="glow_mushroom">幽光菌沼</option><option value="old_tree_edge">古树孢巢</option><option value="forest_garden">野蔬菜圃</option><option value="hot_spring_shallows">热泉浅滩</option><option value="steam_crack">蒸汽裂隙</option><option value="ember_edge">赤焰断坡</option><option value="steam_lake">矿泉晶池</option></select> <small>alpha.4</small></h1></div><button id="pause" aria-label="暂停试玩">暂停</button></header>
+<nav class="modes" aria-label="同场景美术对比"><button data-mode="hybrid-e1" aria-pressed="true">Hybrid 新版</button><button data-mode="hybrid-e0" aria-pressed="false">旧草地</button><button data-mode="pixel" aria-pressed="false">全像素</button><button data-mode="legacy" aria-pressed="false">B1 对照</button></nav>
 <section class="stage" aria-label="探索场景"><canvas id="scene" aria-label="可移动的香草小径场景"></canvas>
 <div class="scene-hud"><span id="health"></span><span id="bag-count"></span></div>
 <div id="overlay" hidden><strong id="overlay-title"></strong><p id="overlay-note"></p><div id="event-actions" hidden><button data-choice="trade">蘑菇换火椒</button><button data-choice="leave">离开</button></div><button id="again">重新试玩</button></div>

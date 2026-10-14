@@ -26,7 +26,7 @@ export function isHerbPixelSlice(f){
 export function herbPixelSpriteNames(){
  return ['grass0','grass1','grass2','grass3','tree0','tree1','rock',
   'garlic','cabbage','onion','potato','mushroom','chili','beef','chicken',
-  'traveler','vent','flower','tuft','spark'];
+  'traveler','vent','flower','tuft','spark','ember_pepper','mushroom_heart'];
 }
 export function herbPixelSpriteSize(name){
  if(!herbPixelSpriteNames().includes(name)&&!/^trail:[0-9]+:[0-3]$/.test(name))return null;
@@ -80,6 +80,8 @@ function herbPaintRock(ctx){
  herbPaintRect(ctx,2,14,5,1,PH.deep);
 }
 function herbPaintFood(ctx,id){
+ const rare=id==='ember_pepper'||id==='mushroom_heart';
+ if(id==='ember_pepper')id='chili';if(id==='mushroom_heart')id='mushroom';
  // All pickups occupy the same 16px silhouette frame, distinct at ~25px on phone.
  // Shared dark outline, single warm highlight, and a colored upper leaf/stem.
  if(id==='garlic'){
@@ -115,6 +117,7 @@ function herbPaintFood(ctx,id){
   herbPaintRect(ctx,6,6,6,4,id==='beef'?'#d98a71':'#f0dfad');
   herbPaintRect(ctx,5,9,3,2,PH.cream);herbPaintRect(ctx,11,11,2,2,PH.bark);
  }
+ if(rare){herbPaintRect(ctx,7,7,3,3,'#f8d68d');herbPaintRect(ctx,8,8,1,1,'#fff5c7');}
 }
 function herbPaintTraveler(ctx){
  // Same readable 20x28 proportions as pixelActor's 18x24 character.
@@ -189,7 +192,10 @@ function herbRealTrail(f){
  return trail;
 }
 export function herbPixelGroundPlan(f){
- if(!isHerbPixelSlice(f))return null;
+ return isHerbPixelSlice(f)?fieldArtGroundPlan(f):null;
+}
+export function fieldArtGroundPlan(f){
+ if(f?.worldVersion!=='0.11-B1')return null;
  const cached=herbGroundPlans.get(f);
  if(cached)return cached;
  const trail=herbRealTrail(f),blocked=new Set([...f.obstacles,...f.hazards,...f.nodes]
@@ -241,7 +247,7 @@ export function drawHerbPixelObstacle(c,o,index=0){
  if(isRock)c.drawImage(herbGetSprite(name),o.x+.1,o.y+.10,.82,.87);
  else c.drawImage(herbGetSprite(name),o.x-.12,o.y-.52,1.24,1.46);
 }
-export function drawHerbPixelNode(c,n,time=0){
+export function drawHerbPixelNode(c,n,time=0,markers=true){
  if(n.claimed)return;
  const name=n.type==='event'?'traveler':herbPixelSpriteNames().includes(n.id)?n.id:'mushroom';
  const bob=n.type==='event'?0:Math.sin(time*3+n.x)*.028;
@@ -249,10 +255,10 @@ export function drawHerbPixelNode(c,n,time=0){
  c.fillStyle='#26352e88';c.fillRect(n.x-.26,n.y+.22,.52,.10);
  if(n.type==='event'){
   c.drawImage(herbGetSprite(name),n.x-.41,n.y-.80,.82,1.10);
-  c.drawImage(herbGetSprite('spark'),n.x+.28,n.y-.90,.27,.27);
+  if(markers)c.drawImage(herbGetSprite('spark'),n.x+.28,n.y-.90,.27,.27);
  }else{
   c.drawImage(herbGetSprite(name),n.x-.38,n.y-.49+bob,.76,.76);
-  if(n.key==='target'){
+  if(markers&&n.key==='target'){
    // A clear 4-corner pixel target bracket replaces the old antialiased ellipse.
    c.fillStyle='#ffe4a0';
    const left=n.x-.45,right=n.x+.35,top=n.y-.57+bob,bottom=n.y+.24+bob;
@@ -284,7 +290,7 @@ export function drawHerbPixelHazard(c,hz,phase,time=0){
 
 // Actual battlefield uses existing actor pixels, replacing meadow-only circles
 // with sharp angular health / wind-up marks. Bosses in other biomes stay original.
-export function drawHerbPixelEnemy(c,e,t,sc,pixelEnemyFn){
+export function drawHerbPixelEnemy(c,e,t,sc,pixelEnemyFn,indicators=true){
  const alive=e.hp>0;
  c.save();c.translate(e.x,e.y);c.scale(1/sc,1/sc);
  if(alive||e.deathFx>0){
@@ -295,13 +301,13 @@ export function drawHerbPixelEnemy(c,e,t,sc,pixelEnemyFn){
   pixelEnemyFn(c,e.kind,0,0,1.8,{face:e.face||1,walk:crouch?0:t,hurt:e.hurtFx||0});
   c.restore();
  }
- if(e.warning>0){
+ if(indicators&&e.warning>0){
   const col='#ffe0a2';
   herbPaintRect(c,-11,-31,22,2,PH.outline);
   herbPaintRect(c,-9,-31,18*Math.min(1,e.warning/1.25),2,'#f5ad70');
   herbPaintRect(c,-2,-37,4,4,col);
  }
- if(alive){
+ if(indicators&&alive){
   const ratio=Math.max(0,Math.min(1,e.hp/Math.max(1,e.maxHp)));
   herbPaintRect(c,-12,-25,24,5,PH.outline);
   herbPaintRect(c,-11,-24,22*ratio,3,'#edc581');

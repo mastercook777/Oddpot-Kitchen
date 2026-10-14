@@ -3,6 +3,7 @@ on:
   push:
     branches:
       - feat/herb-path-pixel-art-slice
+      - feature/v0.11-hybrid-exploration-rollout
     paths:
       - 'art-preview.html'
       - 'src/**'
@@ -42,7 +43,7 @@ jobs:
           git add docs/screenshots/
           if ! git diff --staged --quiet; then
             git commit -m "preview: capture actual herb-path mobile Canvas screenshots [skip ci]"
-            git fetch origin feat/herb-path-pixel-art-slice
-            git rebase origin/feat/herb-path-pixel-art-slice
-            git push origin HEAD:feat/herb-path-pixel-art-slice
+            git fetch origin "${GITHUB_REF_NAME}"
+            git rebase "origin/${GITHUB_REF_NAME}"
+            git push origin "HEAD:${GITHUB_REF_NAME}"
           fi

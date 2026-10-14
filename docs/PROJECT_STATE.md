@@ -1,8 +1,9 @@
 # 《怪味食堂》当前已实现状态 / 技术交接
 
 **状态**：`已实装（部分尚待玩家真机验收）`
-**基准**：GitHub `main` v0.11.0-alpha.3（v0.11-B1 扩展生态地图与镜头第一批合并后；真机仍待验收）。后续每版合并应更新本页，不应仅向 README 顶部累加旧版本内容。
-> **分支实验状态（非 main）**：`feat/herb-path-pixel-art-slice` / Draft PR #44 已实现 E.1，**2026-10-14 玩家认可草地环境精修成立**；原像素角色/食材/NPC/敌人保留，地图/碰撞/采集/经济未改。当前切片仍为 E.1：https://oddpot-exploration-art-lab.prettyfinch1.chatgpt.site；348/348 回归、网页/离线构建通过，后续 GitHub 既有截图工作流已生成移动浏览器截图，不能代替真机操作验收。**新要求 E.2 全部非像素特效与 F 全生态重绘尚未实现**，见 [规范与排期](V0.11E2_F_EXPLORATION_ART_STYLE_AND_ROLLOUT.md)。环境方向认可不等于手机帧率、全部特效与八生态完成验收；main 仍 alpha.3，保持 Draft。
+**代码基准**：v0.11.0-alpha.4（正式推广）；实际正式分支以 main 当前 package.json / 最新合并提交为准。
+
+**本轮实现**：E.1 环境经玩家认可后，按授权整合 E.2 平滑特效与 F1/F2/F3 八生态/十四 zoneId 场景重绘。新增 `field_effects_v011e2.js`、`field_hybrid_biomes_v011f.js`，提取共享只读路径/细节计划，静态地面缓存；人物/食材像素保持，模拟/经济/存档没有改变。主线完整游戏与离线版均 alpha.4；`art-preview.html` 可选八生态，纯内存。原独立 E.1 Site 不更新作为基准。详细 [V0.11_HYBRID_MAINLINE_ROLLOUT.md](V0.11_HYBRID_MAINLINE_ROLLOUT.md)；353/353 自动测试通过，旧9×11环境不重建。iPhone视觉/帧率等待实际反馈，不能据此宣称完整探索2.0完成。
 
 **验证权威**：`package.json`、`src/` 实现、自动测试、实际用户试玩反馈；旧 GDD v0.1/v0.2 与 AGENTS.md 中 v0.7.x 的“当前”措辞仅作为历史材料。
 
@@ -108,3 +109,10 @@
 - 客人图鉴已遇见的人物改用游戏营业场景**同一个 `pixelActor` 程序像素角色**绘制静态 Canvas 肖像；没有新正式美术资产。未解锁客群仍显示问号。
 - 图鉴专属弹窗顶部头区扩为 57px，固定容纳 44px 可点关闭键，菜谱/客人页签与关闭键不再共享同一行，内容保持滚动。
 - 代码 `src/guest_portraits_v104.js`、`src/app.js`、`src/kitchen_050.css`。 [设计与实现](V0.10.4_GUEST_PORTRAITS_SHEET_FIX.md) / [PR #38](https://github.com/mastercook777/Oddpot-Kitchen/pull/38)。
+
+## v0.11-alpha.4 · Hybrid 正式推广代码事实
+
+- 所有新 B1 世界八生态共十四 zoneId 使用 E.1 同源 Canvas 地貌；各生态有独立地表结构/真实障碍造型。森林菌柱/盘根/菜畦，水域浅水/矿岸/晶体，危险区蒸汽/断岩/真实裂口相位。
+- 非像素效果统一挥击、敌我投射、命中/受伤、技能、格挡、采集、旅人星芒与目标标记，爆炸不再直接绘制emoji。保留全像素/旧B1历史对照。
+- 源码 `engine.js/field_v04.js` 未改；不改变地图节点、敌人HP/AI/数量、伤害/冷却、真实掉落/背包/撤离、库存金币或餐厅规则。Boss本体仍是原占位，特效已统一；B2/C未实施。
+- 353/353测试；八生态×64种子/十四zone全覆盖、缓存、真实地图不变、完整两区三段及两锅具关键帧。Native Canvas生成32张实际场景/效果图及八生态对照板，不替代iPhone操作。

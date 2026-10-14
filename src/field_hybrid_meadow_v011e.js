@@ -1,6 +1,6 @@
 // v0.11-E: restaurant-inspired painted Canvas scenery; player/NPC/enemies remain pixel sprites.
 // This module deliberately does not alter any simulation entities, roads or saved data.
-import {isHerbPixelSlice,herbPixelGroundPlan} from './field_pixel_herb_v011c.js';
+import {isHerbPixelSlice,herbPixelGroundPlan,fieldArtGroundPlan} from './field_pixel_herb_v011c.js';
 
 export const HYBRID_MEADOW_PALETTE=Object.freeze({
  grass:'#75896f',grassShade:'#607763',grassLight:'#9baa8d',
@@ -30,7 +30,7 @@ function hybridMeadowLeaf(c,x,y,sx,sy,fill){
  c.bezierCurveTo(x-sx*.22,y+sy*1.16,x-sx*1.12,y+sy*.63,x-sx,y);
  c.closePath();c.fillStyle=fill;c.fill();
 }
-function hybridMeadowTrail(c,plan,polished=false){
+function hybridMeadowTrail(c,plan,polished=false,palette=HM){
  const trail=plan.trail;
  if(!trail?.size)return;
  const segs=[];
@@ -40,7 +40,7 @@ function hybridMeadowTrail(c,plan,polished=false){
   if(trail.has(hybridMeadowKey(x,y+1)))segs.push([x+.5,y+.5,x+.5,y+1.5]);
  }
  // Stacked continuous rounded ribbons: never paint isolated square tiles.
- for(const [width,col] of [[.82,'#6b755c55'],[.75,HM.trailRim],[.68,HM.trail],[.49,HM.trailLight]]){
+ for(const [width,col] of [[.82,'#6b755c55'],[.75,palette.trailRim],[.68,palette.trail],[.49,palette.trailLight]]){
   c.strokeStyle=col;c.lineWidth=width;c.lineCap='round';c.lineJoin='round';
   if(polished){
    // One smooth center line through each genuine cell, including rounded
@@ -118,7 +118,10 @@ function hybridMeadowGroundE0Into(c,f,plan){
 // already centered after startActionField; pre-action maps use tile coordinates.
 export const HYBRID_MEADOW_DETAIL_BUDGET=Object.freeze({free:8,edge:7,root:6,special:1,total:22});
 export function buildHybridMeadowDetailPlan(f,groundPlan=herbPixelGroundPlan(f)){
- if(!isHerbPixelSlice(f)||!groundPlan)return null;
+ return isHerbPixelSlice(f)?buildHybridFieldDetailPlan(f,groundPlan):null;
+}
+export function buildHybridFieldDetailPlan(f,groundPlan=fieldArtGroundPlan(f)){
+ if(f?.worldVersion!=='0.11-B1'||!groundPlan)return null;
  const cached=hybridMeadowDetailCache.get(f);if(cached)return cached;
  const seed=f.biome?.encounterSeed||1,groups=[];
  const trail=[...groundPlan.trail].map(k=>{const [x,y]=k.split(',').map(Number);return {x:x+.5,y:y+.5};});
@@ -348,3 +351,5 @@ export function drawHybridMeadowHazard(c,hz,phase,time=0){
  }
  c.restore();
 }
+
+export function drawHybridFieldTrail(c,plan,palette){hybridMeadowTrail(c,plan,true,palette);}

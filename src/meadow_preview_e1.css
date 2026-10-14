@@ -2,3 +2,5 @@
 
 /* Keep touch targets reachable even on short iPhone screens. */
 .modes button,.weapons button,footer button,footer select{min-height:44px}.play-controls{height:112px}@media(max-height:650px){.play-controls{height:106px}}
+
+header #biome{font-size:17px;font-weight:700;min-height:34px;border:0;background:transparent;padding:0 14px 0 0;max-width:190px}.modes button:disabled{opacity:.4}

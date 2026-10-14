@@ -3,8 +3,11 @@ import {newGame,enterField} from './engine.js';
 import {startActionField} from './field_v04.js';
 import {fieldTilePath} from './field_rules_v011a.js';
 export const MEADOW_PREVIEW_MODES=['hybrid-e1','hybrid-e0','pixel','legacy'];
-export function createMeadowPreview(seed=20261013){
- const s=newGame(seed);s.phase='field';enterField(s,'safe');startActionField(s);
+export const HYBRID_PREVIEW_ZONES=['herb_path','glow_mushroom','old_tree_edge','forest_garden','hot_spring_shallows','steam_crack','ember_edge','steam_lake'];
+export function createMeadowPreview(seed=20261013,zoneId='herb_path'){
+ const s=newGame(seed);s.phase='field';
+ s.fieldZoneId=HYBRID_PREVIEW_ZONES.includes(zoneId)?zoneId:'herb_path';
+ enterField(s,/^(hot_|steam_|ember_)/.test(s.fieldZoneId)?'spring_safe':'safe');startActionField(s);
  s.field.artPreviewMode='hybrid-e1';return s;
 }
 export function setMeadowPreviewMode(s,mode){
