@@ -2,7 +2,7 @@
 
 > **唯一用途：快速接续项目。** 每次新开对话或交给新的开发代理，先读本页与链接的文档，再读 GitHub 当前代码；不要要求用户重新复述历史背景。
 
-**本轮接续：v0.11-H攻击/技能手感。** alpha.8主体已正式发布，见[手感规格与交付](V0.11H_COMBAT_FEEL.md)与PR #49；402项测试、生产/离线构建、Canvas关键帧与真实Chrome三种手机视口/正式及离线双指操作检查通过。**2026-10-14 16:50玩家明确授权本项目直接推送并上线手机试玩，后续不重复询问发布授权。** 先做工程验证，再交手机试玩；仍待iPhone主观手感/帧率验收。快捷测试锅具高亮修正PR #50已合入且浏览器复验通过；线上alpha.8版本/新模块HTTP200核验见H文档。
+**本轮接续：经营模块下一轮。** 玩家在2026-10-14认可alpha.8攻击手感与探索内容丰富度，希望讨论[评星里程碑与异界开店](V0.12_RESTAURANT_GROWTH_DIRECTION.md)。该文档为**讨论稿，未确认实现范围或数值，也未开发**。alpha.8已发布，见[H手感交付](V0.11H_COMBAT_FEEL.md)与PR #49；402项测试、构建、Canvas关键帧与真实Chrome三种手机视口/双指检查通过。**2026-10-14 16:50玩家明确授权本项目直接推送并上线手机试玩，后续不重复询问发布授权。** 专项iPhone帧率未测；快捷测试高亮修正PR #50已合入。
 
 **仓库**：https://github.com/mastercook777/Oddpot-Kitchen
 **线上试玩**：https://mastercook777.github.io/Oddpot-Kitchen/
@@ -18,7 +18,7 @@
 
 ## 阅读顺序
 
-**当前任务先读[H手感规格与交付](V0.11H_COMBAT_FEEL.md)，再读[C规格与交付](V0.11C_SPECIAL_ENCOUNTERS_AND_CUISINE.md)，再读[B2规格与交付](V0.11B2_ECOLOGY_ENCOUNTERS.md)，再读 [G修正规格/交付](V0.11G_BOSSES_NPC_INGREDIENTS.md)，再读 [正式推广实现与验收](V0.11_HYBRID_MAINLINE_ROLLOUT.md)，再读 [E.2 / F 统一规范与排期](V0.11E2_F_EXPLORATION_ART_STYLE_AND_ROLLOUT.md) 和 [E.1 实装/认可记录](V0.11E1_HYBRID_MEADOW_DETAIL_POLISH_SPEC.md)，再按下列资料核对既有探索规则。**
+**当前任务先读[经营方向讨论](V0.12_RESTAURANT_GROWTH_DIRECTION.md)、[ROADMAP](ROADMAP.md)与[PROJECT_STATE](PROJECT_STATE.md)，再按需读[H手感交付](V0.11H_COMBAT_FEEL.md)、[C规格/交付](V0.11C_SPECIAL_ENCOUNTERS_AND_CUISINE.md)、[B2规格/交付](V0.11B2_ECOLOGY_ENCOUNTERS.md)及后续美术记录。**
 
 1. [PROJECT_STATE.md](PROJECT_STATE.md)——**已实装**、真实代码入口、机制边界、已知约束；版本变化后必须更新。
 2. [ROADMAP.md](ROADMAP.md)——**准备做 / 候选 / 暂缓**，含设计文档链接与状态，禁止把规划当作已开发。
@@ -43,7 +43,7 @@
 
 《怪味食堂》是**餐馆经营成长 × 料理研发 × 奇幻取材探索**，不是刷更高参数的纯战斗 Roguelite。经营成果必须在真实顾客、实际客流、利润、店面与员工协作中可感知。奇幻感来自 NPC、器物、口吻和行为，**内部空间设定名不要因为强调世界观而出现在玩家 UI**。尽量少浮窗，保持手机竖屏阅读清晰。
 
-**下一步**：按[D连续run执行计划](V0.11D_CONTINUOUS_RUN_PLAN.md)接续。H alpha.8已正式发布，先收集手机手感反馈并优先热修操作缺陷；同时准备两区多局真实流程基线，辨别奇遇未生成/未发现/未交易以及两份材料的研发、实际销售与净成本；有证据后再实施D的有限调优并发布手机复验，之后讨论v0.12经营深化。**D目前只是计划，尚未实施。**旧9×11/旧计划保持兼容，正式版本以main/package为准。
+**下一步**：玩家希望经营先行。按[经营方向讨论稿](V0.12_RESTAURANT_GROWTH_DIRECTION.md)确定第一枚星章最小范围，写正式评分/失败重试/扩建及新客规格后开发手机试玩。建议先做真实评鉴、第四桌资格与一类新客，第三厨位和新员工分期；传送门世界作为独立大版本，先验证一个完整世界。此前[D连续run计划](V0.11D_CONTINUOUS_RUN_PLAN.md)留待后续经济复盘，不把探索整体认可误写为交易价格验收。正式版本以main/package为准。
 
 ## 探索 2.0 背景（2026-10-13，当前优先级以上方 E.2 / F 为准）
 
