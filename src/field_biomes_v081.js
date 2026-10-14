@@ -1,3 +1,4 @@
+import {ING} from './data.js?v=0.11.0-alpha.7';
 import {fieldTilePath} from './field_rules_v011a.js';
 // v0.8.1 base biomes; v0.11-A adds safe, seed-varying actual obstacle layouts.
 // The physical layout, resource concentration and color identity live together.
@@ -78,7 +79,7 @@ export function generateBiomeMap(s,route,target){
  const variance=((seed>>>7)%3)-1;
  const sourceCount=Math.max(2,Math.min(6,biome.count+(biome.count>=4?variance:Math.min(0,variance))));
  const chosen=[...spots.slice(0,sourceCount)];
- const actualTarget=target||biome.primary;
+ const actualTarget=['SHOP_STAPLE','FIELD_ONLY'].includes(ING[target]?.acquisitionPolicy)?target:biome.primary;
  const first=chosen.shift();
  const nodes=[{key:'target',id:actualTarget,x:first[0],y:first[1],n:2,type:'gather',claimed:false}];
  for(const [i,[x,y]] of chosen.entries()){

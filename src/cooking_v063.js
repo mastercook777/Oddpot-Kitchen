@@ -1,7 +1,7 @@
 // v0.6.3-A: real-time ingredient-event adjudicator.
 // No timed turns, no universal style buffs and no direct inventory writes.
-import {ING,RECIPES,RECIPE_INDEX,recipeSignature} from './data.js?v=0.9.1';
-import {RECIPE_PROFILES} from './recipe_profiles_v063.js?v=0.8.0';
+import {ING,RECIPES,RECIPE_INDEX,recipeSignature} from './data.js?v=0.11.0-alpha.7';
+import {RECIPE_PROFILES} from './recipe_profiles_v063.js?v=0.11.0-alpha.7';
 
 export const LIVE_ACTIONS={
   WOK:[{id:'flip',name:'翻炒',emoji:'🍳'},{id:'toss',name:'颠勺',emoji:'↗'}],
@@ -12,10 +12,10 @@ export const LIVE_STYLES={
   pot_home:'家常炖煮',gentle:'清润慢炖',reduced:'浓香收汁',legacy:'标准工艺'
 };
 export const LIVE_AFFINITY={signature:'招牌适配',viable:'适合',ordinary:'普通',off:'不契合'};
-const REQUIRE={beef:5.4,chicken:6.1,chili:1.3,garlic:1.3,mushroom:2.9,cabbage:2.5,onion:2.8,potato:6.2,mushroom_heart:3.9,ember_pepper:1.9};
-const AROMATICS=new Set(['onion','garlic','chili','mushroom','ember_pepper']);
-const MAIN_PRIORITY=['beef','chicken','potato','cabbage','mushroom','mushroom_heart','onion','ember_pepper','chili','garlic'];
-const PRIMARY_AROMATIC={garlic:true,onion:true,chili:true,mushroom:true,ember_pepper:true};
+const REQUIRE={beef:5.4,chicken:6.1,chili:1.3,garlic:1.3,mushroom:2.9,cabbage:2.5,onion:2.8,potato:6.2,mushroom_heart:3.9,ember_pepper:1.9,tide_sour_pulp:1.8,starlit_nectar:1.2};
+const AROMATICS=new Set(['onion','garlic','chili','mushroom','ember_pepper','tide_sour_pulp','starlit_nectar']);
+const MAIN_PRIORITY=['beef','chicken','potato','cabbage','mushroom','mushroom_heart','onion','ember_pepper','chili','garlic','tide_sour_pulp','starlit_nectar'];
+const PRIMARY_AROMATIC={garlic:true,onion:true,chili:true,mushroom:true,ember_pepper:true,tide_sour_pulp:true,starlit_nectar:true};
 export const liveRecipeId=(ids,station)=>RECIPE_INDEX[recipeSignature(ids,station)]||null;
 
 export function liveCookAmount(drop,t,actions,vessel){

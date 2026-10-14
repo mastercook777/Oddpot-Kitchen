@@ -6,6 +6,7 @@ on:
       - feature/v0.11-hybrid-exploration-rollout
       - feature/v0.11-boss-npc-food-polish
       - feature/v0.11-b2-ecology-encounters
+      - feature/v0.11-c-encounter-cuisine
     paths:
       - 'art-preview.html'
       - 'src/**'

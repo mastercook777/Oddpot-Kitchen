@@ -1,8 +1,9 @@
-import {stepActionField,useFieldSkill,resolveFieldEvent} from './field_v04.js?v=0.11.0-alpha.6';
-import {drawField} from './scenes_v04.js?v=0.11.0-alpha.6';
+import {specialEncounterHtml} from './field_encounter_ui_v011c.js';
+import {stepActionField,useFieldSkill,resolveFieldEvent} from './field_v04.js?v=0.11.0-alpha.7';
+import {drawField} from './scenes_v04.js?v=0.11.0-alpha.7';
 import {joystickVector} from './controls_v041.js';
-import {ING} from './data.js';
-import {createMeadowPreview,setMeadowPreviewMode,meadowPreviewPose,prepareGPreview,prepareEcologyPreview} from './meadow_preview_state_e1.js?v=0.11.0-alpha.6';
+import {ING} from './data.js?v=0.11.0-alpha.7';
+import {createMeadowPreview,setMeadowPreviewMode,meadowPreviewPose,prepareGPreview,prepareEcologyPreview,prepareSpecialPreview} from './meadow_preview_state_e1.js?v=0.11.0-alpha.7';
 const $=id=>document.getElementById(id),canvas=$('scene');
 const params=new URLSearchParams(location.search);
 let biome=params.get('zone')||'herb_path';
@@ -25,7 +26,9 @@ function updateHud(){
  $('skill').disabled=skill>0||paused||!!f.finished||!!f.activeEvent;
  $('notice').textContent=paused?'已暂停 · 切换画面保持同一地图与位置':f.harvestNode?'采集中 '+Math.min(100,Math.round(f.harvestProgress/.82*100))+'%':f.actionMessageTTL>0?f.actionMessage:'左下摇杆移动 · 靠近食材自动采集';
  const event=!!f.activeEvent,finished=!!f.finished;
- $('overlay').hidden=!event&&!finished;$('event-actions').hidden=!event;$('again').hidden=event;
+ const node=event&&f.nodes.find(n=>n.key===f.activeEvent),special=!!node?.offer;
+ $('special-preview').hidden=!special;$('special-preview').innerHTML=special?specialEncounterHtml(s,node):'';
+ $('overlay').hidden=special||!event&&!finished;$('event-actions').hidden=!event;$('again').hidden=event;
  $('overlay-title').textContent=event?'流浪调味师':'本次试玩结束';
  $('overlay-note').textContent=event?'沿用原有奇遇：1 份蘑菇交换 1 份火椒，或直接离开。':'采集与战斗使用真实引擎。可以重置，继续检查画面与走位。';
 }
@@ -38,9 +41,10 @@ document.querySelectorAll('[data-mode]').forEach(b=>b.onclick=()=>{pause(true);m
 document.querySelectorAll('[data-weapon]').forEach(b=>b.onclick=()=>{weapon=b.dataset.weapon;s.field.weapon.type=weapon;
  document.querySelectorAll('[data-weapon]').forEach(el=>el.setAttribute('aria-pressed',String(el.dataset.weapon===weapon)));hudKey='';updateHud();});
 $('skill').onclick=()=>{if(!paused)useFieldSkill(s);};
+$('special-preview').onclick=e=>{const b=e.target.closest('[data-event]');if(!b||b.disabled)return;resolveFieldEvent(s,b.dataset.event);clearInput();hudKey='';updateHud();};
 document.querySelectorAll('[data-choice]').forEach(b=>b.onclick=()=>{resolveFieldEvent(s,b.dataset.choice);clearInput();hudKey='';updateHud();});
 $('camera').onchange=()=>{const name=$('camera').value;if(name==='live'){pause(false);return;}
- pause(true);if(['encounter','encounter_risk'].includes(name))prepareEcologyPreview(s,name==='encounter_risk');else if(!prepareGPreview(s,name))s.field.pos={...meadowPreviewPose(s,name)};s.field.x=s.field.pos.x;s.field.y=s.field.pos.y;s.field.moving=false;drawField(canvas,s,4.3);};
+ pause(true);if(prepareSpecialPreview(s,name,params.get('case')||'ready')){}else if(['encounter','encounter_risk'].includes(name))prepareEcologyPreview(s,name==='encounter_risk');else if(!prepareGPreview(s,name))s.field.pos={...meadowPreviewPose(s,name)};s.field.x=s.field.pos.x;s.field.y=s.field.pos.y;s.field.moving=false;drawField(canvas,s,4.3);};
 const joy=$('joystick');
 joy.addEventListener('pointerdown',e=>{if(pointer!==null||paused)return;pointer=e.pointerId;joy.setPointerCapture(pointer);move(e);e.preventDefault();});
 function move(e){if(e.pointerId!==pointer)return;const r=joy.getBoundingClientRect();
@@ -56,9 +60,9 @@ function frame(now){const dt=last?Math.min(.06,(now-last)/1000):0;last=now;
  if(!paused&&!document.hidden){const x=(keys.has('d')||keys.has('arrowright')?1:0)-(keys.has('a')||keys.has('arrowleft')?1:0),y=(keys.has('s')||keys.has('arrowdown')?1:0)-(keys.has('w')||keys.has('arrowup')?1:0);
   stepActionField(s,x||axis.x,y||axis.y,dt);}
  drawField(canvas,s,s.field.elapsed||4.3);updateHud();
- window.__oddpotPreview={view:params.get('view')||'live',mode:selectedMode,seed,worldVersion:s.field.worldVersion,style:s.field.biome.zoneId,rendered:true,paused,pos:{...s.field.pos},hp:s.field.hp,boss:s.field.enemies.find(e=>e.isBoss)?.kind,encounterVersion:s.field.encounterVersion,enemies:s.field.enemies.filter(e=>e.hp>0).map(e=>({id:e.id,kind:e.kind,x:e.x,y:e.y,engaged:!!e.engaged,warning:e.warning||0}))};
+ window.__oddpotPreview={view:params.get('view')||'live',mode:selectedMode,seed,worldVersion:s.field.worldVersion,style:s.field.biome.zoneId,rendered:true,paused,pos:{...s.field.pos},hp:s.field.hp,boss:s.field.enemies.find(e=>e.isBoss)?.kind,encounterVersion:s.field.encounterVersion,coins:s.coins,bag:{...s.field.bag},activeEvent:s.field.activeEvent,ledgerCount:s.ledger.length,enemies:s.field.enemies.filter(e=>e.hp>0).map(e=>({id:e.id,kind:e.kind,x:e.x,y:e.y,engaged:!!e.engaged,warning:e.warning||0}))};
  requestAnimationFrame(frame);
 }
 const view=params.get('view');mode(params.get('mode')||(view==='pixel'?'pixel':view==='original'?'legacy':'hybrid-e1'));
-if(view){if(['encounter','encounter_risk'].includes(view))prepareEcologyPreview(s,view==='encounter_risk');else if(!prepareGPreview(s,view))s.field.pos={...meadowPreviewPose(s,view)};pause(true);}
+if(view){if(prepareSpecialPreview(s,view,params.get('case')||'ready')){}else if(['encounter','encounter_risk'].includes(view))prepareEcologyPreview(s,view==='encounter_risk');else if(!prepareGPreview(s,view))s.field.pos={...meadowPreviewPose(s,view)};pause(true);}
 updateHud();requestAnimationFrame(frame);

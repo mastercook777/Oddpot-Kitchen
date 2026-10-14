@@ -1,4 +1,4 @@
-<!doctype html><html lang="zh-CN"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1.0,maximum-scale=1.0,viewport-fit=cover,user-scalable=no"><meta name="apple-mobile-web-app-capable" content="yes"><meta name="theme-color" content="#1b3c2b"><title>怪味食堂 · v0.11.0-alpha.6 离线版</title><style>.ingredient-icon{display:inline-block;width:var(--ingredient-size,24px);height:var(--ingredient-size,24px);max-width:none;object-fit:contain;image-rendering:pixelated;vertical-align:-.24em;flex:none;pointer-events:none;user-select:none}
+<!doctype html><html lang="zh-CN"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1.0,maximum-scale=1.0,viewport-fit=cover,user-scalable=no"><meta name="apple-mobile-web-app-capable" content="yes"><meta name="theme-color" content="#1b3c2b"><title>怪味食堂 · v0.11.0-alpha.7 离线版</title><style>.ingredient-icon{display:inline-block;width:var(--ingredient-size,24px);height:var(--ingredient-size,24px);max-width:none;object-fit:contain;image-rendering:pixelated;vertical-align:-.24em;flex:none;pointer-events:none;user-select:none}
 .stock-line>span .ingredient-icon{margin-right:3px}.target-chip .ingredient-icon{vertical-align:middle}.book-icon .ingredient-icon{display:block}
 .v063-food-icon .ingredient-icon{width:1em;height:1em;vertical-align:top;filter:none}.v063-receipt-line .ingredient-icon{vertical-align:middle}
 .v063-food-picker button>span,.v063-drop>span{line-height:1}.v063-food-picker .ingredient-icon,.v063-drop .ingredient-icon{vertical-align:top}
@@ -1142,6 +1142,10 @@
  transform-origin:50% 50%;
  transition:transform .22s ease-out,color .22s ease-out;
 }
+
+.special-encounter .encounter-actions{display:grid;gap:6px}.special-encounter .encounter-actions button{min-height:46px;width:100%;padding:9px 10px;border:2px solid #af9066;border-radius:8px;background:#fff1cc;color:#3e3526;text-align:left;font:700 13px/1.4 system-ui;white-space:normal}.special-encounter .encounter-actions button:disabled{opacity:.58}.special-encounter .encounter-actions button small{display:block;font-size:12px;font-weight:500;margin-top:3px}.special-encounter .encounter-wallet{font-weight:700}.special-encounter .encounter-cargo{display:block;margin-top:9px;font-size:12px;line-height:1.45}.special-encounter .encounter-hint{font-size:12px;margin-bottom:0}.special-encounter{overscroll-behavior:contain}.special-encounter .ingredient-icon{vertical-align:middle}
+@media(max-height:670px){.special-encounter{max-height:85%;padding:9px!important}.special-encounter>p{margin:5px 0!important;font-size:12px!important}.special-encounter .encounter-actions{gap:4px}.special-encounter .encounter-actions button{min-height:44px;padding:7px 8px}}
+#special-preview:not([hidden]){position:fixed;inset:0;z-index:99;background:#142c2699}#special-preview[hidden]{display:none}#special-preview .special-encounter{width:min(440px,92vw);max-height:85dvh;top:50%;left:50%;right:auto;transform:translate(-50%,-50%);position:absolute;background:#f5e3bb;border:3px solid #7e5d3b;border-radius:14px;padding:13px;color:#473829;overflow-y:auto}#special-preview strong{display:block;font-size:17px}#special-preview p{font-size:13px;line-height:1.45;margin:7px 0}
 </style></head><body><div id="app"></div><script>// v0.6.3-A: curated recipe × technique metadata. Curated benefits now resolved per recipe/technique in v0.6.3-B.
 // The engine applies these per-recipe overrides at order snapshot, never as universal style buffs.
 const RECIPE_PROFILES = {
@@ -2280,6 +2284,19 @@ const RECIPE_PROFILES = {
   }
 
 };
+
+// C: recipe-specific affinities; no global style price/crew/bento modifiers.
+const encounterRecipeProfiles=[
+ ['sour_chicken_wok','逆潮酸爆鸡',['tide_sour_pulp','chicken','garlic'],'WOK',9,42,['酸','清爽','肉','香'],'burst',{regular:6,critic:4},'酸香与锅气结合，清爽客群和鉴味师更容易认可。','鸡肉、酸浆与蒜瓣同锅，颠勺后充分熟制。'],
+ ['sour_potato_pot','潮酸焖薯',['tide_sour_pulp','potato','onion'],'POT',13,40,['酸','饱腹','温和'],'gentle',{family:5,regular:4},'轻搅保留酸浆的明亮风味，衬出土豆的温和。','土豆需要熟透；用轻搅融合酸浆与洋葱。'],
+ ['nectar_cabbage_wok','星蜜卷卷脆蔬',['starlit_nectar','cabbage'],'WOK',7,40,['花香','甜香','清爽'],'home_even',{regular:6,family:3},'均匀翻炒使花蜜轻裹菜叶，清爽而有甜香。','魔菜与花蜜入锅后翻炒，及时起锅。'],
+ ['nectar_chicken_pot','星露蜜焖鸡',['starlit_nectar','chicken','onion'],'POT',13,44,['花香','甜香','温和','肉'],'gentle',{family:7,regular:3},'轻搅形成柔和蜜香，适合菌帽一家与街坊。','鸡肉熟透，花蜜与洋葱用轻搅缓缓融合。']
+];
+for(const [id,name,ingredients,vessel,baseTimeSeconds,basePriceCoins,baseTasteTags,code,guestFitDelta,reason,cue] of encounterRecipeProfiles){
+ RECIPE_PROFILES[id]={id,name,origin:'v0.11-encounter-curated',ingredients,vessel,baseTimeSeconds,basePriceCoins,baseTasteTags,personality:reason,
+  styles:[{code,affinity:'signature',guestFitDelta,timeDeltaSeconds:0,priceDeltaCoins:0,culinaryReason:reason,playerCue:cue}],
+  crewSpecific:null,bentoSpecific:null,caution:'奇遇专供食材；仅精选配方，不进入普通市场或通用组合。'};
+}
 // v0.3 prototype content — expanded, configurable, not final balance values.
 const ING = {
   beef:{name:'铁角野牛肉',emoji:'🥩',tags:['鲜','肉','厚重'],lo:5,hi:8,cost:8},
@@ -2318,6 +2335,8 @@ ING.mushroom_heart={name:'菌王孢心',emoji:'🍄',tags:['菌香','鲜','浓�
   acquisitionPolicy:'BOSS_ONLY',bossId:'spore_king'};
 ING.ember_pepper={name:'熔心椒晶',emoji:'🌋',tags:['辣','香','爆香'],lo:3,hi:6,cost:16,
   acquisitionPolicy:'BOSS_ONLY',bossId:'ember_king'};
+ING.tide_sour_pulp={name:'逆潮酸浆',emoji:'🫐',tags:['酸','清爽','开胃'],lo:2,hi:6,cost:18,acquisitionPolicy:'MERCHANT_ONLY'};
+ING.starlit_nectar={name:'星露花蜜',emoji:'🍯',tags:['花香','甜香','温和'],lo:2,hi:5,cost:12,acquisitionPolicy:'ENCOUNTER_ONLY'};
 const SHOP_STAPLES=Object.keys(ING).filter(id=>ING[id].acquisitionPolicy==='SHOP_STAPLE');
 const FIELD_INGREDIENTS=Object.keys(ING).filter(id=>ING[id].acquisitionPolicy!=='SHOP_STAPLE');
 const DEFAULT_INVENTORY={beef:3,chicken:10,chili:2,garlic:9,mushroom:12,cabbage:8,onion:5,potato:5};
@@ -2343,6 +2362,10 @@ const FEATURED_ADDITIONS = {
 };
 for(const [id,r] of Object.entries(FEATURED_ADDITIONS)){RECIPES[id]=r;registerRecipe(id,r)}
 const RARE_FEATURED_RECIPES={
+ sour_chicken_wok:{name:'逆潮酸爆鸡',emoji:'🍳',ids:['tide_sour_pulp','chicken','garlic'],method:'stir',station:'WOK',time:9,price:42,tags:['酸','清爽','肉','香'],cost:26,hint:'酸浆配鸡肉与蒜瓣，用炒锅激出酸香',rare:true},
+ sour_potato_pot:{name:'潮酸焖薯',emoji:'🥣',ids:['tide_sour_pulp','potato','onion'],method:'stew',station:'POT',time:13,price:40,tags:['酸','饱腹','温和'],cost:25,hint:'酸浆配土豆与洋葱，轻搅慢炖',rare:true},
+ nectar_cabbage_wok:{name:'星蜜卷卷脆蔬',emoji:'🥬',ids:['starlit_nectar','cabbage'],method:'stir',station:'WOK',time:7,price:40,tags:['花香','甜香','清爽'],cost:14,hint:'花蜜与魔菜，均匀翻炒保留清甜',rare:true},
+ nectar_chicken_pot:{name:'星露蜜焖鸡',emoji:'🍲',ids:['starlit_nectar','chicken','onion'],method:'stew',station:'POT',time:13,price:44,tags:['花香','甜香','温和','肉'],cost:21,hint:'花蜜配鸡肉与洋葱，轻搅形成温和蜜香',rare:true},
   mushroom_heart_wok:{name:'菌心爆香',emoji:'🍄',ids:['mushroom_heart','garlic'],method:'stir',station:'WOK',time:9,price:35,tags:['菌香','鲜','香'],cost:15,hint:'菌王孢心配蒜瓣，高温激发菌香',rare:true},
   mushroom_heart_pot:{name:'菌王吐息浓汤',emoji:'🥣',ids:['mushroom_heart','chicken','mushroom'],method:'stew',station:'POT',time:14,price:36,tags:['菌香','鲜','温和'],cost:22,hint:'菌王孢心与鸡汤慢炖，再收汁',rare:true},
   ember_pepper_wok:{name:'熔心喷火牛',emoji:'🔥',ids:['ember_pepper','beef','garlic'],method:'stir',station:'WOK',time:11,price:46,tags:['辣','肉','香','爆香'],cost:26,hint:'熔心椒晶、野牛肉和蒜瓣极速爆炒',rare:true},
@@ -2352,7 +2375,7 @@ for(const [id,r] of Object.entries(RARE_FEATURED_RECIPES)){RECIPES[id]=r;registe
 
 const NAMED_EXTRA = {"WOK:beef,chili":"辣椒炒肉","WOK:chicken,chili":"辣椒炒肉","WOK:garlic,mushroom":"菌香小炒","POT:chicken,mushroom":"蘑菇焖鸡","WOK:cabbage,mushroom":"清炒双蔬","WOK:beef,chili,garlic":"爆炎牛肉","WOK:beef,garlic":"焦香蒜牛","WOK:chili,mushroom":"火山菌菇","POT:chicken,onion":"洋葱烩鸡","POT:onion,potato":"地精土豆煲","WOK:chili,potato":"爆辣脆薯","POT:mushroom,potato":"森林浓汤","WOK:cabbage,onion,potato":"丰收三拼","WOK:beef,onion":"葱爆牛肉","POT:beef,onion":"洋葱炖牛肉","WOK:chicken,onion":"洋葱炒鸡","POT:beef,potato":"牛肉土豆煲","WOK:beef,potato":"牛肉煎薯","WOK:beef,mushroom":"菌香牛肉","POT:beef,mushroom":"菌香炖牛肉","POT:beef,chili":"火椒炖牛","POT:beef,garlic":"蒜香炖牛","WOK:cabbage,garlic":"蒜香包菜","POT:cabbage,garlic":"蒜香菜汤","WOK:cabbage,onion":"洋葱包菜","POT:cabbage,onion":"甜洋葱菜煲","WOK:cabbage,potato":"锅煎双蔬","POT:cabbage,potato":"田园双蔬汤","WOK:chicken,garlic":"蒜香炒鸡","POT:chicken,garlic":"蒜香焖鸡","WOK:chicken,mushroom":"山菌炒鸡","POT:chicken,potato":"鸡肉土豆煲","WOK:chicken,potato":"鸡肉脆薯","POT:chili,potato":"火椒土豆煲","WOK:garlic,potato":"蒜香脆薯","POT:garlic,potato":"蒜香土豆浓汤","WOK:mushroom,onion":"甜香菌菇","POT:mushroom,onion":"洋葱菌菇汤","WOK:mushroom,potato":"煎菌菇土豆","WOK:chili,garlic":"爆香辣蒜","POT:chili,garlic":"火椒蒜香汁","WOK:chili,onion":"辣炒洋葱","POT:chili,onion":"香辣洋葱汤","WOK:garlic,onion":"双香煸锅","POT:garlic,onion":"双香浓汤","WOK:beef,cabbage":"牛肉炒包菜","POT:beef,cabbage":"牛肉菜煲","WOK:cabbage,chili":"火椒炝包菜","POT:cabbage,chili":"火椒蔬菜汤","WOK:beef,chicken":"双肉锅气炒","POT:beef,chicken":"双肉滋补锅","WOK:beef,chili,onion":"火椒葱爆牛肉","POT:beef,chili,onion":"香辣洋葱牛肉煲","WOK:beef,garlic,onion":"双香爆牛","POT:beef,garlic,onion":"双香焖牛","WOK:chicken,garlic,mushroom":"蒜香菌菇炒鸡","POT:chicken,garlic,mushroom":"菌菇蒜香鸡汤","WOK:chicken,chili,onion":"辛香炒鸡","POT:chicken,chili,onion":"香辣洋葱焖鸡","WOK:cabbage,garlic,mushroom":"菌香蒜炒双蔬","POT:cabbage,garlic,mushroom":"蒜香菌菇蔬菜汤","WOK:beef,mushroom,onion":"菌菇葱爆牛肉","POT:beef,mushroom,onion":"菌香洋葱炖牛肉","WOK:beef,onion,potato":"牛肉薯片葱爆","POT:beef,onion,potato":"洋葱土豆炖牛肉","WOK:chili,mushroom,potato":"火椒菌菇煎薯","POT:chili,mushroom,potato":"火山菌薯汤","WOK:cabbage,chili,garlic":"蒜香火椒包菜","POT:cabbage,chili,garlic":"辣蒜蔬菜汤"};
 const NAMED_LOOKUP=Object.fromEntries(Object.entries(NAMED_EXTRA).map(([key,value])=>{const [vessel,parts]=key.split(':');return [vessel+':'+parts.split(',').sort().join(','),value]}));
-const idsForRecipes=Object.keys(ING).filter(id=>ING[id].acquisitionPolicy!=='BOSS_ONLY');
+const idsForRecipes=Object.keys(ING).filter(id=>['SHOP_STAPLE','FIELD_ONLY'].includes(ING[id].acquisitionPolicy));
 for(const station of ["WOK","POT"]){
   for(let a=0;a<idsForRecipes.length;a++)for(let b=a+1;b<idsForRecipes.length;b++){
     for(const items of [[idsForRecipes[a],idsForRecipes[b]],
@@ -2386,10 +2409,10 @@ const LIVE_STYLES={
   pot_home:'家常炖煮',gentle:'清润慢炖',reduced:'浓香收汁',legacy:'标准工艺'
 };
 const LIVE_AFFINITY={signature:'招牌适配',viable:'适合',ordinary:'普通',off:'不契合'};
-const REQUIRE={beef:5.4,chicken:6.1,chili:1.3,garlic:1.3,mushroom:2.9,cabbage:2.5,onion:2.8,potato:6.2,mushroom_heart:3.9,ember_pepper:1.9};
-const AROMATICS=new Set(['onion','garlic','chili','mushroom','ember_pepper']);
-const MAIN_PRIORITY=['beef','chicken','potato','cabbage','mushroom','mushroom_heart','onion','ember_pepper','chili','garlic'];
-const PRIMARY_AROMATIC={garlic:true,onion:true,chili:true,mushroom:true,ember_pepper:true};
+const REQUIRE={beef:5.4,chicken:6.1,chili:1.3,garlic:1.3,mushroom:2.9,cabbage:2.5,onion:2.8,potato:6.2,mushroom_heart:3.9,ember_pepper:1.9,tide_sour_pulp:1.8,starlit_nectar:1.2};
+const AROMATICS=new Set(['onion','garlic','chili','mushroom','ember_pepper','tide_sour_pulp','starlit_nectar']);
+const MAIN_PRIORITY=['beef','chicken','potato','cabbage','mushroom','mushroom_heart','onion','ember_pepper','chili','garlic','tide_sour_pulp','starlit_nectar'];
+const PRIMARY_AROMATIC={garlic:true,onion:true,chili:true,mushroom:true,ember_pepper:true,tide_sour_pulp:true,starlit_nectar:true};
 const liveRecipeId=(ids,station)=>RECIPE_INDEX[recipeSignature(ids,station)]||null;
 
 function liveCookAmount(drop,t,actions,vessel){
@@ -2905,7 +2928,7 @@ function generateBiomeMap(s,route,target){
  const variance=((seed>>>7)%3)-1;
  const sourceCount=Math.max(2,Math.min(6,biome.count+(biome.count>=4?variance:Math.min(0,variance))));
  const chosen=[...spots.slice(0,sourceCount)];
- const actualTarget=target||biome.primary;
+ const actualTarget=['SHOP_STAPLE','FIELD_ONLY'].includes(ING[target]?.acquisitionPolicy)?target:biome.primary;
  const first=chosen.shift();
  const nodes=[{key:'target',id:actualTarget,x:first[0],y:first[1],n:2,type:'gather',claimed:false}];
  for(const [i,[x,y]] of chosen.entries()){
@@ -2969,6 +2992,7 @@ function makeFieldEncounterPlan(s,route){
 
 const key=(x,y)=>x+','+y;
 function insertPlannedFieldEncounter(map,plan,segment){
+ if(plan?.version==='0.11-C'){for(const e of plan.encounters||[])insertPlannedFieldEncounter(map,e,segment);return map;}
  if(!plan||plan.segment!==segment||!map||!Array.isArray(map.nodes))return map;
  if(map.nodes.some(n=>n.key===plan.eventId))return map; // idempotent reload
  const target=map.nodes.find(n=>n.key==='target');
@@ -2990,7 +3014,8 @@ function insertPlannedFieldEncounter(map,plan,segment){
  const middle=(path.length-1)/2;
  candidates.sort((a,b)=>Math.abs(a.i+1-middle)-Math.abs(b.i+1-middle));
  const where=candidates[0];
- map.nodes.push({key:plan.eventId,eventId:plan.eventId,kind:plan.kind,
+ map.nodes.push({key:plan.eventId,eventId:plan.eventId,kind:plan.kind,region:plan.region,
+  ...(plan.offer?{offer:structuredClone(plan.offer),status:'available'}:{}),
   id:plan.region==='spring'?'potato':'mushroom',type:'event',
   x:where.x,y:where.y,n:1,claimed:false});
  return map;
@@ -3138,6 +3163,58 @@ function meleeAttackWouldHit(enemy,playerPos){
 function meleeWindupProgress(enemy){
  const max=enemy?.windupTotal||meleeProfile(enemy?.kind)?.windup||.7;
  return Math.max(0,Math.min(1,1-Math.max(0,enemy?.warning||0)/max));
+}
+// Pure planning/quotes. engine.js owns the unique ledger + field commit.
+const encounterHash=n=>{let h=n>>>0;h=Math.imul(h^(h>>>16),0x45d9f3b);h=Math.imul(h^(h>>>16),0x45d9f3b);return (h^(h>>>16))>>>0;};
+const SPECIAL_ENCOUNTER_KINDS=['merchant','traveler','ecology'];
+function specialEncounterOffer(kind,region='forest'){
+ if(kind==='merchant')return {coins:36,cost:{},gain:{tide_sour_pulp:2}};
+ if(kind==='traveler')return {coins:0,cost:{[region==='spring'?'potato':'mushroom']:2},gain:{starlit_nectar:2}};
+ if(kind==='ecology')return {coins:0,cost:{},gain:{[region==='spring'?'potato':'mushroom']:1}};
+ return null;
+}
+function makeSpecialEncounterPlan(s,route){
+ const region=String(route).startsWith('spring')?'spring':'forest',risk=/risk/.test(route);
+ const seed=encounterHash((s.seed||20261009)+(s.cycle||1)*1009+(s.day||1)*139+(region==='spring'?104729:0));
+ const misses=Math.min(2,Math.max(0,Number(s.encounterProgress?.misses)||0)),npc=misses>=2||seed%100<(risk?50:40);
+ const encounters=[],segment=2+encounterHash(seed+5)%2,key=`${s.cycle}-${s.day}-${region}`;
+ if(npc){const kind=encounterHash(seed+17)%100<(risk?70:30)?'merchant':'traveler';
+  encounters.push({eventId:`special-${key}`,segment,kind,region,offer:specialEncounterOffer(kind,region)});}
+ if(encounterHash(seed+91)%100<25){
+  const stage=npc?1:2+encounterHash(seed+117)%2;
+  encounters.push({eventId:`ecology-${key}`,segment:stage,kind:'ecology',region,offer:specialEncounterOffer('ecology',region)});
+ }
+ return {version:'0.11-C',region,npcScheduled:npc,encounters};
+}
+function specialEncounterDetails(n){
+ if(n?.kind==='merchant')return {title:'神秘商人',line:'「酸得会拐弯，一包两份。先试一锅，再留一份招待识货的客人。」',hint:'酸浆适合鸡肉与蒜瓣爆炒，也能与土豆、洋葱慢炖。'};
+ if(n?.kind==='traveler')return {title:'采蜜旅人',line:'「蜜蜂不收金币，我也不收。拿你这趟找到的食材换吧。」',hint:'花蜜可以翻炒魔菜，或与鸡肉、洋葱轻搅慢炖。'};
+ return {title:n?.region==='spring'?'温泉晶簇':'月露花丛',line:'一处尚未被取走的自然馈赠。可以安全采一点，或付出体力深入调查。',hint:'这里得到普通食材；不会直接解锁菜谱。'};
+}
+function specialEncounterChoices(n){
+ return n?.kind==='merchant'?['buy','leave']:n?.kind==='traveler'?['trade','leave']:n?.kind==='ecology'?['observe','forage','leave']:[];
+}
+function specialBagSlots(bag){return Object.values(bag||{}).reduce((n,v)=>n+Math.ceil(Math.max(0,v)/3),0);}
+const encounterItemsValid=items=>items&&typeof items==='object'&&!Array.isArray(items)&&Object.entries(items).every(([id,q])=>Object.hasOwn(ING,id)&&Number.isInteger(q)&&q>0&&q<=9);
+function previewSpecialEncounter(s,n,choice){
+ const f=s.field,fail=reason=>({ok:false,reason});
+ if(!f||!n||!specialEncounterChoices(n).includes(choice))return fail('无效的奇遇选项');
+ if(n.claimed||n.status==='resolved'||s.ledger?.some(t=>t.id==='encounter-'+n.eventId))return fail('这次奇遇已经结束');
+ if(choice==='leave')return {ok:true,bag:{...f.bag},coins:0,hp:0,cost:{},gain:{},slots:specialBagSlots(f.bag)};
+ const offer=n.offer;if(!offer||!encounterItemsValid(offer.cost)||!encounterItemsValid(offer.gain)||!Number.isInteger(offer.coins)||offer.coins<0)return fail('这份报价无法使用');
+ const cost={...offer.cost},gain={...offer.gain},coins=offer.coins,hp=n.kind==='ecology'&&choice==='forage'?1:0;
+ if(hp)for(const id of Object.keys(gain))gain[id]=3;
+ if(!Number.isFinite(s.coins)||s.coins<coins)return fail(`金币不足：需要${coins}金币`);
+ if(!Number.isFinite(f.hp)||f.hp<=hp)return fail('生命不足：调查后至少保留1点生命');
+ const bag={...f.bag};
+ for(const [id,q] of Object.entries(cost)){
+  if((bag[id]||0)<q)return fail(`野外背包缺少${ING[id].name}×${q}（不使用仓库）`);
+  bag[id]-=q;if(!bag[id])delete bag[id];
+ }
+ for(const [id,q] of Object.entries(gain))bag[id]=(bag[id]||0)+q;
+ const slots=specialBagSlots(bag);
+ if(slots>(f.capacity||8))return fail('背包空间不足：需要装下整份收获');
+ return {ok:true,bag,coins,hp,cost,gain,slots};
 }
 const PHASES=['forecast','field','research','menu','prep','service','report','upgrade'];
 const SAVE_KEY='oddpot-prototype-v04'; // v0.2 兼容先前试玩存档
@@ -3528,16 +3605,17 @@ function fieldBranchChoices(f){
 }
 function enterField(s,route){
  if(s.phase!=='field'||s.field||!['safe','risk','spring_safe','spring_risk'].includes(route))return false;
- const target=ING[s.selectedTarget]?.acquisitionPolicy==='BOSS_ONLY'?'mushroom':s.selectedTarget;
+ const target=['SHOP_STAPLE','FIELD_ONLY'].includes(ING[s.selectedTarget]?.acquisitionPolicy)?s.selectedTarget:'mushroom';
  const risk=route==='risk'||route==='spring_risk';
  const sequence=risk?[{type:'gather',id:target,n:2,label:'定向采集'},{type:'danger',id:'beef',n:2,label:'野牛领地'},{type:'event',id:'mushroom',n:2,label:'菌菇奇遇'}]:
   [{type:'gather',id:target,n:2,label:'目标采集'},{type:'gather',id:s.day===2?'chili':'mushroom',n:3,label:'林间采集'},{type:'event',id:'chicken',n:2,label:'流浪农夫'}];
  s.route=route;
+ const encounterPlan=makeSpecialEncounterPlan(s,route),map=insertPlannedFieldEncounter(buildFieldMap(s,route,target),encounterPlan,1);
  s.field={route,hp:3,node:0,bag:{},bagStacks:[],capacity:s.bagSlots||8,sequence,
-  segmentIndex:1,segmentStatus:'active',encounterPlan:makeFieldEncounterPlan(s,route),zoneId:route.startsWith('spring')?'hot_spring_shallows':'herb_path',
+  segmentIndex:1,segmentStatus:'active',encounterPlan,zoneId:route.startsWith('spring')?'hot_spring_shallows':'herb_path',
   zoneTitle:route.startsWith('spring')?'热泉浅滩':'香草小径',
   dangerCommitment:risk,selectedBranches:[],choices:[],weapon:fieldWeaponSnapshot(s),
-  finished:false,...buildFieldMap(s,route,target),bento:s.bento?.day===kitchenDayKey(s)?clone(s.bento):null};
+  finished:false,...map,bento:s.bento?.day===kitchenDayKey(s)?clone(s.bento):null};
  return true;
 }
 function completeFieldSegment(s){
@@ -3563,6 +3641,7 @@ function chooseFieldBranch(s,choiceId){
  const segmentSeed=(f.segmentIndex*1307+branch.id.split('').reduce((n,c)=>n+c.charCodeAt(0),0)*17);
  const map=insertPlannedFieldEncounter(buildFieldMap({...s,seed:s.seed+segmentSeed,fieldZoneId:branch.id,fieldSegmentIndex:f.segmentIndex},f.route,branch.target),f.encounterPlan,f.segmentIndex);
  for(const key of ['region','biome','bossSpawn','spawn','x','y','steps','worldW','worldH','worldVersion','scenery','visitedHazards','nodes','obstacles','hazards'])f[key]=map[key];
+ if(map.nodes.some(n=>['merchant','traveler'].includes(n.kind)))f.specialNpcOpportunity=true;
  f.action=false;f.target=branch.target;f.harvestProgress=0;f.harvestNode=null;f.activeEvent=null;
  // HP, bag, bento, skill cooldown and equipped cookware persist across all three segments.
  return true;
@@ -3584,7 +3663,13 @@ function recordEcologySegment(f,reason){
  f.encounterHistory.push({segment:f.segmentIndex,zone:f.biome?.zoneId,seconds:f.elapsed,reason,...f.ecologyStats,discardRate:(f.ecologyStats.carriedIn+f.ecologyStats.collected)?f.ecologyStats.discarded/(f.ecologyStats.carriedIn+f.ecologyStats.collected):0});
 }
 function settleField(s,reason='retreat'){const f=s.field;if(!f||f.settled)return false;let items={...f.bag};if(reason==='faint')for(const id of Object.keys(items)){items[id]=Math.ceil(items[id]/2);if(items[id]===0)delete items[id]};f.settled=true;f.reason=reason;f.winnings=items;const settled=transact(s,`field-${s.cycle}-${s.day}`,'exploration',items);
- if(settled)recordEcologySegment(f,reason);
+ if(settled){recordEcologySegment(f,reason);
+  if(f.encounterPlan?.version==='0.11-C'){
+   s.encounterProgress??={misses:0};
+   if(f.specialNpcOpportunity)s.encounterProgress.misses=0;
+   else if(reason==='completed'&&f.segmentIndex===3)s.encounterProgress.misses=Math.min(2,(s.encounterProgress.misses||0)+1);
+  }
+ }
  if(settled&&f.bossDefeated&&(items.mushroom_heart||items.ember_pepper)){s.bossCleared??={};s.bossCleared[f.bossDefeated]=true;}
  nextPhase(s,'research');return true}
 function skipField(s){if(s.phase!=='field'||s.field)return false;nextPhase(s,'research');return true}
@@ -4178,6 +4263,7 @@ function interactExplorer(s){
  const f=s.field;if(s.phase!=='field'||!f||f.settled||f.finished)return {ok:false,message:'探索已结束'};
  const node=f.nodes.find(n=>!n.claimed&&Math.abs(n.x-f.x)+Math.abs(n.y-f.y)<=1);
  if(!node)return {ok:false,message:'请靠近可采集的食材'};
+ if(node.type==='event'&&node.offer)return {ok:false,message:'请在场内靠近奇遇后选择交易，不能直接采集奇遇货品'};
  if(f.bag[node.id]>=3)return {ok:false,message:'这一食材的背包格已装满，先回店吧'};
  if(Object.keys(f.bag).length>=6&&!f.bag[node.id])return {ok:false,message:'六格背包已满，请先撤离'};
  if(node.type==='danger'){
@@ -4306,6 +4392,23 @@ function stepLiveResearch(s,seconds=0){
  c.elapsed=Math.min(19,c.elapsed+Math.max(0,Math.min(.1,Number(seconds)||0)));
  if(c.elapsed>=19)return finishLiveResearch(s);
  return null;
+}
+
+// Full preflight precedes the only synchronous commit; UI saves one full snapshot.
+function resolveSpecialFieldEvent(s,choice){
+ const f=s.field;if(s.phase!=='field'||!f?.action||f.finished||f.settled||!f.activeEvent)return false;
+ const n=f.nodes.find(n=>n.key===f.activeEvent);if(!n||!SPECIAL_ENCOUNTER_KINDS.includes(n.kind))return false;
+ const quote=previewSpecialEncounter(s,n,choice);
+ if(!quote.ok){f.actionMessage=quote.reason;f.actionMessageTTL=3;return false;}
+ const id='encounter-'+n.eventId,type=choice==='leave'?'encounter_decline':n.kind==='merchant'?'field_trade':n.kind==='traveler'?'field_exchange':'field_discovery';
+ if(!transact(s,id,type,{},-quote.coins))return false;
+ f.bag=quote.bag;syncFieldBagStacks(f);f.hp-=quote.hp;
+ if(f.ecologyStats){f.ecologyStats.collected+=Object.values(quote.gain).reduce((a,b)=>a+b,0);f.ecologyStats.damageTaken+=quote.hp;}
+ n.claimed=true;n.status='resolved';n.result={choice,coins:quote.coins,hp:quote.hp,cost:quote.cost,gain:quote.gain};
+ const entry=s.ledger.find(t=>t.id===id);entry.fieldCost={...quote.cost};entry.fieldGain={...quote.gain};entry.hpCost=quote.hp;
+ f.activeEvent=null;f.harvestNode=null;f.harvestProgress=0;
+ f.actionMessage=choice==='leave'?'你告别了这次奇遇，继续赶路。':'获得'+Object.entries(quote.gain).map(([id,q])=>ING[id].name+'×'+q).join('、')+'，仍在野外背包，回店后入库。';
+ f.actionMessageTTL=4;return true;
 }
 // G: readable mini-boss patterns and pixel bodies. Damage/drops stay owned
 // by field_v04. Callbacks use its real collision and damage protections.
@@ -4736,7 +4839,7 @@ function useFieldSkill(s){
  pushMsg(f,hits?'🛡️ 锅盖反击！击退 '+hits+' 个敌人':'🛡️ 举起锅盖！短暂防御迎面攻击。');
  return true;
 }
-function resolveFieldEvent(s,choice){const f=s.field;if(!f?.action||!f.activeEvent||f.finished)return false;const n=f.nodes.find(n=>n.key===f.activeEvent);if(!n||n.claimed)return false;let label='';if(choice==='trade'){
+function resolveFieldEvent(s,choice){const f=s.field;if(f?.nodes?.some(n=>n.key===f.activeEvent&&['merchant','traveler','ecology'].includes(n.kind)))return resolveSpecialFieldEvent(s,choice);if(!f?.action||!f.activeEvent||f.finished)return false;const n=f.nodes.find(n=>n.key===f.activeEvent);if(!n||n.claimed)return false;let label='';if(choice==='trade'){
  if(!f.bag.mushroom){pushMsg(f,'没有采到蘑菇，无法交换');return false}
  f.bag.mushroom--;if(!f.bag.mushroom)delete f.bag.mushroom;
  const n=addBag(f,'chili',1);if(n===0){f.bag.mushroom=(f.bag.mushroom||0)+1;pushMsg(f,'背包没有火椒位置');return false}label='向游商用 1 份蘑菇换到火椒 ×1';
@@ -4859,7 +4962,7 @@ function stepActionField(s,axisX,axisY,dt){
  }
  const nearby=f.nodes.find(n=>!n.claimed&&dist(f.pos,n)<.86&&n.type!=='combat');
  if(nearby){if(nearby.type==='event'){
-  f.activeEvent=nearby.key;pushMsg(f,'遇见流浪调味师：你要如何处理？');event='field_event';
+  f.activeEvent=nearby.key;pushMsg(f,nearby.kind==='merchant'?'遇见神秘商人':nearby.kind==='traveler'?'遇见采蜜旅人':nearby.kind==='ecology'?'发现一处奇异馈赠':'遇见流浪调味师：你要如何处理？');event='field_event';
  }else {
   if(f.harvestNode!==nearby.key){f.harvestNode=nearby.key;f.harvestProgress=0}
   f.harvestProgress+=dt;if(f.harvestProgress>=.82){if(gather(f,nearby))event='harvest';f.harvestProgress=0;f.harvestNode=null}
@@ -4880,6 +4983,18 @@ function ingredientIconHtml(id,size=24){
  const url=ingredientIconUrl(id);if(!url)return '';
  const pixels=Math.max(12,Math.min(64,Number(size)||24));
  return `<img class="ingredient-icon" data-ingredient-icon="${id}" src="${url}" width="${pixels}" height="${pixels}" style="--ingredient-size:${pixels}px" alt="" aria-hidden="true" draggable="false">`;
+}
+const encounterEsc=s=>String(s??'').replaceAll('&','&amp;').replaceAll('<','&lt;').replaceAll('>','&gt;').replaceAll('"','&quot;');
+function encounterItemText(items){return Object.entries(items).map(([id,q])=>`${ingredientIconHtml(id,20)} ${encounterEsc(ING[id]?.name||id)} ×${q}`).join(' + ');}
+function specialEncounterHtml(s,n){
+ const details=specialEncounterDetails(n),f=s.field;
+ const actions=specialEncounterChoices(n).map(choice=>{
+  const quote=previewSpecialEncounter(s,n,choice);
+  const gain=n.kind==='ecology'&&choice==='forage'?Object.fromEntries(Object.keys(n.offer.gain).map(id=>[id,3])):n.offer.gain;
+  const label=choice==='leave'?'离开，结束这次机会':choice==='buy'?`支付 ${n.offer.coins} 金币 → ${encounterItemText(gain)}`:choice==='trade'?`${encounterItemText(n.offer.cost)} → ${encounterItemText(gain)}`:choice==='observe'?`安全采集 → ${encounterItemText(gain)}`:`消耗 1 生命 → ${encounterItemText(gain)}`;
+  return `<button type="button" data-event="${choice}" ${quote.ok?'':'disabled'}><span>${label}</span>${quote.ok&&choice!=='leave'?`<small>完成后背包 ${quote.slots}/${f.capacity} 格</small>`:!quote.ok?`<small>${encounterEsc(quote.reason)}</small>`:''}</button>`;
+ }).join('');
+ return `<section class="field-event special-encounter" role="dialog" aria-modal="true" aria-labelledby="special-encounter-title"><strong id="special-encounter-title">${encounterEsc(details.title)}</strong><p>${encounterEsc(details.line)}</p><p class="encounter-wallet">金币 ${s.coins} · 野外背包 ${specialBagSlots(f.bag)}/${f.capacity} 格 · 生命 ${f.hp}</p><div class="encounter-actions">${actions}</div><small class="encounter-cargo">${n.kind==='merchant'?'货品先入野外包，回店才入库；晕倒会减损，已付金币不退。离开机会即结束。':'收获先入野外包，回店才入库；晕倒会减损。机会只能使用一次，离开即结束。'}</small><p class="encounter-hint">${encounterEsc(details.hint)}</p></section>`;
 }
 // v0.4.1 original 16x24-ish pixel actors. Raster blocks rendered at integer scale,
 // so these are maintainable gameplay sprites rather than platform emoji or external art.
@@ -5536,12 +5651,12 @@ function isHerbPixelSlice(f){
 function herbPixelSpriteNames(){
  return ['grass0','grass1','grass2','grass3','tree0','tree1','rock',
   'garlic','cabbage','onion','potato','mushroom','chili','beef','chicken',
-  'traveler','vent','flower','tuft','spark','ember_pepper','mushroom_heart'];
+  'traveler','merchant','nectar_traveler','encounter_bloom','encounter_crystal','vent','flower','tuft','spark','ember_pepper','mushroom_heart','tide_sour_pulp','starlit_nectar'];
 }
 function herbPixelSpriteSize(name){
  if(!herbPixelSpriteNames().includes(name)&&!/^trail:[0-9]+:[0-3]$/.test(name))return null;
  return name.startsWith('tree')?{width:24,height:30}:
-  name==='traveler'?{width:20,height:28}:{width:16,height:16};
+  ['traveler','merchant','nectar_traveler'].includes(name)?{width:20,height:28}:{width:16,height:16};
 }
 function herbPaintGrass(ctx,variant=0){
  herbPaintRect(ctx,0,0,16,16,PH.grass);
@@ -5594,7 +5709,17 @@ function herbPaintFood(ctx,id){
  if(id==='ember_pepper')id='chili';if(id==='mushroom_heart')id='mushroom';
  // All pickups occupy the same 16px silhouette frame, distinct at ~25px on phone.
  // Shared dark outline, single warm highlight, and a colored upper leaf/stem.
- if(id==='garlic'){
+ if(id==='tide_sour_pulp'){
+  herbPaintRect(ctx,4,4,9,10,PH.outline);herbPaintRect(ctx,3,7,11,5,PH.outline);
+  herbPaintRect(ctx,5,5,7,8,'#4caaa5');herbPaintRect(ctx,4,8,9,3,'#72c7bc');
+  herbPaintRect(ctx,6,6,2,5,'#d5ead1');herbPaintRect(ctx,9,8,2,3,'#f4e8b8');
+  herbPaintRect(ctx,7,1,2,4,PH.deep);herbPaintRect(ctx,9,2,4,2,PH.leaf);
+ }else if(id==='starlit_nectar'){
+  herbPaintRect(ctx,5,4,7,3,PH.outline);herbPaintRect(ctx,4,7,9,8,PH.outline);
+  herbPaintRect(ctx,5,8,7,6,'#d69a49');herbPaintRect(ctx,6,8,5,4,'#f1ca72');
+  herbPaintRect(ctx,6,9,2,3,PH.shine);herbPaintRect(ctx,5,4,7,2,'#aa7b54');
+  herbPaintRect(ctx,8,0,2,5,PH.leaf);herbPaintRect(ctx,6,1,6,2,'#d6bad1');herbPaintRect(ctx,8,1,2,2,PH.shine);
+ }else if(id==='garlic'){
   herbPaintRect(ctx,7,1,3,4,PH.deep);herbPaintRect(ctx,6,2,2,4,PH.leaf);herbPaintRect(ctx,9,2,2,4,PH.leaf);
   herbPaintRect(ctx,4,7,9,7,PH.outline);herbPaintRect(ctx,5,6,7,8,PH.cream);
   herbPaintRect(ctx,6,8,2,4,PH.shine);herbPaintRect(ctx,9,9,2,4,'#d6b98b');herbPaintRect(ctx,7,13,3,1,PH.outline);
@@ -5673,7 +5798,15 @@ function herbGetSprite(name){
   const [,mask,variant]=name.split(':');herbPaintTrail(ctx,Number(mask),Number(variant));
  }else if(name.startsWith('tree'))herbPaintTree(ctx,Number(name.slice(-1)));
  else if(name==='rock')herbPaintRock(ctx);
- else if(name==='traveler')herbPaintTraveler(ctx);
+ else if(['traveler','merchant','nectar_traveler'].includes(name)){
+  herbPaintTraveler(ctx);
+  if(name==='merchant'){herbPaintRect(ctx,5,1,12,7,PH.outline);herbPaintRect(ctx,6,2,10,5,'#817395');herbPaintRect(ctx,8,0,7,3,'#aa94ad');herbPaintRect(ctx,1,13,5,11,PH.bark);herbPaintRect(ctx,2,15,3,4,'#d8ba79');herbPaintRect(ctx,6,15,10,8,'#756480');herbPaintRect(ctx,9,15,2,8,PH.cream);}
+  if(name==='nectar_traveler'){herbPaintRect(ctx,2,5,18,3,'#c9ab76');herbPaintRect(ctx,6,1,10,5,'#dfc38b');herbPaintRect(ctx,7,4,8,1,PH.leaf);herbPaintRect(ctx,15,16,5,8,PH.outline);herbPaintRect(ctx,16,17,3,6,'#d6a54e');herbPaintRect(ctx,17,18,1,3,PH.shine);}
+ }
+ else if(['encounter_bloom','encounter_crystal'].includes(name)){
+  if(name==='encounter_bloom'){herbPaintRect(ctx,7,5,2,10,PH.deep);herbPaintRect(ctx,3,10,5,3,PH.leaf);herbPaintRect(ctx,9,11,5,2,PH.leaf);herbPaintRect(ctx,4,2,8,7,PH.outline);herbPaintRect(ctx,5,3,6,5,'#b99dc1');herbPaintRect(ctx,7,3,2,5,PH.shine);herbPaintRect(ctx,5,5,6,1,PH.shine);}
+  else{herbPaintRect(ctx,2,12,12,3,PH.rock);herbPaintRect(ctx,6,1,5,12,PH.outline);herbPaintRect(ctx,7,2,3,10,'#9fc9c0');herbPaintRect(ctx,8,3,1,7,PH.shine);herbPaintRect(ctx,2,6,4,7,'#73a99e');herbPaintRect(ctx,11,7,3,6,'#c9d9ba');}
+ }
  else if(['flower','tuft','spark','vent'].includes(name))herbPaintGroundObject(ctx,name);
  else herbPaintFood(ctx,name);
  herbSprites.set(name,cv);
@@ -5759,12 +5892,12 @@ function drawHerbPixelObstacle(c,o,index=0){
 }
 function drawHerbPixelNode(c,n,time=0,markers=true,screenScale=null){
  if(n.claimed)return;
- const name=n.type==='event'?'traveler':herbPixelSpriteNames().includes(n.id)?n.id:'mushroom';
+ const name=n.type==='event'?(n.kind==='merchant'?'merchant':n.kind==='traveler'?'nectar_traveler':n.kind==='ecology'?(n.region==='spring'?'encounter_crystal':'encounter_bloom'):'traveler'):herbPixelSpriteNames().includes(n.id)?n.id:'mushroom';
  const bob=n.type==='event'?0:Math.sin(time*3+n.x)*.028;
  c.imageSmoothingEnabled=false;
  c.fillStyle='#26352e88';c.fillRect(n.x-.26,n.y+.22,.52,.10);
  if(n.type==='event'){
-  if(screenScale){c.save();c.translate(n.x,n.y);c.scale(1/screenScale,1/screenScale);c.drawImage(herbGetSprite(name),-14,-23.8,28,39.2);c.restore();}
+  if(screenScale){c.save();c.translate(n.x,n.y);c.scale(1/screenScale,1/screenScale);if(n.kind==='ecology')c.drawImage(herbGetSprite(name),-13,-17,26,26);else c.drawImage(herbGetSprite(name),-14,-23.8,28,39.2);c.restore();}
   else c.drawImage(herbGetSprite(name),n.x-.41,n.y-.80,.82,1.10);
   if(markers)c.drawImage(herbGetSprite('spark'),n.x+.28,n.y-.90,.27,.27);
  }else{
@@ -5834,7 +5967,7 @@ function drawHerbPixelProjectile(c,projectile,type='enemy'){
 
 // Shared identity for field and DOM ingredient art: the very same raster cache.
 function ingredientSpriteCanvas(id){
- if(!['beef','chicken','chili','garlic','mushroom','cabbage','onion','potato','mushroom_heart','ember_pepper'].includes(id))return null;
+ if(!['beef','chicken','chili','garlic','mushroom','cabbage','onion','potato','mushroom_heart','ember_pepper','tide_sour_pulp','starlit_nectar'].includes(id))return null;
  return herbGetSprite(id);
 }
 // v0.11-E: restaurant-inspired painted Canvas scenery; player/NPC/enemies remain pixel sprites.
@@ -6723,6 +6856,7 @@ function drawField(canvas,s,clock){const size=setCanvas(canvas);if(!size||!s.fie
  }else if(springs){circle(c,0,3,15,'#8c5940');circle(c,-5,-4,14,'#625d59');circle(c,5,-6,9,'#817875');rect(c,-4,-18,8,3,'#be9a78')}
  else tree(c,0,0);c.restore()}
  for(const n of f.nodes){if(n.claimed)continue;
+   if(n.type==='event'&&n.offer){drawHerbPixelNode(c,n,clock,false,sc);continue;}
    if(fieldSpriteArt){if(smoothFx)drawHerbPixelNode(c,n,clock,false,sc);else drawHerbPixelNode(c,n,clock);continue;}
    if(n.type==='event'){
     // Small traveling cook with a pack: clearly an NPC, not a glowing dot.
@@ -7477,7 +7611,7 @@ const itemCount=()=>Object.keys(game.recipes).length;
 
 function hud(){
  const home=game.phase==='forecast';
- return `<div class="hud ${home?'v076-home-hud':''}"><div class="brand"><span class="logo" aria-hidden="true">🍳</span><div><strong>怪味食堂</strong><small>${home?'今日营业':'ODDPOT · v0.11.0-alpha.6'}</small></div></div><div class="hud-meta"><span aria-label="金币">🪙 ${game.coins}</span><span aria-label="声望">⭐ ${game.reputation}</span></div><button class="hud-gear" data-act="settings" aria-label="设置">⚙</button></div><div class="day-strip ${home?'v076-home-day':''}"><b>营业第 ${totalBusinessDay(game)} 天 · ${tableCapacity(game)} 座</b><span class="day-phase">${home?'☀ 开店前':phaseLabels[game.phase]}</span>${home?'':`<span class="day-recipes">图鉴 ${itemCount()}/${Object.keys(RECIPES).length}</span>`}</div>`;
+ return `<div class="hud ${home?'v076-home-hud':''}"><div class="brand"><span class="logo" aria-hidden="true">🍳</span><div><strong>怪味食堂</strong><small>${home?'今日营业':'ODDPOT · v0.11.0-alpha.7'}</small></div></div><div class="hud-meta"><span aria-label="金币">🪙 ${game.coins}</span><span aria-label="声望">⭐ ${game.reputation}</span></div><button class="hud-gear" data-act="settings" aria-label="设置">⚙</button></div><div class="day-strip ${home?'v076-home-day':''}"><b>营业第 ${totalBusinessDay(game)} 天 · ${tableCapacity(game)} 座</b><span class="day-phase">${home?'☀ 开店前':phaseLabels[game.phase]}</span>${home?'':`<span class="day-recipes">图鉴 ${itemCount()}/${Object.keys(RECIPES).length}</span>`}</div>`;
 }
 function toast(){return `<div class="game-toast" role="status"><span>${esc(message)}</span></div>`}
 function playablePhase(){return game.phase==='service'||(game.phase==='field'&&!!game.field?.action)}
@@ -7516,7 +7650,7 @@ function overlayMarkup(){if(!overlay)return '';
   const ids=Object.keys(ING),market=ensureDailyMarket(game),canShop=['forecast','field','research','menu','prep'].includes(game.phase)&&(!game.field||game.field.settled);
   const stockLine=id=>{
    const ing=ING[id],shop=ing.acquisitionPolicy==='SHOP_STAPLE',offer=market.goods[id],owned=game.inventory[id]||0;
-   if(!shop)return `<div class="stock-line"><span>${ingredientIconHtml(id,24)} ${ing.name}</span><b>×${owned}</b><small class="v08-source-only">${ing.acquisitionPolicy==='BOSS_ONLY'?'首领掉落':'野外采集'}</small></div>`;
+   if(!shop)return `<div class="stock-line"><span>${ingredientIconHtml(id,24)} ${ing.name}</span><b>×${owned}</b><small class="v08-source-only">${ing.acquisitionPolicy==='BOSS_ONLY'?'首领掉落':ing.acquisitionPolicy==='MERCHANT_ONLY'?'神秘商人':ing.acquisitionPolicy==='ENCOUNTER_ONLY'?'旅人交换':'野外采集'}</small></div>`;
    if(!offer)return `<div class="stock-line"><span>${ingredientIconHtml(id,24)} ${ing.name}</span><b>×${owned}</b><small>今日缺货 · 可探索补充</small></div>`;
    return `<div class="stock-line"><span>${ingredientIconHtml(id,24)} ${ing.name}</span><b>×${owned}</b><small>${offer.price} 金币/份 · 今日剩余 ${offer.stock}</small><div class="v093-buy-actions">${b('buy:'+id,offer.stock?'买 1 份':'售罄','small',!canShop||!offer.stock||game.coins<offer.price)}${b('buy:'+id+':3','买 3 份','small',!canShop||offer.stock<3||game.coins<offer.price*3)}</div></div>`;
   };
@@ -7551,7 +7685,7 @@ function overlayMarkup(){if(!overlay)return '';
    };
    body=`<h2>👩‍🍳 食堂伙伴</h2><p class="sheet-lead">雇员永久留下；每人每天最多吃 1 道料理。员工餐真实扣料并增加当日效率，也积累最多 3 点熟练。</p><div class="staff-roster">${row('helper')}${row('waiter')}</div>`;
  }else if(overlay==='settings'){
-  body=`<h2>⚙ 试玩设置</h2><p class="sheet-lead">版本 v0.11.0-alpha.6 · 固定 9:16 竖屏 · 单机 localStorage 存档</p>${b('reset','重置存档，从 DAY 1 重新开始','danger')}<p class="sheet-lead">切到后台时营业会自动暂停。更换设备不会同步存档。</p>`;
+  body=`<h2>⚙ 试玩设置</h2><p class="sheet-lead">版本 v0.11.0-alpha.7 · 固定 9:16 竖屏 · 单机 localStorage 存档</p>${b('reset','重置存档，从 DAY 1 重新开始','danger')}<p class="sheet-lead">切到后台时营业会自动暂停。更换设备不会同步存档。</p>`;
  }else if(overlay==='details'){
   const r=game.report;body=r?`<h2>营业账本详情</h2><p class="sheet-lead">本日订单由真实食材库存、工位工作秒数和顾客等待事件计算。</p><div class="book-list">${Object.entries(r.byDish).map(([id,d])=>`<div class="detail-row">${RECIPES[id].emoji} ${RECIPES[id].name}：售出 ${d.count} 份 · 满意 ${Math.round(d.totalSat/d.count)}</div>`).join('')}<div class="detail-row">WOK 占用 ${r.congestion.WOK} 秒 / POT ${r.congestion.POT} 秒</div><div class="detail-row">食材耗用估值 ${r.cost} · 招待支出 ${r.hospitalityCost||0} · 收入 ${r.revenue} · 贡献利润 ${r.profit}</div></div>`:'';
  }
@@ -7614,7 +7748,7 @@ function field(){
  `<div class="forest-scene route-scene ux-route">${forestBackdrop()}<div class="route-panel">
    <div class="route-intro"><span class="ux-kicker">出发准备</span><h2>今天去哪找食材？</h2><p>缺什么，就去哪。</p></div>
    <div class="ux-field-label"><strong>目标食材</strong><span>当前：${ING[game.selectedTarget]?.name||'未选'}</span></div>
-   <div class="target-scroller" role="group" aria-label="目标食材">${Object.entries(ING).filter(([id,ing])=>ing.acquisitionPolicy!=='BOSS_ONLY').map(([id,ing])=>`<button class="target-chip ${game.selectedTarget===id?'chosen':''}" data-target="${id}" aria-pressed="${game.selectedTarget===id}">${ingredientIconHtml(id,24)} ${ing.name}</button>`).join('')}</div>
+   <div class="target-scroller" role="group" aria-label="目标食材">${Object.entries(ING).filter(([id,ing])=>['SHOP_STAPLE','FIELD_ONLY'].includes(ing.acquisitionPolicy)).map(([id,ing])=>`<button class="target-chip ${game.selectedTarget===id?'chosen':''}" data-target="${id}" aria-pressed="${game.selectedTarget===id}">${ingredientIconHtml(id,24)} ${ing.name}</button>`).join('')}</div>
    <div class="ux-field-label"><strong>探索区域</strong></div>
    <div class="region-tabs" role="group" aria-label="探索区域"><button data-region="forest" class="${selectedRegion==='forest'?'current':''}" aria-pressed="${selectedRegion==='forest'}">晨露森林</button><button data-region="spring" class="${selectedRegion==='spring'?'current':''}" aria-pressed="${selectedRegion==='spring'}">热泉峡谷</button></div>
    <div class="ux-field-label"><strong>携带厨具</strong><span>升级也会影响探索</span></div>
@@ -7639,7 +7773,7 @@ function field(){
  const readyToFinish=f.nodes?.some(n=>n.key==='target'&&n.claimed)&&!(f.segmentIndex===3&&f.enemies?.some(e=>e.isBoss&&e.hp>0));
  const bag=Object.entries(f.bag).map(([id,n])=>`${ING[id].name}${n}`).join(' · ')||'空';
  const event=f.activeEvent&&f.nodes.find(n=>n.key===f.activeEvent);
- return [`<div class="forest-scene action-forest"><canvas id="forest-canvas" class="forest-canvas"></canvas><div class="floating-joystick" id="field-stick" aria-hidden="true"><div class="floating-joystick-knob" id="field-stick-knob"></div></div><div class="action-hud" aria-label="探索状态"><span class="field-hp" aria-label="体力">${'♥'.repeat(f.hp)}${'♡'.repeat(3-f.hp)}</span><button data-act="field-bag" class="field-bag-chip" aria-label="查看野外背包">背包 <b id="field-bag-count">${fieldBagSlotsUsed(f)}/${f.capacity||8}</b></button><span class="field-clock" id="field-clock">${f.segmentIndex||1}/3 · ${Math.floor(f.elapsed)}s</span></div><div class="field-action-notice" id="field-action-notice" hidden></div>${f.weapon?.type==='WOK'?`<div class="v082-shield-status" id="v082-shield-status" aria-label="锅盖被动防御状态">${f.shieldCharge!==false?'🛡 防御就绪':'🛡 蓄能 '+Math.ceil(f.shieldCooldown||0)+'s'}</div>`:''}${f.bento?`<div class="v063-field-bento">🍱 ${esc(RECIPES[f.bento.recipeId]?.name||"便当")} · <span id="v063-bento-effect">${f.bento.used?"已触发":"待触发"}</span></div>`:""}<button data-act="skill" class="field-skill" aria-label="${f.weapon?.type==='POT'?'高压洋葱炸弹':'锅盖反击'}"><span class="skill-glyph" aria-hidden="true">${f.weapon?.type==='WOK'?'🛡':ingredientIconHtml('onion',25)}</span><span class="skill-caption">${f.weapon?.type==='POT'?'汤锅':'反击'}</span><span class="skill-cooldown" id="skill-cooldown" hidden></span></button>${event?`<div class="field-event"><strong>野外遭遇 · 流浪调味师</strong><p>你在野外遇见流浪调味师。本次机会只有一次，要交换还是继续赶路？</p><button data-event="trade">蘑菇 ×1 → 火椒 ×1（野外背包）</button><button data-event="forage">深入调查：损失生命，争取两份材料</button><button data-event="leave">绕开，保留现有收获</button></div>`:''}</div>`,
+ return [`<div class="forest-scene action-forest"><canvas id="forest-canvas" class="forest-canvas"></canvas><div class="floating-joystick" id="field-stick" aria-hidden="true"><div class="floating-joystick-knob" id="field-stick-knob"></div></div><div class="action-hud" aria-label="探索状态"><span class="field-hp" aria-label="体力">${'♥'.repeat(f.hp)}${'♡'.repeat(3-f.hp)}</span><button data-act="field-bag" class="field-bag-chip" aria-label="查看野外背包">背包 <b id="field-bag-count">${fieldBagSlotsUsed(f)}/${f.capacity||8}</b></button><span class="field-clock" id="field-clock">${f.segmentIndex||1}/3 · ${Math.floor(f.elapsed)}s</span></div><div class="field-action-notice" id="field-action-notice" hidden></div>${f.weapon?.type==='WOK'?`<div class="v082-shield-status" id="v082-shield-status" aria-label="锅盖被动防御状态">${f.shieldCharge!==false?'🛡 防御就绪':'🛡 蓄能 '+Math.ceil(f.shieldCooldown||0)+'s'}</div>`:''}${f.bento?`<div class="v063-field-bento">🍱 ${esc(RECIPES[f.bento.recipeId]?.name||"便当")} · <span id="v063-bento-effect">${f.bento.used?"已触发":"待触发"}</span></div>`:""}<button data-act="skill" class="field-skill" aria-label="${f.weapon?.type==='POT'?'高压洋葱炸弹':'锅盖反击'}"><span class="skill-glyph" aria-hidden="true">${f.weapon?.type==='WOK'?'🛡':ingredientIconHtml('onion',25)}</span><span class="skill-caption">${f.weapon?.type==='POT'?'汤锅':'反击'}</span><span class="skill-cooldown" id="skill-cooldown" hidden></span></button>${event?(event.offer?specialEncounterHtml(game,event):`<div class="field-event"><strong>野外遭遇 · 流浪调味师</strong><p>你在野外遇见流浪调味师。本次机会只有一次，要交换还是继续赶路？</p><button data-event="trade">蘑菇 ×1 → 火椒 ×1（野外背包）</button><button data-event="forage">深入调查：损失生命，争取两份材料</button><button data-event="leave">绕开，保留现有收获</button></div>`):''}</div>`,
  `<div class="action-field-dock field-compact-dock"><span class="field-touch-tip">按住场景 · 拖动移动</span>${readyToFinish?b('finish-segment',f.segmentIndex===3?'探索结束 · 返回':'结束本区 · 选择下一站','primary'):''}${b('retreat','撤离回店','secondary')} </div>`]
 }
 
@@ -7868,7 +8002,7 @@ app.addEventListener('click',e=>{
  const variant=e.target.closest('[data-choose-variant]');if(variant){const value=variant.dataset.chooseVariant,cut=value.indexOf('::');if(cut>0){const id=value.slice(0,cut),variantId=value.slice(cut+2);if(chooseRecipeVariant(game,id,variantId))note('已设为默认工艺，它的真实售价、时间和顾客适配会在营业时生效。')}return}
  const tile=e.target.closest('[data-tile]');if(tile&&game.cook){const i=+tile.dataset.tile;if(tileSelected===null){if(game.cook.tiles[i]){tileSelected=i;note('再点一次目的格，交换或移动食材。');}}else{const from=tileSelected;tileSelected=null;note(moveTile(game,from,i)?'已翻动锅内食材。':'本拍换位机会已用完。')}return}
  const discard=e.target.closest('[data-discard]');if(discard){const ok=discardFieldStack(game,discard.dataset.discard);overlay='';note(ok?'已丢弃本次探索的食材格，仓库库存未受影响。':'无法丢弃该材料。');return}
- const ev=e.target.closest('[data-event]');if(ev){if(resolveFieldEvent(game,ev.dataset.event)){message=game.field.actionMessage;render()}return}
+ const ev=e.target.closest('[data-event]');if(ev){resolveFieldEvent(game,ev.dataset.event);releaseStick();message=game.field.actionMessage;render();return}
  const ch=e.target.closest('[data-choice]');if(ch){if(chooseServiceEvent(game,ch.dataset.choice)){if(game.service?.walkable)resumeBreak(game);servicePanel='';releaseStick();note(game.service.decisionFlash+'，已继续营业。')}else note('目前条件不足或已经处理过本波事件。');return}
  const bp=e.target.closest('[data-breakprep]');if(bp){servicePanel='';note(breakPrep(game,bp.dataset.breakprep)?game.service.decisionFlash+'，下波同款订单将优先出餐。':'原料不足或本波应急机会已用。');return}
  const swap=e.target.closest('[data-apply-swap]');if(swap){const slot=Number(swap.dataset.applySwap),id=app.querySelector(`[data-swap-slot="${slot}"]`)?.value;const ok=swapBreakMenu(game,slot,id);servicePanel='';note(ok?game.service.decisionFlash+'，只影响尚未入店的顾客。':'无法换菜：只能一次，或与现有菜相同。');return}
@@ -7910,7 +8044,7 @@ app.addEventListener('pointerdown',e=>{const skill=e.target.closest('.field-skil
 },{passive:false});
 app.addEventListener('pointerdown',e=>{const a=e.target.closest('[data-tile]');if(a&&game.cook&&game.cook.tiles[+a.dataset.tile])drag={i:+a.dataset.tile,x:e.clientX,y:e.clientY};},{passive:true});
 app.addEventListener('pointerup',e=>{if(!drag)return;const from=drag;drag=null;if(Math.hypot(e.clientX-from.x,e.clientY-from.y)<25)return;const to=document.elementFromPoint(e.clientX,e.clientY)?.closest('[data-tile]');if(to){tileSelected=null;note(moveTile(game,from.i,+to.dataset.tile)?'拖动翻炒成功。':'本拍只能换位一次。')}},{passive:true});
-document.addEventListener('keydown',e=>{if(((game.phase==='field'&&game.field)||(game.phase==='service'&&game.service?.walkable))&&!overlay){const map={ArrowUp:[0,-1],ArrowDown:[0,1],ArrowLeft:[-1,0],ArrowRight:[1,0],w:[0,-1],s:[0,1],a:[-1,0],d:[1,0]};if(map[e.key]){e.preventDefault();keys.add(e.key)}}});
+document.addEventListener('keydown',e=>{if(((game.phase==='field'&&game.field&&!game.field.activeEvent)||(game.phase==='service'&&game.service?.walkable))&&!overlay){const map={ArrowUp:[0,-1],ArrowDown:[0,1],ArrowLeft:[-1,0],ArrowRight:[1,0],w:[0,-1],s:[0,1],a:[-1,0],d:[1,0]};if(map[e.key]){e.preventDefault();keys.add(e.key)}}});
 setInterval(()=>{if(document.hidden||overlay)return;if(game.phase==='service'&&game.service&&!game.service.walkable&&!game.service.paused&&!game.service.done&&!game.service.breakAt){tick(game,1);serviceTickAt=performance.now();if(game.service.done)message='今晚的顾客已经全部处理完毕，可以查看日报。';else if(game.service.breakAt){servicePanel='event';message='突发经营事件！请选择应对方案，或改菜单、备菜。';}render()}},750);
 document.addEventListener('keyup',e=>keys.delete(e.key));
 document.addEventListener('visibilitychange',()=>{if(document.hidden){if(walking){clearInterval(walking);walking=null}if(game.phase==='service'&&game.service&&!game.service.paused){game.service.paused=true;game.service.clockAccumulator=0;releaseStick();message='已自动暂停营业，返回后继续。'}save(game)}else if(game.phase==='service'&&game.service?.walkable){render()}});

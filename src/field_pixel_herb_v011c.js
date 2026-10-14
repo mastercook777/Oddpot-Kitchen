@@ -26,12 +26,12 @@ export function isHerbPixelSlice(f){
 export function herbPixelSpriteNames(){
  return ['grass0','grass1','grass2','grass3','tree0','tree1','rock',
   'garlic','cabbage','onion','potato','mushroom','chili','beef','chicken',
-  'traveler','vent','flower','tuft','spark','ember_pepper','mushroom_heart'];
+  'traveler','merchant','nectar_traveler','encounter_bloom','encounter_crystal','vent','flower','tuft','spark','ember_pepper','mushroom_heart','tide_sour_pulp','starlit_nectar'];
 }
 export function herbPixelSpriteSize(name){
  if(!herbPixelSpriteNames().includes(name)&&!/^trail:[0-9]+:[0-3]$/.test(name))return null;
  return name.startsWith('tree')?{width:24,height:30}:
-  name==='traveler'?{width:20,height:28}:{width:16,height:16};
+  ['traveler','merchant','nectar_traveler'].includes(name)?{width:20,height:28}:{width:16,height:16};
 }
 function herbPaintGrass(ctx,variant=0){
  herbPaintRect(ctx,0,0,16,16,PH.grass);
@@ -84,7 +84,17 @@ function herbPaintFood(ctx,id){
  if(id==='ember_pepper')id='chili';if(id==='mushroom_heart')id='mushroom';
  // All pickups occupy the same 16px silhouette frame, distinct at ~25px on phone.
  // Shared dark outline, single warm highlight, and a colored upper leaf/stem.
- if(id==='garlic'){
+ if(id==='tide_sour_pulp'){
+  herbPaintRect(ctx,4,4,9,10,PH.outline);herbPaintRect(ctx,3,7,11,5,PH.outline);
+  herbPaintRect(ctx,5,5,7,8,'#4caaa5');herbPaintRect(ctx,4,8,9,3,'#72c7bc');
+  herbPaintRect(ctx,6,6,2,5,'#d5ead1');herbPaintRect(ctx,9,8,2,3,'#f4e8b8');
+  herbPaintRect(ctx,7,1,2,4,PH.deep);herbPaintRect(ctx,9,2,4,2,PH.leaf);
+ }else if(id==='starlit_nectar'){
+  herbPaintRect(ctx,5,4,7,3,PH.outline);herbPaintRect(ctx,4,7,9,8,PH.outline);
+  herbPaintRect(ctx,5,8,7,6,'#d69a49');herbPaintRect(ctx,6,8,5,4,'#f1ca72');
+  herbPaintRect(ctx,6,9,2,3,PH.shine);herbPaintRect(ctx,5,4,7,2,'#aa7b54');
+  herbPaintRect(ctx,8,0,2,5,PH.leaf);herbPaintRect(ctx,6,1,6,2,'#d6bad1');herbPaintRect(ctx,8,1,2,2,PH.shine);
+ }else if(id==='garlic'){
   herbPaintRect(ctx,7,1,3,4,PH.deep);herbPaintRect(ctx,6,2,2,4,PH.leaf);herbPaintRect(ctx,9,2,2,4,PH.leaf);
   herbPaintRect(ctx,4,7,9,7,PH.outline);herbPaintRect(ctx,5,6,7,8,PH.cream);
   herbPaintRect(ctx,6,8,2,4,PH.shine);herbPaintRect(ctx,9,9,2,4,'#d6b98b');herbPaintRect(ctx,7,13,3,1,PH.outline);
@@ -163,7 +173,15 @@ function herbGetSprite(name){
   const [,mask,variant]=name.split(':');herbPaintTrail(ctx,Number(mask),Number(variant));
  }else if(name.startsWith('tree'))herbPaintTree(ctx,Number(name.slice(-1)));
  else if(name==='rock')herbPaintRock(ctx);
- else if(name==='traveler')herbPaintTraveler(ctx);
+ else if(['traveler','merchant','nectar_traveler'].includes(name)){
+  herbPaintTraveler(ctx);
+  if(name==='merchant'){herbPaintRect(ctx,5,1,12,7,PH.outline);herbPaintRect(ctx,6,2,10,5,'#817395');herbPaintRect(ctx,8,0,7,3,'#aa94ad');herbPaintRect(ctx,1,13,5,11,PH.bark);herbPaintRect(ctx,2,15,3,4,'#d8ba79');herbPaintRect(ctx,6,15,10,8,'#756480');herbPaintRect(ctx,9,15,2,8,PH.cream);}
+  if(name==='nectar_traveler'){herbPaintRect(ctx,2,5,18,3,'#c9ab76');herbPaintRect(ctx,6,1,10,5,'#dfc38b');herbPaintRect(ctx,7,4,8,1,PH.leaf);herbPaintRect(ctx,15,16,5,8,PH.outline);herbPaintRect(ctx,16,17,3,6,'#d6a54e');herbPaintRect(ctx,17,18,1,3,PH.shine);}
+ }
+ else if(['encounter_bloom','encounter_crystal'].includes(name)){
+  if(name==='encounter_bloom'){herbPaintRect(ctx,7,5,2,10,PH.deep);herbPaintRect(ctx,3,10,5,3,PH.leaf);herbPaintRect(ctx,9,11,5,2,PH.leaf);herbPaintRect(ctx,4,2,8,7,PH.outline);herbPaintRect(ctx,5,3,6,5,'#b99dc1');herbPaintRect(ctx,7,3,2,5,PH.shine);herbPaintRect(ctx,5,5,6,1,PH.shine);}
+  else{herbPaintRect(ctx,2,12,12,3,PH.rock);herbPaintRect(ctx,6,1,5,12,PH.outline);herbPaintRect(ctx,7,2,3,10,'#9fc9c0');herbPaintRect(ctx,8,3,1,7,PH.shine);herbPaintRect(ctx,2,6,4,7,'#73a99e');herbPaintRect(ctx,11,7,3,6,'#c9d9ba');}
+ }
  else if(['flower','tuft','spark','vent'].includes(name))herbPaintGroundObject(ctx,name);
  else herbPaintFood(ctx,name);
  herbSprites.set(name,cv);
@@ -249,12 +267,12 @@ export function drawHerbPixelObstacle(c,o,index=0){
 }
 export function drawHerbPixelNode(c,n,time=0,markers=true,screenScale=null){
  if(n.claimed)return;
- const name=n.type==='event'?'traveler':herbPixelSpriteNames().includes(n.id)?n.id:'mushroom';
+ const name=n.type==='event'?(n.kind==='merchant'?'merchant':n.kind==='traveler'?'nectar_traveler':n.kind==='ecology'?(n.region==='spring'?'encounter_crystal':'encounter_bloom'):'traveler'):herbPixelSpriteNames().includes(n.id)?n.id:'mushroom';
  const bob=n.type==='event'?0:Math.sin(time*3+n.x)*.028;
  c.imageSmoothingEnabled=false;
  c.fillStyle='#26352e88';c.fillRect(n.x-.26,n.y+.22,.52,.10);
  if(n.type==='event'){
-  if(screenScale){c.save();c.translate(n.x,n.y);c.scale(1/screenScale,1/screenScale);c.drawImage(herbGetSprite(name),-14,-23.8,28,39.2);c.restore();}
+  if(screenScale){c.save();c.translate(n.x,n.y);c.scale(1/screenScale,1/screenScale);if(n.kind==='ecology')c.drawImage(herbGetSprite(name),-13,-17,26,26);else c.drawImage(herbGetSprite(name),-14,-23.8,28,39.2);c.restore();}
   else c.drawImage(herbGetSprite(name),n.x-.41,n.y-.80,.82,1.10);
   if(markers)c.drawImage(herbGetSprite('spark'),n.x+.28,n.y-.90,.27,.27);
  }else{
@@ -324,6 +342,6 @@ export function drawHerbPixelProjectile(c,projectile,type='enemy'){
 
 // Shared identity for field and DOM ingredient art: the very same raster cache.
 export function ingredientSpriteCanvas(id){
- if(!['beef','chicken','chili','garlic','mushroom','cabbage','onion','potato','mushroom_heart','ember_pepper'].includes(id))return null;
+ if(!['beef','chicken','chili','garlic','mushroom','cabbage','onion','potato','mushroom_heart','ember_pepper','tide_sour_pulp','starlit_nectar'].includes(id))return null;
  return herbGetSprite(id);
 }

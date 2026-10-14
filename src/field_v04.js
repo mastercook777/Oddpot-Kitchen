@@ -2,9 +2,9 @@ import {createEcologyEnemies,ecologyEngagedEnemies,stepEcologyEnemy} from './fie
 import {stepMiniBoss,stepBossZones} from './field_bosses_v011g.js';
 // v0.4 real-time forest encounter. The underlying kitchen inventory remains
 // governed by engine.settleField; this file only mutates the expedition bag.
-import {ING} from './data.js?v=0.8.0';
+import {ING} from './data.js?v=0.11.0-alpha.7';
 import {meleeProfile,meleeAttackWouldHit} from './field_combat_feedback_v084.js?v=0.8.4';
-import {clamp, rand, settleField,addFieldBag} from './engine.js?v=0.11.0-alpha.6';
+import {clamp, rand, settleField,addFieldBag,resolveSpecialFieldEvent} from './engine.js?v=0.11.0-alpha.7';
 import {hazardPhase} from './field_rules_v011a.js';
 import {fieldEnemySpawnCandidates} from './field_world_v011b1.js';
 const dist=(a,b)=>Math.hypot(a.x-b.x,a.y-b.y);
@@ -203,7 +203,7 @@ export function useFieldSkill(s){
  pushMsg(f,hits?'🛡️ 锅盖反击！击退 '+hits+' 个敌人':'🛡️ 举起锅盖！短暂防御迎面攻击。');
  return true;
 }
-export function resolveFieldEvent(s,choice){const f=s.field;if(!f?.action||!f.activeEvent||f.finished)return false;const n=f.nodes.find(n=>n.key===f.activeEvent);if(!n||n.claimed)return false;let label='';if(choice==='trade'){
+export function resolveFieldEvent(s,choice){const f=s.field;if(f?.nodes?.some(n=>n.key===f.activeEvent&&['merchant','traveler','ecology'].includes(n.kind)))return resolveSpecialFieldEvent(s,choice);if(!f?.action||!f.activeEvent||f.finished)return false;const n=f.nodes.find(n=>n.key===f.activeEvent);if(!n||n.claimed)return false;let label='';if(choice==='trade'){
  if(!f.bag.mushroom){pushMsg(f,'没有采到蘑菇，无法交换');return false}
  f.bag.mushroom--;if(!f.bag.mushroom)delete f.bag.mushroom;
  const n=addBag(f,'chili',1);if(n===0){f.bag.mushroom=(f.bag.mushroom||0)+1;pushMsg(f,'背包没有火椒位置');return false}label='向游商用 1 份蘑菇换到火椒 ×1';
@@ -326,7 +326,7 @@ export function stepActionField(s,axisX,axisY,dt){
  }
  const nearby=f.nodes.find(n=>!n.claimed&&dist(f.pos,n)<.86&&n.type!=='combat');
  if(nearby){if(nearby.type==='event'){
-  f.activeEvent=nearby.key;pushMsg(f,'遇见流浪调味师：你要如何处理？');event='field_event';
+  f.activeEvent=nearby.key;pushMsg(f,nearby.kind==='merchant'?'遇见神秘商人':nearby.kind==='traveler'?'遇见采蜜旅人':nearby.kind==='ecology'?'发现一处奇异馈赠':'遇见流浪调味师：你要如何处理？');event='field_event';
  }else {
   if(f.harvestNode!==nearby.key){f.harvestNode=nearby.key;f.harvestProgress=0}
   f.harvestProgress+=dt;if(f.harvestProgress>=.82){if(gather(f,nearby))event='harvest';f.harvestProgress=0;f.harvestNode=null}

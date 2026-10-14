@@ -1,6 +1,7 @@
+import {specialEncounterOffer} from './field_encounters_v011c.js';
 // All preview state is in memory. Never load/save the player's localStorage.
-import {newGame,enterField} from './engine.js?v=0.11.0-alpha.6';
-import {startActionField} from './field_v04.js?v=0.11.0-alpha.6';
+import {newGame,enterField,syncFieldBagStacks} from './engine.js?v=0.11.0-alpha.7';
+import {startActionField,stepActionField} from './field_v04.js?v=0.11.0-alpha.7';
 import {fieldTilePath} from './field_rules_v011a.js';
 export const MEADOW_PREVIEW_MODES=['hybrid-e1','hybrid-e0','pixel','legacy'];
 export const HYBRID_PREVIEW_ZONES=['herb_path','glow_mushroom','old_tree_edge','forest_garden','hot_spring_shallows','steam_crack','ember_edge','steam_lake'];
@@ -52,4 +53,17 @@ export function prepareEcologyPreview(s,risk=false){
  const tiles=fieldTilePath(s.field,s.field.spawn,e,{avoidHazards:true});
  const p=tiles.slice(0,Math.max(1,tiles.length-2)).reverse().find(p=>s.field.nodes.filter(n=>n.type==='event').every(n=>Math.hypot(p.x-n.x,p.y-n.y)>1.1))||s.field.spawn;s.field.pos={...p};s.field.x=p.x;s.field.y=p.y;
  return true;
+}
+
+export function prepareSpecialPreview(s,view,scenario='ready'){
+ const kind=view==='merchant_trade'?'merchant':view==='traveler_trade'?'traveler':view==='ecology_event'?'ecology':null;if(!kind)return false;
+ prepareGPreview(s,'merchant');const f=s.field,n=f.nodes.find(n=>n.key==='g-traveler'),region=f.region;
+ Object.assign(n,{kind,region,eventId:'preview-'+kind,status:'available',offer:specialEncounterOffer(kind,region)});
+ s.ledger=[];s.coins=scenario==='no-money'?0:120;f.capacity=scenario==='full-bag'?1:8;
+ f.bag=kind==='traveler'&&scenario!=='no-material'?{[region==='spring'?'potato':'mushroom']:scenario==='full-bag'?3:2}:{};
+ if(scenario==='full-bag'&&kind!=='traveler')f.bag={garlic:3};
+ if(scenario==='low-hp')f.hp=1;
+ syncFieldBagStacks(f);if(f.ecologyStats){f.ecologyStats.collected=0;f.ecologyStats.carriedIn=Object.values(f.bag).reduce((a,b)=>a+b,0);}
+ f.pos={x:n.x-.65,y:n.y+.1};f.x=f.pos.x;f.y=f.pos.y;f.activeEvent=null;
+ stepActionField(s,0,0,0);return true;
 }

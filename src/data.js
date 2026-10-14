@@ -1,4 +1,4 @@
-import {RECIPE_PROFILES} from './recipe_profiles_v063.js?v=0.8.0';
+import {RECIPE_PROFILES} from './recipe_profiles_v063.js?v=0.11.0-alpha.7';
 // v0.3 prototype content — expanded, configurable, not final balance values.
 export const ING = {
   beef:{name:'铁角野牛肉',emoji:'🥩',tags:['鲜','肉','厚重'],lo:5,hi:8,cost:8},
@@ -37,6 +37,8 @@ ING.mushroom_heart={name:'菌王孢心',emoji:'🍄',tags:['菌香','鲜','浓�
   acquisitionPolicy:'BOSS_ONLY',bossId:'spore_king'};
 ING.ember_pepper={name:'熔心椒晶',emoji:'🌋',tags:['辣','香','爆香'],lo:3,hi:6,cost:16,
   acquisitionPolicy:'BOSS_ONLY',bossId:'ember_king'};
+ING.tide_sour_pulp={name:'逆潮酸浆',emoji:'🫐',tags:['酸','清爽','开胃'],lo:2,hi:6,cost:18,acquisitionPolicy:'MERCHANT_ONLY'};
+ING.starlit_nectar={name:'星露花蜜',emoji:'🍯',tags:['花香','甜香','温和'],lo:2,hi:5,cost:12,acquisitionPolicy:'ENCOUNTER_ONLY'};
 export const SHOP_STAPLES=Object.keys(ING).filter(id=>ING[id].acquisitionPolicy==='SHOP_STAPLE');
 export const FIELD_INGREDIENTS=Object.keys(ING).filter(id=>ING[id].acquisitionPolicy!=='SHOP_STAPLE');
 export const DEFAULT_INVENTORY={beef:3,chicken:10,chili:2,garlic:9,mushroom:12,cabbage:8,onion:5,potato:5};
@@ -62,6 +64,10 @@ const FEATURED_ADDITIONS = {
 };
 for(const [id,r] of Object.entries(FEATURED_ADDITIONS)){RECIPES[id]=r;registerRecipe(id,r)}
 const RARE_FEATURED_RECIPES={
+ sour_chicken_wok:{name:'逆潮酸爆鸡',emoji:'🍳',ids:['tide_sour_pulp','chicken','garlic'],method:'stir',station:'WOK',time:9,price:42,tags:['酸','清爽','肉','香'],cost:26,hint:'酸浆配鸡肉与蒜瓣，用炒锅激出酸香',rare:true},
+ sour_potato_pot:{name:'潮酸焖薯',emoji:'🥣',ids:['tide_sour_pulp','potato','onion'],method:'stew',station:'POT',time:13,price:40,tags:['酸','饱腹','温和'],cost:25,hint:'酸浆配土豆与洋葱，轻搅慢炖',rare:true},
+ nectar_cabbage_wok:{name:'星蜜卷卷脆蔬',emoji:'🥬',ids:['starlit_nectar','cabbage'],method:'stir',station:'WOK',time:7,price:40,tags:['花香','甜香','清爽'],cost:14,hint:'花蜜与魔菜，均匀翻炒保留清甜',rare:true},
+ nectar_chicken_pot:{name:'星露蜜焖鸡',emoji:'🍲',ids:['starlit_nectar','chicken','onion'],method:'stew',station:'POT',time:13,price:44,tags:['花香','甜香','温和','肉'],cost:21,hint:'花蜜配鸡肉与洋葱，轻搅形成温和蜜香',rare:true},
   mushroom_heart_wok:{name:'菌心爆香',emoji:'🍄',ids:['mushroom_heart','garlic'],method:'stir',station:'WOK',time:9,price:35,tags:['菌香','鲜','香'],cost:15,hint:'菌王孢心配蒜瓣，高温激发菌香',rare:true},
   mushroom_heart_pot:{name:'菌王吐息浓汤',emoji:'🥣',ids:['mushroom_heart','chicken','mushroom'],method:'stew',station:'POT',time:14,price:36,tags:['菌香','鲜','温和'],cost:22,hint:'菌王孢心与鸡汤慢炖，再收汁',rare:true},
   ember_pepper_wok:{name:'熔心喷火牛',emoji:'🔥',ids:['ember_pepper','beef','garlic'],method:'stir',station:'WOK',time:11,price:46,tags:['辣','肉','香','爆香'],cost:26,hint:'熔心椒晶、野牛肉和蒜瓣极速爆炒',rare:true},
@@ -71,7 +77,7 @@ for(const [id,r] of Object.entries(RARE_FEATURED_RECIPES)){RECIPES[id]=r;registe
 
 const NAMED_EXTRA = {"WOK:beef,chili":"辣椒炒肉","WOK:chicken,chili":"辣椒炒肉","WOK:garlic,mushroom":"菌香小炒","POT:chicken,mushroom":"蘑菇焖鸡","WOK:cabbage,mushroom":"清炒双蔬","WOK:beef,chili,garlic":"爆炎牛肉","WOK:beef,garlic":"焦香蒜牛","WOK:chili,mushroom":"火山菌菇","POT:chicken,onion":"洋葱烩鸡","POT:onion,potato":"地精土豆煲","WOK:chili,potato":"爆辣脆薯","POT:mushroom,potato":"森林浓汤","WOK:cabbage,onion,potato":"丰收三拼","WOK:beef,onion":"葱爆牛肉","POT:beef,onion":"洋葱炖牛肉","WOK:chicken,onion":"洋葱炒鸡","POT:beef,potato":"牛肉土豆煲","WOK:beef,potato":"牛肉煎薯","WOK:beef,mushroom":"菌香牛肉","POT:beef,mushroom":"菌香炖牛肉","POT:beef,chili":"火椒炖牛","POT:beef,garlic":"蒜香炖牛","WOK:cabbage,garlic":"蒜香包菜","POT:cabbage,garlic":"蒜香菜汤","WOK:cabbage,onion":"洋葱包菜","POT:cabbage,onion":"甜洋葱菜煲","WOK:cabbage,potato":"锅煎双蔬","POT:cabbage,potato":"田园双蔬汤","WOK:chicken,garlic":"蒜香炒鸡","POT:chicken,garlic":"蒜香焖鸡","WOK:chicken,mushroom":"山菌炒鸡","POT:chicken,potato":"鸡肉土豆煲","WOK:chicken,potato":"鸡肉脆薯","POT:chili,potato":"火椒土豆煲","WOK:garlic,potato":"蒜香脆薯","POT:garlic,potato":"蒜香土豆浓汤","WOK:mushroom,onion":"甜香菌菇","POT:mushroom,onion":"洋葱菌菇汤","WOK:mushroom,potato":"煎菌菇土豆","WOK:chili,garlic":"爆香辣蒜","POT:chili,garlic":"火椒蒜香汁","WOK:chili,onion":"辣炒洋葱","POT:chili,onion":"香辣洋葱汤","WOK:garlic,onion":"双香煸锅","POT:garlic,onion":"双香浓汤","WOK:beef,cabbage":"牛肉炒包菜","POT:beef,cabbage":"牛肉菜煲","WOK:cabbage,chili":"火椒炝包菜","POT:cabbage,chili":"火椒蔬菜汤","WOK:beef,chicken":"双肉锅气炒","POT:beef,chicken":"双肉滋补锅","WOK:beef,chili,onion":"火椒葱爆牛肉","POT:beef,chili,onion":"香辣洋葱牛肉煲","WOK:beef,garlic,onion":"双香爆牛","POT:beef,garlic,onion":"双香焖牛","WOK:chicken,garlic,mushroom":"蒜香菌菇炒鸡","POT:chicken,garlic,mushroom":"菌菇蒜香鸡汤","WOK:chicken,chili,onion":"辛香炒鸡","POT:chicken,chili,onion":"香辣洋葱焖鸡","WOK:cabbage,garlic,mushroom":"菌香蒜炒双蔬","POT:cabbage,garlic,mushroom":"蒜香菌菇蔬菜汤","WOK:beef,mushroom,onion":"菌菇葱爆牛肉","POT:beef,mushroom,onion":"菌香洋葱炖牛肉","WOK:beef,onion,potato":"牛肉薯片葱爆","POT:beef,onion,potato":"洋葱土豆炖牛肉","WOK:chili,mushroom,potato":"火椒菌菇煎薯","POT:chili,mushroom,potato":"火山菌薯汤","WOK:cabbage,chili,garlic":"蒜香火椒包菜","POT:cabbage,chili,garlic":"辣蒜蔬菜汤"};
 const NAMED_LOOKUP=Object.fromEntries(Object.entries(NAMED_EXTRA).map(([key,value])=>{const [vessel,parts]=key.split(':');return [vessel+':'+parts.split(',').sort().join(','),value]}));
-const idsForRecipes=Object.keys(ING).filter(id=>ING[id].acquisitionPolicy!=='BOSS_ONLY');
+const idsForRecipes=Object.keys(ING).filter(id=>['SHOP_STAPLE','FIELD_ONLY'].includes(ING[id].acquisitionPolicy));
 for(const station of ["WOK","POT"]){
   for(let a=0;a<idsForRecipes.length;a++)for(let b=a+1;b<idsForRecipes.length;b++){
     for(const items of [[idsForRecipes[a],idsForRecipes[b]],
