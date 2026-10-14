@@ -381,7 +381,7 @@ export function addFieldBag(f,id,count){
   const accepted=Math.min(count-gained,3-(n%3));
   f.bag[id]=n+accepted;gained+=accepted;
  }
- syncFieldBagStacks(f);return gained;
+ syncFieldBagStacks(f);if(f.ecologyStats)f.ecologyStats.collected+=gained;return gained;
 }
 export function fieldBranchChoices(f){
  const zones=f.region==='spring'?SPRING_ZONES:FOREST_ZONES;
@@ -414,6 +414,7 @@ export function completeFieldSegment(s){
   if(f.dangerCommitment&&f.enemies?.some(e=>e.isBoss&&e.hp>0))return false;
   return settleField(s,'completed');
  }
+ recordEcologySegment(f,'continued');
  f.segmentStatus='choice';f.choices=fieldBranchChoices(f).map((a,i)=>({...a,choiceId:f.segmentIndex+'-'+i}));
  return true;
 }
@@ -441,9 +442,15 @@ export function discardFieldStack(s,id){
  const n=f.bag?.[ingredient]||0;if(!n)return false;
  const removing=ING[id]?n:Math.min(3,n);
  if(n<=removing)delete f.bag[ingredient];else f.bag[ingredient]-=removing;
- syncFieldBagStacks(f);return true;
+ syncFieldBagStacks(f);if(f.ecologyStats)f.ecologyStats.discarded+=removing;return true;
+}
+function recordEcologySegment(f,reason){
+ if(!f.ecologyStats)return;f.encounterHistory??=[];
+ if(f.encounterHistory.some(x=>x.segment===f.segmentIndex))return;
+ f.encounterHistory.push({segment:f.segmentIndex,zone:f.biome?.zoneId,seconds:f.elapsed,reason,...f.ecologyStats,discardRate:(f.ecologyStats.carriedIn+f.ecologyStats.collected)?f.ecologyStats.discarded/(f.ecologyStats.carriedIn+f.ecologyStats.collected):0});
 }
 export function settleField(s,reason='retreat'){const f=s.field;if(!f||f.settled)return false;let items={...f.bag};if(reason==='faint')for(const id of Object.keys(items)){items[id]=Math.ceil(items[id]/2);if(items[id]===0)delete items[id]};f.settled=true;f.reason=reason;f.winnings=items;const settled=transact(s,`field-${s.cycle}-${s.day}`,'exploration',items);
+ if(settled)recordEcologySegment(f,reason);
  if(settled&&f.bossDefeated&&(items.mushroom_heart||items.ember_pepper)){s.bossCleared??={};s.bossCleared[f.bossDefeated]=true;}
  nextPhase(s,'research');return true}
 export function skipField(s){if(s.phase!=='field'||s.field)return false;nextPhase(s,'research');return true}

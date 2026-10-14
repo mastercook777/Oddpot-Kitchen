@@ -1,9 +1,10 @@
+import {createEcologyEnemies,ecologyEngagedEnemies,stepEcologyEnemy} from './field_ecology_v011b2.js';
 import {stepMiniBoss,stepBossZones} from './field_bosses_v011g.js';
 // v0.4 real-time forest encounter. The underlying kitchen inventory remains
 // governed by engine.settleField; this file only mutates the expedition bag.
 import {ING} from './data.js?v=0.8.0';
 import {meleeProfile,meleeAttackWouldHit} from './field_combat_feedback_v084.js?v=0.8.4';
-import {clamp, rand, settleField,addFieldBag} from './engine.js?v=0.8.4';
+import {clamp, rand, settleField,addFieldBag} from './engine.js?v=0.11.0-alpha.6';
 import {hazardPhase} from './field_rules_v011a.js';
 import {fieldEnemySpawnCandidates} from './field_world_v011b1.js';
 const dist=(a,b)=>Math.hypot(a.x-b.x,a.y-b.y);
@@ -26,7 +27,9 @@ export function startActionField(s){
   {x:6.9,y:4.25},{x:2.8,y:7.1},{x:5.8,y:2.4},{x:1.6,y:4.6}
  ];
  f.enemies=[];
- for(let i=0;i<count;i++){
+ const ecology=f.worldVersion==='0.11-B1'&&!f.legacyField;
+ if(ecology){f.encounterVersion='0.11-B2';f.ecologyStats={movingSeconds:0,damageTaken:0,collected:0,discarded:0,carriedIn:Object.values(f.bag||{}).reduce((n,v)=>n+v,0)};f.enemies=createEcologyEnemies(f,encounterSeed);}
+ for(let i=0;!ecology&&i<count;i++){
   const pick=mix[((random(i+19)>>>8)+i)%mix.length],kind=pick||'chicken';
   const candidates=positions.slice();
   if(!candidates.length)continue;
@@ -65,6 +68,7 @@ function damageEnemy(s,e,amount=1){
  f.popFx??=[];f.popFx.push({x:e.x,y:e.y,text:'-'+amount,ttl:.72,color:'#ffeab4'});
  if(e.hp>0||e.lootDropped)return true;
  e.lootDropped=true;e.deathFx=.45;
+ e.ecologyAttack=null;e.ecologyRush=null;e.warning=0;
  if(e.isBoss){
   e.rush=null;e.bossAttack=null;e.warning=0;
   f.bossZones=(f.bossZones||[]).filter(z=>z.ownerId!==e.id);
@@ -144,7 +148,7 @@ function hurt(s,amount=1,source='enemy',attacker=null){
  // Damage feedback is based on the real HP event, never an unrelated
  // animation timer. A bento absorption is a distinct softer visual cue.
  const hpBefore=f.hp;
- f.hp=Math.max(0,f.hp-amount);f.damageCd=1.15;f.hurtFx=amount>0?.62:.30;
+ f.hp=Math.max(0,f.hp-amount);if(f.ecologyStats)f.ecologyStats.damageTaken+=hpBefore-f.hp;f.damageCd=1.15;f.hurtFx=amount>0?.62:.30;
  f.hitFlash=amount>0?.52:.22;f.hitShake=amount>0?.24:0;
  const from=attacker&&Number.isFinite(attacker.x)&&Number.isFinite(attacker.y)?attacker:null;
  const nx=from?f.pos.x-from.x:0,ny=from?f.pos.y-from.y:-1;
@@ -187,7 +191,13 @@ export function useFieldSkill(s){
  let hits=0;
  for(const e of f.enemies){
   if(e.hp<=0||dist(f.pos,e)>1.85)continue;
-  damageEnemy(s,e,2);e.x=clamp(e.x+Math.sign(e.x-f.pos.x)*.65,.35,f.worldW-.35);
+  damageEnemy(s,e,2);
+  if(e.brainVersion==='0.11-B2'){
+   e.warning=0;e.ecologyAttack=null;e.ecologyRush=null;e.attackOrigin=null;e.cooldown=Math.max(.6,e.cooldown);
+   const next={x:clamp(e.x+Math.sign(e.x-f.pos.x)*.65,.35,f.worldW-.35),y:clamp(e.y+Math.sign(e.y-f.pos.y)*.65,.35,f.worldH-.35)};
+   if(e.hp>0&&!blocked(f,next,.18)){e.x=next.x;e.y=next.y;}hits++;continue;
+  }
+  e.x=clamp(e.x+Math.sign(e.x-f.pos.x)*.65,.35,f.worldW-.35);
   e.y=clamp(e.y+Math.sign(e.y-f.pos.y)*.65,.35,f.worldH-.35);hits++;
  }
  pushMsg(f,hits?'🛡️ 锅盖反击！击退 '+hits+' 个敌人':'🛡️ 举起锅盖！短暂防御迎面攻击。');
@@ -231,12 +241,16 @@ export function stepActionField(s,axisX,axisY,dt){
  const risk=/risk/.test(f.route);
  const boost=b&&((b.kind==='risk_move'&&risk)||(b.kind==='danger_speed'&&risk))?(b.enhanced?.07:.05):0;
  const speed=2.8*(1+boost);
+ const beforeMove={...f.pos};
  if(len>.08){const px={x:f.pos.x+dx*speed*dt,y:f.pos.y};if(!blocked(f,px))f.pos.x=px.x;const py={x:f.pos.x,y:f.pos.y+dy*speed*dt};if(!blocked(f,py))f.pos.y=py.y;f.x=f.pos.x;f.y=f.pos.y;}
+ if(f.ecologyStats&&len>.08&&(f.pos.x!==beforeMove.x||f.pos.y!==beforeMove.y))f.ecologyStats.movingSeconds+=dt;
+ const engaged=ecologyEngagedEnemies(f);
  let event=null;
  for(const e of f.enemies){
   if(e.hp<=0)continue;
   e.cooldown-=dt;
   if(e.isBoss){e.slowTime=Math.max(0,(e.slowTime||0)-dt);stepMiniBoss(f,e,dt,{blocked,hurt:(amount,source,attacker)=>hurt(s,amount,source,attacker)});continue;}
+  if(e.brainVersion==='0.11-B2'){e.slowTime=Math.max(0,(e.slowTime||0)-dt);stepEcologyEnemy(f,e,dt,engaged.has(e.id),{blocked,hurt:(amount,source,attacker)=>hurt(s,amount,source,attacker)});continue;}
   const d=dist(f.pos,e);
   const profile=meleeProfile(e.kind),melee=!!profile;
   e.slowTime=Math.max(0,(e.slowTime||0)-dt);

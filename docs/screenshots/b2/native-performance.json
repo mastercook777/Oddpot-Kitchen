@@ -1,0 +1,58 @@
+[
+  {
+    "zone": "forest_garden",
+    "risk": false,
+    "initializationMs": 56.983318999999995,
+    "simulationMeanMs": 0.024846159999999978,
+    "ordinary": 3
+  },
+  {
+    "zone": "forest_garden",
+    "risk": true,
+    "initializationMs": 39.87282999999991,
+    "simulationMeanMs": 0.025242229999999685,
+    "ordinary": 4
+  },
+  {
+    "zone": "old_tree_edge",
+    "risk": false,
+    "initializationMs": 30.73469399999999,
+    "simulationMeanMs": 0.012709680000000011,
+    "ordinary": 3
+  },
+  {
+    "zone": "old_tree_edge",
+    "risk": true,
+    "initializationMs": 22.77413200000001,
+    "simulationMeanMs": 0.029232299999999895,
+    "ordinary": 5
+  },
+  {
+    "zone": "steam_crack",
+    "risk": false,
+    "initializationMs": 25.139237999999978,
+    "simulationMeanMs": 0.03248956333333316,
+    "ordinary": 4
+  },
+  {
+    "zone": "steam_crack",
+    "risk": true,
+    "initializationMs": 25.545245000000023,
+    "simulationMeanMs": 0.041018523333333404,
+    "ordinary": 6
+  },
+  {
+    "zone": "ember_edge",
+    "risk": false,
+    "initializationMs": 20.12822200000005,
+    "simulationMeanMs": 0.01014630666666676,
+    "ordinary": 3
+  },
+  {
+    "zone": "ember_edge",
+    "risk": true,
+    "initializationMs": 21.65107899999998,
+    "simulationMeanMs": 0.01753436666666668,
+    "ordinary": 6
+  }
+]

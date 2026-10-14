@@ -3,7 +3,7 @@ import {mkdir,writeFile} from 'node:fs/promises';
 import {createMeadowPreview,prepareGPreview} from '../src/meadow_preview_state_e1.js';
 import {drawField} from '../src/scenes_v04.js';
 import {stepMiniBoss} from '../src/field_bosses_v011g.js';
-import {ingredientSpriteCanvas} from '../src/field_pixel_herb_v011c.js?v=0.11.0-alpha.5';
+import {ingredientSpriteCanvas} from '../src/field_pixel_herb_v011c.js?v=0.11.0-alpha.6';
 import {ING} from '../src/data.js';
 const require=createRequire(import.meta.url);let runtime;try{runtime=require('@napi-rs/canvas');}catch{runtime=require(process.env.CODEX_PRIMARY_RUNTIME_NODE_MODULES+'/@napi-rs/canvas');}
 const {createCanvas}=runtime;globalThis.window={devicePixelRatio:2};globalThis.document={createElement:()=>createCanvas(1,1)};

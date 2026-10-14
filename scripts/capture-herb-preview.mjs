@@ -53,6 +53,22 @@ try{
   if(!bounds||bounds.y<0||bounds.y+bounds.height>size.height)throw new Error('Joystick outside short screen');
   await page.locator('.shell').screenshot({path:out+'/hybrid-rollout-short-'+size.width+'.png'});
  }
+ // B2 packs: exact formal controller, new preview entries, no fake save rewards.
+ for(const zone of ['forest_garden','old_tree_edge','steam_crack','ember_edge'])for(const risk of [false,true]){
+  await page.setViewportSize({width:390,height:844});
+  await page.goto('http://127.0.0.1:5173/art-preview.html?zone='+zone+'&view='+(risk?'encounter_risk':'encounter'));
+  await page.waitForFunction("window.__oddpotPreview?.rendered===true");
+  const initial=await page.evaluate(()=>window.__oddpotPreview);
+  if(initial.encounterVersion!=='0.11-B2'||initial.enemies.length<(risk?4:2)||initial.enemies.length>(risk?7:4))throw new Error('Wrong ecology pack count/version');
+  await page.locator('#pause').click();await page.waitForTimeout(1050);await page.locator('#pause').click();
+  const later=await page.evaluate(()=>window.__oddpotPreview.enemies);
+  if(!later.some(e=>{const before=initial.enemies.find(b=>b.id===e.id);return before&&Math.hypot(before.x-e.x,before.y-e.y)>.02;}))throw new Error('Pack controller never moved '+zone);
+  if(later.filter(e=>e.engaged).length>3)throw new Error('Too many ordinary active threats');
+  await page.locator('.shell').screenshot({path:out+'/b2-'+zone+'-'+(risk?'risk':'safe')+'.png'});
+  await page.locator('#camera').selectOption(risk?'encounter':'encounter_risk');
+  await page.waitForFunction("window.__oddpotPreview?.rendered===true&&window.__oddpotPreview.paused");
+ }
+ console.log('B2 formal ecology packs, counts, movement, threat cap and dropdown switching passed.');
  // G: formal bodies and controls in the same independent field fixture.
  for(const view of ['boss_spore','boss_ember','merchant']){
   await page.setViewportSize({width:390,height:844});
@@ -96,7 +112,7 @@ try{
  if(Object.keys(stockUrls).length!==10)throw new Error('Missing stock ingredient sprites');
  await page.screenshot({path:out+'/g-stock-320.png'});
  // Isolated test save: research begins through the formal controls, with real inventory.
- const researchSave=await page.evaluate(async()=>{const {newGame}=await import('/src/engine.js?v=0.10.4');const s=newGame(20261013);s.phase='research';return s;});
+ const researchSave=await page.evaluate(async()=>{const {newGame}=await import('/src/engine.js?v=0.11.0-alpha.6');const s=newGame(20261013);s.phase='research';return s;});
  // Inject after navigation: the departing game's visibility handler legitimately saves its own state.
  await page.addInitScript(s=>localStorage.setItem('oddpot-prototype-v04',JSON.stringify(s)),researchSave);
  await page.reload();await page.locator('[data-act="start-research"]').waitFor();

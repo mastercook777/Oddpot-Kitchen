@@ -1,6 +1,6 @@
 // All preview state is in memory. Never load/save the player's localStorage.
-import {newGame,enterField} from './engine.js';
-import {startActionField} from './field_v04.js?v=0.11.0-alpha.5';
+import {newGame,enterField} from './engine.js?v=0.11.0-alpha.6';
+import {startActionField} from './field_v04.js?v=0.11.0-alpha.6';
 import {fieldTilePath} from './field_rules_v011a.js';
 export const MEADOW_PREVIEW_MODES=['hybrid-e1','hybrid-e0','pixel','legacy'];
 export const HYBRID_PREVIEW_ZONES=['herb_path','glow_mushroom','old_tree_edge','forest_garden','hot_spring_shallows','steam_crack','ember_edge','steam_lake'];
@@ -40,5 +40,16 @@ export function prepareGPreview(s,name){
  f.hp=3;f.finished=false;f.damageCd=0;f.attackCd=1;f.moving=false;
  if(name==='merchant')f.nodes.push({key:'g-traveler',type:'event',eventId:'legacy_traveler',x:7.2,y:8.5,claimed:false});
  else f.enemies.push({id:'g-'+name,kind:name,isBoss:true,x:6,y:6.7,hp:10,maxHp:10,cooldown:1.2,warning:0,slowTime:0});
+ return true;
+}
+
+export function prepareEcologyPreview(s,risk=false){
+ const zone=s.field.biome.zoneId,seed=s.seed,route=/^(hot_|steam_|ember_)/.test(zone)?(risk?'spring_risk':'spring_safe'):(risk?'risk':'safe');
+ const game=newGame(seed);game.phase='field';game.fieldZoneId=zone;enterField(game,route);startActionField(game);
+ s.field=game.field;s.field.artPreviewMode='hybrid-e1';
+ const e=s.field.enemies.find(x=>x.kind==='boar')||s.field.enemies[0];
+ if(!e)return false;
+ const tiles=fieldTilePath(s.field,s.field.spawn,e,{avoidHazards:true});
+ const p=tiles.slice(0,Math.max(1,tiles.length-2)).reverse().find(p=>s.field.nodes.filter(n=>n.type==='event').every(n=>Math.hypot(p.x-n.x,p.y-n.y)>1.1))||s.field.spawn;s.field.pos={...p};s.field.x=p.x;s.field.y=p.y;
  return true;
 }
