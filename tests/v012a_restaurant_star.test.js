@@ -1,5 +1,7 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
+import {readFileSync} from 'node:fs';
+import {spawnSync} from 'node:child_process';
 import {CUSTOMERS} from '../src/data.js';
 import {
  newGame,load,SAVE_KEY,nextPhase,requestFirstStar,firstStarAvailable,firstStarRequested,
@@ -161,4 +163,13 @@ test('a carried real plate can be served at the new fourth-table target once',()
  tick(s,1);
  assert.equal(o.status,'eating');
  assert.equal(s.ledger.filter(e=>e.id==='sale-'+o.id).length,1);
+});
+
+test('single-file offline build includes first-star code and executable plain script',()=>{
+ const html=readFileSync(new URL('../standalone.html',import.meta.url),'utf8');
+ const code=html.match(/<script>([\s\S]*?)<\/script>/)?.[1];
+ assert.ok(code?.includes('function scoreFirstStar('));
+ assert.ok(code.includes('function requestFirstStar('));
+ const check=spawnSync(process.execPath,['--check','-'],{input:code,encoding:'utf8'});
+ assert.equal(check.status,0,check.stderr);
 });

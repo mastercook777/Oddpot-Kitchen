@@ -7,7 +7,7 @@ css+='\n'+(root/'src/restaurant_star_v012a.css').read_text()
 code=[]
 for path in ('recipe_profiles_v063.js','data.js','cooking_v063.js','cook_motion_v063.js','restaurant_scene_v075.js','walkable_restaurant_v07.js','field_rules_v011a.js','field_biomes_v081.js','field_encounter_plan_v011b.js','field_world_v011b1.js','field_camera_v011b1.js','field_combat_feedback_v084.js','field_encounters_v011c.js','restaurant_star_v012a.js','engine.js','field_bosses_v011g.js','field_ecology_v011b2.js','field_hit_response_v011h.js','field_v04.js','ingredient_icons_v011g.js','field_encounter_ui_v011c.js','pixels_v041.js','guest_portraits_v104.js','controls_v041.js','diner_ambience_v077.js','field_pose_v083.js','field_world_render_v011b1.js','field_pixel_herb_v011c.js','field_hybrid_meadow_v011e.js','field_hybrid_biomes_v011f.js','field_effects_v011e2.js','scenes_v04.js','app.js'):
  s=(root/'src'/path).read_text()
- s='\n'.join(line for line in s.splitlines() if not line.startswith('import '))
+ s='\n'.join(line for line in s.splitlines() if not line.startswith(('import ','export {')))
  s=s.replace('export const ','const ').replace('export function ','function ')
  code.append(s)
 script='\n'.join(code).replace('</script>','<\\/script>')

@@ -2,7 +2,7 @@
 export const FIRST_STAR_TARGET=72;
 export const FOURTH_TABLE_COST=220;
 export const FIRST_STAR_CHAPTER='hearth';
-const clamp=(n,a=0,b=100)=>Math.max(a,Math.min(b,Number(n)||0));
+const starClamp=(n,a=0,b=100)=>Math.max(a,Math.min(b,Number(n)||0));
 export const restaurantDay=s=>(s.cycle-1)*3+s.day;
 export const restaurantDayKey=s=>s.cycle+'-'+s.day;
 
@@ -29,7 +29,7 @@ export function requestFirstStar(s,requested=true){
 }
 export function scoreFirstStar(orders=[]){
  const all=Array.isArray(orders)?orders:[],served=all.filter(o=>o.status==='served');
- const avg=key=>served.length?Math.round(served.reduce((n,o)=>n+clamp(o[key]),0)/served.length):0;
+ const avg=key=>served.length?Math.round(served.reduce((n,o)=>n+starClamp(o[key]),0)/served.length):0;
  const coverage=all.length?Math.round(served.length/all.length*100):0;
  const satisfaction=avg('sat'),fit=avg('fit'),craft=avg('quality');
  const score=Math.round(coverage*.35+satisfaction*.35+fit*.15+craft*.15);

@@ -3254,7 +3254,7 @@ function previewSpecialEncounter(s,n,choice){
 const FIRST_STAR_TARGET=72;
 const FOURTH_TABLE_COST=220;
 const FIRST_STAR_CHAPTER='hearth';
-const clamp=(n,a=0,b=100)=>Math.max(a,Math.min(b,Number(n)||0));
+const starClamp=(n,a=0,b=100)=>Math.max(a,Math.min(b,Number(n)||0));
 const restaurantDay=s=>(s.cycle-1)*3+s.day;
 const restaurantDayKey=s=>s.cycle+'-'+s.day;
 
@@ -3281,7 +3281,7 @@ function requestFirstStar(s,requested=true){
 }
 function scoreFirstStar(orders=[]){
  const all=Array.isArray(orders)?orders:[],served=all.filter(o=>o.status==='served');
- const avg=key=>served.length?Math.round(served.reduce((n,o)=>n+clamp(o[key]),0)/served.length):0;
+ const avg=key=>served.length?Math.round(served.reduce((n,o)=>n+starClamp(o[key]),0)/served.length):0;
  const coverage=all.length?Math.round(served.length/all.length*100):0;
  const satisfaction=avg('sat'),fit=avg('fit'),craft=avg('quality');
  const score=Math.round(coverage*.35+satisfaction*.35+fit*.15+craft*.15);
@@ -3289,7 +3289,6 @@ function scoreFirstStar(orders=[]){
  const weakest=Object.entries({coverage,satisfaction,fit,craft}).sort((a,b)=>a[1]-b[1])[0]?.[0]||'coverage';
  return {coverage,satisfaction,fit,craft,score,target:FIRST_STAR_TARGET,served:served.length,total:all.length,passed,weakest};
 }
-export {ensureChapterProgress,firstStarAvailable,firstStarRequested,requestFirstStar,FOURTH_TABLE_COST};
 const PHASES=['forecast','field','research','menu','prep','service','report','upgrade'];
 const SAVE_KEY='oddpot-prototype-v04'; // v0.2 兼容先前试玩存档
 const clone=x=>structuredClone(x);
