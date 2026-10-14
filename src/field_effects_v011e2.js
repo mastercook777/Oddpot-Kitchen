@@ -18,10 +18,15 @@ export function drawFieldProjectile(c,p,type='enemy'){
  c.save();c.lineCap='round';
  if(type==='player'){
   const t=fieldFxClamp(p.time/Math.max(.001,p.duration)),arc=Math.sin(Math.PI*t)*.37;
+  if(p.empowered){
+   c.save();c.globalAlpha=.5+.35*t;fieldFxRing(c,p.targetX,p.targetY,p.radius*(.8+.2*t),'#d3f3dc',.035);
+   fieldFxRing(c,p.x,p.y-arc,.24,'#e2f7c7',.055);c.restore();
+  }
   fieldFxEllipse(c,p.x,p.y,.14,.065,'#304d3c33');
   const d=Math.hypot(p.targetX-p.fromX,p.targetY-p.fromY)||1;
-  c.strokeStyle='#e3c99c77';c.lineWidth=.08;c.beginPath();
+  c.strokeStyle=p.empowered?'#d8f4caaa':'#e3c99c77';c.lineWidth=p.empowered?.12:.08;c.beginPath();
   c.moveTo(p.x-(p.targetX-p.fromX)/d*.21,p.y-arc-(p.targetY-p.fromY)/d*.21);c.lineTo(p.x,p.y-arc);c.stroke();
+  if(p.empowered){c.translate(p.x,p.y-arc);c.scale(1.18,1.18);c.translate(-p.x,-p.y+arc);}
   fieldFxEllipse(c,p.x,p.y-arc,.15,.17,'#bb874e');
   fieldFxEllipse(c,p.x-.03,p.y-arc-.025,.105,.13,'#e6c48a');
   fieldFxEllipse(c,p.x-.05,p.y-arc-.065,.032,.06,'#fff0c4');
@@ -37,17 +42,65 @@ export function drawFieldProjectile(c,p,type='enemy'){
 }
 export function drawFieldSwipe(c,f){
  const fx=f.attackFx;if(!(fx?.ttl>0)||fx.pot)return;
- const p=fieldFxClamp(1-fx.ttl/fx.duration),a=Math.atan2(fx.dy,fx.dx);
- c.save();c.translate(f.pos.x,f.pos.y);c.rotate(a);c.globalAlpha=fieldFxClamp(fx.ttl/.2);c.lineCap='round';
- for(const [r,w,color] of [[.86,.12,'#e9c087'],[1.03,.05,'#fff0c4']]){
-  c.beginPath();c.arc(0,0,r,-.9+p*.65,.45+p*.65);c.strokeStyle=color;c.lineWidth=w;c.stroke();
+ const p=fieldFxClamp(1-fx.ttl/fx.duration),a=Math.atan2(fx.dy,fx.dx),fade=(1-p)**1.5;
+ c.save();c.translate(fx.x??f.pos.x,fx.y??f.pos.y);c.rotate(a);c.globalAlpha=fade;c.lineCap='round';
+ // Contact is immediate in the simulation: the bright edge crosses the front
+ // on frame zero, then sweeps outwards and thins into recovery.
+ for(const [r,w,color] of [[.80,.16,'#cb996c'],[1.03,.11,'#f8dc9e'],[1.17,.035,'#fff8dc']]){
+  c.beginPath();c.arc(0,0,r,-.78+p*.7,.78+p*.7);c.strokeStyle=color;c.lineWidth=w*(1-p*.6);c.stroke();
  }
  c.restore();
 }
 export function drawFieldSkillWave(c,f){
  if(!(f.skillFx>0))return;
- const q=fieldFxClamp(f.skillFx/.42),p=1-q;
- c.save();c.globalAlpha=q;fieldFxRing(c,f.pos.x,f.pos.y,.38+p*1.25,f.weapon?.type==='POT'?'#d3e8c4':'#f1d59d',.075);c.restore();
+ const q=fieldFxClamp(f.skillFx/.42),p=1-q,o=f.skillOrigin||f.pos,pot=o.type==='POT'||!o.type&&f.weapon?.type==='POT';
+ c.save();c.globalAlpha=q;c.lineCap='round';
+ if(pot){
+  // Cast pressure hugs the caster. The damaging blast is at the landing point.
+  fieldFxRing(c,o.x,o.y,.20+p*.40,'#cde8ca',.05*q);
+  for(let i=0;i<3;i++){
+   const x=o.x+(i-1)*.15,y=o.y-.12-p*.48;
+   c.beginPath();c.moveTo(x,y+.20);c.quadraticCurveTo(x-.10,y+.08,x+.04,y-.08);c.strokeStyle='#e4f4d6';c.lineWidth=.055*q;c.stroke();
+  }
+ }else{
+  const radius=.25+Math.min(1,p*2.7)*1.6;
+  fieldFxRing(c,o.x,o.y,radius,'#edc37f',.12*q);
+  fieldFxRing(c,o.x,o.y,Math.max(.1,radius-.12),'#fff2c5',.045*q);
+  for(let i=0;i<8;i++){
+   const a=i*Math.PI/4;c.beginPath();c.moveTo(o.x+Math.cos(a)*radius*.82,o.y+Math.sin(a)*radius*.82);
+   c.lineTo(o.x+Math.cos(a)*radius,o.y+Math.sin(a)*radius);c.strokeStyle='#fff0c1';c.lineWidth=.035*q;c.stroke();
+  }
+ }
+ c.restore();
+}
+export function drawFieldHitEffects(c,f){
+ for(const fx of f.impactFx||[]){
+  const q=fieldFxClamp(fx.ttl/fx.duration),p=1-q;
+  c.save();c.translate(fx.x,fx.y);c.globalAlpha=q;c.lineCap='round';
+  if(fx.kind==='contact'){
+   const a=Math.atan2(fx.dy,fx.dx),size=fx.strong?.53:.34;
+   c.translate(-fx.dx*.13,-.12-fx.dy*.13);c.rotate(a);
+   fieldFxEllipse(c,0,0,.08*q,.20*q,fx.color);
+   c.strokeStyle=fx.color;c.lineWidth=.06*q;
+   for(let i=0;i<5;i++){
+    const theta=-1.25+i*.625,r=size*(.35+p);
+    c.beginPath();c.moveTo(Math.cos(theta)*r*.35,Math.sin(theta)*r*.35);
+    c.lineTo(Math.cos(theta)*r,Math.sin(theta)*r);c.stroke();
+   }
+   if(fx.kill)fieldFxRing(c,0,0,.14+p*.36,'#ffe7a5',.045*q);
+  }else{
+   const r=fx.radius,expand=Math.min(1,p*3),color=fx.strong?'#d6f3d9':'#eee3bc';
+   fieldFxEllipse(c,0,0,r*expand,r*.36*expand,fx.strong?'#afd9bf44':'#e7d5a433');
+   fieldFxRing(c,0,-.07,r*expand,color,.08*q);
+   if(fx.strong)fieldFxRing(c,0,-.07,r*Math.max(0,p-.09)*1.45,'#f3f8cf',.045*q);
+   for(let i=0;i<(fx.strong?8:5);i++){
+    const a=i*Math.PI*2/(fx.strong?8:5),x=Math.cos(a)*r*p*.8,y=Math.sin(a)*r*p*.35-p*.42;
+    c.beginPath();c.moveTo(x,y+.13*q);c.quadraticCurveTo(x-.10*q,y-.05,x+.02,y-.21*q);c.strokeStyle=color;c.lineWidth=(fx.strong?.10:.065)*q;c.stroke();
+   }
+   if(p<.22)fieldFxEllipse(c,0,-.1,r*.32*(1-p/.22),r*.20*(1-p/.22),'#fff7d7');
+  }
+  c.restore();
+ }
 }
 export function drawFieldBurst(c,fx){
  const q=fieldFxClamp(fx.ttl/.5),p=1-q;

@@ -1,4 +1,4 @@
-import {RECIPE_PROFILES} from './recipe_profiles_v063.js?v=0.11.0-alpha.7';
+import {RECIPE_PROFILES} from './recipe_profiles_v063.js?v=0.11.0-alpha.8';
 // v0.3 prototype content — expanded, configurable, not final balance values.
 export const ING = {
   beef:{name:'铁角野牛肉',emoji:'🥩',tags:['鲜','肉','厚重'],lo:5,hi:8,cost:8},

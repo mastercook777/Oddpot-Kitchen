@@ -1,7 +1,7 @@
 import {specialEncounterOffer} from './field_encounters_v011c.js';
 // All preview state is in memory. Never load/save the player's localStorage.
-import {newGame,enterField,syncFieldBagStacks} from './engine.js?v=0.11.0-alpha.7';
-import {startActionField,stepActionField} from './field_v04.js?v=0.11.0-alpha.7';
+import {newGame,enterField,syncFieldBagStacks} from './engine.js?v=0.11.0-alpha.8';
+import {startActionField,stepActionField,useFieldSkill} from './field_v04.js?v=0.11.0-alpha.8';
 import {fieldTilePath} from './field_rules_v011a.js';
 export const MEADOW_PREVIEW_MODES=['hybrid-e1','hybrid-e0','pixel','legacy'];
 export const HYBRID_PREVIEW_ZONES=['herb_path','glow_mushroom','old_tree_edge','forest_garden','hot_spring_shallows','steam_crack','ember_edge','steam_lake'];
@@ -66,4 +66,24 @@ export function prepareSpecialPreview(s,view,scenario='ready'){
  syncFieldBagStacks(f);if(f.ecologyStats){f.ecologyStats.collected=0;f.ecologyStats.carriedIn=Object.values(f.bag).reduce((a,b)=>a+b,0);}
  f.pos={x:n.x-.65,y:n.y+.1};f.x=f.pos.x;f.y=f.pos.y;f.activeEvent=null;
  stepActionField(s,0,0,0);return true;
+}
+
+// Isolated combat fixtures use the real damage/projectile controller and renderer.
+// No storage, inventory or formal-run state is read or written.
+export function prepareCombatPreview(s,view,stage='impact'){
+ if(!['combat_wok','combat_pot','combat_wok_skill','combat_pot_skill','combat_boss'].includes(view))return false;
+ prepareGPreview(s,'merchant');const f=s.field;
+ f.nodes=[];f.hp=3;f.damageCd=999;f.skillCd=0;f.attackCd=999;f.impactFx=[];f.combatJolt=0;
+ f.weapon.type=view.includes('pot')?'POT':'WOK';f.facing={x:1,y:0};
+ const pot=f.weapon.type==='POT',skill=view.includes('_skill'),boss=view==='combat_boss';
+ f.enemies=[{id:'h-target',kind:boss?'boss_spore':'boar',isBoss:boss,x:pot?8.2:6.92,y:9,hp:boss?10:4,maxHp:boss?10:4,cooldown:999,phase:0}];
+ if(!boss)f.enemies.push({id:'h-second',kind:'chicken',x:pot?8.35:6.88,y:9.35,hp:3,maxHp:3,cooldown:999,phase:0});
+ if(skill)useFieldSkill(s);else {f.attackCd=0;stepActionField(s,0,0,.001);}
+ if(pot&&stage!=='cast'){
+  // Fast-forward to the actual first landing, preserving projectile timing.
+  while(f.playerProjectiles.length)stepActionField(s,0,0,.01);
+ }
+ const time=stage==='cast'?0:stage==='recovery'?.16:.055;
+ for(let t=0;t<time-1e-9;t+=.005)stepActionField(s,0,0,Math.min(.005,time-t));
+ return true;
 }

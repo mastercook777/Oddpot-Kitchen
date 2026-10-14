@@ -1,9 +1,9 @@
 import {makeSpecialEncounterPlan,previewSpecialEncounter,SPECIAL_ENCOUNTER_KINDS} from './field_encounters_v011c.js';
-import {ING,RECIPES,CUSTOMERS,FORECAST,DEFAULT_INVENTORY,SHOP_STAPLES} from './data.js?v=0.11.0-alpha.7';
-import {LIVE_ACTIONS,evaluateLiveCook,liveIngredientState,liveIngredientHeatFeedback,legacyVariant,makeLiveVariant,resolveTechnique} from './cooking_v063.js?v=0.11.0-alpha.7';
-import {RECIPE_PROFILES} from './recipe_profiles_v063.js?v=0.11.0-alpha.7';
-import {generateBiomeMap} from './field_biomes_v081.js?v=0.11.0-alpha.7';
-import {makeFieldEncounterPlan,insertPlannedFieldEncounter} from './field_encounter_plan_v011b.js?v=0.11.0-alpha.7';
+import {ING,RECIPES,CUSTOMERS,FORECAST,DEFAULT_INVENTORY,SHOP_STAPLES} from './data.js?v=0.11.0-alpha.8';
+import {LIVE_ACTIONS,evaluateLiveCook,liveIngredientState,liveIngredientHeatFeedback,legacyVariant,makeLiveVariant,resolveTechnique} from './cooking_v063.js?v=0.11.0-alpha.8';
+import {RECIPE_PROFILES} from './recipe_profiles_v063.js?v=0.11.0-alpha.8';
+import {generateBiomeMap} from './field_biomes_v081.js?v=0.11.0-alpha.8';
+import {makeFieldEncounterPlan,insertPlannedFieldEncounter} from './field_encounter_plan_v011b.js?v=0.11.0-alpha.8';
 import {expandFieldMap} from './field_world_v011b1.js';
 import {newServiceHero,heroZone} from './walkable_restaurant_v07.js?v=0.9.2';
 export const PHASES=['forecast','field','research','menu','prep','service','report','upgrade'];

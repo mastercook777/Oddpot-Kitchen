@@ -1,4 +1,4 @@
-<!doctype html><html lang="zh-CN"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1.0,maximum-scale=1.0,viewport-fit=cover,user-scalable=no"><meta name="apple-mobile-web-app-capable" content="yes"><meta name="theme-color" content="#1b3c2b"><title>怪味食堂 · v0.11.0-alpha.7 离线版</title><style>.ingredient-icon{display:inline-block;width:var(--ingredient-size,24px);height:var(--ingredient-size,24px);max-width:none;object-fit:contain;image-rendering:pixelated;vertical-align:-.24em;flex:none;pointer-events:none;user-select:none}
+<!doctype html><html lang="zh-CN"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1.0,maximum-scale=1.0,viewport-fit=cover,user-scalable=no"><meta name="apple-mobile-web-app-capable" content="yes"><meta name="theme-color" content="#1b3c2b"><title>怪味食堂 · v0.11.0-alpha.8 离线版</title><style>.ingredient-icon{display:inline-block;width:var(--ingredient-size,24px);height:var(--ingredient-size,24px);max-width:none;object-fit:contain;image-rendering:pixelated;vertical-align:-.24em;flex:none;pointer-events:none;user-select:none}
 .stock-line>span .ingredient-icon{margin-right:3px}.target-chip .ingredient-icon{vertical-align:middle}.book-icon .ingredient-icon{display:block}
 .v063-food-icon .ingredient-icon{width:1em;height:1em;vertical-align:top;filter:none}.v063-receipt-line .ingredient-icon{vertical-align:middle}
 .v063-food-picker button>span,.v063-drop>span{line-height:1}.v063-food-picker .ingredient-icon,.v063-drop .ingredient-icon{vertical-align:top}
@@ -4641,6 +4641,62 @@ function drawEcologyWarning(c,e){
  c.strokeStyle='#dc98732e';c.lineWidth=.96;c.stroke();c.strokeStyle='#efcf9b';c.lineWidth=.055;c.stroke();
  c.beginPath();c.arc(a.end.x,a.end.y,.48,0,Math.PI*2);c.lineWidth=.04;c.stroke();c.restore();
 }
+// Local hit response in simulation seconds. No global hit-stop or wall clock.
+const FIELD_HIT_PROFILES={
+ wok:{distance:.22,duration:.14,hold:.035,color:'#fff0bc'},
+ pot:{distance:.17,duration:.14,hold:.030,color:'#e3efc4'},
+ wok_skill:{distance:.55,duration:.20,hold:.050,color:'#fff0bc'},
+ pot_skill:{distance:.36,duration:.18,hold:.050,color:'#d3f3dc'}
+};
+function queueFieldImpact(f,fx){
+ f.impactFx??=[];f.impactFx.push(fx);
+ if(f.impactFx.length>24)f.impactFx.splice(0,f.impactFx.length-24);
+}
+function beginFieldHit(f,e,kind,origin){
+ const profile=FIELD_HIT_PROFILES[kind]||FIELD_HIT_PROFILES.wok;
+ let dx=e.x-origin.x,dy=e.y-origin.y,n=Math.hypot(dx,dy);
+ if(n<.001){dx=origin.dx??f.facing?.x??0;dy=origin.dy??f.facing?.y??-1;n=Math.hypot(dx,dy);if(n<.001){dx=0;dy=-1;n=1;}}
+ dx/=n;dy/=n;
+ const strong=kind.endsWith('_skill'),heavy=['boar','steam_crab'].includes(e.kind);
+ e.hitResponse={kind,dx,dy,hold:profile.hold,duration:profile.duration,time:0,
+  distance:e.isBoss||e.hp<=0?0:profile.distance*(heavy?.55:1),
+  ttl:profile.hold+profile.duration+.07,total:profile.hold+profile.duration+.07};
+ queueFieldImpact(f,{kind:'contact',x:e.x,y:e.y,dx,dy,strong,kill:e.hp<=0,
+  color:profile.color,ttl:strong?.28:.20,duration:strong?.28:.20});
+ if(strong||e.hp<=0)f.combatJolt=Math.max(f.combatJolt||0,.09);
+}
+// Return AI time left in this frame. The actor alone stops briefly; player,
+// cooldowns, hazards and all other actors continue. Sweep every displacement.
+function stepFieldHit(f,e,dt,blocked){
+ const r=e.hitResponse;if(!r)return dt;
+ r.ttl=Math.max(0,r.ttl-dt);
+ if(e.isBoss||e.hp<=0){if(!r.ttl)e.hitResponse=null;return dt;}
+ const held=Math.min(dt,r.hold);r.hold=Math.max(0,r.hold-held);
+ const moving=Math.min(dt-held,Math.max(0,r.duration-r.time));
+ const prev=r.time/r.duration;r.time+=moving;
+ const next=r.time/r.duration,distance=r.distance*((1-prev)**2-(1-next)**2);
+ const steps=Math.ceil(distance/.035);
+ for(let i=0;i<steps;i++){
+  const p={x:e.x+r.dx*distance/steps,y:e.y+r.dy*distance/steps};
+  if(blocked(f,p,.18)){r.distance=0;break;}
+  e.x=p.x;e.y=p.y;
+ }
+ const remaining=Math.max(0,dt-held-moving);
+ if(!r.ttl)e.hitResponse=null;
+ return remaining;
+}
+function fieldHitPose(e){
+ const r=e.hitResponse;if(!r||r.ttl<=0)return {x:0,y:0,sx:1,sy:1};
+ const p=1-r.ttl/r.total,amount=Math.sin(Math.PI*Math.min(1,p*1.8))*(e.isBoss?.35:1);
+ // Pixel-sized recoil only: authoritative coordinates and warnings stay put.
+ return {x:r.dx*amount*2,y:r.dy*amount*1.5,sx:1+amount*.07,sy:1-amount*.07};
+}
+function fieldAttackPose(f){
+ const fx=f.attackFx;if(!fx?.ttl)return {x:0,y:0,angle:0};
+ const p=Math.max(0,Math.min(1,1-fx.ttl/fx.duration));
+ const snap=Math.exp(-p*6),settle=Math.sin(p*Math.PI)*.25;
+ return {x:fx.dx*(snap*2-settle),y:fx.dy*(snap*1.4-settle),angle:(snap-.2)*.9};
+}
 // v0.4 real-time forest encounter. The underlying kitchen inventory remains
 // governed by engine.settleField; this file only mutates the expedition bag.
 const dist=(a,b)=>Math.hypot(a.x-b.x,a.y-b.y);
@@ -4649,7 +4705,7 @@ function startActionField(s){
  const f=s.field;if(!f||f.action)return false;
  f.action=true;f.pos={...(f.spawn||{x:4.5,y:9.4})};f.x=f.pos.x;f.y=f.pos.y;
  f.elapsed=0;f.harvestProgress=0;f.harvestNode=null;f.attackCd=0;f.skillCd??=0;f.damageCd=0;f.guardTime??=0;f.shieldCharge??=(f.weapon?.type==='WOK');f.shieldCooldown??=0;f.shieldFlash??=0;f.activeEvent=null;
- f.projectiles=[];f.playerProjectiles=[];f.attackFx=null;f.skillFx=0;f.hurtFx=0;f.hitFlash=0;f.hitShake=0;f.hitDir=null;f.popFx=[];f.facing={x:0,y:-1};f.moving=false;f.actionMessage='移动寻找食材。靠近目标会自动采集。';f.actionMessageTTL=4;
+ f.impactFx=[];f.combatJolt=0;f.skillOrigin=null;f.projectiles=[];f.playerProjectiles=[];f.attackFx=null;f.skillFx=0;f.hurtFx=0;f.hitFlash=0;f.hitShake=0;f.hitDir=null;f.popFx=[];f.facing={x:0,y:-1};f.moving=false;f.actionMessage='移动寻找食材。靠近目标会自动采集。';f.actionMessageTTL=4;
  const profile=f.biome||{},mix=profile.enemyMix||[f.region==='spring'?'pepper':'chicken'];
  const risk=/risk/.test(f.route),wave=f.segmentIndex||1;
  // Encounter composition, count and spawn rotate with the run seed and zone,
@@ -4698,9 +4754,10 @@ function startActionField(s){
 }
 function blocked(f,p,r=.20){return p.x<r||p.y<r||p.x>f.worldW-r||p.y>f.worldH-r||f.obstacles.some(o=>Math.abs(p.x-(o.x+.5))<.40+r&&Math.abs(p.y-(o.y+.5))<.40+r)}
 function addBag(f,id,n){return addFieldBag(f,id,n)}
-function damageEnemy(s,e,amount=1){
+function damageEnemy(s,e,amount=1,kind='wok',origin=s.field.pos){
  const f=s.field;if(!e||e.hp<=0)return false;
  e.hp=Math.max(0,e.hp-amount);e.hurtFx=.36;
+ beginFieldHit(f,e,kind,origin);
  f.popFx??=[];f.popFx.push({x:e.x,y:e.y,text:'-'+amount,ttl:.72,color:'#ffeab4'});
  if(e.hp>0||e.lootDropped)return true;
  e.lootDropped=true;e.deathFx=.45;
@@ -4732,7 +4789,7 @@ function clearLineOfFire(f,a,b){
 function potLaunch(f,target,damage=1,radius=.65,slow=0){
  f.playerProjectiles??=[];
  f.playerProjectiles.push({x:f.pos.x,y:f.pos.y,fromX:f.pos.x,fromY:f.pos.y,
-  targetX:target.x,targetY:target.y,time:0,duration:.38,damage,radius,slow});
+  targetX:target.x,targetY:target.y,time:0,duration:.38,damage,radius,slow,empowered:damage>1});
 }
 function advancePlayerProjectiles(s,dt){
  const f=s.field;
@@ -4742,11 +4799,11 @@ function advancePlayerProjectiles(s,dt){
   if(factor<1||p.hit)continue;
   p.hit=true;
   for(const e of f.enemies||[]){
-   if(e.hp>0&&dist({x:p.targetX,y:p.targetY},e)<=p.radius){
-    damageEnemy(s,e,p.damage);if(p.slow>0)e.slowTime=Math.max(e.slowTime||0,p.slow);
+   if(e.hp>0&&dist({x:p.targetX,y:p.targetY},e)<=p.radius&&clearLineOfFire(f,{x:p.targetX,y:p.targetY},e)){
+    damageEnemy(s,e,p.damage,p.empowered?'pot_skill':'pot',{x:p.targetX,y:p.targetY,dx:p.targetX-p.fromX,dy:p.targetY-p.fromY});if(p.slow>0)e.slowTime=Math.max(e.slowTime||0,p.slow);
    }
   }
-  f.popFx??=[];f.popFx.push({x:p.targetX,y:p.targetY,text:'💥',ttl:.5,color:'#ffe5ad'});
+  queueFieldImpact(f,{kind:'burst',x:p.targetX,y:p.targetY,radius:p.radius,strong:!!p.empowered,ttl:p.empowered?.48:.34,duration:p.empowered?.48:.34});
  }
  f.playerProjectiles=(f.playerProjectiles||[]).filter(p=>!p.hit);
 }
@@ -4815,26 +4872,25 @@ function gather(f,n){
  return true;
 }
 function useFieldSkill(s){
- const f=s.field;if(s.phase!=='field'||!f?.action||f.skillCd>0||f.finished||f.segmentStatus==='choice')return false;
+ const f=s.field;if(s.phase!=='field'||!f?.action||f.skillCd>0||f.finished||f.segmentStatus==='choice'||f.activeEvent)return false;
  if(f.weapon?.type==='POT'){
   const target=f.enemies.filter(e=>e.hp>0&&dist(f.pos,e)<=3.9&&clearLineOfFire(f,f.pos,e))
    .sort((a,b)=>dist(f.pos,a)-dist(f.pos,b))[0];
   if(!target){pushMsg(f,'高压汤锅：附近没有可瞄准的敌人。');return false;}
-  potLaunch(f,target,2,1.1,.8);f.skillCd=6.5;f.skillFx=.42;
+  potLaunch(f,target,2,1.1,.8);f.skillCd=6.5;f.skillFx=.42;f.skillOrigin={...f.pos,type:'POT'};
+  const d=dist(f.pos,target)||1;f.facing={x:(target.x-f.pos.x)/d,y:(target.y-f.pos.y)/d};
+  f.attackFx={ttl:.24,duration:.24,dx:f.facing.x,dy:f.facing.y,pot:true};
   pushMsg(f,'🍲 高压汤锅！投出强化洋葱炸弹。');return true;
  }
- f.skillCd=6.5;f.skillFx=.42;f.guardTime=f.weapon?.level>1?.55:.45;
+ f.skillCd=6.5;f.skillFx=.42;f.skillOrigin={...f.pos,type:'WOK'};f.guardTime=f.weapon?.level>1?.55:.45;
  let hits=0;
  for(const e of f.enemies){
-  if(e.hp<=0||dist(f.pos,e)>1.85)continue;
-  damageEnemy(s,e,2);
-  if(e.brainVersion==='0.11-B2'){
-   e.warning=0;e.ecologyAttack=null;e.ecologyRush=null;e.attackOrigin=null;e.cooldown=Math.max(.6,e.cooldown);
-   const next={x:clamp(e.x+Math.sign(e.x-f.pos.x)*.65,.35,f.worldW-.35),y:clamp(e.y+Math.sign(e.y-f.pos.y)*.65,.35,f.worldH-.35)};
-   if(e.hp>0&&!blocked(f,next,.18)){e.x=next.x;e.y=next.y;}hits++;continue;
+  if(e.hp<=0||dist(f.pos,e)>1.85||!clearLineOfFire(f,f.pos,e))continue;
+  damageEnemy(s,e,2,'wok_skill');
+  if(!e.isBoss){
+   e.warning=0;e.ecologyAttack=null;e.ecologyRush=null;e.attackOrigin=null;e.cooldown=Math.max(.6,e.cooldown||0);
   }
-  e.x=clamp(e.x+Math.sign(e.x-f.pos.x)*.65,.35,f.worldW-.35);
-  e.y=clamp(e.y+Math.sign(e.y-f.pos.y)*.65,.35,f.worldH-.35);hits++;
+  hits++;
  }
  pushMsg(f,hits?'🛡️ 锅盖反击！击退 '+hits+' 个敌人':'🛡️ 举起锅盖！短暂防御迎面攻击。');
  return true;
@@ -4855,6 +4911,8 @@ function stepActionField(s,axisX,axisY,dt){
  if(f.segmentStatus==='choice')return null;
  dt=clamp(Number(dt)||0,0,.06); f.elapsed+=dt;f.guardTime=Math.max(0,(f.guardTime||0)-dt);
  f.shieldFlash=Math.max(0,(f.shieldFlash||0)-dt);
+ f.combatJolt=Math.max(0,(f.combatJolt||0)-dt);
+ f.impactFx=(f.impactFx||[]).filter(x=>(x.ttl-=dt)>0);
  f.hitFlash=Math.max(0,(f.hitFlash||0)-dt);f.hitShake=Math.max(0,(f.hitShake||0)-dt);
  if(f.weapon?.type==='WOK'&&!f.shieldCharge){f.shieldCooldown=Math.max(0,(f.shieldCooldown||0)-dt);if(f.shieldCooldown<=0)f.shieldCharge=true;}
  for(const key of ['attackCd','skillCd','damageCd','actionMessageTTL','skillFx','hurtFx'])f[key]=Math.max(0,(f[key]||0)-dt);
@@ -4883,18 +4941,20 @@ function stepActionField(s,axisX,axisY,dt){
  const engaged=ecologyEngagedEnemies(f);
  let event=null;
  for(const e of f.enemies){
+  const aiDt=stepFieldHit(f,e,dt,blocked);
   if(e.hp<=0)continue;
-  e.cooldown-=dt;
-  if(e.isBoss){e.slowTime=Math.max(0,(e.slowTime||0)-dt);stepMiniBoss(f,e,dt,{blocked,hurt:(amount,source,attacker)=>hurt(s,amount,source,attacker)});continue;}
-  if(e.brainVersion==='0.11-B2'){e.slowTime=Math.max(0,(e.slowTime||0)-dt);stepEcologyEnemy(f,e,dt,engaged.has(e.id),{blocked,hurt:(amount,source,attacker)=>hurt(s,amount,source,attacker)});continue;}
+  e.cooldown-=dt;e.slowTime=Math.max(0,(e.slowTime||0)-dt);
+  if(aiDt<=0){e.moving=false;continue;}
+  if(e.isBoss){stepMiniBoss(f,e,aiDt,{blocked,hurt:(amount,source,attacker)=>hurt(s,amount,source,attacker)});continue;}
+  if(e.brainVersion==='0.11-B2'){stepEcologyEnemy(f,e,aiDt,engaged.has(e.id),{blocked,hurt:(amount,source,attacker)=>hurt(s,amount,source,attacker)});continue;}
   const d=dist(f.pos,e);
   const profile=meleeProfile(e.kind),melee=!!profile;
-  e.slowTime=Math.max(0,(e.slowTime||0)-dt);
+
   const chase=e.kind==='boar'?1.22:e.kind==='chicken'?1.02:e.kind==='steam_crab'?.78:e.isBoss?.47:.62;
   // Make the wind-up readable and dodgeable: melee enemies stop tracking
   // once their attack starts and aim at the player's LAST locked position.
   if(!(e.warning>0)&&d<3.6&&d>.62){
-   const speed=chase*(e.slowTime>0?.45:1),next={x:e.x+(f.pos.x-e.x)/d*speed*dt,y:e.y+(f.pos.y-e.y)/d*speed*dt};
+   const speed=chase*(e.slowTime>0?.45:1),next={x:e.x+(f.pos.x-e.x)/d*speed*aiDt,y:e.y+(f.pos.y-e.y)/d*speed*aiDt};
    if(!blocked(f,next,.1)){e.x=next.x;e.y=next.y}
   }
   if(d<(melee?profile.trigger:e.isBoss?4:3.2)&&e.cooldown<=0&&!(e.warning>0)){
@@ -4905,7 +4965,7 @@ function stepActionField(s,axisX,axisY,dt){
    e.attackOrigin={x:e.x,y:e.y};
    e.intentKind=melee?'melee':'ranged';
   }
-  if(e.warning>0){e.warning-=dt;if(e.warning<=0){
+  if(e.warning>0){e.warning-=aiDt;if(e.warning<=0){
    if(melee){
     e.aim??={...f.pos};e.attackOrigin??={x:e.x,y:e.y};
     const original={x:e.x,y:e.y},aim=e.aim;
@@ -4937,7 +4997,7 @@ function stepActionField(s,axisX,axisY,dt){
  advancePlayerProjectiles(s,dt);
  if(f.attackCd<=0){
   const isPot=f.weapon?.type==='POT',range=isPot?3.5:1.25;
-  const target=f.enemies.filter(e=>e.hp>0&&dist(f.pos,e)<range&&(!isPot||clearLineOfFire(f,f.pos,e)))
+  const target=f.enemies.filter(e=>e.hp>0&&dist(f.pos,e)<range&&clearLineOfFire(f,f.pos,e))
    .sort((a,b)=>dist(f.pos,a)-dist(f.pos,b))[0];
   if(target){
    const distance=Math.max(.001,dist(f.pos,target));
@@ -4948,11 +5008,11 @@ function stepActionField(s,axisX,axisY,dt){
     f.attackFx={ttl:.24,duration:.24,dx:f.facing.x,dy:f.facing.y,pot:true};
    }else{
     f.attackCd=.70;
-    f.attackFx={ttl:.33,duration:.33,dx:f.facing.x,dy:f.facing.y};
+    f.attackFx={ttl:.33,duration:.33,dx:f.facing.x,dy:f.facing.y,x:f.pos.x,y:f.pos.y};
     const maxHits=2,span=f.weapon?.level>1?1.84:1.57;
     let hit=0;
     for(const enemy of f.enemies){
-     if(enemy.hp<=0||dist(f.pos,enemy)>1.25)continue;
+     if(enemy.hp<=0||dist(f.pos,enemy)>1.25||!clearLineOfFire(f,f.pos,enemy))continue;
      const r=Math.max(.001,dist(f.pos,enemy)),dot=((enemy.x-f.pos.x)*f.facing.x+(enemy.y-f.pos.y)*f.facing.y)/r;
      if(dot<Math.cos(span/2))continue;
      damageEnemy(s,enemy,1);if(++hit>=maxHits)break;
@@ -6538,10 +6598,15 @@ function drawFieldProjectile(c,p,type='enemy'){
  c.save();c.lineCap='round';
  if(type==='player'){
   const t=fieldFxClamp(p.time/Math.max(.001,p.duration)),arc=Math.sin(Math.PI*t)*.37;
+  if(p.empowered){
+   c.save();c.globalAlpha=.5+.35*t;fieldFxRing(c,p.targetX,p.targetY,p.radius*(.8+.2*t),'#d3f3dc',.035);
+   fieldFxRing(c,p.x,p.y-arc,.24,'#e2f7c7',.055);c.restore();
+  }
   fieldFxEllipse(c,p.x,p.y,.14,.065,'#304d3c33');
   const d=Math.hypot(p.targetX-p.fromX,p.targetY-p.fromY)||1;
-  c.strokeStyle='#e3c99c77';c.lineWidth=.08;c.beginPath();
+  c.strokeStyle=p.empowered?'#d8f4caaa':'#e3c99c77';c.lineWidth=p.empowered?.12:.08;c.beginPath();
   c.moveTo(p.x-(p.targetX-p.fromX)/d*.21,p.y-arc-(p.targetY-p.fromY)/d*.21);c.lineTo(p.x,p.y-arc);c.stroke();
+  if(p.empowered){c.translate(p.x,p.y-arc);c.scale(1.18,1.18);c.translate(-p.x,-p.y+arc);}
   fieldFxEllipse(c,p.x,p.y-arc,.15,.17,'#bb874e');
   fieldFxEllipse(c,p.x-.03,p.y-arc-.025,.105,.13,'#e6c48a');
   fieldFxEllipse(c,p.x-.05,p.y-arc-.065,.032,.06,'#fff0c4');
@@ -6557,17 +6622,65 @@ function drawFieldProjectile(c,p,type='enemy'){
 }
 function drawFieldSwipe(c,f){
  const fx=f.attackFx;if(!(fx?.ttl>0)||fx.pot)return;
- const p=fieldFxClamp(1-fx.ttl/fx.duration),a=Math.atan2(fx.dy,fx.dx);
- c.save();c.translate(f.pos.x,f.pos.y);c.rotate(a);c.globalAlpha=fieldFxClamp(fx.ttl/.2);c.lineCap='round';
- for(const [r,w,color] of [[.86,.12,'#e9c087'],[1.03,.05,'#fff0c4']]){
-  c.beginPath();c.arc(0,0,r,-.9+p*.65,.45+p*.65);c.strokeStyle=color;c.lineWidth=w;c.stroke();
+ const p=fieldFxClamp(1-fx.ttl/fx.duration),a=Math.atan2(fx.dy,fx.dx),fade=(1-p)**1.5;
+ c.save();c.translate(fx.x??f.pos.x,fx.y??f.pos.y);c.rotate(a);c.globalAlpha=fade;c.lineCap='round';
+ // Contact is immediate in the simulation: the bright edge crosses the front
+ // on frame zero, then sweeps outwards and thins into recovery.
+ for(const [r,w,color] of [[.80,.16,'#cb996c'],[1.03,.11,'#f8dc9e'],[1.17,.035,'#fff8dc']]){
+  c.beginPath();c.arc(0,0,r,-.78+p*.7,.78+p*.7);c.strokeStyle=color;c.lineWidth=w*(1-p*.6);c.stroke();
  }
  c.restore();
 }
 function drawFieldSkillWave(c,f){
  if(!(f.skillFx>0))return;
- const q=fieldFxClamp(f.skillFx/.42),p=1-q;
- c.save();c.globalAlpha=q;fieldFxRing(c,f.pos.x,f.pos.y,.38+p*1.25,f.weapon?.type==='POT'?'#d3e8c4':'#f1d59d',.075);c.restore();
+ const q=fieldFxClamp(f.skillFx/.42),p=1-q,o=f.skillOrigin||f.pos,pot=o.type==='POT'||!o.type&&f.weapon?.type==='POT';
+ c.save();c.globalAlpha=q;c.lineCap='round';
+ if(pot){
+  // Cast pressure hugs the caster. The damaging blast is at the landing point.
+  fieldFxRing(c,o.x,o.y,.20+p*.40,'#cde8ca',.05*q);
+  for(let i=0;i<3;i++){
+   const x=o.x+(i-1)*.15,y=o.y-.12-p*.48;
+   c.beginPath();c.moveTo(x,y+.20);c.quadraticCurveTo(x-.10,y+.08,x+.04,y-.08);c.strokeStyle='#e4f4d6';c.lineWidth=.055*q;c.stroke();
+  }
+ }else{
+  const radius=.25+Math.min(1,p*2.7)*1.6;
+  fieldFxRing(c,o.x,o.y,radius,'#edc37f',.12*q);
+  fieldFxRing(c,o.x,o.y,Math.max(.1,radius-.12),'#fff2c5',.045*q);
+  for(let i=0;i<8;i++){
+   const a=i*Math.PI/4;c.beginPath();c.moveTo(o.x+Math.cos(a)*radius*.82,o.y+Math.sin(a)*radius*.82);
+   c.lineTo(o.x+Math.cos(a)*radius,o.y+Math.sin(a)*radius);c.strokeStyle='#fff0c1';c.lineWidth=.035*q;c.stroke();
+  }
+ }
+ c.restore();
+}
+function drawFieldHitEffects(c,f){
+ for(const fx of f.impactFx||[]){
+  const q=fieldFxClamp(fx.ttl/fx.duration),p=1-q;
+  c.save();c.translate(fx.x,fx.y);c.globalAlpha=q;c.lineCap='round';
+  if(fx.kind==='contact'){
+   const a=Math.atan2(fx.dy,fx.dx),size=fx.strong?.53:.34;
+   c.translate(-fx.dx*.13,-.12-fx.dy*.13);c.rotate(a);
+   fieldFxEllipse(c,0,0,.08*q,.20*q,fx.color);
+   c.strokeStyle=fx.color;c.lineWidth=.06*q;
+   for(let i=0;i<5;i++){
+    const theta=-1.25+i*.625,r=size*(.35+p);
+    c.beginPath();c.moveTo(Math.cos(theta)*r*.35,Math.sin(theta)*r*.35);
+    c.lineTo(Math.cos(theta)*r,Math.sin(theta)*r);c.stroke();
+   }
+   if(fx.kill)fieldFxRing(c,0,0,.14+p*.36,'#ffe7a5',.045*q);
+  }else{
+   const r=fx.radius,expand=Math.min(1,p*3),color=fx.strong?'#d6f3d9':'#eee3bc';
+   fieldFxEllipse(c,0,0,r*expand,r*.36*expand,fx.strong?'#afd9bf44':'#e7d5a433');
+   fieldFxRing(c,0,-.07,r*expand,color,.08*q);
+   if(fx.strong)fieldFxRing(c,0,-.07,r*Math.max(0,p-.09)*1.45,'#f3f8cf',.045*q);
+   for(let i=0;i<(fx.strong?8:5);i++){
+    const a=i*Math.PI*2/(fx.strong?8:5),x=Math.cos(a)*r*p*.8,y=Math.sin(a)*r*p*.35-p*.42;
+    c.beginPath();c.moveTo(x,y+.13*q);c.quadraticCurveTo(x-.10*q,y-.05,x+.02,y-.21*q);c.strokeStyle=color;c.lineWidth=(fx.strong?.10:.065)*q;c.stroke();
+   }
+   if(p<.22)fieldFxEllipse(c,0,-.1,r*.32*(1-p/.22),r*.20*(1-p/.22),'#fff7d7');
+  }
+  c.restore();
+ }
 }
 function drawFieldBurst(c,fx){
  const q=fieldFxClamp(fx.ttl/.5),p=1-q;
@@ -6804,8 +6917,9 @@ function drawMeleeWarnings(c,f){
 }
 function drawField(canvas,s,clock){const size=setCanvas(canvas);if(!size||!s.field?.action)return;const {c,w,h}=size,f=s.field;const springs=f.region==='spring';const camera=fieldCamera(f,w,h),sc=camera.scale,left=camera.offsetX,top=camera.offsetY;
  c.fillStyle=isHybridMeadow(f)?'#75896f':isHerbPixelSlice(f)?'#485e4c':springs?'#9c674c':'#305a40';c.fillRect(0,0,w,h);
- const shake=(f.hitShake||0)/.24,shakeX=shake?Math.sin(f.elapsed*151)*4*shake:0;
- const shakeY=shake?Math.cos(f.elapsed*117)*2.4*shake:0;
+ const jolt=(f.combatJolt||0)/.09;
+ const shake=(f.hitShake||0)/.24,shakeX=(shake?Math.sin(f.elapsed*151)*4*shake:0)+Math.sin(f.elapsed*137)*1.6*jolt;
+ const shakeY=(shake?Math.cos(f.elapsed*117)*2.4*shake:0)+Math.cos(f.elapsed*103)*.8*jolt;
  c.save();c.translate(left+shakeX,top+shakeY);c.scale(sc,sc);
  const herbPixelArt=isHerbPixelSlice(f),herbHybridArt=isHybridMeadow(f),fieldHybridArt=isHybridFieldArt(f),fieldSpriteArt=herbPixelArt||fieldHybridArt,smoothFx=!['pixel','legacy'].includes(f.artPreviewMode);
  if(herbHybridArt)drawHybridMeadowGround(c,f);
@@ -6881,7 +6995,16 @@ function drawField(canvas,s,clock){const size=setCanvas(canvas);if(!size||!s.fie
  for(const e of f.enemies||[])drawEcologyWarning(c,e);
  for(const e of f.enemies||[])if(e.isBoss)drawMiniBossWarning(c,e);
  drawBossZones(c,f);
- for(const e of f.enemies||[]){if(e.hp>0||e.deathFx>0){if(e.isBoss){drawPixelMiniBoss(c,e,clock,sc);drawFieldActorIndicators(c,e,sc);continue;}if(fieldSpriteArt&&!e.isBoss){if(smoothFx){drawHerbPixelEnemy(c,e,clock,sc,pixelEnemy,false);drawFieldActorIndicators(c,e,sc);}else drawHerbPixelEnemy(c,e,clock,sc,pixelEnemy);continue;}c.save();c.translate(e.x,e.y);c.scale(1/sc,1/sc);monster(c,{...e,x:0,y:0},clock);c.restore()}}
+ for(const e of f.enemies||[]){
+  if(e.hp<=0&&!(e.deathFx>0))continue;
+  const pose=fieldHitPose(e),actor=e.hitResponse?{...e,hurtFx:0}:e;
+  c.save();c.translate(e.x+pose.x/sc,e.y+pose.y/sc);c.scale(pose.sx,pose.sy);c.translate(-e.x,-e.y);
+  if(e.hitResponse&&e.hitResponse.ttl/e.hitResponse.total>.68)c.filter='brightness(1.7)';
+  if(e.isBoss)drawPixelMiniBoss(c,actor,clock,sc);
+  else if(fieldSpriteArt)drawHerbPixelEnemy(c,actor,e.hitResponse?0:clock,sc,pixelEnemy,!smoothFx);
+  else {c.save();c.translate(e.x,e.y);c.scale(1/sc,1/sc);monster(c,{...actor,x:0,y:0},clock);c.restore();}
+  c.restore();if(smoothFx||e.isBoss)drawFieldActorIndicators(c,e,sc);
+ }
  if(smoothFx)for(const e of f.enemies||[])drawFieldDeath(c,e);
  // Attack swipe uses the *same* direction and trigger as combat hit detection.
  if(smoothFx)drawFieldSwipe(c,f);
@@ -6895,11 +7018,12 @@ function drawField(canvas,s,clock){const size=setCanvas(canvas);if(!size||!s.fie
    c.strokeStyle='#fff9e0';c.lineWidth=.07;c.beginPath();c.arc(0,0,1.05,-.65+progress*.65,.30+progress*.65);c.stroke();}
   c.restore();
  }
- if(smoothFx)drawFieldSkillWave(c,f);
+ if(smoothFx){drawFieldSkillWave(c,f);drawFieldHitEffects(c,f);}
  if(!smoothFx&&f.skillFx>0){c.save();c.strokeStyle=`rgba(255,231,151,${Math.min(.95,f.skillFx*2.4)})`;c.lineWidth=.12;c.beginPath();c.arc(f.pos.x,f.pos.y,(.42-f.skillFx)*3+.35,0,Math.PI*2);c.stroke();c.restore();}
- for(const e of f.enemies||[]){if(e.hurtFx>0&&e.hp>0){c.save();c.translate(e.x,e.y);c.scale(1/sc,1/sc);if(smoothFx)drawFieldImpact(c,0,-5,e.hurtFx/.36,8);else pixelImpact(c,0,-5,8);c.restore()}}
+ for(const e of f.enemies||[]){if(e.hurtFx>0&&e.hp>0&&!e.hitResponse){c.save();c.translate(e.x,e.y);c.scale(1/sc,1/sc);if(smoothFx)drawFieldImpact(c,0,-5,e.hurtFx/.36,8);else pixelImpact(c,0,-5,8);c.restore()}}
  for(const fx of f.popFx||[]){if(smoothFx&&fx.text==='💥'){drawFieldBurst(c,fx);continue;}if(smoothFx&&String(fx.text).startsWith('+'))drawFieldCollection(c,fx);c.save();c.translate(fx.x,fx.y-(.76-fx.ttl)*.5);c.scale(1/sc,1/sc);text(c,fx.text,0,-17,fx.color||'#fff1b1',12);c.restore()}
  c.save();c.translate(f.pos.x,f.pos.y);c.scale(1/sc,1/sc);
+ const attackPose=fieldAttackPose(f);c.translate(attackPose.x,attackPose.y);
  const chefFace=(f.facing?.x||0)<-.15?-1:1;
  const isWok=f.weapon?.type==='WOK';
  const posture=isWok?fieldWokPose(f.facing,f.moving,clock,(f.guardTime||0)>0):null;
@@ -6907,7 +7031,11 @@ function drawField(canvas,s,clock){const size=setCanvas(canvas);if(!size||!s.fie
  if(isWok){
   // BACK LAYER: pan handle runs from the rear hand to a compact wok.
   // This replaces the oversized circular pan beside the face.
-  const a=posture.hand,p=posture.weapon;
+  const a=posture.hand,rest=posture.weapon;
+  const swing=f.attackFx&&!f.attackFx.pot?Math.exp(-(1-f.attackFx.ttl/f.attackFx.duration)*6):0;
+  const p={x:rest.x*(1-swing)+(f.attackFx?.dx||0)*25*swing,
+   y:rest.y*(1-swing)+(8+(f.attackFx?.dy||0)*16)*swing,
+   angle:rest.angle+attackPose.angle*posture.shieldSign};
   c.save();
   c.lineCap='round';
   line(c,a.x,a.y,p.x,p.y,'#473e37',4.8);
@@ -7611,7 +7739,7 @@ const itemCount=()=>Object.keys(game.recipes).length;
 
 function hud(){
  const home=game.phase==='forecast';
- return `<div class="hud ${home?'v076-home-hud':''}"><div class="brand"><span class="logo" aria-hidden="true">🍳</span><div><strong>怪味食堂</strong><small>${home?'今日营业':'ODDPOT · v0.11.0-alpha.7'}</small></div></div><div class="hud-meta"><span aria-label="金币">🪙 ${game.coins}</span><span aria-label="声望">⭐ ${game.reputation}</span></div><button class="hud-gear" data-act="settings" aria-label="设置">⚙</button></div><div class="day-strip ${home?'v076-home-day':''}"><b>营业第 ${totalBusinessDay(game)} 天 · ${tableCapacity(game)} 座</b><span class="day-phase">${home?'☀ 开店前':phaseLabels[game.phase]}</span>${home?'':`<span class="day-recipes">图鉴 ${itemCount()}/${Object.keys(RECIPES).length}</span>`}</div>`;
+ return `<div class="hud ${home?'v076-home-hud':''}"><div class="brand"><span class="logo" aria-hidden="true">🍳</span><div><strong>怪味食堂</strong><small>${home?'今日营业':'ODDPOT · v0.11.0-alpha.8'}</small></div></div><div class="hud-meta"><span aria-label="金币">🪙 ${game.coins}</span><span aria-label="声望">⭐ ${game.reputation}</span></div><button class="hud-gear" data-act="settings" aria-label="设置">⚙</button></div><div class="day-strip ${home?'v076-home-day':''}"><b>营业第 ${totalBusinessDay(game)} 天 · ${tableCapacity(game)} 座</b><span class="day-phase">${home?'☀ 开店前':phaseLabels[game.phase]}</span>${home?'':`<span class="day-recipes">图鉴 ${itemCount()}/${Object.keys(RECIPES).length}</span>`}</div>`;
 }
 function toast(){return `<div class="game-toast" role="status"><span>${esc(message)}</span></div>`}
 function playablePhase(){return game.phase==='service'||(game.phase==='field'&&!!game.field?.action)}
@@ -7685,7 +7813,7 @@ function overlayMarkup(){if(!overlay)return '';
    };
    body=`<h2>👩‍🍳 食堂伙伴</h2><p class="sheet-lead">雇员永久留下；每人每天最多吃 1 道料理。员工餐真实扣料并增加当日效率，也积累最多 3 点熟练。</p><div class="staff-roster">${row('helper')}${row('waiter')}</div>`;
  }else if(overlay==='settings'){
-  body=`<h2>⚙ 试玩设置</h2><p class="sheet-lead">版本 v0.11.0-alpha.7 · 固定 9:16 竖屏 · 单机 localStorage 存档</p>${b('reset','重置存档，从 DAY 1 重新开始','danger')}<p class="sheet-lead">切到后台时营业会自动暂停。更换设备不会同步存档。</p>`;
+  body=`<h2>⚙ 试玩设置</h2><p class="sheet-lead">版本 v0.11.0-alpha.8 · 固定 9:16 竖屏 · 单机 localStorage 存档</p>${b('reset','重置存档，从 DAY 1 重新开始','danger')}<p class="sheet-lead">切到后台时营业会自动暂停。更换设备不会同步存档。</p>`;
  }else if(overlay==='details'){
   const r=game.report;body=r?`<h2>营业账本详情</h2><p class="sheet-lead">本日订单由真实食材库存、工位工作秒数和顾客等待事件计算。</p><div class="book-list">${Object.entries(r.byDish).map(([id,d])=>`<div class="detail-row">${RECIPES[id].emoji} ${RECIPES[id].name}：售出 ${d.count} 份 · 满意 ${Math.round(d.totalSat/d.count)}</div>`).join('')}<div class="detail-row">WOK 占用 ${r.congestion.WOK} 秒 / POT ${r.congestion.POT} 秒</div><div class="detail-row">食材耗用估值 ${r.cost} · 招待支出 ${r.hospitalityCost||0} · 收入 ${r.revenue} · 贡献利润 ${r.profit}</div></div>`:'';
  }

@@ -1,9 +1,9 @@
 import {specialEncounterHtml} from './field_encounter_ui_v011c.js';
-import {stepActionField,useFieldSkill,resolveFieldEvent} from './field_v04.js?v=0.11.0-alpha.7';
-import {drawField} from './scenes_v04.js?v=0.11.0-alpha.7';
+import {stepActionField,useFieldSkill,resolveFieldEvent} from './field_v04.js?v=0.11.0-alpha.8';
+import {drawField} from './scenes_v04.js?v=0.11.0-alpha.8';
 import {joystickVector} from './controls_v041.js';
-import {ING} from './data.js?v=0.11.0-alpha.7';
-import {createMeadowPreview,setMeadowPreviewMode,meadowPreviewPose,prepareGPreview,prepareEcologyPreview,prepareSpecialPreview} from './meadow_preview_state_e1.js?v=0.11.0-alpha.7';
+import {ING} from './data.js?v=0.11.0-alpha.8';
+import {createMeadowPreview,setMeadowPreviewMode,meadowPreviewPose,prepareGPreview,prepareEcologyPreview,prepareSpecialPreview,prepareCombatPreview} from './meadow_preview_state_e1.js?v=0.11.0-alpha.8';
 const $=id=>document.getElementById(id),canvas=$('scene');
 const params=new URLSearchParams(location.search);
 let biome=params.get('zone')||'herb_path';
@@ -44,7 +44,7 @@ $('skill').onclick=()=>{if(!paused)useFieldSkill(s);};
 $('special-preview').onclick=e=>{const b=e.target.closest('[data-event]');if(!b||b.disabled)return;resolveFieldEvent(s,b.dataset.event);clearInput();hudKey='';updateHud();};
 document.querySelectorAll('[data-choice]').forEach(b=>b.onclick=()=>{resolveFieldEvent(s,b.dataset.choice);clearInput();hudKey='';updateHud();});
 $('camera').onchange=()=>{const name=$('camera').value;if(name==='live'){pause(false);return;}
- pause(true);if(prepareSpecialPreview(s,name,params.get('case')||'ready')){}else if(['encounter','encounter_risk'].includes(name))prepareEcologyPreview(s,name==='encounter_risk');else if(!prepareGPreview(s,name))s.field.pos={...meadowPreviewPose(s,name)};s.field.x=s.field.pos.x;s.field.y=s.field.pos.y;s.field.moving=false;drawField(canvas,s,4.3);};
+ pause(true);if(prepareCombatPreview(s,name,params.get('stage')||'impact')){weapon=s.field.weapon.type;}else if(prepareSpecialPreview(s,name,params.get('case')||'ready')){}else if(['encounter','encounter_risk'].includes(name))prepareEcologyPreview(s,name==='encounter_risk');else if(!prepareGPreview(s,name))s.field.pos={...meadowPreviewPose(s,name)};s.field.x=s.field.pos.x;s.field.y=s.field.pos.y;s.field.moving=false;drawField(canvas,s,4.3);};
 const joy=$('joystick');
 joy.addEventListener('pointerdown',e=>{if(pointer!==null||paused)return;pointer=e.pointerId;joy.setPointerCapture(pointer);move(e);e.preventDefault();});
 function move(e){if(e.pointerId!==pointer)return;const r=joy.getBoundingClientRect();
@@ -64,5 +64,5 @@ function frame(now){const dt=last?Math.min(.06,(now-last)/1000):0;last=now;
  requestAnimationFrame(frame);
 }
 const view=params.get('view');mode(params.get('mode')||(view==='pixel'?'pixel':view==='original'?'legacy':'hybrid-e1'));
-if(view){if(prepareSpecialPreview(s,view,params.get('case')||'ready')){}else if(['encounter','encounter_risk'].includes(view))prepareEcologyPreview(s,view==='encounter_risk');else if(!prepareGPreview(s,view))s.field.pos={...meadowPreviewPose(s,view)};pause(true);}
+if(view){if(prepareCombatPreview(s,view,params.get('stage')||'impact')){weapon=s.field.weapon.type;}else if(prepareSpecialPreview(s,view,params.get('case')||'ready')){}else if(['encounter','encounter_risk'].includes(view))prepareEcologyPreview(s,view==='encounter_risk');else if(!prepareGPreview(s,view))s.field.pos={...meadowPreviewPose(s,view)};pause(true);}
 updateHud();requestAnimationFrame(frame);

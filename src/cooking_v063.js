@@ -1,7 +1,7 @@
 // v0.6.3-A: real-time ingredient-event adjudicator.
 // No timed turns, no universal style buffs and no direct inventory writes.
-import {ING,RECIPES,RECIPE_INDEX,recipeSignature} from './data.js?v=0.11.0-alpha.7';
-import {RECIPE_PROFILES} from './recipe_profiles_v063.js?v=0.11.0-alpha.7';
+import {ING,RECIPES,RECIPE_INDEX,recipeSignature} from './data.js?v=0.11.0-alpha.8';
+import {RECIPE_PROFILES} from './recipe_profiles_v063.js?v=0.11.0-alpha.8';
 
 export const LIVE_ACTIONS={
   WOK:[{id:'flip',name:'翻炒',emoji:'🍳'},{id:'toss',name:'颠勺',emoji:'↗'}],
