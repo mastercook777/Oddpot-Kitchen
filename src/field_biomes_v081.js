@@ -1,4 +1,4 @@
-import {ING} from './data.js?v=0.11.0-alpha.8';
+import {ING} from './data.js?v=0.12.0-alpha.1';
 import {fieldTilePath} from './field_rules_v011a.js';
 // v0.8.1 base biomes; v0.11-A adds safe, seed-varying actual obstacle layouts.
 // The physical layout, resource concentration and color identity live together.

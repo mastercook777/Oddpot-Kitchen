@@ -1,19 +1,19 @@
-import {fieldHitPose,fieldAttackPose} from './field_hit_response_v011h.js?v=0.11.0-alpha.8';
-import {drawFieldHitEffects} from './field_effects_v011e2.js?v=0.11.0-alpha.8';
+import {fieldHitPose,fieldAttackPose} from './field_hit_response_v011h.js?v=0.12.0-alpha.1';
+import {drawFieldHitEffects} from './field_effects_v011e2.js?v=0.12.0-alpha.1';
 import {drawEcologyWarning} from './field_ecology_v011b2.js';
 import {drawPixelMiniBoss,drawMiniBossWarning,drawBossZones} from './field_bosses_v011g.js';
-import {isHybridFieldArt,drawHybridFieldGround,drawHybridFieldObstacle,drawHybridFieldHazard,drawHybridFieldAtmosphere} from './field_hybrid_biomes_v011f.js?v=0.11.0-alpha.8';
-import {drawFieldImpact,drawFieldProjectile,drawFieldSwipe,drawFieldSkillWave,drawFieldBurst,drawFieldCollection,drawFieldDeath,drawFieldActorIndicators,drawFieldNodeMarkers} from './field_effects_v011e2.js?v=0.11.0-alpha.8';
+import {isHybridFieldArt,drawHybridFieldGround,drawHybridFieldObstacle,drawHybridFieldHazard,drawHybridFieldAtmosphere} from './field_hybrid_biomes_v011f.js?v=0.12.0-alpha.1';
+import {drawFieldImpact,drawFieldProjectile,drawFieldSwipe,drawFieldSkillWave,drawFieldBurst,drawFieldCollection,drawFieldDeath,drawFieldActorIndicators,drawFieldNodeMarkers} from './field_effects_v011e2.js?v=0.12.0-alpha.1';
 import {fieldWokPose,fieldPotPose} from './field_pose_v083.js?v=0.8.5';
 import {hazardPhase,fieldTilePath} from './field_rules_v011a.js';
 import {fieldCamera} from './field_camera_v011b1.js';
 import {drawExpandedLandscape,drawExpandedObstacle} from './field_world_render_v011b1.js';
-import {isHerbPixelSlice,drawHerbPixelGround,drawHerbPixelObstacle,drawHerbPixelNode,drawHerbPixelHazard,drawHerbPixelEnemy,drawHerbPixelProjectile} from './field_pixel_herb_v011c.js?v=0.11.0-alpha.8';
-import {isHybridMeadow,drawHybridMeadowGround,drawHybridMeadowObstacle,drawHybridMeadowHazard} from './field_hybrid_meadow_v011e.js?v=0.11.0-alpha.8';
+import {isHerbPixelSlice,drawHerbPixelGround,drawHerbPixelObstacle,drawHerbPixelNode,drawHerbPixelHazard,drawHerbPixelEnemy,drawHerbPixelProjectile} from './field_pixel_herb_v011c.js?v=0.12.0-alpha.1';
+import {isHybridMeadow,drawHybridMeadowGround,drawHybridMeadowObstacle,drawHybridMeadowHazard} from './field_hybrid_meadow_v011e.js?v=0.12.0-alpha.1';
 import {meleeProfile,meleeWindupProgress} from './field_combat_feedback_v084.js?v=0.8.4';
 import {pixelActor,pixelEnemy,pixelImpact} from './pixels_v041.js?v=0.9.0';
 // Lightweight procedural game graphics: original Canvas shapes, no art pack.
-import {ING,RECIPES,CUSTOMERS} from './data.js?v=0.11.0-alpha.8';
+import {ING,RECIPES,CUSTOMERS} from './data.js?v=0.12.0-alpha.1';
 import {heroZone,waiterDeliveryPose,HERO_PASS} from './walkable_restaurant_v07.js?v=0.9.1';
 import {DINER_FLOOR,dinerFloor,dinerGuestRoute,dinerWeather,dinerQueueGuests} from './restaurant_scene_v075.js?v=0.9.2';
 import {selectDiningSpeech,selectStaffSpeech,diningBubbleLines,speechOpacity} from './diner_ambience_v077.js?v=0.9.2';
@@ -805,16 +805,17 @@ function drawRestaurantV075(c,s,t,w,h){
    rr(X+sign*side*.77-7,Y-14,14,13,3,'#78573b','#bc9366');
   }
   rr(X-half-3,Y-half+7,side+6,side+5,6,'#493124','#67462e');
-  rr(X-half,Y-half,side,side,5,i===2?'#916b48':'#a0754a','#e0b27b');
+  rr(X-half,Y-half,side,side,5,i>=2?'#916b48':'#a0754a','#e0b27b');
   rr(X-half+4,Y-half+4,side-8,side-8,3,'#ae865a','#c69d65');
   line(c,X-half+6,Y-4,X+half-6,Y-4,'#8d6845',1);
   line(c,X-half+6,Y+6,X+half-6,Y+6,'#8d6845',1);
   // A single subtle rune is part of the wood, not an in-world UI name.
-  circle(c,X,Y,3,i===2?'#b2db9e':'#ceb17c');
-  if(i===2){ // a low mushroom lamp identifies the alcove without any label
-   line(c,X-half-8,Y-half-28,X-half-8,Y-half-8,'#756d56',2);
-   circle(c,X-half-8,Y-half-28,8,'#72a37f');
-   circle(c,X-half-8,Y-half-30,3,'#c1e9a9');
+  circle(c,X,Y,3,i>=2?'#b2db9e':'#ceb17c');
+  if(i>=2){ // low lamps mark the rear extension without a room label
+   const lampX=X+(i===2?-1:1)*(half+8);
+   line(c,lampX,Y-half-28,lampX,Y-half-8,'#756d56',2);
+   circle(c,lampX,Y-half-28,8,i===2?'#72a37f':'#86a6aa');
+   circle(c,lampX,Y-half-30,3,'#c1e9a9');
   }
   if(v){
    // Plates remain on the ACTUAL table while visitors eat and review.

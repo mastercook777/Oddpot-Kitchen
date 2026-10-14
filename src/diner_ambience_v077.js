@@ -1,7 +1,7 @@
 // v0.7.7 - transient, state-grounded dining dialogue for real orders.
 // Data only: never mutate gameplay, advance clocks or spend resources.
 // Max one speech per table, max two across the entire restaurant.
-import {RECIPES,ING} from './data.js?v=0.11.0-alpha.8';
+import {RECIPES,ING} from './data.js?v=0.12.0-alpha.1';
 
 const clampSpeech=x=>Math.max(0,Math.min(1,x));
 const speechWhen=(t,start,duration)=>Number.isFinite(start)&&t>=start&&t<start+duration;
@@ -164,6 +164,18 @@ export const DINER_VOICES={
    "今天的菜单不太合胃口。",
    "想吃清爽一点的呀。"
   ]
+ },
+ stargazer: {
+  order: ["走过夜路，想尝一口清亮的。","星砂落到锅边啦。","有没有带花香的料理？"],
+  choose: ["让我看看今晚的菜单。","这间小店的香味传得很远。","能闻到菌林与露水。"],
+  kitchen: ["锅气像夜空的尾光。","火候再轻一点就好了。","原来星光也能下锅。"],
+  ready: ["好香，我的行囊都发亮了。","这一盘看着真清爽。","可以开吃了吗？"],
+  delivery: ["小心我的旅袋，放这边。","今晚走了好远，谢啦。","盘子像一轮小月亮。"],
+  eat: ["这甜香能照亮夜路。","路过这里真值得。","吃完还能走到天亮。"],
+  hurry: ["夜路还长，能快些吗？","我的星砂快睡着了。","已经闻了很久香味啦。"],
+  furious: ["今晚只好带着空肚子上路。","等到星星都换位置了。","改日再来吧。"],
+  stockout: ["花香都用完了吗？","看来今晚与这道菜无缘。","我的旅袋里也没备餐。"],
+  mismatch: ["想找清爽些的口味。","有点太重了，夜路会口渴。","也许下次有更合口的菜。"]
  },
  critic: {
   order: [

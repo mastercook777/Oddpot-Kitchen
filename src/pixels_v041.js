@@ -3,7 +3,7 @@
 const P={outline:'#2b3334',skin:'#e4b18a',skinLight:'#f7d0a1',white:'#f5ead1',shadow:'#534b48'};
 function r(c,x,y,w,h,col){c.fillStyle=col;c.fillRect(x|0,y|0,w|0,h|0)}
 function person(c,kind,walk,attack){
- const p={chef:['#477a91','#e7d4a7','#7e4f37'],helper:['#d27a46','#f2d69a','#654730'],waiter:['#708d62','#dfc18e','#466251'],adventurer:['#4d8a66','#c59d55','#5d4630'],family:['#d67872','#f0cf79','#8a5747'],regular:['#729aba','#9bc1ce','#6c5440'],critic:['#795777','#bb9abd','#362e48']}[kind]||['#729aba','#9bc1ce','#6c5440'];
+ const p={chef:['#477a91','#e7d4a7','#7e4f37'],helper:['#d27a46','#f2d69a','#654730'],waiter:['#708d62','#dfc18e','#466251'],adventurer:['#4d8a66','#c59d55','#5d4630'],family:['#d67872','#f0cf79','#8a5747'],regular:['#729aba','#9bc1ce','#6c5440'],critic:['#795777','#bb9abd','#362e48'],stargazer:['#41576e','#c3b67e','#7f5c91']}[kind]||['#729aba','#9bc1ce','#6c5440'];
  const step=walk?Math.round(Math.sin(walk*13)*2):0,arm=attack? -7:Math.round(Math.sin(walk*13+2)*1);
  // Shoes, alternating leg pixels, outlined torso/arms, expressive large face.
  r(c,3,18+step,5,5,P.outline);r(c,10,18-step,5,5,P.outline);
@@ -30,6 +30,12 @@ function person(c,kind,walk,attack){
   // Spotted mushroom-cap people, silhouette still legible at phone size.
   r(c,1,1,17,4,'#a34c5b');r(c,3,-3,13,5,'#d26c79');r(c,5,-2,3,2,'#fff0c6');r(c,12,0,2,2,'#fff0c6');
   r(c,2,3,4,8,p[2]);r(c,15,3,3,8,p[2]);
+ }else if(kind==='stargazer'){
+  // Pointed night-blue hood, gold star pin and a small travel satchel.
+  r(c,3,-2,13,7,P.outline);r(c,5,-4,9,7,'#41576e');
+  r(c,2,1,4,9,'#566c87');r(c,14,1,4,9,'#566c87');
+  r(c,14,11,5,7,'#8b658f');r(c,15,12,2,2,'#f8df90');
+  r(c,8,-3,3,3,'#f7d97b');r(c,9,-5,1,7,'#f7d97b');r(c,7,-3,5,1,'#f7d97b');
  }else{
   // Slime villager: translucent turquoise head and bobbing droplets.
   r(c,3,0,13,4,'#52ae9d');r(c,4,3,5,2,'#70debc');r(c,1,1,2,2,'#8be9d3');r(c,15,1,2,2,'#8be9d3');

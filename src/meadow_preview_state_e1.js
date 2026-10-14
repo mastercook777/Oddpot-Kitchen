@@ -1,7 +1,7 @@
 import {specialEncounterOffer} from './field_encounters_v011c.js';
 // All preview state is in memory. Never load/save the player's localStorage.
-import {newGame,enterField,syncFieldBagStacks} from './engine.js?v=0.11.0-alpha.8';
-import {startActionField,stepActionField,useFieldSkill} from './field_v04.js?v=0.11.0-alpha.8';
+import {newGame,enterField,syncFieldBagStacks} from './engine.js?v=0.12.0-alpha.1';
+import {startActionField,stepActionField,useFieldSkill} from './field_v04.js?v=0.12.0-alpha.1';
 import {fieldTilePath} from './field_rules_v011a.js';
 export const MEADOW_PREVIEW_MODES=['hybrid-e1','hybrid-e0','pixel','legacy'];
 export const HYBRID_PREVIEW_ZONES=['herb_path','glow_mushroom','old_tree_edge','forest_garden','hot_spring_shallows','steam_crack','ember_edge','steam_lake'];
