@@ -42,7 +42,7 @@ function move(e){if(e.pointerId!==pointer)return;const r=joy.getBoundingClientRe
  $('knob').style.transform=`translate(${axis.knobX}px,${axis.knobY}px)`;}
 joy.addEventListener('pointermove',move);
 for(const name of ['pointerup','pointercancel','lostpointercapture'])joy.addEventListener(name,e=>{if(e.pointerId===pointer)clearInput();});
-window.addEventListener('keydown',e=>{if(e.target.matches('select,button,input'))return;
+window.addEventListener('keydown',e=>{if(e.target.matches('select,input,textarea')||(e.target.matches('button')&&e.key===' '))return;
  const key=e.key.toLowerCase();if(['arrowup','arrowdown','arrowleft','arrowright','w','a','s','d',' '].includes(key)){e.preventDefault();keys.add(key);if(key===' '&&!e.repeat&&!paused)useFieldSkill(s);}});
 window.addEventListener('keyup',e=>keys.delete(e.key.toLowerCase()));
 window.addEventListener('blur',()=>pause(true));document.addEventListener('visibilitychange',()=>{if(document.hidden)pause(true);});
