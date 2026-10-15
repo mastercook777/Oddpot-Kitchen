@@ -60,11 +60,11 @@ try{
  offline.on('pageerror',e=>errors.push(e.message));
  await offline.addInitScript(([key,s])=>localStorage.setItem(key,JSON.stringify(s)),[k,crowd()]);
  await offline.goto('http://127.0.0.1:5173/standalone.html',{waitUntil:'networkidle'});
- assert.match(await offline.title(),/alpha.5/);
+ assert.match(await offline.title(),/alpha.1/);
  assert.match(await offline.locator('#v075-served').innerText(),/等位 1/);
  assert.ok(await offline.locator('#diner-canvas').evaluate(c=>c.width>0));
  await offline.screenshot({path:out+'/queue-standalone-390.png'});
  assert.deepEqual(errors,[]);
  await offline.close();
- console.log('v0.12-F Chrome 320x568, 375x667, 390x844: real waiting guest painting, no UI exception, frozen selected ingredient, and offline alpha.5 passed.');
+ console.log('v0.12-F Chrome 320x568, 375x667, 390x844: real waiting guest painting, no UI exception, frozen selected ingredient, and offline alpha.1 passed.');
 }finally{if(browser)await browser.close();server.kill('SIGTERM')}
