@@ -65,7 +65,7 @@ test('v0.5B service snapshot measures helper saved seconds, waiter aid and meal 
  assert.ok(report.staff.stats.helperOrders>0);assert.ok(report.staff.stats.helperSeconds>0);
  assert.ok(report.staff.stats.waiterOrders>0);assert.ok(report.staff.stats.waiterBonus>0);
  assert.equal(report.staff.foodCost,mealCost);assert.equal(s.staffFoodCost,0);
- assert.equal(report.profit,report.revenue-report.cost-(report.hospitalityCost||0)-(report.eventExpense||0));
+ assert.equal(report.profit,report.revenue-report.cost-(report.hospitalityCost||0)-(report.eventExpense||0)-(report.finance?.wage||0)-(report.finance?.marketingCost||0));
  assert.equal(s.ledger.filter(x=>x.type==='consume'&&x.id.startsWith('crew-meal-')).length,2);
 });
 
