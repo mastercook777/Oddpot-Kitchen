@@ -403,7 +403,7 @@ export function fieldWeaponChoices(s){
   const installed=slots.map((slot,index)=>({...slot,index}))
    .filter(slot=>slot.type===type)
    .sort((a,b)=>b.level-a.level||a.index-b.index)[0];
-  return {type,level:installed?.level||1,slotIndex:installed?.index??null,
+  return {type,level:ensureKitchen(s).mastery[type],slotIndex:installed?.index??null,
     fitted:!!installed,source:installed?'kitchen':'reserve'};
  });
 }
@@ -1080,6 +1080,7 @@ v.queuePeak=Math.max(v.queuePeak||0,outdoorQueueCount(v.orders,v.time));
 advanceGuestOrders(s);
 advanceGuestMeals(s);
 if(v.walkable)stepWalkableShift(s);
+reassignIdleCooks(v);
 for(const st of Object.keys(v.stations)){const job=v.stations[st];if(job){v.congestion[st]=(v.congestion[st]||0)+1;
  const role=shiftHelperAt(v.crew,stationIdx(st)),hero=v.walkable&&v.hero&&!v.hero.carryOrderId&&heroZone(v.hero,s)===st;
  const rate=v.walkable?(Number(!!role)+Number(!!hero)):1;
@@ -1093,7 +1094,11 @@ for(const o of v.orders){if((o.status==='queued'||o.status==='cooking'||(v.walka
 for(const st of Object.keys(v.stations)){if(v.stations[st])continue;
  const ix=stationIdx(st),slot=v.kitchenSnapshot?.[ix];if(!slot)continue;
  // A new hearth without its employee or the player physically present does not steal work.
- if(st==='CENTER'&&v.walkable&&!shiftHelperAt(v.crew,ix)&&heroZone(v.hero,s)!==st)continue;
+ if(v.walkable&&v.kitchenSnapshot.length>=3&&!shiftHelperAt(v.crew,ix)&&heroZone(v.hero,s)!==st){
+  // All 3 physical ovens need an actual chef before they can reserve ingredients.
+  // Do not let an unattended left bench steal a WOK order from staffed centre.
+  continue;
+ }
  let i=v.queued.findIndex(id=>{const o=v.orders.find(x=>x.id===id);return o&&RECIPES[o.recipeId].station===slot.type});if(i<0)continue;const id=v.queued.splice(i,1)[0];const o=v.orders.find(x=>x.id===id);const r=RECIPES[o.recipeId];if(o.manual){o.status='cooking';v.stations[st]={orderId:id,left:stationDuration(s,st,r,v),quality:o.manual.sellable&&o.manual.recipeId===o.recipeId?o.manual.quality:0};if(!o.manual.sellable||o.manual.recipeId!==o.recipeId){o.status='left';o.leftReason='制作失败';o.leftAt=v.time;record(s,{type:'failed_cook',order:id})}continue;}
 const prepared=s.prepVariants?.[o.recipeId]||[];
 const match=prepared.findIndex(x=>x.variantId===(o.craft?.variantId||''));
