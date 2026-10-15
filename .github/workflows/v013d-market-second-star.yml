@@ -1,0 +1,31 @@
+name: v0.13-D market second star and vegetable diners
+on:
+  pull_request:
+    paths: ['src/**','tests/**','scripts/**','index.html','standalone.html','.github/workflows/v013d-market-second-star.yml']
+  push:
+    branches: ['feat/v013d-market-second-star-veg','main']
+permissions: {contents: read}
+jobs:
+  restaurant-star-two:
+    runs-on: ubuntu-latest
+    timeout-minutes: 22
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - name: Install browser and node deps
+        run: |
+          sudo apt-get update && sudo apt-get install -y fonts-noto-cjk
+          npm install --no-package-lock --no-audit --no-fund
+          npm install --no-save --package-lock=false playwright@1.56.1
+      - run: npm test
+      - run: npm run build
+      - run: python scripts/build-standalone.py
+      - run: node scripts/simulate-second-star-market-v013d.mjs
+      - run: node scripts/check-v013d-market-second-star-browser.mjs
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: v013d-second-star-vegetable-mobile
+          path: docs/screenshots/v013d-second-star/*.png
