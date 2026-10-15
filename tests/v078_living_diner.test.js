@@ -11,8 +11,8 @@ const sample=(segment='regular',status='ordering')=>({
  started:6,pickupAt:11,carriedAt:12,deliveryAt:13,landedAt:18,
  reviewAt:21,reviewedAt:23,reviewText:'非常好吃！',reviewType:'delicious'
 });
-test('all five customer segments have distinct, multiple voice lines for every meaningful activity',()=>{
- const types=['adventurer','family','regular','critic','stargazer'];
+test('all six customer segments have distinct, multiple voice lines for every meaningful activity',()=>{
+ const types=['adventurer','family','regular','critic','stargazer','gardener'];
  assert.deepEqual(Object.keys(DINER_VOICES).sort(),types.sort());
  const kinds=['order','choose','kitchen','ready','delivery','eat','hurry','furious','stockout','mismatch'];
  for(const type of types){
@@ -22,7 +22,7 @@ test('all five customer segments have distinct, multiple voice lines for every m
   }
  }
  const guests=types.map(s=>diningSpeechCue(sample(s),2.6)?.text);
- assert.equal(new Set(guests).size,5,'opening phrases must sound distinct by archetype');
+ assert.equal(new Set(guests).size,6,'opening phrases must sound distinct by archetype');
 });
 test('speech for a real dish leads with the actual recipe name and is deterministic across frames',()=>{
  const o=sample('critic','queued');
