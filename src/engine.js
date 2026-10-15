@@ -1,10 +1,10 @@
 import {fieldHarvestTargetSuffix} from './field_target_v012f.js';
 import {makeSpecialEncounterPlan,previewSpecialEncounter,SPECIAL_ENCOUNTER_KINDS} from './field_encounters_v011c.js';
-import {ING,RECIPES,CUSTOMERS,FORECAST,DEFAULT_INVENTORY,SHOP_STAPLES,MARKET_ROTATION_STAPLES} from './data.js?v=0.13.0-alpha.4';
-import {LIVE_ACTIONS,evaluateLiveCook,liveIngredientState,liveIngredientHeatFeedback,legacyVariant,makeLiveVariant,resolveTechnique} from './cooking_v063.js?v=0.13.0-alpha.4';
-import {RECIPE_PROFILES} from './recipe_profiles_v063.js?v=0.13.0-alpha.4';
-import {generateBiomeMap} from './field_biomes_v081.js?v=0.13.0-alpha.4';
-import {makeFieldEncounterPlan,insertPlannedFieldEncounter} from './field_encounter_plan_v011b.js?v=0.13.0-alpha.4';
+import {ING,RECIPES,CUSTOMERS,FORECAST,DEFAULT_INVENTORY,SHOP_STAPLES,MARKET_ROTATION_STAPLES} from './data.js?v=0.13.0-alpha.5';
+import {LIVE_ACTIONS,evaluateLiveCook,liveIngredientState,liveIngredientHeatFeedback,legacyVariant,makeLiveVariant,resolveTechnique} from './cooking_v063.js?v=0.13.0-alpha.5';
+import {RECIPE_PROFILES} from './recipe_profiles_v063.js?v=0.13.0-alpha.5';
+import {generateBiomeMap} from './field_biomes_v081.js?v=0.13.0-alpha.5';
+import {makeFieldEncounterPlan,insertPlannedFieldEncounter} from './field_encounter_plan_v011b.js?v=0.13.0-alpha.5';
 import {expandFieldMap} from './field_world_v011b1.js';
 import {newServiceHero,heroZone} from './walkable_restaurant_v07.js?v=0.9.2';
 import {CAMPAIGNS,CREW_GROWTH,CREW_XP_THRESHOLDS,ensureManagement,selectedCampaign,chooseCampaign,crewWage,ensureStaffProgress,setCrewDuty,crewPromotion,applyCrewPromotion,payroll,settleCrewExperience} from './restaurant_management_v012c.js';
@@ -128,28 +128,35 @@ export function expandDiningRoom(s){
 export const DAILY_STAPLE_MIN_PURCHASES=6;
 export function ensureDailyMarket(s){
  const key=`${s.cycle}-${s.day}`;
- if(s.market?.dayKey===key&&(s.market.schema===2||s.market.schema===3))return s.market;
- if(s.market?.dayKey===key&&s.market.goods&&Object.keys(s.market.goods).length){
-  // Keep an existing old unversioned day's selection, actual stock and prices.
-  for(const offer of Object.values(s.market.goods)){
-   const bought=Math.max(0,(offer.initialStock||0)-(offer.stock||0));
-   offer.initialStock=Math.max(DAILY_STAPLE_MIN_PURCHASES,bought,offer.initialStock||0);
-   offer.stock=offer.initialStock-bought;
-  }
-  s.market.schema=2;return s.market;
- }
+ const current=s.market?.dayKey===key?s.market:null;
+ // The old schema2 could have 3 offers. Preserve their actual stock/price
+ // (including previously sold-out goods) and fill missing slots once only.
+ if(current?.schema===4&&Object.keys(current.goods||{}).length===4)return current;
  const roll=rand((s.seed^(s.cycle*7919)^(s.day*65521))>>>0);
- const selection=MARKET_ROTATION_STAPLES.map((id,i)=>({
+ const picks=MARKET_ROTATION_STAPLES.map((id,i)=>({
   id,roll:rand((roll ^ Math.imul(i+1,0x9e3779b9) ^ Math.imul(s.cycle*3+s.day,0x85ebca6b))>>>0)
- })).sort((a,b)=>a.roll-b.roll||a.id.localeCompare(b.id)).slice(0,4);
+ })).sort((a,b)=>a.roll-b.roll||a.id.localeCompare(b.id));
+ const fresh=({id,roll:value})=>{
+  const field=ING[id].acquisitionPolicy==='FIELD_ONLY';
+  const initialStock=field?2+((value>>>16)%3):6+((value>>>16)%4);
+  const price=Math.max(1,Math.round(ING[id].cost*(field?160+((value>>>10)%31):85+((value>>>10)%51))/100));
+  return {stock:initialStock,initialStock,price};
+ };
+ const entries=Object.entries(current?.goods||{}).filter(([id,offer])=>MARKET_ROTATION_STAPLES.includes(id)&&offer&&Number.isFinite(offer.stock));
  const goods={};
- for(const {id,roll:value} of selection){
-  const isField=ING[id].acquisitionPolicy==='FIELD_ONLY';
-  const initialStock=isField?2+((value>>>16)%3):6+((value>>>16)%4);
-  const price=Math.max(1,Math.round(ING[id].cost*(isField?160+((value>>>10)%31):85+((value>>>10)%51))/100));
-  goods[id]={stock:initialStock,initialStock,price};
+ if(entries.length){
+  for(const [id,offer] of entries.slice(0,4)){
+   // Do not reconstruct a legacy offer from a new RNG roll: doing so would
+   // undo purchases or silently alter an already announced day's prices.
+   goods[id]=offer;
+  }
  }
- s.market={dayKey:key,goods,schema:3};return s.market;
+ for(const item of picks){
+  if(Object.keys(goods).length>=4)break;
+  if(!goods[item.id])goods[item.id]=fresh(item);
+ }
+ s.market={dayKey:key,goods,schema:4};
+ return s.market;
 }
 export const KITCHEN_POSITIONS=['WOK','POT','CENTER'];
 export const THIRD_KITCHEN_BUNDLE_COST=260;
@@ -614,7 +621,7 @@ export function prepStockForecast(s){
  const shortages=ingredients.filter(x=>x.short>0);
  const market=ensureDailyMarket(s);
  const purchasableShortages=shortages.filter(x=>
-  ING[x.id]?.acquisitionPolicy==='SHOP_STAPLE'&&(market.goods[x.id]?.stock||0)>0);
+  MARKET_ROTATION_STAPLES.includes(x.id)&&(market.goods[x.id]?.stock||0)>0);
  return {guestCount,portionsToCook:afterPrep,coveredByPrep,ingredients,shortages,
   shortageCount:shortages.length,purchasableShortages,purchasableCount:purchasableShortages.length,
   estimated:true};

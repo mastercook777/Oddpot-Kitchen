@@ -9,7 +9,7 @@ test('daily market rotates exactly four of all eight ordinary ingredients with s
  for(let seed=1;seed<=120;seed++)for(let i=0;i<15;i++){
   const s=newGame(seed);s.cycle=1+Math.floor(i/3);s.day=1+i%3;
   const m=ensureDailyMarket(s),list=Object.keys(m.goods);
-  assert.equal(m.schema,3);assert.equal(list.length,4);
+  assert.equal(m.schema,4);assert.equal(list.length,4);
   for(const id of list){
    assert.ok(['beef','chicken','chili','garlic','mushroom','cabbage','onion','potato'].includes(id));
    seen.add(id);
@@ -54,14 +54,14 @@ test('old same-day market migrates the offer quantity without recreating sold un
  old.schema=undefined;
  old.goods[id].initialStock=original;
  const absent=SHOP_STAPLES.filter(x=>!old.goods[x]);
- const migrated=ensureDailyMarket(s);assert.equal(migrated.schema,2);assert.deepEqual(Object.keys(migrated.goods).sort(),['chicken','garlic','mushroom']);
+ const migrated=ensureDailyMarket(s);assert.equal(migrated.schema,4);assert.equal(Object.keys(migrated.goods).length,4);for(const oldId of ['chicken','garlic','mushroom'])assert.strictEqual(migrated.goods[oldId],old.goods[oldId]);
  assert.ok(migrated.goods[id].initialStock>=DAILY_STAPLE_MIN_PURCHASES);
  assert.equal(migrated.goods[id].stock,migrated.goods[id].initialStock-2);
  assert.equal(migrated.goods[id].price,price);
  assert.equal(s.inventory[id],purchasedBefore);
  assert.equal(s.coins,spent);
  assert.equal(s.ledger.length,ledgerBefore);
- for(const missing of absent)assert.equal(migrated.goods[missing],undefined);
+ assert.equal(Object.keys(migrated.goods).length,4);assert.equal(migrated.goods.chicken.stock,6);
 });
 test('home preview has no kitchen and seating badge overlays; purchasing keeps stock state',()=>{
  const app=readFileSync(new URL('../src/app.js',import.meta.url),'utf8');
@@ -69,6 +69,6 @@ test('home preview has no kitchen and seating badge overlays; purchasing keeps s
  assert.doesNotMatch(home,/v076-preview-info/);
  assert.match(home,/restaurantView\(false\)/);
  assert.match(app,/买 3 份/);
- assert.match(app,/今日缺货/);
- assert.match(app,/今日上架/);
+ assert.doesNotMatch(app,/今日缺货/);
+ assert.match(app,/今日上架/);assert.match(app,/Object.entries\(market.goods\)/);
 });

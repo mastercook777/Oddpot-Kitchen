@@ -32,12 +32,12 @@ test('eight rotating staples retain a chosen market and do not grant rare goods'
  assert.equal(s.ledger.filter(e=>e.type==='purchase').length,limit);
  s.phase='upgrade';assert.equal(advanceDay(s),true);
  const next=ensureDailyMarket(s);
- assert.equal(next.schema,3);assert.equal(Object.keys(next.goods).length,4);
+ assert.equal(next.schema,4);assert.equal(Object.keys(next.goods).length,4);
  assert.notEqual(next.dayKey,before.dayKey);
 });
 test('old schema2 same-day stock never gets rerolled or restocked',()=>{
  const s=newGame();s.market={dayKey:'1-1',schema:2,goods:{chicken:{stock:2,initialStock:8,price:4}}};
- const old=s.market;assert.equal(ensureDailyMarket(s),old);assert.deepEqual(Object.keys(s.market.goods),['chicken']);
+ const old=s.market;assert.equal(ensureDailyMarket(s).schema,4);assert.equal(Object.keys(s.market.goods).length,4);assert.equal(s.market.goods.chicken.stock,2);
  s.coins=100;assert.equal(purchase(s,'chicken',1),true);
  assert.equal(s.market.goods.chicken.stock,1);
  assert.equal(ensureDailyMarket(s).goods.chicken.stock,1);

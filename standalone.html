@@ -1,4 +1,4 @@
-<!doctype html><html lang="zh-CN"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1.0,maximum-scale=1.0,viewport-fit=cover,user-scalable=no"><meta name="apple-mobile-web-app-capable" content="yes"><meta name="theme-color" content="#1b3c2b"><title>怪味食堂 · v0.13.0-alpha.4 离线版</title><style>.ingredient-icon{display:inline-block;width:var(--ingredient-size,24px);height:var(--ingredient-size,24px);max-width:none;object-fit:contain;image-rendering:pixelated;vertical-align:-.24em;flex:none;pointer-events:none;user-select:none}
+<!doctype html><html lang="zh-CN"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1.0,maximum-scale=1.0,viewport-fit=cover,user-scalable=no"><meta name="apple-mobile-web-app-capable" content="yes"><meta name="theme-color" content="#1b3c2b"><title>怪味食堂 · v0.13.0-alpha.5 离线版</title><style>.ingredient-icon{display:inline-block;width:var(--ingredient-size,24px);height:var(--ingredient-size,24px);max-width:none;object-fit:contain;image-rendering:pixelated;vertical-align:-.24em;flex:none;pointer-events:none;user-select:none}
 .stock-line>span .ingredient-icon{margin-right:3px}.target-chip .ingredient-icon{vertical-align:middle}.book-icon .ingredient-icon{display:block}
 .v063-food-icon .ingredient-icon{width:1em;height:1em;vertical-align:top;filter:none}.v063-receipt-line .ingredient-icon{vertical-align:middle}
 .v063-food-picker button>span,.v063-drop>span{line-height:1}.v063-food-picker .ingredient-icon,.v063-drop .ingredient-icon{vertical-align:top}
@@ -3670,28 +3670,35 @@ function expandDiningRoom(s){
 const DAILY_STAPLE_MIN_PURCHASES=6;
 function ensureDailyMarket(s){
  const key=`${s.cycle}-${s.day}`;
- if(s.market?.dayKey===key&&(s.market.schema===2||s.market.schema===3))return s.market;
- if(s.market?.dayKey===key&&s.market.goods&&Object.keys(s.market.goods).length){
-  // Keep an existing old unversioned day's selection, actual stock and prices.
-  for(const offer of Object.values(s.market.goods)){
-   const bought=Math.max(0,(offer.initialStock||0)-(offer.stock||0));
-   offer.initialStock=Math.max(DAILY_STAPLE_MIN_PURCHASES,bought,offer.initialStock||0);
-   offer.stock=offer.initialStock-bought;
-  }
-  s.market.schema=2;return s.market;
- }
+ const current=s.market?.dayKey===key?s.market:null;
+ // The old schema2 could have 3 offers. Preserve their actual stock/price
+ // (including previously sold-out goods) and fill missing slots once only.
+ if(current?.schema===4&&Object.keys(current.goods||{}).length===4)return current;
  const roll=rand((s.seed^(s.cycle*7919)^(s.day*65521))>>>0);
- const selection=MARKET_ROTATION_STAPLES.map((id,i)=>({
+ const picks=MARKET_ROTATION_STAPLES.map((id,i)=>({
   id,roll:rand((roll ^ Math.imul(i+1,0x9e3779b9) ^ Math.imul(s.cycle*3+s.day,0x85ebca6b))>>>0)
- })).sort((a,b)=>a.roll-b.roll||a.id.localeCompare(b.id)).slice(0,4);
+ })).sort((a,b)=>a.roll-b.roll||a.id.localeCompare(b.id));
+ const fresh=({id,roll:value})=>{
+  const field=ING[id].acquisitionPolicy==='FIELD_ONLY';
+  const initialStock=field?2+((value>>>16)%3):6+((value>>>16)%4);
+  const price=Math.max(1,Math.round(ING[id].cost*(field?160+((value>>>10)%31):85+((value>>>10)%51))/100));
+  return {stock:initialStock,initialStock,price};
+ };
+ const entries=Object.entries(current?.goods||{}).filter(([id,offer])=>MARKET_ROTATION_STAPLES.includes(id)&&offer&&Number.isFinite(offer.stock));
  const goods={};
- for(const {id,roll:value} of selection){
-  const isField=ING[id].acquisitionPolicy==='FIELD_ONLY';
-  const initialStock=isField?2+((value>>>16)%3):6+((value>>>16)%4);
-  const price=Math.max(1,Math.round(ING[id].cost*(isField?160+((value>>>10)%31):85+((value>>>10)%51))/100));
-  goods[id]={stock:initialStock,initialStock,price};
+ if(entries.length){
+  for(const [id,offer] of entries.slice(0,4)){
+   // Do not reconstruct a legacy offer from a new RNG roll: doing so would
+   // undo purchases or silently alter an already announced day's prices.
+   goods[id]=offer;
+  }
  }
- s.market={dayKey:key,goods,schema:3};return s.market;
+ for(const item of picks){
+  if(Object.keys(goods).length>=4)break;
+  if(!goods[item.id])goods[item.id]=fresh(item);
+ }
+ s.market={dayKey:key,goods,schema:4};
+ return s.market;
 }
 const KITCHEN_POSITIONS=['WOK','POT','CENTER'];
 const THIRD_KITCHEN_BUNDLE_COST=260;
@@ -4156,7 +4163,7 @@ function prepStockForecast(s){
  const shortages=ingredients.filter(x=>x.short>0);
  const market=ensureDailyMarket(s);
  const purchasableShortages=shortages.filter(x=>
-  ING[x.id]?.acquisitionPolicy==='SHOP_STAPLE'&&(market.goods[x.id]?.stock||0)>0);
+  MARKET_ROTATION_STAPLES.includes(x.id)&&(market.goods[x.id]?.stock||0)>0);
  return {guestCount,portionsToCook:afterPrep,coveredByPrep,ingredients,shortages,
   shortageCount:shortages.length,purchasableShortages,purchasableCount:purchasableShortages.length,
   estimated:true};
@@ -8438,7 +8445,7 @@ const itemCount=()=>Object.keys(game.recipes).length;
 
 function hud(){
  const home=game.phase==='forecast';
- return `<div class="hud ${home?'v076-home-hud':''}"><div class="brand"><span class="logo" aria-hidden="true">🍳</span><div><strong>怪味食堂</strong><small>${home?'今日营业':'ODDPOT · v0.13.0-alpha.4'}</small></div></div><div class="hud-meta"><span aria-label="金币">🪙 ${game.coins}</span><span aria-label="声望">⭐ ${game.reputation}</span></div><button class="hud-gear" data-act="settings" aria-label="设置">⚙</button></div><div class="day-strip ${home?'v076-home-day':''}"><b>营业第 ${totalBusinessDay(game)} 天 · ${tableCapacity(game)} 座</b><span class="day-phase">${home?'☀ 开店前':phaseLabels[game.phase]}</span>${home?'':`<span class="day-recipes">图鉴 ${itemCount()}/${Object.keys(RECIPES).length}</span>`}</div>`;
+ return `<div class="hud ${home?'v076-home-hud':''}"><div class="brand"><span class="logo" aria-hidden="true">🍳</span><div><strong>怪味食堂</strong><small>${home?'今日营业':'ODDPOT · v0.13.0-alpha.5'}</small></div></div><div class="hud-meta"><span aria-label="金币">🪙 ${game.coins}</span><span aria-label="声望">⭐ ${game.reputation}</span></div><button class="hud-gear" data-act="settings" aria-label="设置">⚙</button></div><div class="day-strip ${home?'v076-home-day':''}"><b>营业第 ${totalBusinessDay(game)} 天 · ${tableCapacity(game)} 座</b><span class="day-phase">${home?'☀ 开店前':phaseLabels[game.phase]}</span>${home?'':`<span class="day-recipes">图鉴 ${itemCount()}/${Object.keys(RECIPES).length}</span>`}</div>`;
 }
 function toast(){return `<div class="game-toast" role="status"><span>${esc(message)}</span></div>`}
 function playablePhase(){return game.phase==='service'||(game.phase==='field'&&!!game.field?.action)}
@@ -8485,16 +8492,18 @@ function overlayMarkup(){if(!overlay)return '';
   <p class="sheet-lead">每格最多 3 份；同种材料可以占多格。点击具体格子丢弃，本次携带材料会减少，仓库不受影响。</p>
   <div class="book-list">${f.bagStacks.map(st=>`<button class="book-item" data-discard="${st.stackId}"><span class="book-icon">${ingredientIconHtml(st.ingredientId,28)}</span><div><strong>${ING[st.ingredientId].name} ×${st.quantity}</strong><small>${ING[st.ingredientId].acquisitionPolicy==='BOSS_ONLY'?'★ Mini Boss 专属':'点击丢弃这一格'}</small></div><span>✕</span></button>`).join('')||'背包是空的'}</div>`;
  }else if(overlay==='stock'){
-  const ids=Object.keys(ING),market=ensureDailyMarket(game),canShop=['forecast','field','research','menu','prep'].includes(game.phase)&&(!game.field||game.field.settled);
-  const stockLine=id=>{
-   const ing=ING[id],shop=ing.acquisitionPolicy==='SHOP_STAPLE',offer=market.goods[id],owned=game.inventory[id]||0;
-   if(!shop)return `<div class="stock-line"><span>${ingredientIconHtml(id,24)} ${ing.name}</span><b>×${owned}</b><small class="v08-source-only">${ing.acquisitionPolicy==='BOSS_ONLY'?'首领掉落':ing.acquisitionPolicy==='MERCHANT_ONLY'?'神秘商人':ing.acquisitionPolicy==='ENCOUNTER_ONLY'?'旅人交换':'野外采集'}</small></div>`;
-   if(!offer)return `<div class="stock-line"><span>${ingredientIconHtml(id,24)} ${ing.name}</span><b>×${owned}</b><small>今日缺货 · 可探索补充</small></div>`;
-   return `<div class="stock-line"><span>${ingredientIconHtml(id,24)} ${ing.name}</span><b>×${owned}</b><small>${offer.price} 金币/份 · 今日剩余 ${offer.stock}</small><div class="v093-buy-actions">${b('buy:'+id,offer.stock?'买 1 份':'售罄','small',!canShop||!offer.stock||game.coins<offer.price)}${b('buy:'+id+':3','买 3 份','small',!canShop||offer.stock<3||game.coins<offer.price*3)}</div></div>`;
+  const market=ensureDailyMarket(game),canShop=['forecast','field','research','menu','prep'].includes(game.phase)&&(!game.field||game.field.settled);
+  // Render actual market offers, never the four historical SHOP_STAPLE IDs.
+  const offers=Object.entries(market.goods);
+  const stockLine=([id,offer])=>{
+   const ing=ING[id],owned=game.inventory[id]||0;
+   return `<div class="stock-line" data-market-id="${id}"><span>${ingredientIconHtml(id,24)} ${ing.name}</span><b>×${owned}</b><small>${offer.price} 金币/份 · 今日剩余 ${offer.stock}/${offer.initialStock}</small><div class="v093-buy-actions">${b('buy:'+id,offer.stock?'买 1 份':'售罄','small',!canShop||offer.stock<1||game.coins<offer.price)}${b('buy:'+id+':3','买 3 份','small',!canShop||offer.stock<3||game.coins<offer.price*3)}</div></div>`;
   };
-  body=`<h2>食材采购</h2><p class="sheet-lead">每天随机上架 3–4 种基础食材；上架的每种至少可买 ${DAILY_STAPLE_MIN_PURCHASES} 份。售罄或缺货可等次日，也可去野外取材。</p>
-  <h3>今日上架 ${Object.keys(market.goods).length} / 4 种</h3><div class="stock-list">${ids.filter(id=>ING[id].acquisitionPolicy==='SHOP_STAPLE').map(stockLine).join('')}</div>
-  <h3>探索获取</h3><div class="stock-list">${ids.filter(id=>ING[id].acquisitionPolicy!=='SHOP_STAPLE').map(stockLine).join('')}</div>`;
+  // Other warehouse inventory is reference only, not a fifth "missing" shop slot.
+  const elsewhere=Object.entries(ING).filter(([id])=>!market.goods[id]);
+  body=`<h2>食材采购</h2><p class="sheet-lead">每天从 8 种普通食材随机上架 4 种，四种均有当日限额；售罄后次日换货。野外也可获取普通食材。</p>
+  <h3>第 ${totalBusinessDay(game)} 天 · 今日上架 ${offers.length} 种</h3><div class="stock-list" aria-label="今日可采购食材">${offers.map(stockLine).join('')}</div>
+  <details class="v013e-warehouse-details"><summary>查看其他仓库库存（非今日商品）</summary><div class="stock-list">${elsewhere.map(([id,ing])=>`<div class="detail-row">${ingredientIconHtml(id,20)} ${ing.name} · 库存 ×${game.inventory[id]||0}</div>`).join('')}</div></details>`;
  }else if(overlay==='premium'){
   const options=premiumMenuOptions(game),active=premiumMenuActive(game)?game.premiumMenu:null;
   body=`<h2>✨ 隐藏菜单</h2><p class="sheet-lead">每日仅选一款稀有菜，最多两份。只有鉴味师和关系深厚的熟客会获知，且不保证一定购买。食材将被保留，正式制作时才扣除。</p>
@@ -8531,7 +8540,7 @@ function overlayMarkup(){if(!overlay)return '';
    };
    body='<h2>👩‍🍳 食堂伙伴</h2><p class="sheet-lead">每位帮厨按本人实际完成的订单获得经验；增加厨位必须配备人手才能真正出餐。开门前直接选择左、中、右优先站位；已选位置不可重复安排。营业时，空闲帮厨仍会自动走到缺人的炉台支援。</p><div class="staff-roster">'+row('helper')+row('waiter')+(crew.helper2.hired?row('helper2'):'')+'</div>';
  }else if(overlay==='settings'){
-  body=`<h2>⚙ 试玩设置</h2><p class="sheet-lead">版本 v0.13.0-alpha.4 · 固定 9:16 竖屏 · 单机 localStorage 存档</p>${b('reset','重置存档，从 DAY 1 重新开始','danger')}<p class="sheet-lead">切到后台时营业会自动暂停。更换设备不会同步存档。</p>`;
+  body=`<h2>⚙ 试玩设置</h2><p class="sheet-lead">版本 v0.13.0-alpha.5 · 固定 9:16 竖屏 · 单机 localStorage 存档</p>${b('reset','重置存档，从 DAY 1 重新开始','danger')}<p class="sheet-lead">切到后台时营业会自动暂停。更换设备不会同步存档。</p>`;
  }else if(overlay==='details'){
   const r=game.report;body=r?`<h2>营业账本详情</h2><p class="sheet-lead">本日订单由真实食材库存、工位工作秒数和顾客等待事件计算。</p><div class="book-list">${Object.entries(r.byDish).map(([id,d])=>`<div class="detail-row">${RECIPES[id].emoji} ${RECIPES[id].name}：售出 ${d.count} 份 · 满意 ${Math.round(d.totalSat/d.count)}</div>`).join('')}<div class="detail-row">左厨位占用 ${r.congestion.WOK||0} 秒 / 右厨位 ${r.congestion.POT||0} 秒${r.congestion.CENTER!==undefined?' / 中厨位 '+r.congestion.CENTER+' 秒':''}</div><div class="detail-row">食材耗用估值 ${r.cost} · 宣传 ${r.finance?.marketingCost||0} · 工资 ${r.finance?.wage||0} · 招待支出 ${r.hospitalityCost||0} · 收入 ${r.revenue} · 经营利润 ${r.profit} · 现金净变动 ${r.finance?.cashChange??'旧版无记录'}</div></div>`:'';
  }
