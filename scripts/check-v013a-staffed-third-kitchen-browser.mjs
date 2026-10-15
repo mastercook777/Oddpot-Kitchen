@@ -67,7 +67,7 @@ try{
  const s=base();s.phase='upgrade';assert.equal(buyThirdKitchenBundle(s),true);
  await offline.addInitScript(([k,v])=>localStorage.setItem(k,JSON.stringify(v)),[key,s]);
  await offline.goto('http://127.0.0.1:5173/standalone.html',{waitUntil:'networkidle'});
- assert.match(await offline.title(),/0.13.0-alpha.3/);
+ assert.match(await offline.title(),/0.13.0-alpha.4/);
  assert.match(await offline.locator('.v13a-bundle-panel').innerText(),/小炭已到岗/);
  await offline.screenshot({path:out+'/standalone-third-bundle.png'});
  assert.deepEqual(errors,[]);
