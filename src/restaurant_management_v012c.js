@@ -8,6 +8,7 @@ export const CAMPAIGNS={
 };
 export const CREW_GROWTH={
  helper:{wages:[10,14,19],promotionCosts:[0,28,64]},
+ helper2:{wages:[12,16,22],promotionCosts:[0,28,64]},
  waiter:{wages:[9,13,18],promotionCosts:[0,28,64]}
 };
 export const CREW_XP_THRESHOLDS={2:8,3:30};
@@ -83,9 +84,10 @@ export function payroll(s,shift,transact){
 }
 export function settleCrewExperience(s,shift){
  const crew=ensureStaffProgress(s),served=new Set(shift.orders.filter(x=>x.status==='served').map(x=>x.id));
- const helperOrders=new Set(shift.events.filter(x=>x.type==='helper_finished').map(x=>x.order));
+ const helperOrders=new Set(shift.events.filter(x=>x.type==='helper_finished'&&(!x.role||x.role==='helper')).map(x=>x.order));
+ const helper2Orders=new Set(shift.events.filter(x=>x.type==='helper_finished'&&x.role==='helper2').map(x=>x.order));
  const waiterOrders=new Set(shift.events.filter(x=>x.type==='waiter_pickup'&&served.has(x.order)).map(x=>x.order));
- const earned={helper:shift.crew?.helper?.hired?helperOrders.size:0,waiter:shift.crew?.waiter?.hired?waiterOrders.size:0};
+ const earned={helper:shift.crew?.helper?.hired?helperOrders.size:0,waiter:shift.crew?.waiter?.hired?waiterOrders.size:0,helper2:shift.crew?.helper2?.hired?helper2Orders.size:0};
  for(const role of Object.keys(earned))crew[role].xp+=earned[role];
  return {earned,after:Object.fromEntries(Object.keys(earned).map(role=>[role,{xp:crew[role].xp,level:crew[role].level}]))};
 }
