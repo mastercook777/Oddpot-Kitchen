@@ -11,7 +11,7 @@ import {drawExpandedLandscape,drawExpandedObstacle} from './field_world_render_v
 import {isHerbPixelSlice,drawHerbPixelGround,drawHerbPixelObstacle,drawHerbPixelNode,drawHerbPixelHazard,drawHerbPixelEnemy,drawHerbPixelProjectile} from './field_pixel_herb_v011c.js?v=0.12.0-alpha.1';
 import {isHybridMeadow,drawHybridMeadowGround,drawHybridMeadowObstacle,drawHybridMeadowHazard} from './field_hybrid_meadow_v011e.js?v=0.12.0-alpha.1';
 import {meleeProfile,meleeWindupProgress} from './field_combat_feedback_v084.js?v=0.8.4';
-import {pixelActor,pixelEnemy,pixelImpact} from './pixels_v041.js?v=0.9.0';
+import {pixelActor,pixelEnemy,pixelImpact} from './pixels_v041.js?v=0.12.0-alpha.3';
 // Lightweight procedural game graphics: original Canvas shapes, no art pack.
 import {ING,RECIPES,CUSTOMERS} from './data.js?v=0.12.0-alpha.1';
 import {heroZone,waiterDeliveryPose,HERO_PASS} from './walkable_restaurant_v07.js?v=0.9.1';
@@ -571,13 +571,13 @@ function paintDinerStaff(c,s,v,t,w,h){
  for(let i=0;i<2;i++){
   const x=w*(i===0?.21:.79),busy=!!jobs[i===0?'WOK':'POT'];
   if(staff.helper?.hired&&staff.helper.station===i){
-   pixelActor(c,'helper',x+(i===0?35:-35),h*.345,DINER_ACTOR_SCALE,{walk:busy?t:0,attack:busy});
+   pixelActor(c,'helper',x+(i===0?35:-35),h*.345,DINER_ACTOR_SCALE,{walk:busy?t:0,attack:busy,level:staff.helper.level||1});
   }
  }
  if(v?.walkable&&v.hero){
   if(staff.waiter?.hired){
    const pos=waiterDeliveryPose(s,t);
-   pixelActor(c,'waiter',pos.x*w,pos.y*h,DINER_ACTOR_SCALE,{walk:pos.moving?t:0});
+   pixelActor(c,'waiter',pos.x*w,pos.y*h,DINER_ACTOR_SCALE,{walk:pos.moving?t:0,level:staff.waiter.level||1});
    if(pos.plate)dish(c,pos.x*w+15,pos.y*h-13,'WOK');
   }
   // One authoritative movable chef. EXACT SAME scale as helper, waiter and guests.
@@ -596,7 +596,7 @@ function paintDinerStaff(c,s,v,t,w,h){
  }
  if(staff.waiter?.hired){
   const pos=waiterStagePosition(v,t,w,h);
-  pixelActor(c,'waiter',pos.x,pos.y,DINER_ACTOR_SCALE,{walk:pos.moving?t:0});
+  pixelActor(c,'waiter',pos.x,pos.y,DINER_ACTOR_SCALE,{walk:pos.moving?t:0,level:staff.waiter.level||1});
  }
  const recentThrow=(v?.events||[]).slice().reverse().find(e=>e.type==='throw'&&plateFlight(t,e.t,2).flying);
  pixelActor(c,'chef',w*.5,h*.34,DINER_ACTOR_SCALE,{attack:!!recentThrow,walk:jobs.WOK||jobs.POT?t:0});
@@ -875,11 +875,11 @@ function drawRestaurantV075(c,s,t,w,h){
   const crew=v.crew||s.crew;
   if(crew?.helper?.hired){
    const station=crew.helper.station===1?1:0,pt=g.helper[station];
-   actors.push({id:'helper',x:pt.x,y:pt.y,kind:'helper',walk:false,working:!!v.stations[station?'POT':'WOK']});
+   actors.push({id:'helper',x:pt.x,y:pt.y,kind:'helper',level:crew.helper.level||1,walk:false,working:!!v.stations[station?'POT':'WOK']});
   }
   if(crew?.waiter?.hired){
    const pos=waiterDeliveryPose(s,t);
-   actors.push({id:'waiter',x:pos.x,y:pos.y,kind:'waiter',walk:pos.moving,plate:pos.plate});
+   actors.push({id:'waiter',x:pos.x,y:pos.y,kind:'waiter',level:crew.waiter.level||1,walk:pos.moving,plate:pos.plate});
   }
   if(v.hero){
    const hero=v.hero,zone=heroZone(hero,s);
@@ -906,7 +906,7 @@ function drawRestaurantV075(c,s,t,w,h){
   const X=x(a.x),Y=y(a.y)+(a.order?.status==='eating'?Math.sin(t*5+Number(a.order.seatId||0))*.9:0);
   if(a.id==='hero')circle(c,X,Y+11,12,'#f6df9e2d');
   pixelActor(c,a.kind,X,Y,DINER_ACTOR_SCALE,{walk:a.walk?t*2:0,
-    face:a.direction==='left'?-1:1,attack:!!a.working});
+    face:a.direction==='left'?-1:1,attack:!!a.working,level:a.level||1});
   // Feet overlap the chair, not the floor next to it. The cushion lip
   // masks the lower legs, producing a seated read without a sprite sheet.
   if(a.seat&&a.order){

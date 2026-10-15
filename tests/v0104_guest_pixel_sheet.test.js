@@ -76,7 +76,7 @@ test('separate sheet header reserves full close target and does not overlay tabs
 test('generated standalone bundle includes portrait functions before UI calls, not merely import references',()=>{
  const build=readFileSync(new URL('../scripts/build-standalone.py',import.meta.url),'utf8');
  const offline=readFileSync(new URL('../standalone.html',import.meta.url),'utf8');
- assert.match(build,/'pixels_v041\.js','guest_portraits_v104\.js'/);
+ assert.ok(build.includes("'pixels_v041.js','crew_portraits_v012d.js','guest_portraits_v104.js'"));
  assert.match(offline,/function drawGuestPortrait\(/);
  assert.match(offline,/function drawGuestPortraits\(/);
  assert.ok(offline.indexOf('function pixelActor(')<offline.indexOf('function drawGuestPortrait('));
