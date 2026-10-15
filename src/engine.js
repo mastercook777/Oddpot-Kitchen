@@ -571,10 +571,11 @@ export function chooseFieldBranch(s,choiceId){
  f.segmentIndex++;f.zoneId=branch.id;f.zoneTitle=branch.name;f.segmentStatus='active';f.choices=[];
  f.route=f.region==='spring'?(f.dangerCommitment?'spring_risk':'spring_safe'):(f.dangerCommitment?'risk':'safe');
  const segmentSeed=(f.segmentIndex*1307+branch.id.split('').reduce((n,c)=>n+c.charCodeAt(0),0)*17);
- const map=insertPlannedFieldEncounter(buildFieldMap({...s,seed:s.seed+segmentSeed,fieldZoneId:branch.id,fieldSegmentIndex:f.segmentIndex},f.route,branch.target),f.encounterPlan,f.segmentIndex);
+ const ecologicalTarget=f.targetMode==='ecology'?getFieldBiome(branch.id,f.route).primary:branch.target;
+ const map=insertPlannedFieldEncounter(buildFieldMap({...s,seed:s.seed+segmentSeed,fieldZoneId:branch.id,fieldSegmentIndex:f.segmentIndex},f.route,ecologicalTarget),f.encounterPlan,f.segmentIndex);
  for(const key of ['region','biome','bossSpawn','spawn','x','y','steps','worldW','worldH','worldVersion','scenery','visitedHazards','nodes','obstacles','hazards'])f[key]=map[key];
  if(map.nodes.some(n=>['merchant','traveler'].includes(n.kind)))f.specialNpcOpportunity=true;
- f.action=false;f.target=branch.target;f.harvestProgress=0;f.harvestNode=null;f.activeEvent=null;
+ f.action=false;f.target=ecologicalTarget;f.harvestProgress=0;f.harvestNode=null;f.activeEvent=null;
  // HP, bag, bento, skill cooldown and equipped cookware persist across all three segments.
  return true;
 }
