@@ -103,7 +103,8 @@ test('one new customer replaces an existing slot after star and becomes known on
  assert.equal(guestBookEntries(s).find(g=>g.segment==='stargazer').seen,false);
  s.chapterProgress.stars=1;
  const plan=serviceDayPlan(s);
- assert.equal(plan.count,baseline.count);
+ assert.ok(plan.count>baseline.count,'first-star reputation adds real natural customers');
+ assert.ok(plan.baseCount<=19);
  assert.ok(plan.guests.includes('stargazer'));
  assert.deepEqual(CUSTOMERS.stargazer.likes,['清爽','甜香','菌香']);
  nextPhase(s,'service');assert.equal(createService(s),true);
