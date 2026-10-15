@@ -69,7 +69,7 @@ function paintCrewRank(c,kind,level,arm){
  }
 }
 function person(c,kind,walk,attack,level=1){
- const p={chef:['#477a91','#e7d4a7','#7e4f37'],helper:['#d27a46','#f2d69a','#654730'],waiter:['#708d62','#dfc18e','#466251'],adventurer:['#4d8a66','#c59d55','#5d4630'],family:['#d67872','#f0cf79','#8a5747'],regular:['#729aba','#9bc1ce','#6c5440'],critic:['#795777','#bb9abd','#362e48'],stargazer:['#41576e','#c3b67e','#7f5c91']}[kind]||['#729aba','#9bc1ce','#6c5440'];
+ const p={chef:['#477a91','#e7d4a7','#7e4f37'],helper:['#d27a46','#f2d69a','#654730'],helper2:['#517d85','#ead2ae','#36595b'],waiter:['#708d62','#dfc18e','#466251'],adventurer:['#4d8a66','#c59d55','#5d4630'],family:['#d67872','#f0cf79','#8a5747'],regular:['#729aba','#9bc1ce','#6c5440'],critic:['#795777','#bb9abd','#362e48'],stargazer:['#41576e','#c3b67e','#7f5c91']}[kind]||['#729aba','#9bc1ce','#6c5440'];
  const step=walk?Math.round(Math.sin(walk*13)*2):0,arm=attack? -7:Math.round(Math.sin(walk*13+2)*1);
  // Shoes, alternating leg pixels, outlined torso/arms, expressive large face.
  r(c,3,18+step,5,5,P.outline);r(c,10,18-step,5,5,P.outline);
