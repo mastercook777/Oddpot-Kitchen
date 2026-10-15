@@ -1,0 +1,13 @@
+/* v0.12-E: show actionable growth without introducing overlays in the dining room. */
+.v12e-promotion-alert,.v12e-queue-report{display:flex;flex-direction:column;gap:5px;padding:11px 12px;margin:9px 0;background:#ebf3dd;border:1px solid #89aa6b;border-radius:10px;color:#2d4938;line-height:1.4}
+.v12e-promotion-alert strong,.v12e-queue-report strong{font-size:13px;color:#31543e}
+.v12e-promotion-alert span,.v12e-queue-report span{font-size:12px;font-weight:700}
+.v12e-promotion-alert small,.v12e-queue-report small{font-size:11px;line-height:1.45;color:#42614d}
+.v12e-promotion-alert button{align-self:stretch;border:1px solid #527e54;border-radius:8px;background:#3c7756;color:#fff8dc;min-height:38px;font-size:12px;font-weight:800;cursor:pointer}
+.v12e-promotion-alert button:active{filter:brightness(.87)}
+.v12e-queue-report{background:#f0e9dc;border-color:#c5a87c}
+.v12e-queue-report strong{color:#694a35}
+.v12e-queue-report small{color:#725941}
+.staff-open-prep.v12e-staff-ready{border-color:#ba9947;background:#f8ebbb}
+.staff-open-prep.v12e-staff-ready span{color:#76551d;font-weight:900}
+@media(max-width:350px){.v12e-promotion-alert,.v12e-queue-report{padding:8px 9px;gap:4px;margin:6px 0}.v12e-promotion-alert span,.v12e-queue-report span{font-size:11.5px}.v12e-promotion-alert button{min-height:37px}}

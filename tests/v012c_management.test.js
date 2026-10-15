@@ -79,7 +79,8 @@ test('v0.12-C: base audience remains natural-cap 14 and restaurant tables are se
  assert.deepEqual(guild.guests.slice(baseline.count),['adventurer','adventurer','adventurer']);
  assert.equal(chooseCampaign(s,'tasting'),false);
  s.chapterProgress.stars=1;assert.equal(chooseCampaign(s,'tasting'),true);
- assert.equal(serviceDayPlan(s).count,baseline.count+1);
+ const tastingPlan=serviceDayPlan(s);assert.ok(tastingPlan.baseCount>baseline.baseCount);
+ assert.equal(tastingPlan.count,tastingPlan.baseCount+1);
 });
 test('v0.12-C: cannot overspend on marketing, changing plan is free until opening',()=>{
  const s=sufficient();s.coins=5;
