@@ -6,7 +6,7 @@ import {stepMiniBoss,stepBossZones} from './field_bosses_v011g.js';
 import {ING} from './data.js?v=0.12.0-alpha.5';
 import {fieldHarvestTargetSuffix} from './field_target_v012f.js';
 import {meleeProfile,meleeAttackWouldHit} from './field_combat_feedback_v084.js?v=0.8.4';
-import {clamp, rand, settleField,addFieldBag,resolveSpecialFieldEvent} from './engine.js?v=0.12.0-alpha.1';
+import {clamp, rand, settleField,addFieldBag,resolveSpecialFieldEvent} from './engine.js?v=0.12.0-alpha.5';
 import {hazardPhase} from './field_rules_v011a.js';
 import {fieldEnemySpawnCandidates} from './field_world_v011b1.js';
 const dist=(a,b)=>Math.hypot(a.x-b.x,a.y-b.y);
