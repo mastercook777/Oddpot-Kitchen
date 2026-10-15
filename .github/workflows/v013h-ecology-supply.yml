@@ -1,0 +1,31 @@
+name: v0.13-H ecology route supply balance
+on:
+  pull_request:
+    paths: ['src/**','tests/**','scripts/**','index.html','standalone.html','docs/V0.13H_*','.github/workflows/v013h-ecology-supply.yml']
+  push:
+    branches: ['main']
+permissions: {contents: read}
+jobs:
+  ecology:
+    runs-on: ubuntu-latest
+    timeout-minutes: 24
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with: {node-version: 22}
+      - name: Current ecology actual generator distribution
+        run: |
+          set -o pipefail
+          mkdir -p docs/audits
+          node scripts/audit-ecology-supply-v013h.mjs --seeds 80 | tee docs/audits/v013h-ecology-supply.json.txt
+      - name: Rules and production build
+        run: |
+          npm install --no-package-lock --no-audit --no-fund
+          npm test
+          npm run build
+          python scripts/build-standalone.py
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: oddpot-v013h-ecology-supply
+          path: docs/audits/v013h-ecology-supply.json.txt
