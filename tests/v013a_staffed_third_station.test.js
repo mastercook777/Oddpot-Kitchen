@@ -46,10 +46,10 @@ test('v0.13-A one purchase provides BOTH a real new station and employee, no fre
 test('v0.13-A staff site is an actual unique assignment with independent promotion and pay',()=>{
  const s=prepared(1652,true);
  assert.equal(crewWage('helper2',1),12);
- assert.equal(assignCrew(s,0,'helper2'),true,'taking an occupied position swaps the preferred cooking stations');
- assert.equal(s.crew.helper.station,2);
+ assert.equal(assignCrew(s,0,'helper2'),false,'occupied left position cannot reassign 阿火');
+ assert.equal(s.crew.helper.station,0);
  assert.equal(assignCrew(s,1,'helper2'),true);
- assert.equal(assignCrew(s,2,'helper'),false,'阿火 is already assigned to centre after swap');
+ assert.equal(assignCrew(s,2,'helper'),true,'阿火 may independently choose now-free centre');
  assert.equal(crewEffects(s).helper.station,2);
  assert.equal(crewEffects(s).helper2.station,1);
  assert.equal(configureKitchenSlot(s,2,'POT'),true);

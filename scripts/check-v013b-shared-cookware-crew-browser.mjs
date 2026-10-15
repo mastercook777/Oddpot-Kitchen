@@ -33,11 +33,14 @@ try{
   await page.addInitScript(([k,v])=>localStorage.setItem(k,JSON.stringify(v)),[key,prep]);await page.reload({waitUntil:'networkidle'});
   await page.locator('[data-act="crew"]').first().click();
   assert.equal(await page.locator('[data-assign="helper:2"]').count(),1);
-  await page.locator('[data-assign="helper:2"]').click();
-  const swapped=await page.evaluate(k=>JSON.parse(localStorage.getItem(k)),key);
-  assert.equal(swapped.crew.helper.station,2);
-  assert.equal(swapped.crew.helper2.station,0);
-  await page.screenshot({path:dir+'/swap-crew-'+width+'.png',fullPage:true});
+  assert.equal(await page.locator('[data-assign="helper:2"]').isDisabled(),true);
+  assert.deepEqual(await page.locator('[data-assign^="helper:"]').allTextContents(),['左','中','右']);
+  await page.locator('[data-assign="helper:1"]').click();
+  const selected=await page.evaluate(k=>JSON.parse(localStorage.getItem(k)),key);
+  assert.equal(selected.crew.helper.station,1);
+  assert.equal(selected.crew.helper2.station,2);
+  assert.equal(await page.locator('[data-assign="helper2:1"]').isDisabled(),true);
+  await page.screenshot({path:dir+'/simple-crew-position-'+width+'.png',fullPage:true});
   assert.deepEqual(errors,[], 'no browser exceptions on '+width);
   await page.close();
  }
@@ -55,8 +58,8 @@ try{
  const offline=await browser.newPage({viewport:{width:390,height:844}});
  await offline.addInitScript(([k,obj])=>localStorage.setItem(k,JSON.stringify(obj)),[key,make()]);
  await offline.goto('http://127.0.0.1:5173/standalone.html',{waitUntil:'networkidle'});
- assert.match(await offline.title(),/0.13.0-alpha.2/);
+ assert.match(await offline.title(),/0.13.0-alpha.3/);
  assert.equal(await offline.locator('[data-act^="upgrade-kitchen:"]').count(),2);
  await offline.close();
- console.log('v0.13-B: independent cookware mastery, free helper swap, staff travel display, 320/375/390 Chrome and offline: PASS');
+ console.log('v0.13-B: independent cookware mastery, simple crew positions, staff travel display, 320/375/390 Chrome and offline: PASS');
 }finally{if(browser)await browser.close();server.kill('SIGTERM')}

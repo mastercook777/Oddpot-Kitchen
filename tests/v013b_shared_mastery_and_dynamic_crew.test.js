@@ -46,18 +46,20 @@ test('v0.13-B old paid position levels turn into type mastery with no repeat fee
  assert.equal(cookwareUpgradeCost(s,'POT'),null);
  assert.equal(s.coins,money);
 });
-test('v0.13-B 阿火 or 小炭 can take centre: assigned person swaps instead of blocking',()=>{
+test('v0.13.0-alpha.3 direct left / middle / right priority spots never move another helper',()=>{
  const s=setup();s.phase='prep';
  assert.equal(s.crew.helper.station,0);assert.equal(s.crew.helper2.station,2);
- assert.equal(assignCrew(s,2,'helper'),true);
- assert.equal(s.crew.helper.station,2);assert.equal(s.crew.helper2.station,0);
- assert.equal(assignCrew(s,0,'helper'),true);
+ assert.equal(assignCrew(s,2,'helper'),false,'occupied middle cannot silently swap staff');
  assert.equal(s.crew.helper.station,0);assert.equal(s.crew.helper2.station,2);
- assert.equal(assignCrew(s,1,'helper2'),true);
- assert.equal(assignCrew(s,2,'helper'),true);
- assert.equal(s.crew.helper.station,2);
- assert.equal(s.crew.helper2.station,1);
- assert.equal(assignCrew(s,2,'helper'),false);
+ assert.equal(assignCrew(s,1,'helper'),true,'free right station is selectable');
+ assert.equal(s.crew.helper.station,1);assert.equal(s.crew.helper2.station,2);
+ assert.equal(assignCrew(s,1,'helper2'),false,'cannot duplicate a claimed right position');
+ assert.equal(s.crew.helper.station,1);assert.equal(s.crew.helper2.station,2);
+ assert.equal(assignCrew(s,0,'helper2'),true,'other helper can independently use freed left position');
+ assert.equal(s.crew.helper.station,1);assert.equal(s.crew.helper2.station,0);
+ assert.equal(assignCrew(s,2,'helper'),true,'former middle position now free');
+ assert.equal(s.crew.helper.station,2);assert.equal(s.crew.helper2.station,0);
+ assert.equal(assignCrew(s,2,'helper'),false,'same position is a no-op');
 });
 test('v0.13-B real idle helper moves from unneeded home to unattended compatible oven with travel delay',()=>{
  const s=setup();s.phase='prep';
@@ -93,6 +95,8 @@ test('v0.13-B UI has exactly two type mastery upgrade controls and shows roaming
  const scene=readFileSync(new URL('../src/scenes_v04.js',import.meta.url),'utf8');
  assert.match(app,/\['WOK','POT'\]\.map\(type=>/);
  assert.match(app,/全店共享 Lv/);
- assert.match(app,/互换/);
+ assert.doesNotMatch(app,/互换/);
+ assert.match(app,/aria-pressed/);
+ assert.match(app,/data-assign/);
  assert.match(scene,/person\.moveStart/);
 });
