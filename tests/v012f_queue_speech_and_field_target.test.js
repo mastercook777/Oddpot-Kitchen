@@ -77,7 +77,7 @@ test('v0.12-F real action-stage auto-harvest uses the same truthful per-run targ
  const target=s.field.nodes.find(n=>n.key==='target');
  assert.equal(target.id,'potato');
  assert.equal(startActionField(s),true);
- s.field.enemies=[];s.field.pos={x:target.x+.5,y:target.y+.5};
+ s.field.enemies=[];s.field.pos={x:target.x,y:target.y};
  for(let i=0;i<35&&!target.claimed;i++)stepActionField(s,0,0,.06);
  assert.equal(target.claimed,true);
  assert.match(s.field.actionMessage,/今日目标已完成/);
@@ -87,7 +87,7 @@ test('v0.12-F real action-stage auto-harvest uses the same truthful per-run targ
  s.field.enemies=[];
  const branch=s.field.nodes.find(n=>n.key==='target');
  assert.equal(branch.id,'mushroom');
- s.field.pos={x:branch.x+.5,y:branch.y+.5};
+ s.field.pos={x:branch.x,y:branch.y};
  for(let i=0;i<35&&!branch.claimed;i++)stepActionField(s,0,0,.06);
  assert.equal(branch.claimed,true);
  assert.match(s.field.actionMessage,/本区采集完成/);
