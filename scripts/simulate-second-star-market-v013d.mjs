@@ -7,14 +7,14 @@ import {newGame,buyThirdKitchenBundle,requestSecondStar,createService,setService
  chooseCampaign,ensureDailyMarket} from '../src/engine.js';
 import {DINER_FLOOR} from '../src/restaurant_scene_v075.js';
 const samples=80;
-function simulate(seed,{third=false,stock=100,stage=1,marketing='none',stars=1}={}){
+function simulate(seed,{third=false,stock=100,stage=1,marketing='none',stars=1,menu=null}={}){
  const s=newGame(seed);s.cycle=4;s.day=1;s.reputation=24;s.phase='upgrade';s.coins=1000;
  s.chapterProgress.stars=stars;s.dining.tableCount=4;
  s.crew.helper.hired=true;s.crew.helper.onDuty=true;s.crew.helper.station=0;
  s.crew.waiter.hired=true;s.crew.waiter.onDuty=true;
  if(third)assert.equal(buyThirdKitchenBundle(s),true);
  s.coins=500;s.phase='prep';s.management={dayKey:'4-1',openingCoins:500,campaignId:'none',wageDebt:0};
- s.menu=['chili_meat','chicken_stew','veg_stir'];
+ s.menu=menu||['chili_meat','chicken_stew','veg_stir'];
  for(const id of s.menu)s.recipes[id]=83;
  for(const id of Object.keys(s.inventory))s.inventory[id]=stock;
  if(stars===1){
@@ -61,20 +61,30 @@ for(const spec of [
   passRate:average(a,'passed'),meanScore:average(a,'score'),served:average(a,'served'),
   profit:average(a,'profit'),queueLoss:average(a,'lost'),soldDishTypes:average(a,'diversity')});
 }
-const gardens=[];
-for(let i=0;i<samples;i++){
- const r=simulate(183719+i*3719,{stars:2,third:true,marketing:i%2?'garden':'none'});
- gardens.push({campaign:i%2?'garden':'none',guests:r.planned,veg:r.vegetable,
-  served:r.report.served,profit:r.report.profit,marketingCost:r.report.finance.marketingCost});
+const guestStrategy=[];
+for(const [label,menu] of [
+ ['混合菜单',['chili_meat','chicken_stew','veg_stir']],
+ ['蔬食菜单',['veg_stir','harvest_stir','potato_stew']]
+]){
+ const natural=[],paid=[];
+ for(let i=0;i<samples;i++){
+  const seed=183719+i*3719;
+  const normal=simulate(seed,{stars:2,third:true,marketing:'none',menu});
+  const invited=simulate(seed,{stars:2,third:true,marketing:'garden',menu});
+  natural.push({guests:normal.planned,vegetable:normal.vegetable,served:normal.report.served,profit:normal.report.profit});
+  paid.push({guests:invited.planned,vegetable:invited.vegetable,served:invited.report.served,profit:invited.report.profit});
+ }
+ guestStrategy.push({label,menu,natural:{guests:average(natural,'guests'),vegetable:average(natural,'vegetable'),
+  served:average(natural,'served'),profit:average(natural,'profit')},
+  paid:{guests:average(paid,'guests'),vegetable:average(paid,'vegetable'),served:average(paid,'served'),
+    profit:average(paid,'profit')},cost:24});
 }
-const regular=gardens.filter(x=>x.campaign==='none'),invited=gardens.filter(x=>x.campaign==='garden');
+const regular=guestStrategy[0].natural,invited=guestStrategy[0].paid;
 assert.ok(rows[0].passRate>0&&rows[1].passRate>0,'first appraisal should be achievable with two alternative capacities');
 assert.ok(rows[2].passRate>0&&rows[3].passRate>0,'second appraisal should be achievable');
-assert.equal(invited.length,regular.length);
-assert.ok(average(invited,'guests')>average(regular,'guests'),'paid campaign creates actual guests');
-assert.ok(average(invited,'veg')>average(regular,'veg'),'paid campaign reaches vegetable eaters');
+assert.equal(guestStrategy.length,2);
+assert.ok(invited.guests>regular.guests,'paid campaign creates actual guests');
+assert.ok(invited.vegetable>regular.vegetable,'paid campaign reaches vegetable eaters');
 console.log(JSON.stringify({description:'80 real fixed-seed nights per strategy; scripted hero at right kitchen, no manual power actions; no claim of iPhone subjective acceptance',
  marketExample:Array.from({length:10},(_,i)=>{const s=newGame(20261009);s.cycle=1+Math.floor(i/3);s.day=i%3+1;return Object.keys(ensureDailyMarket(s).goods).sort()}),
- scoreRows:rows,twoStarVisitors:{naturalGuests:average(regular,'guests'),naturalVeg:average(regular,'veg'),
- invitedGuests:average(invited,'guests'),invitedVeg:average(invited,'veg'),normalProfit:average(regular,'profit'),
- invitationProfit:average(invited,'profit'),fee:24}},null,2));
+ scoreRows:rows,twoStarVisitors:guestStrategy},null,2));
