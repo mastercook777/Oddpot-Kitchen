@@ -1,6 +1,7 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import {readFileSync} from 'node:fs';
+import {RECIPES} from '../src/data.js';
 import {newGame,recipeAvailableServings,recipeCraftSnapshot,setPremiumMenu,premiumReserved,prepStockForecast,purchase,ensureDailyMarket} from '../src/engine.js';
 
 test('a dish reports the number of complete portions, not the total quantity of its cheapest ingredient',()=>{
@@ -34,8 +35,9 @@ test('hidden dish escrow is subtracted from normal recipe, without touching actu
 test('read-only stock capacity changes when market replenishes pantry',()=>{
  const s=newGame(147);s.phase='menu';s.coins=1000;
  const [id]=Object.entries(ensureDailyMarket(s).goods)[0];
- const r=Object.entries(s.recipes).map(([id])=>id).find(x=>recipeCraftSnapshot(s,x)?.ingredientIds.includes(id));
+ const r=Object.entries(RECIPES).find(([,recipe])=>!recipe.rare&&recipe.ids.includes(id))?.[0];
  assert.ok(r);
+ s.recipes[r]=76;for(const ingredient of RECIPES[r].ids)s.inventory[ingredient]=10;
  s.inventory[id]=0;
  const before=recipeAvailableServings(s,r);
  assert.equal(before,0);
