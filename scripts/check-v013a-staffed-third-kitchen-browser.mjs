@@ -36,7 +36,7 @@ try{
   await page.locator('[data-act="next-day"]').click();
   const prep=await page.evaluate(k=>{const s=JSON.parse(localStorage.getItem(k));s.phase='prep';for(const id of Object.keys(s.inventory))s.inventory[id]=100;return s},key);
   // Load the exact purchased state into pre-opening, with complete inventory.
-  await page.evaluate(([k,v])=>localStorage.setItem(k,JSON.stringify(v)),[key,prep]);
+  await page.addInitScript(([k,v])=>localStorage.setItem(k,JSON.stringify(v)),[key,prep]);
   await page.reload({waitUntil:'networkidle'});
   assert.equal(await page.locator('.kitchen-config-slot').count(),3);
   assert.match(await page.locator('.kitchen-config-slot').last().innerText(),/中厨位/);
@@ -55,7 +55,7 @@ try{
   }
   assert.equal(current.service.kitchenSnapshot.length,3);
   assert.ok(current.service.events.some(e=>e.type==='started'&&e.station==='CENTER'));
-  await page.evaluate(([k,v])=>localStorage.setItem(k,JSON.stringify(v)),[key,current]);
+  await page.addInitScript(([k,v])=>localStorage.setItem(k,JSON.stringify(v)),[key,current]);
   await page.reload({waitUntil:'networkidle'});
   assert.ok(await page.locator('#diner-canvas').evaluate(c=>c.width>0&&c.height>0));
   await page.screenshot({path:out+'/real-third-kitchen-'+width+'.png'});
