@@ -148,19 +148,47 @@ export const KITCHEN_POSITIONS=['WOK','POT','CENTER'];
 export const THIRD_KITCHEN_BUNDLE_COST=260;
 const stationId=i=>KITCHEN_POSITIONS[i];
 const stationIdx=id=>KITCHEN_POSITIONS.indexOf(id);
-const shiftHelperAt=(crew,index)=>['helper','helper2'].find(role=>crew?.[role]?.hired&&crew[role].station===index)||null;
+const helperRoles=['helper','helper2'];
+const helperPosition=h=>h?.currentStation??h?.station;
+const shiftHelperAt=(crew,index)=>helperRoles.find(role=>crew?.[role]?.hired&&!(crew[role].moveUntil>0)&&helperPosition(crew[role])===index)||null;
+function stationTaken(v,i,excluded){return helperRoles.some(role=>role!==excluded&&v.crew?.[role]?.hired&&(v.crew[role].moveTo===i||(!(v.crew[role].moveUntil>0)&&helperPosition(v.crew[role])===i)));}
+export function reassignIdleCooks(v){
+ if(!v?.walkable||!v.crew||!v.stations)return;
+ for(const role of helperRoles){
+  const w=v.crew[role];if(!w?.hired)continue;
+  w.currentStation??=w.station;
+  if(w.moveUntil>0){
+   if(v.time>=w.moveUntil){w.currentStation=w.moveTo;w.moveTo=null;w.moveFrom=null;w.moveStart=null;w.moveUntil=0;v.events?.push({type:'crew_arrived',role,station:stationId(w.currentStation),t:v.time});}
+   else continue;
+  }
+  if(w.autoSupport===false||v.time-(w.lastMoveTime??-999)<4)continue;
+  const current=helperPosition(w),key=stationId(current),type=v.kitchenSnapshot?.[current]?.type;
+  if(v.stations[key]||v.queued.some(id=>{const o=v.orders.find(x=>x.id===id);return o&&RECIPES[o.recipeId]?.station===type}))continue;
+  const candidates=v.kitchenSnapshot.map((slot,i)=>({i,key:stationId(i),slot})).filter(c=>c.i!==current&&!stationTaken(v,c.i,role)&&(v.stations[c.key]||v.queued.some(id=>{const o=v.orders.find(x=>x.id===id);return o&&RECIPES[o.recipeId]?.station===c.slot.type})));
+  if(!candidates.length)continue;
+  candidates.sort((a,b)=>Number(!!v.stations[b.key])-Number(!!v.stations[a.key])||Math.abs(a.i-current)-Math.abs(b.i-current));
+  const next=candidates[0].i;
+  w.moveFrom=current;w.moveTo=next;w.moveStart=v.time;w.moveUntil=v.time+(Math.abs(next-current)===1?2:3);w.lastMoveTime=v.time;
+  v.events?.push({type:'crew_move',role,from:key,to:stationId(next),t:v.time});
+ }
+}
 export function thirdKitchenBundleAvailable(s){return s.phase==='upgrade'&&!s.kitchen?.thirdUnlocked&&(s.chapterProgress?.stars||0)>=1&&(s.dining?.tableCount||2)>=4&&s.coins>=THIRD_KITCHEN_BUNDLE_COST;}
 export function buyThirdKitchenBundle(s){
  if(!thirdKitchenBundleAvailable(s))return false;
  if(!transact(s,'third-kitchen-crew-bundle','room_staff_upgrade',{},-THIRD_KITCHEN_BUNDLE_COST))return false;
- const k=ensureKitchen(s);k.thirdUnlocked=true;k.slots.push({type:'WOK',level:1});
+ const k=ensureKitchen(s);k.thirdUnlocked=true;k.slots.push({type:'WOK',level:k.mastery.WOK});
  const p=ensureCrew(s).helper2;p.hired=true;p.onDuty=true;p.station=2;
  return true;
 }
 export function ensureKitchen(s){
  if(!s.kitchen||!Array.isArray(s.kitchen.slots))s.kitchen={slots:[{type:'WOK',level:s.upgrade?2:1},{type:'POT',level:1}],refitDay:null,freeRefitUsed:false,extraRefits:0};
- s.kitchen.slots=(s.kitchen.thirdUnlocked?[0,1,2]:[0,1]).map(i=>{const v=s.kitchen.slots[i]||{};return {type:v.type==='WOK'?'WOK':'POT',level:v.level===2?2:1}});
- if(s.upgrade&&s.kitchen.slots[0].level<2)s.kitchen.slots[0].level=2;
+ if(!s.kitchen.mastery){
+ const old=s.kitchen.slots;
+ s.kitchen.mastery={WOK:Math.max(1,s.upgrade?2:1,...old.filter(x=>x.type==='WOK').map(x=>x.level===2?2:1)),
+  POT:Math.max(1,...old.filter(x=>x.type==='POT').map(x=>x.level===2?2:1))};
+ }
+ for(const type of ['WOK','POT'])s.kitchen.mastery[type]=s.kitchen.mastery[type]===2?2:1;
+ s.kitchen.slots=(s.kitchen.thirdUnlocked?[0,1,2]:[0,1]).map(i=>{const v=s.kitchen.slots[i]||{};const type=v.type==='WOK'?'WOK':'POT';return {type,level:s.kitchen.mastery[type]}});
  s.kitchen.extraRefits??=0;s.kitchen.freeRefitUsed??=false;
  return s.kitchen;
 }
@@ -179,7 +207,7 @@ export function configureKitchenSlot(s,index,type){
  const seq=k.extraRefits||0;
  if(fee&&!transact(s,`kitchen-refit-${today}-${seq}`,'kitchen_refit',{},-fee))return false;
  if(fee)k.extraRefits=seq+1;
- k.refitDay=today;k.freeRefitUsed=true;k.slots[index].type=type;return true;
+ k.refitDay=today;k.freeRefitUsed=true;k.slots[index].type=type;k.slots[index].level=k.mastery[type];return true;
 }
 export function kitchenHasMenuCoverage(s){
  const k=ensureKitchen(s),needed=new Set(s.menu.filter(id=>s.recipes[id]&&RECIPES[id]).map(id=>RECIPES[id].station));
@@ -193,17 +221,27 @@ export function kitchenPreview(s){
  const pressure=['WOK','POT'].map(type=>({type,menu:demand[type],capacity:capacity[type],pressure:capacity[type]?demand[type]/capacity[type]:null}));
  return {pressure,risk,valid:risk.length===0};
 }
+export const COOKWARE_UPGRADE_COST={WOK:60,POT:75};
+export function cookwareUpgradeCost(s,type){
+ return ['WOK','POT'].includes(type)&&ensureKitchen(s).mastery[type]<2?COOKWARE_UPGRADE_COST[type]:null;
+}
+export function buyCookwareUpgrade(s,type){
+ if(s.phase!=='upgrade')return false;
+ const cost=cookwareUpgradeCost(s,type),k=ensureKitchen(s);
+ if(cost===null||s.coins<cost||!transact(s,'cookware-upgrade-'+type,'upgrade',{},-cost))return false;
+ k.mastery[type]=2;
+ for(const slot of k.slots)if(slot.type===type)slot.level=2;
+ if(type==='WOK')s.upgrade=true;
+ return true;
+}
+// Backward-compatible positional API, now delegates to a single cookware type upgrade.
 export function kitchenUpgradeCost(s,index){
- if(index<0||index>=ensureKitchen(s).slots.length)return null;
- return ensureKitchen(s).slots[index].level>=2?null:index===0?60:75;
+ const type=ensureKitchen(s).slots[index]?.type;
+ return type?cookwareUpgradeCost(s,type):null;
 }
 export function buyKitchenUpgrade(s,index){
- if(s.phase!=='upgrade'||index<0||index>=ensureKitchen(s).slots.length)return false;
- const k=ensureKitchen(s),cost=kitchenUpgradeCost(s,index);
- if(cost===null||s.coins<cost)return false;
- const key=index===0?'upgrade-wok':'kitchen-upgrade-1';
- if(!transact(s,key,'upgrade',{},-cost))return false;
- k.slots[index].level=2;if(index===0)s.upgrade=true;return true;
+ const type=ensureKitchen(s).slots[index]?.type;
+ return type?buyCookwareUpgrade(s,type):false;
 }
 // v0.6.3-B: recipe identity + selected *actual* craft determines its own
 // benefits. Never attach economic effects to style labels globally.
@@ -255,7 +293,7 @@ export function assignCrew(s,position,role='helper'){
  const crew=ensureCrew(s),c=crew[role];
  if(!c?.hired||!Number.isInteger(position)||position<0||position>=ensureKitchen(s).slots.length||c.station===position)return false;
  const other=role==='helper'?'helper2':'helper';
- if(crew[other]?.hired&&crew[other].onDuty&&crew[other].station===position)return false;
+ if(crew[other]?.hired&&crew[other].station===position)crew[other].station=c.station;
  c.station=position;return true;
 }
 export function activeCrewMeal(s,role){
