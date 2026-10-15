@@ -22,7 +22,7 @@ const clone=x=>structuredClone(x);
 export const clamp=(n,a,b)=>Math.min(b,Math.max(a,n));
 export function rand(seed){return (Math.imul(1664525,seed>>>0)+1013904223)>>>0}
 export function uniqueAdd(ledger,id,type,extra={}){if(ledger.some(x=>x.id===id))return false;ledger.push({id,type,...extra});return true}
-export function newGame(seed=20261009){return {version:4,seed,cycle:1,day:1,dining:{tableCount:2},chapterProgress:{chapterId:'hearth',stars:0,requestDay:null,lastAttemptDay:null,lastScore:null},premiumMenu:null,guestRelationships:{},guestDex:{seenSegments:{},metGuests:{}},history:[],market:null,phase:'forecast',coins:120,reputation:0,inventory:{...DEFAULT_INVENTORY},recipes:{chicken_stew:76,mushroom_stir:76,veg_stir:72},learned:{},recipeVariants:{},activeVariantIds:{},tech:false,upgrade:false,crew:{helper:{hired:false,station:0,meals:0,feed:null},waiter:{hired:false,meals:0,feed:null}},staffFoodCost:0,management:{dayKey:'1-1',openingCoins:120,campaignId:'none',wageDebt:0},kitchen:{slots:[{type:'WOK',level:1},{type:'POT',level:1}],refitDay:null,freeRefitUsed:false,extraRefits:0},bagSlots:8,_bagMigrated:true,_v08Save:true,selectedWeaponSlot:0,bento:null,selectedTarget:'chili',route:null,field:null,cook:null,menu:['chicken_stew','mushroom_stir','veg_stir'],prep:{},prepVariants:{},prepCost:0,manualCost:0,service:null,report:null,lastCook:null,researchReceipt:false,ledger:[],logs:[],result:null,step:0};}
+export function newGame(seed=20261009){return {version:4,seed,cycle:1,day:1,dining:{tableCount:2},chapterProgress:{chapterId:'hearth',stars:0,requestDay:null,lastAttemptDay:null,lastScore:null},premiumMenu:null,guestRelationships:{},guestDex:{seenSegments:{},metGuests:{}},history:[],market:null,phase:'forecast',coins:120,reputation:0,inventory:{...DEFAULT_INVENTORY},recipes:{chicken_stew:76,mushroom_stir:76,veg_stir:72},learned:{},recipeVariants:{},activeVariantIds:{},tech:false,upgrade:false,crew:{helper:{hired:false,station:0,meals:0,feed:null},waiter:{hired:false,meals:0,feed:null}},staffFoodCost:0,management:{dayKey:'1-1',openingCoins:120,campaignId:'none',wageDebt:0},kitchen:{slots:[{type:'WOK',level:1},{type:'POT',level:1}],refitDay:null,freeRefitUsed:false,extraRefits:0},bagSlots:8,_bagMigrated:true,_v08Save:true,selectedWeaponSlot:0,bento:null,route:null,field:null,cook:null,menu:['chicken_stew','mushroom_stir','veg_stir'],prep:{},prepVariants:{},prepCost:0,manualCost:0,service:null,report:null,lastCook:null,researchReceipt:false,ledger:[],logs:[],result:null,step:0};}
 // Kitchen station IDs remain WOK/POT for compatibility with 0.4 saves,
 // but now denote PHYSICAL positions (left/right), not stove types.
 // Room size and market stock are persistent economic state, not scene-only buffs.
@@ -424,31 +424,31 @@ const SPRING_ZONES={
 const ECOLOGY_ZONES={
  forest:{
   gathering:[
-   {id:'forest_garden',name:'野蔬采集圃',description:'包菜、土豆与蒜瓣 · 菜圃集中采集',danger:false,target:'cabbage'},
-   {id:'glow_mushroom',name:'幽光菌沼',description:'蘑菇密集 · 少量菌怪巡视',danger:false,target:'mushroom'}],
+   {id:'forest_garden',name:'野蔬采集圃',description:'包菜、土豆与蒜瓣 · 菜圃集中采集',danger:false},
+   {id:'glow_mushroom',name:'幽光菌沼',description:'蘑菇密集 · 少量菌怪巡视',danger:false}],
   hunting:[
-   {id:'herb_path',name:'野牛觅食草场',description:'野牛、鸡怪 · 狩猎补肉',danger:true,target:'garlic'},
-   {id:'glow_mushroom',name:'孢怪栖息沼',description:'孢怪与鸡怪 · 菌菇和肉类',danger:true,target:'mushroom'}],
+   {id:'herb_path',name:'野牛觅食草场',description:'野牛、鸡怪 · 狩猎补肉',danger:true},
+   {id:'glow_mushroom',name:'孢怪栖息沼',description:'孢怪与鸡怪 · 菌菇和肉类',danger:true}],
   forageFinish:f=>f.zoneId==='forest_garden'?
-   {id:'forest_secret',name:'菌光秘径',description:'蘑菇采集 · 最后补一包菌香',danger:false,target:'mushroom'}:
-   {id:'forest_garden',name:'深林采集圃',description:'蔬菜采集 · 最后补齐根茎',danger:false,target:'cabbage'},
+   {id:'forest_secret',name:'菌光秘径',description:'蘑菇采集 · 最后补一包菌香',danger:false}:
+   {id:'forest_garden',name:'深林采集圃',description:'蔬菜采集 · 最后补齐根茎',danger:false},
   bossFinal:[
-   {id:'spore_gate',name:'孢巢正门',description:'孢怪密集 · 菌王孢心',danger:true,target:'mushroom'},
-   {id:'spore_roots',name:'枯根兽径',description:'野牛更多 · 菌王孢心',danger:true,target:'mushroom'}]
+   {id:'spore_gate',name:'孢巢正门',description:'孢怪密集 · 菌王孢心',danger:true},
+   {id:'spore_roots',name:'枯根兽径',description:'野牛更多 · 菌王孢心',danger:true}]
  },
  spring:{
   gathering:[
-   {id:'steam_lake',name:'矿泉晶池',description:'土豆、洋葱 · 根茎类聚集',danger:false,target:'potato'},
-   {id:'steam_crack',name:'蒸汽裂隙',description:'火椒、洋葱 · 蒸汽蟹巡视',danger:false,target:'chili'}],
+   {id:'steam_lake',name:'矿泉晶池',description:'土豆、洋葱 · 根茎类聚集',danger:false},
+   {id:'steam_crack',name:'蒸汽裂隙',description:'火椒、洋葱 · 蒸汽蟹巡视',danger:false}],
   hunting:[
-   {id:'steam_crack',name:'蒸汽猎径',description:'蒸汽蟹、椒怪 · 战斗采料',danger:true,target:'chili'},
-   {id:'hot_spring_shallows',name:'蟹群浅滩',description:'蒸汽蟹与椒怪 · 土豆火椒',danger:true,target:'potato'}],
+   {id:'steam_crack',name:'蒸汽猎径',description:'蒸汽蟹、椒怪 · 战斗采料',danger:true},
+   {id:'hot_spring_shallows',name:'蟹群浅滩',description:'蒸汽蟹与椒怪 · 土豆火椒',danger:true}],
   forageFinish:f=>f.zoneId==='steam_lake'?
-   {id:'spring_market',name:'矿泉秘泉',description:'土豆与火椒 · 深层水岸采集',danger:false,target:'potato'}:
-   {id:'steam_lake',name:'晶池后湾',description:'土豆、洋葱 · 根茎丰收',danger:false,target:'potato'},
+   {id:'spring_market',name:'矿泉秘泉',description:'土豆与火椒 · 深层水岸采集',danger:false}:
+   {id:'steam_lake',name:'晶池后湾',description:'土豆、洋葱 · 根茎丰收',danger:false},
   bossFinal:[
-   {id:'ember_gate',name:'赤焰正坡',description:'椒怪密集 · 熔心椒晶',danger:true,target:'chili'},
-   {id:'ember_side',name:'焦土兽径',description:'野牛与蒸汽蟹 · 熔心椒晶',danger:true,target:'chili'}]
+   {id:'ember_gate',name:'赤焰正坡',description:'椒怪密集 · 熔心椒晶',danger:true},
+   {id:'ember_side',name:'焦土兽径',description:'野牛与蒸汽蟹 · 熔心椒晶',danger:true}]
  }
 };
 // Both starter cookware modes are owned from day one. Physical stations
