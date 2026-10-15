@@ -1,6 +1,6 @@
 // Second-star chapter milestone uses the original single service ledger and real orders.
 // No free guests, rewards, or offline-only shortcut is created in this module.
-export const SECOND_STAR_TARGETS={1:70,2:72};
+export const SECOND_STAR_TARGETS={1:70,2:84};
 const secondClamp=(n,a=0,b=100)=>Math.max(a,Math.min(b,Number(n)||0));
 const dayKey=s=>s.cycle+'-'+s.day;
 const absoluteDay=s=>(s.cycle-1)*3+s.day;
