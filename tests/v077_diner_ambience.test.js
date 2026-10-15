@@ -86,7 +86,7 @@ test('speech calculations do not mutate real inventory, orders, money or service
 test('all visible game versions, entrypoint and offline build are aligned',()=>{
  const html=src('../index.html'),script=src('../scripts/build-standalone.py'),
  app=src('../src/app.js'),pkg=JSON.parse(src('../package.json'));
- assert.equal(pkg.version,'0.13.0-alpha.4');
+ assert.equal(pkg.version,'0.13.0-alpha.5');
  assert.match(html,/Oddpot Kitchen v0\.13\.0-alpha\.4/);
  assert.match(html,/app\.js\?v=0\.13\.0-alpha\.4/);
  assert.match(app,/ODDPOT · v0\.13\.0-alpha\.4/);
