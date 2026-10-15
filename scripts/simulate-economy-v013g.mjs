@@ -4,7 +4,7 @@
 import assert from 'node:assert/strict';
 import {newGame,buyThirdKitchenBundle,requestSecondStar,createService,
  setServicePaused,tick,closeService,resumeBreak,currentServiceEvent,chooseServiceEvent,
- chooseCampaign,ensureDailyMarket,purchase,advanceDay,rand} from '../src/engine.js';
+ chooseCampaign,selectedCampaign,ensureDailyMarket,purchase,advanceDay,rand} from '../src/engine.js';
 import {ING,RECIPES,MARKET_ROTATION_STAPLES} from '../src/data.js';
 import {DINER_FLOOR} from '../src/restaurant_scene_v075.js';
 
@@ -40,8 +40,16 @@ function newScenario(seed,{third=false,menu=MIXED,stars=2,stage=0,startingCoins=
  return s;
 }
 function night(s){
+ // The live UI blocks an unaffordable campaign; the player can still switch
+ // back to real natural demand instead of inventing marketing credit.
+ if(s.coins<selectedCampaign(s).cost){
+  assert.equal(s.phase,'prep');
+  assert.equal(chooseCampaign(s,'none'),true);
+  s._auditSkippedCampaigns=(s._auditSkippedCampaigns||0)+1;
+ }
  s.phase='service';
- assert.equal(createService(s,{walkable:true}),true,'real service creation failed');
+ assert.equal(createService(s,{walkable:true}),true,
+  'real service creation failed seed='+s.seed+' day='+s.cycle+'-'+s.day+' cash='+s.coins+' menu='+s.menu.join(','));
  Object.assign(s.service.hero,DINER_FLOOR.right);
  assert.equal(setServicePaused(s,false),true);
  for(let guard=0;guard<145&&!s.service.done;guard++){
@@ -153,6 +161,7 @@ function twentyOneDays(seed,o){
    endCoins:s.coins,inventoryRemain,debt:r.finance.debt,
    marketingSpent:r.finance.marketingCost,marketingServed:r.finance.marketingServed,
    wage:r.finance.wage,shortageDay:Number(r.rejected>0),
+   skippedCampaign:Number(!!s._auditSkippedCampaigns),
    inDeficit:Number(s.coins<0),unpaidWages:Number(r.finance.debt>0)});
   s.phase='upgrade';assert.equal(advanceDay(s),true);
  }
@@ -166,6 +175,7 @@ function twentyOneDays(seed,o){
   endingNeededInventory:measure.at(-1).inventoryRemain,
   wageDebtDays:total('unpaidWages'),
   marketingServedPerDay:total('marketingServed')/days,
+  daysWithUnaffordableCampaign:total('skippedCampaign'),
   totalMarketing:total('marketingSpent'),totalWages:total('wage'),
   initialNeededInventory:targets.reduce((n,id)=>n+(firstInventory[id]||0),0),
   totalRealSales:s.ledger.filter(x=>x.type==='sale').length};
@@ -189,7 +199,7 @@ for(const c of multiCases){
  multi[c.id]={n:runs,days,...summarize(records,['endingCash','netCash','servedPerDay','arrivalPerDay',
   'profitPerDay','cashPerDay','purchasedPerDay','marketSpentPerDay','shortages',
   'rejectedPerDay','queueLossPerDay','endingNeededInventory','wageDebtDays',
-  'marketingServedPerDay','totalMarketing','totalWages']),
+  'marketingServedPerDay','daysWithUnaffordableCampaign','totalMarketing','totalWages']),
   endingCashP10:quant(records.map(x=>x.endingCash),.1),
   endingCashP90:quant(records.map(x=>x.endingCash),.9),
   insolventPct:rnd(100*records.filter(x=>x.wageDebtDays>0).length/runs)};
