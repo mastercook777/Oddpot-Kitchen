@@ -4,17 +4,17 @@ import {readFileSync} from 'node:fs';
 import {newGame,ensureDailyMarket,purchase,DAILY_STAPLE_MIN_PURCHASES,advanceDay} from '../src/engine.js';
 import {SHOP_STAPLES} from '../src/data.js';
 
-test('daily market rotates exactly four of all eight ordinary ingredients with scarce exploration stock',()=>{
+test('daily market rotates exactly four of eight ingredients with 6–10 initial units each',()=>{
  const seen=new Set(),uniqueOffers=new Set(),days=[];
  for(let seed=1;seed<=120;seed++)for(let i=0;i<15;i++){
   const s=newGame(seed);s.cycle=1+Math.floor(i/3);s.day=1+i%3;
   const m=ensureDailyMarket(s),list=Object.keys(m.goods);
-  assert.equal(m.schema,4);assert.equal(list.length,4);
+  assert.equal(m.schema,5);assert.equal(list.length,4);
   for(const id of list){
    assert.ok(['beef','chicken','chili','garlic','mushroom','cabbage','onion','potato'].includes(id));
    seen.add(id);
-   const offer=m.goods[id],field=!SHOP_STAPLES.includes(id);
-   assert.ok(offer.initialStock>=(field?2:6)&&offer.initialStock<=(field?4:9));
+   const offer=m.goods[id];
+   assert.ok(offer.initialStock>=6&&offer.initialStock<=10);
    assert.equal(offer.stock,offer.initialStock);
   }
   uniqueOffers.add([...list].sort().join(','));
@@ -43,7 +43,9 @@ test('three-unit bundle purchases consume exactly three units, cannot exceed lis
  assert.equal(offer.stock,start-3);
  assert.equal(s.coins,cash-3*offer.price);
  assert.equal(s.inventory[id],inv+3);
- assert.equal(purchase(s,id,5),offer.stock>=5);
+ const canBuyFive=offer.stock>=5;
+ assert.equal(purchase(s,id,5),canBuyFive);
+ assert.equal(offer.stock,start-3-(canBuyFive?5:0));
  assert.equal(purchase(s,id,10),false);
 });
 test('old same-day market migrates the offer quantity without recreating sold units or buying missing goods',()=>{
@@ -54,7 +56,7 @@ test('old same-day market migrates the offer quantity without recreating sold un
  old.schema=undefined;
  old.goods[id].initialStock=original;
  const absent=SHOP_STAPLES.filter(x=>!old.goods[x]);
- const migrated=ensureDailyMarket(s);assert.equal(migrated.schema,4);assert.equal(Object.keys(migrated.goods).length,4);for(const oldId of ['chicken','garlic','mushroom'])assert.strictEqual(migrated.goods[oldId],old.goods[oldId]);
+ const migrated=ensureDailyMarket(s);assert.equal(migrated.schema,5);assert.equal(Object.keys(migrated.goods).length,4);for(const oldId of ['chicken','garlic','mushroom'])assert.strictEqual(migrated.goods[oldId],old.goods[oldId]);
  assert.ok(migrated.goods[id].initialStock>=DAILY_STAPLE_MIN_PURCHASES);
  assert.equal(migrated.goods[id].stock,migrated.goods[id].initialStock-2);
  assert.equal(migrated.goods[id].price,price);
