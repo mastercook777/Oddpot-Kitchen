@@ -531,12 +531,13 @@
 .staff-feed-list button{display:flex;flex-direction:column;align-items:center;justify-content:center;gap:3px;min-height:46px;padding:5px 2px;border-radius:8px;color:#2c4436;background:#f1d9a7;border:1px solid #fff0c8;font-size:12px;font-weight:900}
 .staff-feed-list button:disabled{opacity:.36}.staff-feed-list button small{font-size:11px;color:#756342}
 .staff-assign{display:flex;gap:6px}.staff-assign button{flex:1;min-height:40px;background:#365f49;color:#e9e5cf;border:1px solid #8eae91;border-radius:8px;font-size:13px;font-weight:800}.staff-assign button.active{background:#efd18b;color:#273d31;border-color:#fff0be}
-/* v0.13.0-alpha.3: occupied priority spots stay visible but cannot be assigned twice. */
-.staff-assign button:disabled{opacity:.38;cursor:not-allowed;filter:saturate(.45)}
 .staff-person>.game-btn{width:100%;min-height:45px}
 .staff-report{display:flex;flex-direction:column;gap:4px;background:#30533e;border:1px solid #aac18d;border-radius:10px;padding:9px 11px;font-size:12px;line-height:1.45}
 .staff-report b{font-size:14px;color:#ffe0a0}.staff-report span{color:#e7e8c8}.staff-report small{color:#cfdbc4}
 @media(max-height:650px){.kitchen-prep-card{gap:2px}.staff-open-prep{min-height:33px;font-size:12px;padding:4px 7px}.staff-open-prep span{font-size:11px}}
+/* v0.13.0-alpha.3: occupied priority spots stay visible but cannot be assigned twice. */
+.staff-assign button:disabled{opacity:.38;cursor:not-allowed;filter:saturate(.45)}
+
 /* v0.5C: two-seat diner stage, legible scenario and single-action HUD */
 .diner-table.two-seat{position:relative;overflow:visible}
 .diner-table.two-seat .little-human,.diner-table.two-seat .speech{display:none!important}
