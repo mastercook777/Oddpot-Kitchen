@@ -24,8 +24,14 @@ jobs:
           npm test
           npm run build
           python scripts/build-standalone.py
+      - name: Mobile Chrome 320 / 375 / 390 and offline ecology routes
+        run: |
+          npm install --no-save --package-lock=false playwright@1.56.1
+          node scripts/check-v013h-ecology-browser.mjs
       - uses: actions/upload-artifact@v4
         if: always()
         with:
           name: oddpot-v013h-ecology-supply
-          path: docs/audits/v013h-ecology-supply.json.txt
+          path: |
+            docs/audits/v013h-ecology-supply.json.txt
+            docs/screenshots/v013h-ecology-routes/*.png
