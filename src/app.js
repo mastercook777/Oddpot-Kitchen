@@ -303,12 +303,16 @@ function prepInventoryCheck(){
  <button type="button" data-act="stock" class="v095-stock-action" aria-label="查看库存与今日采购">${action} ›</button>
  </section>`;
 }
+function preOpenMarketing(){
+ const campaign=selectedCampaign(game),m=ensureManagement(game),wage=Object.entries(ensureCrew(game)).reduce((n,[role,c])=>n+(c.hired&&c.onDuty?crewWage(role,c.level):0),0);
+ return '<section class="v12c-marketing" aria-label="今晚揽客计划"><div class="v12c-marketing-title"><b>📣 今晚揽客计划</b><span>工资 '+wage+' · 欠薪 '+m.wageDebt+'</span></div><div class="v12c-campaigns">'+Object.values(CAMPAIGNS).map(c=>'<button type="button" data-act="promo:'+c.id+'" aria-pressed="'+(campaign.id===c.id)+'" class="'+(campaign.id===c.id?'selected':'')+'" '+(c.stars&&(game.chapterProgress?.stars||0)<c.stars?'disabled':'')+'><b>'+esc(c.name)+'</b><small>'+(c.cost?'🪙'+c.cost:'免费')+' · +'+c.guests.length+'客</small></button>').join('')+'</div><small class="v12c-marketing-note">'+esc(campaign.desc)+' · 开门时才扣费；真实成交后才有收入。</small></section>';
+}
 function prep(){
  const k=ensureKitchen(game),preview=kitchenPreview(game);
  const slotCards=k.slots.map((slot,i)=>`<div class="kitchen-config-slot"><span><b>${i===0?'左厨位':'右厨位'}</b><small>Lv.${slot.level}${slot.level===2?' · 制作 -2秒':''}</small></span><div class="kitchen-choice"><button data-act="kitchen:${i}:WOK" class="${slot.type==='WOK'?'active':''}" aria-pressed="${slot.type==='WOK'}">炒锅</button><button data-act="kitchen:${i}:POT" class="${slot.type==='POT'?'active':''}" aria-pressed="${slot.type==='POT'}">炖锅</button></div></div>`).join('');
  const dayPlan=serviceDayPlan(game);
  const pressure=preview.pressure.map(p=>`${p.type==='WOK'?'炒锅':'炖锅'} ${p.menu}菜 / ${p.capacity}位`).join('　');
- return [`<div class="scene-bg diner-bg">${restaurantView(false)}<div class="prep-card kitchen-prep-card"><h2>厨房排布 · 备餐</h2><div class="kitchen-config-head">${preview.valid?'设备覆盖菜单':'缺少：'+preview.risk.map(t=>t==='WOK'?'炒锅':'炖锅').join(' / ')}</div><div class="kitchen-config-slots">${slotCards}</div><p class="kitchen-pressure">${pressure}</p><p class="kitchen-refit">本日首次换锅免费 · 后续每次 ${kitchenRefitCost(game)||12} 金币</p><button class="staff-open-prep" data-act="crew">👩‍🍳 员工餐与岗位 <span>${Object.values(ensureCrew(game)).filter(x=>x.hired).length}/2 人 ›</span></button><div class="service-day-brief"><b>${dayPlan.pressure}</b><span>预计 ${dayPlan.count} 人 · ${dayPlan.goal.label}</span></div>${premiumMenuActive(game)?`<div class="v101-premium-summary" aria-label="今晚隐藏菜单"><span aria-hidden="true">✨</span><div><strong>隐藏菜 · ${esc(RECIPES[game.premiumMenu.recipeId]?.name)}</strong><small>限量 ${game.premiumMenu.limit} 份 · 食材已预留</small></div></div>`:''}${starInvite()}${prepInventoryCheck()}<div class="prep-divider">开业前预制</div><div class="prep-items">${game.menu.map(id=>`<button class="prep-item" data-act="prep:${id}" ${!canUse(game,recipeCraftSnapshot(game,id).ingredientIds)?'disabled':''}>${RECIPES[id].emoji} ${RECIPES[id].name}<span>已备 ${game.prep[id]||0} · ＋1</span></button>`).join('')}</div></div></div>`,
+ return [`<div class="scene-bg diner-bg">${restaurantView(false)}<div class="prep-card kitchen-prep-card"><h2>厨房排布 · 备餐</h2><div class="kitchen-config-head">${preview.valid?'设备覆盖菜单':'缺少：'+preview.risk.map(t=>t==='WOK'?'炒锅':'炖锅').join(' / ')}</div><div class="kitchen-config-slots">${slotCards}</div><p class="kitchen-pressure">${pressure}</p><p class="kitchen-refit">本日首次换锅免费 · 后续每次 ${kitchenRefitCost(game)||12} 金币</p><button class="staff-open-prep" data-act="crew">👩‍🍳 排班、工资与晋升 <span>${Object.values(ensureCrew(game)).filter(x=>x.hired).length}/2 人 ›</span></button><div class="service-day-brief"><b>${dayPlan.pressure}</b><span>预计 ${dayPlan.count} 人 · ${dayPlan.goal.label}</span></div>${premiumMenuActive(game)?`<div class="v101-premium-summary" aria-label="今晚隐藏菜单"><span aria-hidden="true">✨</span><div><strong>隐藏菜 · ${esc(RECIPES[game.premiumMenu.recipeId]?.name)}</strong><small>限量 ${game.premiumMenu.limit} 份 · 食材已预留</small></div></div>`:''}${starInvite()}${preOpenMarketing()}${prepInventoryCheck()}<div class="prep-divider">开业前预制</div><div class="prep-items">${game.menu.map(id=>`<button class="prep-item" data-act="prep:${id}" ${!canUse(game,recipeCraftSnapshot(game,id).ingredientIds)?'disabled':''}>${RECIPES[id].emoji} ${RECIPES[id].name}<span>已备 ${game.prep[id]||0} · ＋1</span></button>`).join('')}</div></div></div>`,
  `<div class="dock-head"><span>${preview.valid?'厨房就绪，可开业': '先给菜单配置所需锅具'}</span><span>金币 ${game.coins}</span></div><div class="action-row">${b('crew','员工','secondary')}${b('open','开门迎客','primary wide',!preview.valid)}</div>`]
 }
 function serviceLegacy(){const v=game.service;if(!v)return ['<div class="empty">餐厅正在准备...</div>',b('open','开业','primary')];
@@ -398,6 +402,9 @@ function action(act){
  if(act==='hero-special'){if(activateWalkableSpecial(game)){message='主厨技能发动！';render()}return}
  if(act==='close-sheet'){overlay='';render();return}
  if(act==='crew'){overlay='crew';render();return}
+ if(act.startsWith('promo:')){note(chooseCampaign(game,act.slice(6))?'揽客方案已选好，将于开门时生效。':'该活动尚未解锁或不能更改。');return}
+ if(act.startsWith('duty:')){const [,role,enabled]=act.split(':');note(setCrewDuty(game,role,enabled==='on')?'已调整今晚排班。':'排班未变化。');return}
+ if(act.startsWith('promote:')){note(promoteCrew(game,act.slice(8))?'员工成功晋升！岗位能力和工资一起成长。':'经验不足、资金不足或暂不能晋升。');return}
  if(act.startsWith('hire:')){note(hireCrew(game,act.slice(5))?'伙伴加入食堂！':'金币不足或已经雇佣。');return}
  if(act==='field-bag'){if(game.phase==='field'&&game.field){releaseStick();overlay='field-bag';render()}return}
  if(act==='book'){bookTab='recipes';overlay='book';render();return}
@@ -424,7 +431,7 @@ function action(act){
  if(act==='to-prep'){if(canMenu(game)){nextPhase(game,'prep');note('安排员工和预制餐点，营业时靠近厨位工作、到餐桌上菜。')}return}
  if(act.startsWith('kitchen:')){const [,i,type]=act.split(':');note(configureKitchenSlot(game,Number(i),type)?`设备已改为${type==='WOK'?'炒锅':'炖锅'}；订单将按新配置分流。`:'配置未更改，或改装金币不足。');return}
  if(act.startsWith('prep:')){note(prepDish(game,act.slice(5))?'备好一份餐点，稍后可直接上桌。':'食材不足，备餐失败。');return}
- if(act==='open'){if(!kitchenHasMenuCoverage(game)){note('菜单里的料理没有对应锅具，请先调整厨房。');return}nextPhase(game,'service');if(!createService(game,{walkable:true})){game.phase='prep';note('厨房未就绪，暂不能开业');return}setServicePaused(game,false);servicePanel='';selectedOrderId=null;note('开门营业！到锅边做菜，再去出餐台取菜、送到餐桌。');return}
+ if(act==='open'){if(game.coins<selectedCampaign(game).cost){note('金币不足以支付宣传费用，请选自然营业。');return}if(!kitchenHasMenuCoverage(game)){note('菜单里的料理没有对应锅具，请先调整厨房。');return}nextPhase(game,'service');if(!createService(game,{walkable:true})){game.phase='prep';note('厨房未就绪，暂不能开业');return}setServicePaused(game,false);servicePanel='';selectedOrderId=null;note('开门营业！到锅边做菜，再去出餐台取菜、送到餐桌。');return}
  if(act==='toggle-service'){setServicePaused(game,!game.service.paused);serviceTickAt=performance.now();note(game.service.paused?'已暂停营业。':'开始迎客！到厨位工作，出餐台取菜再送到桌边。');return}
  if(act==='resume-break'){servicePanel='';resumeBreak(game);serviceTickAt=performance.now();note('下一波开始，注意哪一口锅更忙。');return}
  if(act==='show-management'){servicePanel='event';render();return}
