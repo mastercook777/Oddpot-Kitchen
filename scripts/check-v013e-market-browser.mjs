@@ -15,9 +15,10 @@ const states=()=>{
 };
 let browser;
 async function launchState(page,s,resource='index.html'){
- await page.goto(url+resource,{waitUntil:'domcontentloaded'});
- await page.evaluate(([k,v])=>localStorage.setItem(k,JSON.stringify(v)),[key,s]);
- await page.reload({waitUntil:'networkidle'});
+ // Seed the exact game save BEFORE app.js initializes. Post-load injection
+ // can race against its initial render/save and silently reset to Day 1.
+ await page.addInitScript(([k,v])=>localStorage.setItem(k,JSON.stringify(v)),[key,s]);
+ await page.goto(url+resource,{waitUntil:'networkidle'});
 }
 async function checkFour(page,s,{legacy=false}={}){
  const expected=Object.keys(ensureDailyMarket(s).goods).sort();
@@ -48,28 +49,35 @@ try{
  let ok=false;for(let i=0;i<60;i++){try{if((await fetch(url+'index.html')).ok){ok=true;break}}catch{}await sleep(250)}assert.ok(ok,'vite startup');
  browser=await chromium.launch({headless:true,executablePath:process.env.CHROME_PATH||'/usr/bin/google-chrome',args:['--no-sandbox','--disable-dev-shm-usage']});
  for(const [width,height] of [[320,568],[375,667],[390,844]]){
-  const page=await browser.newPage({viewport:{width,height},deviceScaleFactor:2,isMobile:true,hasTouch:true}),errors=[];
-  page.on('pageerror',e=>errors.push(e.message));
-  const s=states();await launchState(page,s);
-  const result=await checkFour(page,s);
+  const freshPage=()=>browser.newPage({viewport:{width,height},deviceScaleFactor:2,isMobile:true,hasTouch:true});
+  const errors=[];
+  const p1=await freshPage();p1.on('pageerror',e=>errors.push(e.message));
+  const s=states();await launchState(p1,s);
+  const result=await checkFour(p1,s);
+  await p1.close();
+
   const tomorrow=structuredClone(result);tomorrow.day=tomorrow.day===3?1:tomorrow.day+1;
   if(result.day===3)tomorrow.cycle++;
   const nextMarket=ensureDailyMarket(tomorrow);
   assert.notDeepEqual(Object.keys(nextMarket.goods).sort(),Object.keys(result.market.goods).sort(),'actual next-day inventory rotates for default seed');
-  await launchState(page,tomorrow);
-  await checkFour(page,tomorrow);
+  const p2=await freshPage();p2.on('pageerror',e=>errors.push(e.message));
+  await launchState(p2,tomorrow);
+  await checkFour(p2,tomorrow);
+  await p2.close();
+
   const old=states();old.market={dayKey:'1-1',schema:2,goods:{
     chicken:{initialStock:8,stock:4,price:7},
     garlic:{initialStock:7,stock:0,price:3},
     mushroom:{initialStock:9,stock:5,price:4}
   }};
-  await launchState(page,old);
-  const migrated=await page.evaluate(k=>JSON.parse(localStorage.getItem(k)),key);
+  const p3=await freshPage();p3.on('pageerror',e=>errors.push(e.message));
+  await launchState(p3,old);
+  const migrated=await p3.evaluate(k=>JSON.parse(localStorage.getItem(k)),key);
   assert.equal(Object.keys(migrated.market.goods).length,4,'old three-product day supplemented to four');
   for(const id of ['chicken','garlic','mushroom'])assert.deepEqual(migrated.market.goods[id],old.market.goods[id],'legacy stock/price unchanged '+id);
-  await checkFour(page,old,{legacy:true});
+  await checkFour(p3,old,{legacy:true});
+  await p3.close();
   assert.deepEqual(errors,[],'no errors at '+width);
-  await page.close();
  }
  const offline=await browser.newPage({viewport:{width:390,height:844}});
  const s=states();await launchState(offline,s,'standalone.html');
