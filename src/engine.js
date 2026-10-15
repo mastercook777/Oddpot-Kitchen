@@ -153,7 +153,7 @@ const helperPosition=h=>h?.currentStation??h?.station;
 const shiftHelperAt=(crew,index)=>helperRoles.find(role=>crew?.[role]?.hired&&!(crew[role].moveUntil>0)&&helperPosition(crew[role])===index)||null;
 function stationTaken(v,i,excluded){return helperRoles.some(role=>role!==excluded&&v.crew?.[role]?.hired&&(v.crew[role].moveTo===i||(!(v.crew[role].moveUntil>0)&&helperPosition(v.crew[role])===i)));}
 export function reassignIdleCooks(v){
- if(!v?.walkable||!v.crew||!v.stations)return;
+ if(!v?.walkable||!v.crew||!v.stations||v.kitchenSnapshot?.length<3)return;
  for(const role of helperRoles){
   const w=v.crew[role];if(!w?.hired)continue;
   w.currentStation??=w.station;
@@ -187,7 +187,7 @@ export function ensureKitchen(s){
  s.kitchen.mastery={WOK:Math.max(1,s.upgrade?2:1,...old.filter(x=>x.type==='WOK').map(x=>x.level===2?2:1)),
   POT:Math.max(1,...old.filter(x=>x.type==='POT').map(x=>x.level===2?2:1))};
  }
- for(const type of ['WOK','POT'])s.kitchen.mastery[type]=s.kitchen.mastery[type]===2?2:1;
+ for(const type of ['WOK','POT'])s.kitchen.mastery[type]=Math.max(s.kitchen.mastery[type]===2?2:1,...s.kitchen.slots.filter(slot=>slot.type===type).map(slot=>slot.level===2?2:1),1);
  s.kitchen.slots=(s.kitchen.thirdUnlocked?[0,1,2]:[0,1]).map(i=>{const v=s.kitchen.slots[i]||{};const type=v.type==='WOK'?'WOK':'POT';return {type,level:s.kitchen.mastery[type]}});
  s.kitchen.extraRefits??=0;s.kitchen.freeRefitUsed??=false;
  return s.kitchen;
