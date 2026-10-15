@@ -1,0 +1,32 @@
+name: v0.12-F outdoor speech and field target
+on:
+  pull_request:
+    paths: ['src/**','scripts/**','tests/**','index.html','.github/workflows/v012f-queue-target-browser.yml']
+  push:
+    branches: ['feature/v012f-outdoor-queue-dialogue-field-target-20261015','main']
+permissions:
+  contents: read
+jobs:
+  queue-target-browser:
+    runs-on: ubuntu-latest
+    timeout-minutes: 16
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - name: Install Chrome and build dependencies
+        run: |
+          sudo apt-get update && sudo apt-get install -y fonts-noto-cjk
+          npm install --no-package-lock --no-audit --no-fund
+          npm install --no-save --package-lock=false playwright@1.56.1
+      - name: Generate full offline bundle
+        run: python scripts/build-standalone.py
+      - name: Phone Chrome queue bubbles, actual branch goal and standalone
+        run: node scripts/check-v012f-queue-target-browser.mjs
+      - name: Archive portrait screenshots
+        uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: v012f-queue-field-chrome
+          path: docs/screenshots/v012f-queue-target/*.png
