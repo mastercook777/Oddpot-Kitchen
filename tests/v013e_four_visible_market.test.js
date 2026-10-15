@@ -5,20 +5,21 @@ import {newGame,ensureDailyMarket,purchase,advanceDay,prepStockForecast} from '.
 import {MARKET_ROTATION_STAPLES,ING} from '../src/data.js';
 
 test('exactly four of eight ordinary ingredients offered every day (none initially missing)',()=>{
- const seen=new Set(),combinations=new Set();
+ const seen=new Set(),combinations=new Set(),supplyCaps=new Set();
  for(let seed=1;seed<=90;seed++)for(let day=1;day<=21;day++){
   const s=newGame(seed);s.cycle=Math.floor((day-1)/3)+1;s.day=1+(day-1)%3;
   const m=ensureDailyMarket(s),ids=Object.keys(m.goods).sort();
-  assert.equal(m.schema,4);assert.equal(ids.length,4);
+  assert.equal(m.schema,5);assert.equal(ids.length,4);
   for(const id of ids){
    assert.ok(MARKET_ROTATION_STAPLES.includes(id));
-   assert.ok(m.goods[id].initialStock>=2);
+   assert.ok(m.goods[id].initialStock>=6&&m.goods[id].initialStock<=10, id+' initial stock outside 6–10');
    assert.equal(m.goods[id].stock,m.goods[id].initialStock);
-   seen.add(id);
+   seen.add(id);supplyCaps.add(m.goods[id].initialStock);
   }
   combinations.add(ids.join(','));
  }
  assert.equal(seen.size,8);
+ assert.ok(supplyCaps.has(6)&&supplyCaps.has(10),'both caps must be attainable');
  assert.ok(combinations.size>=50,'many combinations across seeds, not four fixed goods');
 });
 test('legacy three-product day fills a fourth, never refunds or restocks sold-out units',()=>{
@@ -31,7 +32,7 @@ test('legacy three-product day fills a fourth, never refunds or restocks sold-ou
  s.market=old;
  const coins=s.coins,stock=JSON.stringify(s.inventory),ledger=JSON.stringify(s.ledger);
  const m=ensureDailyMarket(s);
- assert.equal(m.schema,4);assert.equal(Object.keys(m.goods).length,4);
+ assert.equal(m.schema,5);assert.equal(Object.keys(m.goods).length,4);
  for(const id of ['chicken','garlic','cabbage'])assert.deepEqual(m.goods[id],old.goods[id]);
  assert.equal(purchase(s,'chicken'),false,'old sold-out stock stays sold out');
  assert.equal(s.coins,coins);assert.equal(JSON.stringify(s.inventory),stock);
@@ -49,7 +50,7 @@ test('old four-product day preserves all offers, including old pricing',()=>{
  };
  s.market={dayKey:'1-1',schema:2,goods};
  const m=ensureDailyMarket(s);
- assert.equal(m.schema,4);assert.deepEqual(m.goods,goods);
+ assert.equal(m.schema,5);assert.deepEqual(m.goods,goods);
  assert.equal(m.goods.garlic.stock,0);
 });
 test('actual daily offers become new tomorrow; never silently purchase unlisted goods',()=>{
@@ -62,6 +63,30 @@ test('actual daily offers become new tomorrow; never silently purchase unlisted 
  s.phase='upgrade';assert.equal(advanceDay(s),true);
  const next=ensureDailyMarket(s);assert.equal(Object.keys(next.goods).length,4);
  assert.notDeepEqual(Object.keys(next.goods).sort(),ids.sort());
+});
+test('low-cap schema4 migration increases shop allowance once without undoing buys',()=>{
+ const s=newGame(5151);s.market={dayKey:'1-1',schema:4,goods:{
+  beef:{stock:1,initialStock:3,price:17},chicken:{stock:0,initialStock:8,price:5},
+  garlic:{stock:4,initialStock:7,price:2},mushroom:{stock:6,initialStock:6,price:3}
+ }};
+ const inventory=JSON.stringify(s.inventory),ledger=JSON.stringify(s.ledger);
+ const m=ensureDailyMarket(s);
+ assert.equal(m.schema,5);assert.ok(m.goods.beef.initialStock>=6&&m.goods.beef.initialStock<=10);
+ assert.equal(m.goods.beef.stock,m.goods.beef.initialStock-2);
+ assert.equal(m.goods.beef.price,17);assert.equal(m.goods.chicken.stock,0);
+ assert.equal(JSON.stringify(s.inventory),inventory);assert.equal(JSON.stringify(s.ledger),ledger);
+ assert.equal(ensureDailyMarket(s),m);
+});
+test('new daily caps are finite, purchasable, and cannot refresh after selling out',()=>{
+ const s=newGame(218);s.coins=100000;const m=ensureDailyMarket(s);
+ for(const [id,offer] of Object.entries(m.goods)){
+  const cap=offer.initialStock;
+  assert.ok(cap>=6&&cap<=10);assert.equal(purchase(s,id,3),true);
+  assert.equal(m.goods[id].stock,cap-3);
+  for(let i=3;i<cap;i++)assert.equal(purchase(s,id),true);
+  assert.equal(m.goods[id].stock,0);assert.equal(purchase(s,id),false);
+ }
+ assert.equal(ensureDailyMarket(s),m);
 });
 test('shortage purchasing forecast recognizes rotating exploration-source produce as market purchasable',()=>{
  const s=newGame(1803);s.phase='prep';s.cycle=3;s.day=1;s.dining.tableCount=4;s.chapterProgress.stars=1;

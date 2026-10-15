@@ -1,10 +1,10 @@
 import {fieldHarvestTargetSuffix} from './field_target_v012f.js';
 import {makeSpecialEncounterPlan,previewSpecialEncounter,SPECIAL_ENCOUNTER_KINDS} from './field_encounters_v011c.js';
-import {ING,RECIPES,CUSTOMERS,FORECAST,DEFAULT_INVENTORY,SHOP_STAPLES,MARKET_ROTATION_STAPLES} from './data.js?v=0.13.0-alpha.5';
-import {LIVE_ACTIONS,evaluateLiveCook,liveIngredientState,liveIngredientHeatFeedback,legacyVariant,makeLiveVariant,resolveTechnique} from './cooking_v063.js?v=0.13.0-alpha.5';
-import {RECIPE_PROFILES} from './recipe_profiles_v063.js?v=0.13.0-alpha.5';
-import {generateBiomeMap} from './field_biomes_v081.js?v=0.13.0-alpha.5';
-import {makeFieldEncounterPlan,insertPlannedFieldEncounter} from './field_encounter_plan_v011b.js?v=0.13.0-alpha.5';
+import {ING,RECIPES,CUSTOMERS,FORECAST,DEFAULT_INVENTORY,SHOP_STAPLES,MARKET_ROTATION_STAPLES} from './data.js?v=0.13.0-alpha.6';
+import {LIVE_ACTIONS,evaluateLiveCook,liveIngredientState,liveIngredientHeatFeedback,legacyVariant,makeLiveVariant,resolveTechnique} from './cooking_v063.js?v=0.13.0-alpha.6';
+import {RECIPE_PROFILES} from './recipe_profiles_v063.js?v=0.13.0-alpha.6';
+import {generateBiomeMap} from './field_biomes_v081.js?v=0.13.0-alpha.6';
+import {makeFieldEncounterPlan,insertPlannedFieldEncounter} from './field_encounter_plan_v011b.js?v=0.13.0-alpha.6';
 import {expandFieldMap} from './field_world_v011b1.js';
 import {newServiceHero,heroZone} from './walkable_restaurant_v07.js?v=0.9.2';
 import {CAMPAIGNS,CREW_GROWTH,CREW_XP_THRESHOLDS,ensureManagement,selectedCampaign,chooseCampaign,crewWage,ensureStaffProgress,setCrewDuty,crewPromotion,applyCrewPromotion,payroll,settleCrewExperience} from './restaurant_management_v012c.js';
@@ -124,21 +124,22 @@ export function expandDiningRoom(s){
  s.dining={tableCount:next};return true;
 }
 // Four offers rotate among the eight ordinary ingredients every new day.
-// Expedition staples remain obtainable through exploration, with stricter shop caps.
+// Expedition ingredients keep their premium prices; every daily offer has 6–10 units.
 export const DAILY_STAPLE_MIN_PURCHASES=6;
+export const DAILY_STAPLE_MAX_PURCHASES=10;
 export function ensureDailyMarket(s){
  const key=`${s.cycle}-${s.day}`;
  const current=s.market?.dayKey===key?s.market:null;
  // The old schema2 could have 3 offers. Preserve their actual stock/price
  // (including previously sold-out goods) and fill missing slots once only.
- if(current?.schema===4&&Object.keys(current.goods||{}).length===4)return current;
+ if(current?.schema===5&&Object.keys(current.goods||{}).length===4)return current;
  const roll=rand((s.seed^(s.cycle*7919)^(s.day*65521))>>>0);
  const picks=MARKET_ROTATION_STAPLES.map((id,i)=>({
   id,roll:rand((roll ^ Math.imul(i+1,0x9e3779b9) ^ Math.imul(s.cycle*3+s.day,0x85ebca6b))>>>0)
  })).sort((a,b)=>a.roll-b.roll||a.id.localeCompare(b.id));
  const fresh=({id,roll:value})=>{
   const field=ING[id].acquisitionPolicy==='FIELD_ONLY';
-  const initialStock=field?2+((value>>>16)%3):6+((value>>>16)%4);
+  const initialStock=DAILY_STAPLE_MIN_PURCHASES+((value>>>16)%(DAILY_STAPLE_MAX_PURCHASES-DAILY_STAPLE_MIN_PURCHASES+1));
   const price=Math.max(1,Math.round(ING[id].cost*(field?160+((value>>>10)%31):85+((value>>>10)%51))/100));
   return {stock:initialStock,initialStock,price};
  };
@@ -148,14 +149,22 @@ export function ensureDailyMarket(s){
   for(const [id,offer] of entries.slice(0,4)){
    // Do not reconstruct a legacy offer from a new RNG roll: doing so would
    // undo purchases or silently alter an already announced day's prices.
-   goods[id]=offer;
+   // Existing 2–4-unit offers receive one explicit v0.13-F capacity correction.
+   // Retain prices and prior purchases; do not grant free warehouse items.
+   const oldCapacity=Math.max(0,Math.floor(Number.isFinite(offer.initialStock)?offer.initialStock:offer.stock));
+   const oldRemaining=Math.max(0,Math.floor(offer.stock));
+   if(oldCapacity<DAILY_STAPLE_MIN_PURCHASES){
+    const target=fresh(picks.find(x=>x.id===id)).initialStock;
+    const alreadyBought=Math.max(0,oldCapacity-oldRemaining);
+    goods[id]={...offer,initialStock:target,stock:Math.max(0,target-alreadyBought)};
+   }else goods[id]=offer;
   }
  }
  for(const item of picks){
   if(Object.keys(goods).length>=4)break;
   if(!goods[item.id])goods[item.id]=fresh(item);
  }
- s.market={dayKey:key,goods,schema:4};
+ s.market={dayKey:key,goods,schema:5};
  return s.market;
 }
 export const KITCHEN_POSITIONS=['WOK','POT','CENTER'];

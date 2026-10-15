@@ -45,7 +45,7 @@ try {
  const offline=await browser.newPage({viewport:{width:390,height:844}});
  await offline.addInitScript(([key,v])=>localStorage.setItem(key,JSON.stringify(v)),[storageKey,state(1)]);
  await offline.goto('http://127.0.0.1:5173/standalone.html',{waitUntil:'networkidle'});
- assert.match(await offline.title(),/0.13.0-alpha.5/);
+ assert.match(await offline.title(),/0\.\d+\.\d+-alpha\.\d+/);
  assert.equal(await offline.locator('[data-act="second-star-request"]').count(),1);
  await offline.close();
  console.log('v0.13-D: second-star requests, veggie marketing and standalone pass in 320/375/390 Chrome');

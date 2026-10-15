@@ -60,7 +60,7 @@ try{
  offline.on('pageerror',e=>errors.push(e.message));
  await offline.addInitScript(([key,s])=>localStorage.setItem(key,JSON.stringify(s)),[k,crowd()]);
  await offline.goto('http://127.0.0.1:5173/standalone.html',{waitUntil:'networkidle'});
- assert.match(await offline.title(),/alpha.5/);
+ assert.match(await offline.title(),/alpha\.\d+/);
  assert.match(await offline.locator('#v075-served').innerText(),/等位 1/);
  assert.ok(await offline.locator('#diner-canvas').evaluate(c=>c.width>0));
  await offline.screenshot({path:out+'/queue-standalone-390.png'});
