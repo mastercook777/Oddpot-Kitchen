@@ -58,7 +58,7 @@ try{
  const offline=await browser.newPage({viewport:{width:390,height:844}});
  await offline.addInitScript(([k,obj])=>localStorage.setItem(k,JSON.stringify(obj)),[key,make()]);
  await offline.goto('http://127.0.0.1:5173/standalone.html',{waitUntil:'networkidle'});
- assert.match(await offline.title(),/0.13.0-alpha.4/);
+ assert.match(await offline.title(),/0.13.0-alpha.5/);
  assert.equal(await offline.locator('[data-act^="upgrade-kitchen:"]').count(),2);
  await offline.close();
  console.log('v0.13-B: independent cookware mastery, simple crew positions, staff travel display, 320/375/390 Chrome and offline: PASS');
