@@ -8,7 +8,7 @@ export const RESTAURANT_LORE=Object.freeze({
  kitchen:'ember-range',reservedStation:'sealed-third-hearth'
 });
 export const DINER_FLOOR={
- left:{x:.245,y:.325},right:{x:.755,y:.325},
+ left:{x:.245,y:.325},right:{x:.755,y:.325},centre:{x:.500,y:.325},
  stoveLeft:{x:.245,y:.240},stoveRight:{x:.755,y:.240},
  reservedStove:{x:.500,y:.240},
  pass:{x:.50,y:.448},passFurniture:{x:.50,y:.397},
@@ -23,7 +23,7 @@ export const DINER_FLOOR={
  entrance:{x:.50,y:.930},
  waitLane:{x:.50,y:.620},
  doorwayView:{left:.185,right:.815,top:.857,bottom:.985},
- helper:[{x:.120,y:.325},{x:.880,y:.325}],
+ helper:[{x:.120,y:.325},{x:.880,y:.325},{x:.412,y:.324}],
  margin:{left:.075,right:.925,top:.165,bottom:.945},
  geometry:{tableHalfX:.088,tableHalfY:.046,stoveHalfX:.085,stoveHalfY:.046,
   counterTop:.388,counterBottom:.428,counterGapLeft:.410,counterGapRight:.590}
@@ -54,6 +54,7 @@ export function dinerSpot(hero,s=null){
  if(close075(hero,g.pass,.100,.055))return 'PASS';
  if(close075(hero,g.left,.108,.060))return 'WOK';
  if(close075(hero,g.right,.108,.060))return 'POT';
+ if((s?.service?.kitchenSnapshot?.length||0)>=3&&close075(hero,g.centre,.085,.056))return 'CENTER';
  for(let i=0;i<g.tableWork.length;i++)if(close075(hero,g.tableWork[i],.078,.070))return 'TABLE'+i;
  return null;
 }

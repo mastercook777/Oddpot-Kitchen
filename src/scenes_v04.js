@@ -11,7 +11,7 @@ import {drawExpandedLandscape,drawExpandedObstacle} from './field_world_render_v
 import {isHerbPixelSlice,drawHerbPixelGround,drawHerbPixelObstacle,drawHerbPixelNode,drawHerbPixelHazard,drawHerbPixelEnemy,drawHerbPixelProjectile} from './field_pixel_herb_v011c.js?v=0.12.0-alpha.1';
 import {isHybridMeadow,drawHybridMeadowGround,drawHybridMeadowObstacle,drawHybridMeadowHazard} from './field_hybrid_meadow_v011e.js?v=0.12.0-alpha.1';
 import {meleeProfile,meleeWindupProgress} from './field_combat_feedback_v084.js?v=0.8.4';
-import {pixelActor,pixelEnemy,pixelImpact} from './pixels_v041.js?v=0.12.0-alpha.5';
+import {pixelActor,pixelEnemy,pixelImpact} from './pixels_v041.js?v=0.13.0-alpha.1';
 // Lightweight procedural game graphics: original Canvas shapes, no art pack.
 import {ING,RECIPES,CUSTOMERS} from './data.js?v=0.12.0-alpha.1';
 import {heroZone,waiterDeliveryPose,HERO_PASS} from './walkable_restaurant_v07.js?v=0.9.1';
@@ -793,10 +793,10 @@ function drawRestaurantV075(c,s,t,w,h){
  for(const xx of [.09,.91]){rr(x(xx)-10,h*.072,20,38,5,'#6e937e','#cfae7d');rect(c,x(xx)-5,h*.083,10,18,'#3e6e68')}
  // The two active stoves are deliberately compact; the centre is reserved for
  // a later third production slot. No area names are printed on screen.
- for(const [i,key] of ['WOK','POT'].entries()){
-  const body=i?g.stoveRight:g.stoveLeft,pt=i?g.right:g.left,slot=s.kitchen?.slots?.[i];
-  const type=slot?.type||(i?'POT':'WOK'),busy=v?.stations?.[key];
-  const X=x(body.x),Y=y(body.y),rw=Math.min(62,w*.177);
+ for(const [i,key] of (v?.kitchenSnapshot?.length>=3||!v&&s.kitchen?.thirdUnlocked?['WOK','POT','CENTER']:['WOK','POT']).entries()){
+  const body=i===2?g.reservedStove:i?g.stoveRight:g.stoveLeft,pt=i===2?g.centre:i?g.right:g.left,slot=v?.kitchenSnapshot?.[i]||s.kitchen?.slots?.[i];
+  const type=slot?.type||(i===1?'POT':'WOK'),busy=v?.stations?.[key];
+  const X=x(body.x),Y=y(body.y),rw=Math.min(i===2?48:62,w*(i===2?.139:.177));
   rr(X-rw/2,Y-24,rw,51,7,'#513c30','#b99765');
   rr(X-rw*.43,Y-20,rw*.86,39,5,'#916d49','#d8ae74');
   circle(c,X,Y-4,Math.min(21,w*.057),'#d7c19b');
@@ -813,12 +813,14 @@ function drawRestaurantV075(c,s,t,w,h){
   c.beginPath();c.ellipse(x(pt.x),y(pt.y),w*.075,h*.025,0,0,Math.PI*2);
   c.lineWidth=1.5;c.strokeStyle=near?'#ffe69f':'#c8b68575';c.stroke();
  }
- // A sealed empty hearth is a future upgrade affordance, never an active third station.
- const reserve=g.reservedStove,RX=x(reserve.x),RY=y(reserve.y);
- rr(RX-21,RY-20,42,42,6,'#463c34','#907859');
- rr(RX-16,RY-15,32,27,4,'#625647','#927d60');
- line(c,RX-13,RY+8,RX+13,RY-12,'#998469',3);
- line(c,RX-13,RY-12,RX+13,RY+8,'#998469',3);
+ // Before the REAL expansion purchase, show the old sealed central hearth.
+ if((v?.kitchenSnapshot?.length||(!v&&s.kitchen?.thirdUnlocked?3:2))<3){
+  const reserve=g.reservedStove,RX=x(reserve.x),RY=y(reserve.y);
+  rr(RX-21,RY-20,42,42,6,'#463c34','#907859');
+  rr(RX-16,RY-15,32,27,4,'#625647','#927d60');
+  line(c,RX-13,RY+8,RX+13,RY-12,'#998469',3);
+  line(c,RX-13,RY-12,RX+13,RY+8,'#998469',3);
+ }
  // Compact pass counter: continuous centre aisle, no full-width obstruction.
  for(const [from,to] of [[.075,.390],[.610,.925]]){
   rr(x(from),y(g.geometry.counterTop),x(to-from),h*.039,4,'#5b3e2e','#cda575');
@@ -907,8 +909,12 @@ function drawRestaurantV075(c,s,t,w,h){
   }
   const crew=v.crew||s.crew;
   if(crew?.helper?.hired){
-   const station=crew.helper.station===1?1:0,pt=g.helper[station];
-   actors.push({id:'helper',x:pt.x,y:pt.y,kind:'helper',level:crew.helper.level||1,walk:false,working:!!v.stations[station?'POT':'WOK']});
+   const station=crew.helper.station||0,pt=g.helper[station]||g.helper[0];
+   actors.push({id:'helper',x:pt.x,y:pt.y,kind:'helper',level:crew.helper.level||1,walk:false,working:!!v.stations[['WOK','POT','CENTER'][station]]});
+  }
+  if(crew?.helper2?.hired){
+   const station=crew.helper2.station??2,pt=g.helper[station]||g.helper[2];
+   actors.push({id:'helper2',x:pt.x,y:pt.y,kind:'helper2',level:crew.helper2.level||1,walk:false,working:!!v.stations[['WOK','POT','CENTER'][station]]});
   }
   if(crew?.waiter?.hired){
    const pos=waiterDeliveryPose(s,t);
@@ -918,7 +924,7 @@ function drawRestaurantV075(c,s,t,w,h){
    const hero=v.hero,zone=heroZone(hero,s);
    const carried=v.orders.find(o=>o.id===hero.carryOrderId&&o.status==='carried');
    actors.push({id:'hero',x:hero.x,y:hero.y,kind:'chef',walk:hero.moving,plate:!!carried,
-     working:!carried&&['WOK','POT'].includes(zone)&&!!v.stations[zone],direction:hero.direction,
+     working:!carried&&['WOK','POT','CENTER'].includes(zone)&&!!v.stations[zone],direction:hero.direction,
      stateIcon:carried?'🍽️':zone==='PASS'&&pending.length?'🍽️':
       zone?.startsWith('TABLE')&&v.orders.some(o=>o.tableId===Number(zone.slice(5))&&['queued','cooking','pickup','delivering'].includes(o.status))?'💛':null});
   }

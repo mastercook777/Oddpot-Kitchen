@@ -101,7 +101,7 @@ try{
  offline.on('pageerror',e=>errors.push(e.message));
  await offline.addInitScript(([k,s])=>localStorage.setItem(k,JSON.stringify(s)),[key,done()]);
  await offline.goto('http://127.0.0.1:5173/standalone.html',{waitUntil:'networkidle'});
- assert.match(await offline.title(),/alpha.5/);
+ assert.match(await offline.title(),/alpha.1/);
  assert.equal(await offline.locator('.v12e-promotion-alert').count(),1);
  await offline.locator('.v12e-promotion-alert [data-act="crew"]').click();
  assert.equal(await offline.locator('[data-act="promote:waiter"]').isEnabled(),true);

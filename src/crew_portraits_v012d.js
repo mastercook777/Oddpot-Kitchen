@@ -1,5 +1,5 @@
 // v0.12-D: one painter for the real service actor AND its magnified staff-sheet portrait.
-import {pixelActor,crewAppearance} from './pixels_v041.js?v=0.12.0-alpha.4';
+import {pixelActor,crewAppearance} from './pixels_v041.js?v=0.13.0-alpha.1';
 export function drawCrewPortrait(canvas,role,level=1){
  if(!canvas||typeof canvas.getContext!=='function')return false;
  const look=crewAppearance(role,level);
