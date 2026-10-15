@@ -18,7 +18,7 @@ let flashUntil=0;
 let message='今天会有怎样的客人上门呢？';
 let overlay='',bookTab='recipes',tileSelected=null,selectedOrderId=null;let servicePanel='';
 let selectedIngredients=['chicken','chili'],selectedMethod='stir';
-let routeTarget=null,walking=null,drag=null,selectedRegion='forest';let livePanPointer=null;
+let walking=null,drag=null,selectedRegion='forest';let livePanPointer=null;
 const stick={x:0,y:0,pointer:null,originX:0,originY:0};const keys=new Set();let lastFrame=0,lastSave=0;let gameClock=0;let serviceTickAt=0;const touched=new Map();
 const app=document.getElementById('app');
 const esc=s=>String(s??'').replaceAll('&','&amp;').replaceAll('<','&lt;').replaceAll('>','&gt;').replaceAll('"','&quot;');
