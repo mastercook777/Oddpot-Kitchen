@@ -5,6 +5,10 @@ function r(c,x,y,w,h,col){c.fillStyle=col;c.fillRect(x|0,y|0,w|0,h|0)}
 // v0.12-D staff apparel is layered onto the ORIGINAL working pixel actor.
 // The descriptor and the painted silhouette share one authoritative level contract.
 export const CREW_APPEARANCES={
+ helper2:[
+  {label:'见习后厨',uniform:'炭蓝短衫 · 杏色厨帽',accent:'#527d85'},
+  {label:'资深后厨',uniform:'铜蓝厨衣 · 绒白围裙',accent:'#639a9c'},
+  {label:'炉火匠人',uniform:'金边烟蓝高帽 · 琥珀徽章',accent:'#e4b768'}],
  helper:[
   {label:'见习帮厨',uniform:'经典橙色厨衣',accent:'#d27a46'},
   {label:'熟练厨师',uniform:'铜红厨衣 · 奶油围裙 · 厨帽束带',accent:'#d49b68'},
@@ -21,7 +25,8 @@ export function crewAppearance(kind,rawLevel=1){
  return {role:kind,level,...outfits[level-1]};
 }
 function paintCrewRank(c,kind,level,arm){
- if(kind!=='helper'&&kind!=='waiter'||level<=1)return;
+ if(kind!=='helper'&&kind!=='helper2'&&kind!=='waiter'||level<=1)return;
+ if(kind==='helper2'){r(c,4,10,11,9,level>=3?'#356275':'#56838b');r(c,5,14,9,5,'#e6e5cb');r(c,7,-4,7,3,'#87b4b1');if(level>=3){r(c,6,-8,7,4,'#f3dfbc');r(c,9,11,3,3,'#e7b76c')}return;}
  if(kind==='helper'){
   // Same 18x24 actor. Rank 2: copper jacket, chef cap ribbon, cream apron.
   r(c,4,10,11,3,'#bd6e45');
@@ -75,7 +80,7 @@ function person(c,kind,walk,attack,level=1){
  r(c,5,11,8,8,p[1]);r(c,8,11,2,6,kind==='chef'?'#d26f52':p[0]);
  r(c,3,2,13,11,P.outline);r(c,4,3,11,9,P.skin);r(c,5,4,9,6,P.skinLight);
  r(c,5,6,2,2,P.outline);r(c,12,6,2,2,P.outline);r(c,9,9,3,1,'#9d644f');
- if(kind==='chef'||kind==='helper'){
+ if(kind==='chef'||kind==='helper'||kind==='helper2'){
   r(c,2,1,15,4,P.outline);r(c,3,1,13,3,P.white);r(c,5,-4,9,6,P.outline);r(c,6,-4,7,5,P.white);r(c,8,-6,4,3,P.white);
  }else if(kind==='waiter'){
   r(c,2,0,14,3,'#466251');r(c,6,-2,7,3,'#ddc391');r(c,6,13,8,3,'#e9daa7');
@@ -101,8 +106,9 @@ function person(c,kind,walk,attack,level=1){
   // Slime villager: translucent turquoise head and bobbing droplets.
   r(c,3,0,13,4,'#52ae9d');r(c,4,3,5,2,'#70debc');r(c,1,1,2,2,'#8be9d3');r(c,15,1,2,2,'#8be9d3');
  }
- // Outfits decorate an existing staff pixel actor rather than replace identity or hitbox.
- paintCrewRank(c,kind,level,arm);
+ // The newest kitchen worker is recognisable at Lv1 without enlarging the silhouette.
+ if(kind==='helper2'){r(c,4,11,11,5,'#547f87');r(c,5,15,9,5,'#e9d4a5');r(c,7,1,5,2,'#7ca3a1');if(level>=2)paintCrewRank(c,kind,level,arm);}
+ else paintCrewRank(c,kind,level,arm);
  if(attack){
   // A readable, off-center utensil silhouette synchronized to the attack state.
   r(c,17,-1,2,12,'#b7c4b8');r(c,14,-4,8,4,P.outline);r(c,15,-4,6,3,'#e2ddc3');
