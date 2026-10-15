@@ -144,10 +144,22 @@ export function ensureDailyMarket(s){
  s.market={dayKey:key,goods,schema:2};
  return s.market;
 }
-export const KITCHEN_POSITIONS=['WOK','POT'];
+export const KITCHEN_POSITIONS=['WOK','POT','CENTER'];
+export const THIRD_KITCHEN_BUNDLE_COST=260;
+const stationId=i=>KITCHEN_POSITIONS[i];
+const stationIdx=id=>KITCHEN_POSITIONS.indexOf(id);
+const shiftHelperAt=(crew,index)=>['helper','helper2'].find(role=>crew?.[role]?.hired&&crew[role].station===index)||null;
+export function thirdKitchenBundleAvailable(s){return s.phase==='upgrade'&&!s.kitchen?.thirdUnlocked&&(s.chapterProgress?.stars||0)>=1&&(s.dining?.tableCount||2)>=4&&s.coins>=THIRD_KITCHEN_BUNDLE_COST;}
+export function buyThirdKitchenBundle(s){
+ if(!thirdKitchenBundleAvailable(s))return false;
+ if(!transact(s,'third-kitchen-crew-bundle','room_staff_upgrade',{},-THIRD_KITCHEN_BUNDLE_COST))return false;
+ const k=ensureKitchen(s);k.thirdUnlocked=true;k.slots.push({type:'WOK',level:1});
+ const p=ensureCrew(s).helper2;p.hired=true;p.onDuty=true;p.station=2;
+ return true;
+}
 export function ensureKitchen(s){
  if(!s.kitchen||!Array.isArray(s.kitchen.slots))s.kitchen={slots:[{type:'WOK',level:s.upgrade?2:1},{type:'POT',level:1}],refitDay:null,freeRefitUsed:false,extraRefits:0};
- s.kitchen.slots=[0,1].map(i=>{const v=s.kitchen.slots[i]||{};return {type:v.type==='WOK'?'WOK':'POT',level:v.level===2?2:1}});
+ s.kitchen.slots=(s.kitchen.thirdUnlocked?[0,1,2]:[0,1]).map(i=>{const v=s.kitchen.slots[i]||{};return {type:v.type==='WOK'?'WOK':'POT',level:v.level===2?2:1}});
  if(s.upgrade&&s.kitchen.slots[0].level<2)s.kitchen.slots[0].level=2;
  s.kitchen.extraRefits??=0;s.kitchen.freeRefitUsed??=false;
  return s.kitchen;
@@ -155,7 +167,7 @@ export function ensureKitchen(s){
 export function kitchenDayKey(s){return `${s.cycle}-${s.day}`}
 export function kitchenRefitCost(s){const k=ensureKitchen(s);return k.refitDay===kitchenDayKey(s)&&k.freeRefitUsed?12:0}
 export function configureKitchenSlot(s,index,type){
- if(s.phase!=='prep'||![0,1].includes(index)||!['WOK','POT'].includes(type))return false;
+ if(s.phase!=='prep'||index<0||index>=ensureKitchen(s).slots.length||!['WOK','POT'].includes(type))return false;
  const k=ensureKitchen(s);if(k.slots[index].type===type)return false;
  const today=kitchenDayKey(s),normalFee=kitchenRefitCost(s);
  // Never soft-lock a player who experimented with a free refit. If the
@@ -182,11 +194,11 @@ export function kitchenPreview(s){
  return {pressure,risk,valid:risk.length===0};
 }
 export function kitchenUpgradeCost(s,index){
- if(![0,1].includes(index))return null;
+ if(index<0||index>=ensureKitchen(s).slots.length)return null;
  return ensureKitchen(s).slots[index].level>=2?null:index===0?60:75;
 }
 export function buyKitchenUpgrade(s,index){
- if(s.phase!=='upgrade'||![0,1].includes(index))return false;
+ if(s.phase!=='upgrade'||index<0||index>=ensureKitchen(s).slots.length)return false;
  const k=ensureKitchen(s),cost=kitchenUpgradeCost(s,index);
  if(cost===null||s.coins<cost)return false;
  const key=index===0?'upgrade-wok':'kitchen-upgrade-1';
@@ -210,52 +222,57 @@ export function recipeCraftSnapshot(s,recipeId,variant=null){
    recipeTags:[...r.tags]};
 }
 export function stationDuration(s,position,recipe,v,order=null){
- const k=ensureKitchen(s),i=position==='WOK'?0:1,slot=k.slots[i];
- const bonus=(slot.level-1)*2;
- const staff=v?.crew?.helper;const crewBonus=staff?.hired&&staff.station===i?staff.seconds:0;
- const delta=order?.craft?.timeDelta||0;
- const rush=staff?.hired&&staff.level>=3&&staff.station===i&&v?.time>=30&&v?.time<=70?1:0;
- return Math.max(1,recipe.time+delta-bonus-Math.min(4,crewBonus+rush)-(v?.eventEffects?.[slot.type]||0));
+ const i=stationIdx(position),slot=v?.kitchenSnapshot?.[i]||ensureKitchen(s).slots[i];
+ if(!slot)return recipe.time;
+ const role=shiftHelperAt(v?.crew,i),staff=role?v.crew[role]:null;
+ const bonus=(slot.level-1)*2,delta=order?.craft?.timeDelta||0;
+ const rush=staff?.level>=3&&v?.time>=30&&v?.time<=70?1:0;
+ return Math.max(1,recipe.time+delta-bonus-Math.min(4,(staff?.seconds||0)+rush)-(v?.eventEffects?.[slot.type]||0));
 }
 
 // A two-person restaurant team. Feed uses real standard-recipe ingredients;
 // meals grant one service-day buff plus a tiny, capped long-term familiarity.
-export const CREW_ROLES={helper:{name:'阿火',job:'帮厨',hireCost:40},waiter:{name:'小芽',job:'跑堂',hireCost:35}};
+export const CREW_ROLES={helper:{name:'阿火',job:'帮厨',hireCost:40},waiter:{name:'小芽',job:'跑堂',hireCost:35},helper2:{name:'小炭',job:'后厨帮手',hireCost:0}};
 export function ensureCrew(s){
  ensureStaffProgress(s);
  for(const role of Object.keys(CREW_ROLES)){
   const raw=s.crew[role]||{};
   raw.hired=!!raw.hired;raw.meals=Math.max(0,Math.min(3,Number(raw.meals)||0));
-  raw.feed??=null;if(role==='helper')raw.station=raw.station===1?1:0;
+  raw.feed??=null;if(role==='helper'||role==='helper2')raw.station=Number.isInteger(raw.station)&&raw.station>=0&&raw.station<ensureKitchen(s).slots.length?raw.station:role==='helper2'?2:0;
   s.crew[role]=raw;
  }
  s.staffFoodCost??=0;
  return s.crew;
 }
 export function hireCrew(s,role){
- if(!['prep','upgrade'].includes(s.phase)||!CREW_ROLES[role])return false;
+ if(!['prep','upgrade'].includes(s.phase)||!CREW_ROLES[role]||role==='helper2')return false;
  const c=ensureCrew(s)[role],price=CREW_ROLES[role].hireCost;
  if(c.hired||s.coins<price||!transact(s,`crew-hire-${role}`,'crew_hire',{},-price))return false;
  c.hired=true;c.onDuty=true;return true;
 }
-export function assignCrew(s,position){
- if(s.phase!=='prep'||![0,1].includes(position))return false;
- const c=ensureCrew(s).helper;if(!c.hired||c.station===position)return false;
+export function assignCrew(s,position,role='helper'){
+ if(s.phase!=='prep'||!['helper','helper2'].includes(role))return false;
+ const crew=ensureCrew(s),c=crew[role];
+ if(!c?.hired||!Number.isInteger(position)||position<0||position>=ensureKitchen(s).slots.length||c.station===position)return false;
+ const other=role==='helper'?'helper2':'helper';
+ if(crew[other]?.hired&&crew[other].onDuty&&crew[other].station===position)return false;
  c.station=position;return true;
 }
 export function activeCrewMeal(s,role){
  const c=ensureCrew(s)[role];return c?.hired&&c.feed?.day===kitchenDayKey(s)?c.feed:null;
 }
 export function crewEffects(s){
- const crew=ensureCrew(s),helper=crew.helper,waiter=crew.waiter;
- const f=activeCrewMeal(s,'helper'),w=activeCrewMeal(s,'waiter');
- const hr=f?.recipeId?RECIPES[f.recipeId]:null,wr=w?.recipeId?RECIPES[w.recipeId]:null;
- const helperActive=helper.hired&&helper.onDuty,waiterActive=waiter.hired&&waiter.onDuty;
+ const crew=ensureCrew(s),helper=crew.helper,helper2=crew.helper2,waiter=crew.waiter;
+ const f=activeCrewMeal(s,'helper'),f2=activeCrewMeal(s,'helper2'),w=activeCrewMeal(s,'waiter');
+ const hr=f?.recipeId?RECIPES[f.recipeId]:null,h2r=f2?.recipeId?RECIPES[f2.recipeId]:null,wr=w?.recipeId?RECIPES[w.recipeId]:null;
+ const helperActive=helper.hired&&helper.onDuty,helper2Active=helper2.hired&&helper2.onDuty,waiterActive=waiter.hired&&waiter.onDuty;
  const helperBase=helperActive?1+(helper.meals>=3?1:0)+(helper.level>=2?1:0):0;
  const helperMeal=helperActive&&hr?(hr.tags.includes('辣')&&ensureKitchen(s).slots[helper.station].type==='WOK'?2:hr.tags.includes('菌香')?1:0)+(f.quality>=85?1:0)+(f.craftBonus?.role==='helper'&&ensureKitchen(s).slots[helper.station].type==='WOK'?Math.min(1,f.craftBonus.bonus):0):0;
+ const helper2Base=helper2Active?1+(helper2.meals>=3?1:0)+(helper2.level>=2?1:0):0;
+ const helper2Meal=helper2Active&&h2r?(h2r.tags.includes('辣')&&ensureKitchen(s).slots[helper2.station]?.type==='WOK'?2:h2r.tags.includes('菌香')?1:0)+(f2.quality>=85?1:0):0;
  const waiterBase=waiterActive?3+(waiter.meals>=3?1:0)+(waiter.level>=2?2:0)+(waiter.level>=3?1:0):0;
  const waiterMeal=waiterActive&&wr?(wr.tags.includes('温和')?6:wr.tags.includes('菌香')?4:2)+(w.quality>=85?2:0)+(w.craftBonus?.role==='waiter'?Math.min(1,w.craftBonus.bonus):0):0;
- return {helper:{hired:helperActive,station:helper.station,seconds:Math.min(4,helperBase+helperMeal),fed:helperActive&&!!f,recipeId:f?.recipeId||null,meals:helper.meals,level:helper.level,salary:helperActive?crewWage('helper',helper.level):0},waiter:{hired:waiterActive,patience:Math.min(12,waiterBase+waiterMeal),fed:waiterActive&&!!w,recipeId:w?.recipeId||null,meals:waiter.meals,level:waiter.level,salary:waiterActive?crewWage('waiter',waiter.level):0}};
+ return {helper:{hired:helperActive,station:helper.station,seconds:Math.min(4,helperBase+helperMeal),fed:helperActive&&!!f,recipeId:f?.recipeId||null,meals:helper.meals,level:helper.level,salary:helperActive?crewWage('helper',helper.level):0},helper2:{hired:helper2Active,station:helper2.station,seconds:Math.min(4,helper2Base+helper2Meal),fed:helper2Active&&!!f2,recipeId:f2?.recipeId||null,meals:helper2.meals,level:helper2.level,salary:helper2Active?crewWage('helper2',helper2.level):0},waiter:{hired:waiterActive,patience:Math.min(12,waiterBase+waiterMeal),fed:waiterActive&&!!w,recipeId:w?.recipeId||null,meals:waiter.meals,level:waiter.level,salary:waiterActive?crewWage('waiter',waiter.level):0}};
 }
 export function feedCrew(s,role,recipeId){
  if(s.phase!=='prep'||!CREW_ROLES[role]||!s.recipes[recipeId]||!RECIPES[recipeId])return false;
@@ -264,7 +281,7 @@ export function feedCrew(s,role,recipeId){
  const txn=`crew-meal-${kitchenDayKey(s)}-${role}`;
  if(!consume(s,craft.ingredientIds,txn))return false;
  const specific=RECIPE_PROFILES[recipeId]?.crewSpecific;
- const craftBonus=specific&&specific.style===craft.style&&specific.role===role?{role,bonus:Math.min(1,Number(specific.bonus)||0)}:null;
+ const craftBonus=specific&&specific.style===craft.style&&(specific.role===role||role==='helper2'&&specific.role==='helper')?{role,bonus:Math.min(1,Number(specific.bonus)||0)}:null;
  c.feed={day:kitchenDayKey(s),recipeId,quality:craft.quality,variantId:craft.variantId,craftBonus,ingredients:[...craft.ingredientIds]};c.meals=Math.min(3,c.meals+1);
  s.staffFoodCost+=craft.ingredientIds.reduce((sum,id)=>sum+ING[id].cost,0);
  return true;
