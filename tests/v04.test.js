@@ -14,18 +14,18 @@ test('target is harvested after dwelling near it; retreat transfers once',()=>{
  // Stand at actual centered target: harvesting dwell uses 17+ frames.
  for(let i=0;i<22;i++)stepActionField(s,0,0,.05);
  assert.equal(f.nodes.find(n=>n.key==='target').claimed,true);
- assert.equal(f.bag.chili,2);
- const stock=s.inventory.chili;
- assert.equal(settleField(s),true);assert.equal(s.inventory.chili,stock+2);assert.equal(settleField(s),false);
+ assert.equal(f.bag.garlic,2);
+ const stock=s.inventory.garlic;
+ assert.equal(settleField(s),true);assert.equal(s.inventory.garlic,stock+2);assert.equal(settleField(s),false);
 });
 test('safe line can collect target without engaging optional enemy',()=>{
  const s=explore('safe'),f=s.field;const target=f.nodes.find(n=>n.key==='target');
   f.pos={x:target.x,y:target.y};f.enemies[0].x=f.spawn.x;f.enemies[0].y=f.spawn.y;
   for(let i=0;i<22;i++)stepActionField(s,0,0,.05);
- assert.equal(f.hp,3);assert.equal(f.enemies[0].hp,f.enemies[0].maxHp);assert.equal(f.bag.chili,2);
+ assert.equal(f.hp,3);assert.equal(f.enemies[0].hp,f.enemies[0].maxHp);assert.equal(f.bag.garlic,2);
 });
 test('risk path includes two enemies and skill cooldown damage',()=>{
- const s=explore('risk'),f=s.field;assert.ok(f.enemies.length>=1&&f.enemies.length<=4);
+ const s=explore('risk'),f=s.field;assert.ok(f.enemies.length>=4&&f.enemies.length<=7);
  f.pos={x:f.enemies[0].x,y:f.enemies[0].y+.5};assert.equal(useFieldSkill(s),true);assert.equal(useFieldSkill(s),false);
  assert.equal(f.skillCd,6.5);assert.ok(f.enemies[0].hp<=f.enemies[0].maxHp-2);
 });

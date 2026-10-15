@@ -1,0 +1,75 @@
+import {chromium} from 'playwright';
+import {spawn} from 'node:child_process';
+import assert from 'node:assert/strict';
+import {mkdir} from 'node:fs/promises';
+import {newGame,enterField,completeFieldSegment} from '../src/engine.js';
+
+const out='docs/screenshots/v013h-ecology-routes';
+await mkdir(out,{recursive:true});
+const server=spawn(process.execPath,['node_modules/vite/bin/vite.js','--host','127.0.0.1','--port','5173','--strictPort'],{stdio:'ignore'});
+const pause=n=>new Promise(r=>setTimeout(r,n)), key='oddpot-prototype-v04',url='http://127.0.0.1:5173/';
+const setup=(seed=20261015)=>{const s=newGame(seed);s.phase='field';s.inventory.cabbage=1;s.inventory.mushroom=2;return s;};
+let browser;
+try{
+ let ready=false;
+ for(let i=0;i<60;i++){try{if((await fetch(url+'index.html')).ok){ready=true;break}}catch{}await pause(250);}
+ assert.ok(ready,'Vite route preview unavailable');
+ browser=await chromium.launch({headless:true,executablePath:process.env.CHROME_PATH||'/usr/bin/google-chrome',args:['--no-sandbox','--disable-dev-shm-usage']});
+ for(const [width,height] of [[320,568],[375,667],[390,844]]){
+  const errors=[];
+  const page=await browser.newPage({viewport:{width,height},deviceScaleFactor:2,isMobile:true,hasTouch:true,locale:'zh-CN'});
+  page.on('pageerror',e=>errors.push(e.message));
+  await page.addInitScript(([k,state])=>localStorage.setItem(k,JSON.stringify(state)),[key,setup()]);
+  await page.goto(url+'index.html',{waitUntil:'networkidle'});
+  assert.equal(await page.locator('[data-target]').count(),0,'no selectable material target is allowed');
+  assert.equal(await page.locator('.target-scroller').count(),0,'obsolete target strip must not render');
+  assert.match(await page.locator('.v013h-supply-hint').innerText(),/库存偏低/);
+  assert.equal(await page.locator('[data-route]').count(),2);
+  assert.match(await page.locator('[data-route="safe"]').innerText(),/采集路线/);
+  assert.match(await page.locator('[data-route="risk"]').innerText(),/狩猎路线/);
+  await page.screenshot({path:out+'/forest-routes-'+width+'.png',fullPage:true});
+  await page.locator('[data-region="spring"]').click();
+  assert.match(await page.locator('[data-route="spring_safe"]').innerText(),/采集路线/);
+  assert.match(await page.locator('[data-route="spring_risk"]').innerText(),/狩猎路线/);
+  await page.screenshot({path:out+'/spring-routes-'+width+'.png',fullPage:true});
+  await page.locator('[data-route="spring_risk"]').click();
+  const snap=await page.evaluate(k=>JSON.parse(localStorage.getItem(k)),key);
+  assert.equal(snap.field.targetMode,'ecology');
+  assert.equal(snap.field.dailyTarget,null);
+  assert.equal(snap.field.biome.zoneId,'ember_edge','hunting enters actual ember ecology');
+  assert.equal(snap.field.nodes.find(n=>n.key==='target').id,'chili');
+  assert.equal(await page.locator('#forest-canvas').count(),1);
+  assert.deepEqual(errors,[],'phone '+width+' JS errors');
+  await page.close();
+ }
+ const fork=setup(27015);assert.equal(enterField(fork,'safe'),true);
+ fork.field.nodes.find(n=>n.key==='target').claimed=true;assert.equal(completeFieldSegment(fork),true);
+ const branch=await browser.newPage({viewport:{width:320,height:568},isMobile:true,hasTouch:true,locale:'zh-CN'});
+ const errors=[];branch.on('pageerror',e=>errors.push(e.message));
+ await branch.addInitScript(([k,state])=>localStorage.setItem(k,JSON.stringify(state)),[key,fork]);
+ await branch.goto(url+'index.html',{waitUntil:'networkidle'});
+ assert.equal(await branch.locator('[data-branch]').count(),2);
+ assert.match(await branch.locator('[data-branch]').first().innerText(),/野蔬采集圃/);
+ await branch.screenshot({path:out+'/branch-choice-320.png'});
+ await branch.locator('[data-branch]').first().click();
+ const state=await branch.evaluate(k=>JSON.parse(localStorage.getItem(k)),key);
+ assert.equal(state.field.biome.zoneId,'forest_garden');
+ assert.equal(state.field.nodes.find(n=>n.key==='target').id,'cabbage');
+ assert.deepEqual(errors,[]);
+ await branch.close();
+ const offline=await browser.newPage({viewport:{width:375,height:667},isMobile:true,hasTouch:true,locale:'zh-CN'});
+ offline.on('pageerror',e=>errors.push(e.message));
+ await offline.addInitScript(([k,state])=>localStorage.setItem(k,JSON.stringify(state)),[key,setup()]);
+ await offline.goto(url+'standalone.html',{waitUntil:'networkidle'});
+ assert.match(await offline.title(),/alpha\.7/);
+ assert.equal(await offline.locator('[data-target]').count(),0);
+ assert.equal(await offline.locator('[data-route]').count(),2);
+ await offline.locator('[data-route="risk"]').click();
+ const actual=await offline.evaluate(k=>JSON.parse(localStorage.getItem(k)),key);
+ assert.equal(actual.field.biome.zoneId,'old_tree_edge');
+ assert.equal(actual.field.targetMode,'ecology');
+ assert.deepEqual(errors,[]);
+ await offline.screenshot({path:out+'/offline-hunting-375.png'});
+ await offline.close();
+ console.log('v0.13-H real Chrome 320/375/390, 14 ecological branches, no target selector, in-game and standalone routes passed');
+}finally{if(browser)await browser.close();server.kill('SIGTERM');}

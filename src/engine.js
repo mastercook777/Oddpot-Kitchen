@@ -1,10 +1,10 @@
-import {fieldHarvestTargetSuffix} from './field_target_v012f.js';
+import {fieldHarvestTargetSuffix} from './field_target_v012f.js?v=0.13.0-alpha.7';
 import {makeSpecialEncounterPlan,previewSpecialEncounter,SPECIAL_ENCOUNTER_KINDS} from './field_encounters_v011c.js';
-import {ING,RECIPES,CUSTOMERS,FORECAST,DEFAULT_INVENTORY,SHOP_STAPLES,MARKET_ROTATION_STAPLES} from './data.js?v=0.13.0-alpha.6';
-import {LIVE_ACTIONS,evaluateLiveCook,liveIngredientState,liveIngredientHeatFeedback,legacyVariant,makeLiveVariant,resolveTechnique} from './cooking_v063.js?v=0.13.0-alpha.6';
-import {RECIPE_PROFILES} from './recipe_profiles_v063.js?v=0.13.0-alpha.6';
-import {generateBiomeMap} from './field_biomes_v081.js?v=0.13.0-alpha.6';
-import {makeFieldEncounterPlan,insertPlannedFieldEncounter} from './field_encounter_plan_v011b.js?v=0.13.0-alpha.6';
+import {ING,RECIPES,CUSTOMERS,FORECAST,DEFAULT_INVENTORY,SHOP_STAPLES,MARKET_ROTATION_STAPLES} from './data.js?v=0.13.0-alpha.7';
+import {LIVE_ACTIONS,evaluateLiveCook,liveIngredientState,liveIngredientHeatFeedback,legacyVariant,makeLiveVariant,resolveTechnique} from './cooking_v063.js?v=0.13.0-alpha.7';
+import {RECIPE_PROFILES} from './recipe_profiles_v063.js?v=0.13.0-alpha.7';
+import {generateBiomeMap,getFieldBiome} from './field_biomes_v081.js?v=0.13.0-alpha.7';
+import {makeFieldEncounterPlan,insertPlannedFieldEncounter} from './field_encounter_plan_v011b.js?v=0.13.0-alpha.7';
 import {expandFieldMap} from './field_world_v011b1.js';
 import {newServiceHero,heroZone} from './walkable_restaurant_v07.js?v=0.9.2';
 import {CAMPAIGNS,CREW_GROWTH,CREW_XP_THRESHOLDS,ensureManagement,selectedCampaign,chooseCampaign,crewWage,ensureStaffProgress,setCrewDuty,crewPromotion,applyCrewPromotion,payroll,settleCrewExperience} from './restaurant_management_v012c.js';
@@ -22,7 +22,7 @@ const clone=x=>structuredClone(x);
 export const clamp=(n,a,b)=>Math.min(b,Math.max(a,n));
 export function rand(seed){return (Math.imul(1664525,seed>>>0)+1013904223)>>>0}
 export function uniqueAdd(ledger,id,type,extra={}){if(ledger.some(x=>x.id===id))return false;ledger.push({id,type,...extra});return true}
-export function newGame(seed=20261009){return {version:4,seed,cycle:1,day:1,dining:{tableCount:2},chapterProgress:{chapterId:'hearth',stars:0,requestDay:null,lastAttemptDay:null,lastScore:null},premiumMenu:null,guestRelationships:{},guestDex:{seenSegments:{},metGuests:{}},history:[],market:null,phase:'forecast',coins:120,reputation:0,inventory:{...DEFAULT_INVENTORY},recipes:{chicken_stew:76,mushroom_stir:76,veg_stir:72},learned:{},recipeVariants:{},activeVariantIds:{},tech:false,upgrade:false,crew:{helper:{hired:false,station:0,meals:0,feed:null},waiter:{hired:false,meals:0,feed:null}},staffFoodCost:0,management:{dayKey:'1-1',openingCoins:120,campaignId:'none',wageDebt:0},kitchen:{slots:[{type:'WOK',level:1},{type:'POT',level:1}],refitDay:null,freeRefitUsed:false,extraRefits:0},bagSlots:8,_bagMigrated:true,_v08Save:true,selectedWeaponSlot:0,bento:null,selectedTarget:'chili',route:null,field:null,cook:null,menu:['chicken_stew','mushroom_stir','veg_stir'],prep:{},prepVariants:{},prepCost:0,manualCost:0,service:null,report:null,lastCook:null,researchReceipt:false,ledger:[],logs:[],result:null,step:0};}
+export function newGame(seed=20261009){return {version:4,seed,cycle:1,day:1,dining:{tableCount:2},chapterProgress:{chapterId:'hearth',stars:0,requestDay:null,lastAttemptDay:null,lastScore:null},premiumMenu:null,guestRelationships:{},guestDex:{seenSegments:{},metGuests:{}},history:[],market:null,phase:'forecast',coins:120,reputation:0,inventory:{...DEFAULT_INVENTORY},recipes:{chicken_stew:76,mushroom_stir:76,veg_stir:72},learned:{},recipeVariants:{},activeVariantIds:{},tech:false,upgrade:false,crew:{helper:{hired:false,station:0,meals:0,feed:null},waiter:{hired:false,meals:0,feed:null}},staffFoodCost:0,management:{dayKey:'1-1',openingCoins:120,campaignId:'none',wageDebt:0},kitchen:{slots:[{type:'WOK',level:1},{type:'POT',level:1}],refitDay:null,freeRefitUsed:false,extraRefits:0},bagSlots:8,_bagMigrated:true,_v08Save:true,selectedWeaponSlot:0,bento:null,route:null,field:null,cook:null,menu:['chicken_stew','mushroom_stir','veg_stir'],prep:{},prepVariants:{},prepCost:0,manualCost:0,service:null,report:null,lastCook:null,researchReceipt:false,ledger:[],logs:[],result:null,step:0};}
 // Kitchen station IDs remain WOK/POT for compatibility with 0.4 saves,
 // but now denote PHYSICAL positions (left/right), not stove types.
 // Room size and market stock are persistent economic state, not scene-only buffs.
@@ -418,6 +418,39 @@ const SPRING_ZONES={
  finishBoss:[{id:'ember_gate',name:'熔岩正坡',description:'密集小怪 · 熔壳椒王',danger:true,target:'chili'},
        {id:'ember_side',name:'蒸汽绕行',description:'更多喷气地形 · 熔壳椒王',danger:true,target:'chili'}]
 };
+// v0.13-H: displayed routes express material strategy, not a 'better/worse'
+// difficulty tier. Older in-progress expeditions still use the historical
+// FOREST_ZONES/SPRING_ZONES via targetMode !== 'ecology'.
+const ECOLOGY_ZONES={
+ forest:{
+  gathering:[
+   {id:'forest_garden',name:'野蔬采集圃',description:'包菜、土豆与蒜瓣 · 菜圃集中采集',danger:false},
+   {id:'glow_mushroom',name:'幽光菌沼',description:'蘑菇密集 · 少量菌怪巡视',danger:false}],
+  hunting:[
+   {id:'herb_path',name:'野牛觅食草场',description:'野牛、鸡怪 · 狩猎补肉',danger:true},
+   {id:'glow_mushroom',name:'孢怪栖息沼',description:'孢怪与鸡怪 · 菌菇和肉类',danger:true}],
+  forageFinish:f=>f.zoneId==='forest_garden'?
+   {id:'forest_secret',name:'菌光秘径',description:'蘑菇采集 · 最后补一包菌香',danger:false}:
+   {id:'forest_garden',name:'深林采集圃',description:'蔬菜采集 · 最后补齐根茎',danger:false},
+  bossFinal:[
+   {id:'spore_gate',name:'孢巢正门',description:'孢怪密集 · 菌王孢心',danger:true},
+   {id:'spore_roots',name:'枯根兽径',description:'野牛更多 · 菌王孢心',danger:true}]
+ },
+ spring:{
+  gathering:[
+   {id:'steam_lake',name:'矿泉晶池',description:'土豆、洋葱 · 根茎类聚集',danger:false},
+   {id:'steam_crack',name:'蒸汽裂隙',description:'火椒、洋葱 · 蒸汽蟹巡视',danger:false}],
+  hunting:[
+   {id:'steam_crack',name:'蒸汽猎径',description:'蒸汽蟹、椒怪 · 战斗采料',danger:true},
+   {id:'hot_spring_shallows',name:'蟹群浅滩',description:'蒸汽蟹与椒怪 · 土豆火椒',danger:true}],
+  forageFinish:f=>f.zoneId==='steam_lake'?
+   {id:'spring_market',name:'矿泉秘泉',description:'土豆与火椒 · 深层水岸采集',danger:false}:
+   {id:'steam_lake',name:'晶池后湾',description:'土豆、洋葱 · 根茎丰收',danger:false},
+  bossFinal:[
+   {id:'ember_gate',name:'赤焰正坡',description:'椒怪密集 · 熔心椒晶',danger:true},
+   {id:'ember_side',name:'焦土兽径',description:'野牛与蒸汽蟹 · 熔心椒晶',danger:true}]
+ }
+};
 // Both starter cookware modes are owned from day one. Physical stations
 // affect the combat level only while fitted: a stored spare always remains
 // usable as a Lv1 expedition weapon, without changing the kitchen layout.
@@ -480,6 +513,16 @@ export function addFieldBag(f,id,count){
  syncFieldBagStacks(f);if(f.ecologyStats)f.ecologyStats.collected+=gained;return gained;
 }
 export function fieldBranchChoices(f){
+ if(f.targetMode==='ecology'){
+  const eco=ECOLOGY_ZONES[f.region==='spring'?'spring':'forest'];
+  if(f.segmentIndex===1)return f.dangerCommitment?eco.hunting:eco.gathering;
+  if(f.segmentIndex===2){
+   if(f.dangerCommitment)return eco.bossFinal;
+   return [eco.forageFinish(f),eco.bossFinal[0]];
+  }
+  return [];
+ }
+ // Old ongoing runs retain their old exploration branch contract.
  const zones=f.region==='spring'?SPRING_ZONES:FOREST_ZONES;
  return f.segmentIndex===1&&!f.dangerCommitment?zones.safe:
    f.dangerCommitment?zones.finishBoss:
@@ -490,15 +533,19 @@ export function fieldBranchChoices(f){
 }
 export function enterField(s,route){
  if(s.phase!=='field'||s.field||!['safe','risk','spring_safe','spring_risk'].includes(route))return false;
- const target=['SHOP_STAPLE','FIELD_ONLY'].includes(ING[s.selectedTarget]?.acquisitionPolicy)?s.selectedTarget:'mushroom';
  const risk=route==='risk'||route==='spring_risk';
+ const startZone=route==='risk'?'old_tree_edge':route==='spring_risk'?'ember_edge':
+  route==='spring_safe'?'hot_spring_shallows':'herb_path';
+ const target=getFieldBiome(startZone,route).primary;
  const sequence=risk?[{type:'gather',id:target,n:2,label:'定向采集'},{type:'danger',id:'beef',n:2,label:'野牛领地'},{type:'event',id:'mushroom',n:2,label:'菌菇奇遇'}]:
   [{type:'gather',id:target,n:2,label:'目标采集'},{type:'gather',id:s.day===2?'chili':'mushroom',n:3,label:'林间采集'},{type:'event',id:'chicken',n:2,label:'流浪农夫'}];
  s.route=route;
- const encounterPlan=makeSpecialEncounterPlan(s,route),map=insertPlannedFieldEncounter(buildFieldMap(s,route,target),encounterPlan,1);
- s.field={route,hp:3,node:0,dailyTarget:target,target,bag:{},bagStacks:[],capacity:s.bagSlots||8,sequence,
-  segmentIndex:1,segmentStatus:'active',encounterPlan,zoneId:route.startsWith('spring')?'hot_spring_shallows':'herb_path',
-  zoneTitle:route.startsWith('spring')?'热泉浅滩':'香草小径',
+ const encounterPlan=makeSpecialEncounterPlan(s,route),map=insertPlannedFieldEncounter(
+  buildFieldMap({...s,fieldZoneId:startZone},route,target),encounterPlan,1);
+ s.field={route,hp:3,node:0,dailyTarget:null,targetMode:'ecology',target,bag:{},bagStacks:[],capacity:s.bagSlots||8,sequence,
+  segmentIndex:1,segmentStatus:'active',encounterPlan,zoneId:startZone,
+  zoneTitle:route==='risk'?'古树兽巢':route==='spring_risk'?'赤焰猎场':
+   route==='spring_safe'?'热泉浅滩':'香草小径',
   dangerCommitment:risk,selectedBranches:[],choices:[],weapon:fieldWeaponSnapshot(s),
   finished:false,...map,bento:s.bento?.day===kitchenDayKey(s)?clone(s.bento):null};
  return true;
@@ -524,10 +571,11 @@ export function chooseFieldBranch(s,choiceId){
  f.segmentIndex++;f.zoneId=branch.id;f.zoneTitle=branch.name;f.segmentStatus='active';f.choices=[];
  f.route=f.region==='spring'?(f.dangerCommitment?'spring_risk':'spring_safe'):(f.dangerCommitment?'risk':'safe');
  const segmentSeed=(f.segmentIndex*1307+branch.id.split('').reduce((n,c)=>n+c.charCodeAt(0),0)*17);
- const map=insertPlannedFieldEncounter(buildFieldMap({...s,seed:s.seed+segmentSeed,fieldZoneId:branch.id,fieldSegmentIndex:f.segmentIndex},f.route,branch.target),f.encounterPlan,f.segmentIndex);
+ const ecologicalTarget=f.targetMode==='ecology'?getFieldBiome(branch.id,f.route).primary:branch.target;
+ const map=insertPlannedFieldEncounter(buildFieldMap({...s,seed:s.seed+segmentSeed,fieldZoneId:branch.id,fieldSegmentIndex:f.segmentIndex},f.route,ecologicalTarget),f.encounterPlan,f.segmentIndex);
  for(const key of ['region','biome','bossSpawn','spawn','x','y','steps','worldW','worldH','worldVersion','scenery','visitedHazards','nodes','obstacles','hazards'])f[key]=map[key];
  if(map.nodes.some(n=>['merchant','traveler'].includes(n.kind)))f.specialNpcOpportunity=true;
- f.action=false;f.target=branch.target;f.harvestProgress=0;f.harvestNode=null;f.activeEvent=null;
+ f.action=false;f.target=ecologicalTarget;f.harvestProgress=0;f.harvestNode=null;f.activeEvent=null;
  // HP, bag, bento, skill cooldown and equipped cookware persist across all three segments.
  return true;
 }

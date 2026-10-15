@@ -42,12 +42,13 @@ test('every non-hidden recipe can be cooked from its intended ingredients with 3
   arrange([]);assert.ok(found,`${id}: no cookable fixed 3-beat layout found`);
  }
 });
-test('safe map has a playable path to guaranteed selected material, and pays out only once',()=>{
+test('gathering route has reachable real ecological source, and pays out only once',()=>{
  const s=newGame(789);s.phase='field';s.selectedTarget='onion';
  assert.equal(enterField(s,'safe'),true);
  assert.equal(s.field.worldW,12);assert.equal(s.field.worldH,16);
- assert.deepEqual(s.field.nodes[0].id,'onion');
- const before=s.inventory.onion;
+ assert.equal(s.field.targetMode,'ecology');
+ assert.equal(s.field.nodes[0].id,'garlic');
+ const actual=s.field.nodes[0].id,before=s.inventory[actual];
  const goal=s.field.nodes.find(n=>n.key==='target');
   const path=fieldTilePath(s.field,s.field.spawn,{x:goal.x+.5,y:goal.y+.5},{avoidHazards:true});
   for(let i=1;i<path.length;i++){
@@ -56,14 +57,14 @@ test('safe map has a playable path to guaranteed selected material, and pays out
    assert.equal(moveExplorer(s,dx,dy).ok,true);
   }
   assert.equal(goal.claimed,true);
- assert.equal(s.field.bag.onion,2);
- assert.equal(s.inventory.onion,before,'material has not been booked into restaurant prematurely');
+ assert.equal(s.field.bag[actual],2);
+ assert.equal(s.inventory[actual],before,'material has not been booked into restaurant prematurely');
  s.field.nodes.filter(n=>n!==goal).forEach(n=>n.claimed=true);
   assert.equal(interactExplorer(s).ok,false,'cannot claim completed node again');
  assert.equal(settleField(s),true);
- assert.equal(s.inventory.onion,before+2);
+ assert.equal(s.inventory[actual],before+2);
  assert.equal(settleField(s),false);
- assert.equal(s.inventory.onion,before+2);
+ assert.equal(s.inventory[actual],before+2);
  assert.equal(s.ledger.filter(x=>x.type==='exploration').length,1);
 });
 test('map and node variants reproduce for equal seed, day and route',()=>{

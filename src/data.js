@@ -45,7 +45,7 @@ export const MARKET_ROTATION_STAPLES=['beef','chicken','chili','garlic','mushroo
 export const SHOP_STAPLES=Object.keys(ING).filter(id=>ING[id].acquisitionPolicy==='SHOP_STAPLE');
 export const FIELD_INGREDIENTS=Object.keys(ING).filter(id=>ING[id].acquisitionPolicy!=='SHOP_STAPLE');
 export const DEFAULT_INVENTORY={beef:3,chicken:10,chili:2,garlic:9,mushroom:12,cabbage:8,onion:5,potato:5};
-export const ROUTES=[{id:'safe',name:'晨露林间',subtitle:'安全路线 · 菌菇、蔬菜、调料',emoji:'🌿'}, {id:'risk',name:'野牛草场',subtitle:'危险路线 · 肉类、辣椒与更多惊喜',emoji:'🦬'}];
+export const ROUTES=[{id:'safe',name:'采集路线',subtitle:'草甸与菜圃 · 包菜、蒜瓣、菌菇集中采集',emoji:'🌿'}, {id:'risk',name:'狩猎路线',subtitle:'古树兽巢 · 野牛与鸡怪战斗掉肉，最终可挑战菌王',emoji:'🦬'}];
 
 // v0.6.3-A: all 8-ingredient, 2/3-item combinations are researchable,
 // even without hand-curated text. Original twelve recipe IDs stay unchanged.

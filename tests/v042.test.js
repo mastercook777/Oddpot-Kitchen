@@ -15,10 +15,12 @@ test('two regions have genuinely distinct collectible, rock and hazard layouts',
  assert.ok(['steam_crab','pepper'].includes(b.field.enemies[0].kind));
  assert.ok(Math.hypot(b.field.pos.x-b.field.spawn.x,b.field.pos.y-b.field.spawn.y)<.01);
 });
-test('both region routes keep a reliably discoverable target source',()=>{
+test('both region routes expose biome-specific rather than player-picked first source',()=>{
  for(const route of ['safe','risk','spring_safe','spring_risk']){
   const s=newGame();s.selectedTarget='chili';nextPhase(s,'field');assert.ok(enterField(s,route));
-  assert.ok(s.field.nodes.some(n=>n.key==='target'&&n.id==='chili'&&n.n>=1));
+  const expected=route==='safe'?'garlic':route==='risk'?'mushroom':route==='spring_safe'?'potato':'chili';
+  assert.ok(s.field.nodes.some(n=>n.key==='target'&&n.id===expected&&n.n>=1));
+  assert.equal(s.field.dailyTarget,null);
  }
 });
 test('backpack expands from eight to twelve at real cost and persists through next days',()=>{

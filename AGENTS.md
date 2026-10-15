@@ -1,5 +1,7 @@
 # 🔒 最新项目工作约定（优先级高于本文件下方历史版本记录）
 
+**v0.13-H 新版生态探索（v0.13.0-alpha.7，[PR #68](https://github.com/mastercook777/Oddpot-Kitchen/pull/68)）**：按游戏正式代码，出发前**不再选择目标食材**；原 selectedTarget 不再写入新游戏，老存档字段只作兼容。新图首段与分支强制节点必须读取真实 `getFieldBiome(zone).primary`，不是任意所选食材，`targetMode='ecology'` 与旧在途分开。玩家选采集/狩猎和各段地域生态；采集路线增加有确定生态权重的静态蔬菜/菌菇/根茎收益，狩猎路线增加真怪敌种及死亡掉落机会，二者没有无条件高收益保证。14个原区域现可进入，每次仍3段。前后80种子/每区4组合审计、475项Node和Chrome/离线列于 [v0.13-H量化结果](docs/V0.13H_ECOLOGY_SUPPLY_RESULTS.md)。不改6–10采购、稀有Boss、HP、货币、研发或餐厅结算，第三星/传送门仍未开发。以下 alpha.6 / v0.11 记录都是历史。
+
 **当前交接入口**：[`docs/START_HERE.md`](docs/START_HERE.md)。**已实现状态权威**：[`docs/PROJECT_STATE.md`](docs/PROJECT_STATE.md)，以最新 `main` 源码和 `package.json` 核查；**未来方向**：[`docs/ROADMAP.md`](docs/ROADMAP.md)。
 
 **最新实装（2026-10-15，v0.13.0-alpha.6）**：PR #66 已合入 main。最新市场按确定性 seed 从八种普通材料每日选四种，每款初始可买量 6–10 份；原探索来源普通材料采购仍加价、稀有 Boss/奇遇材料不进入商店；schema5 一次性升级旧 2–4 份上限，保留历史已购份数/单价，不能反复补货。星砂旅人和芽角鹿客图鉴正文/Canvas 像素头像已接原客群/人物系统，只有实际入座才登记为已遇见；六客群全部绘制同源。二星双夜评鉴、第四桌、第三厨位小炭、两名厨师跨炉调度均为**已实现**，不要误用下面 v0.12-A 时期“后续未开发”的旧结论。470/470 Node + 11/11 CI（含手机 Chrome/离线）成功，不代表 iPhone 主观验收和 Pages 线上发布。权威交接：[v0.13-F 审计](docs/V0.13F_MARKET_GUEST_DEX_AUDIT.md)、[PROJECT_STATE](docs/PROJECT_STATE.md)、[ROADMAP](docs/ROADMAP.md)。下一步优先看更大供货量对探索目标、日利润、营销和二星难度的真实经济影响，传送门/第三星仍未开发。

@@ -21,7 +21,7 @@ const crowd=()=>{
  return s;
 };
 const field=()=>{
- const s=newGame(20261015);s.phase='field';s.selectedTarget='chili';
+ const s=newGame(20261015);s.phase='field';s.selectedTarget='chili'; // Legacy value must not control ecology.
  assert.equal(enterField(s,'safe'),true);
  const first=s.field.nodes.find(n=>n.key==='target');s.field.x=first.x;s.field.y=first.y;
  assert.equal(interactExplorer(s).ok,true);assert.equal(completeFieldSegment(s),true);
@@ -52,7 +52,8 @@ try{
  await page.addInitScript(([key,s])=>localStorage.setItem(key,JSON.stringify(s)),[k,f]);
  await page.goto('http://127.0.0.1:5173/index.html',{waitUntil:'networkidle'});
  const actual=await page.evaluate(key=>JSON.parse(localStorage.getItem(key)),k);
- assert.equal(actual.field.dailyTarget,'chili');assert.equal(actual.field.nodes.find(n=>n.key==='target').id,'mushroom');
+ assert.equal(actual.field.targetMode,'ecology');assert.equal(actual.field.dailyTarget,null);
+ assert.equal(actual.field.nodes.find(n=>n.key==='target').id,'cabbage');
  assert.equal(await page.locator('#forest-canvas').count(),1,'active exploration should still render its field Canvas');
  await page.close();
 
@@ -66,5 +67,5 @@ try{
  await offline.screenshot({path:out+'/queue-standalone-390.png'});
  assert.deepEqual(errors,[]);
  await offline.close();
- console.log('v0.12-F Chrome 320x568, 375x667, 390x844: real waiting guest painting, no UI exception, frozen selected ingredient, and offline alpha.2 passed.');
+ console.log('v0.12-F Chrome 320x568, 375x667, 390x844: real waiting guest painting, no UI exception, ecology-selected sources, and standalone passed.');
 }finally{if(browser)await browser.close();server.kill('SIGTERM')}

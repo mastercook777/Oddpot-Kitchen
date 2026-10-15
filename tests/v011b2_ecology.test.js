@@ -1,11 +1,23 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import {newGame,enterField,completeFieldSegment,chooseFieldBranch,addFieldBag,discardFieldStack,settleField} from '../src/engine.js';
+import {newGame,enterField,completeFieldSegment,chooseFieldBranch,addFieldBag,discardFieldStack,settleField,buildFieldMap} from '../src/engine.js';
 import {startActionField,stepActionField,useFieldSkill} from '../src/field_v04.js';
 import {ECOLOGY_ENCOUNTERS,createEcologyEnemies,ecologyEngagedEnemies,ecologyHasSight,ecologyChargeEnd,moveEcologyEnemy,stepEcologyEnemy,drawEcologyWarning} from '../src/field_ecology_v011b2.js';
 import {fieldTilePath} from '../src/field_rules_v011a.js';
+import {getFieldBiome} from '../src/field_biomes_v081.js';
 const zones=['herb_path','glow_mushroom','old_tree_edge','forest_garden','hot_spring_shallows','steam_crack','ember_edge','steam_lake'];
-function game(zone='herb_path',risk=false,seed=20261014){const s=newGame(seed);s.phase='field';s.fieldZoneId=zone;enterField(s,/^(hot_|steam_|ember_)/.test(zone)?(risk?'spring_risk':'spring_safe'):(risk?'risk':'safe'));startActionField(s);return s;}
+function game(zone='herb_path',risk=false,seed=20261014){
+ const s=newGame(seed);s.phase='field';
+ const route=/^(hot_|steam_|ember_)/.test(zone)?(risk?'spring_risk':'spring_safe'):(risk?'risk':'safe');
+ enterField(s,route);
+ // Isolated ecology encounter test: select each biome explicitly by generating
+ // that area's REAL map. Player-facing runs never gain a direct resource selector.
+ if(s.field.biome.zoneId!==zone){
+  const map=buildFieldMap({...s,fieldZoneId:zone},route,getFieldBiome(zone,route).primary);
+  Object.assign(s.field,map);
+ }
+ startActionField(s);return s;
+}
 const blocked=(f,p,r=.18)=>p.x<r||p.y<r||p.x>f.worldW-r||p.y>f.worldH-r||f.obstacles.some(o=>Math.abs(p.x-o.x-.5)<.4+r&&Math.abs(p.y-o.y-.5)<.4+r);
 const plain=()=>({worldW:12,worldH:16,pos:{x:5.5,y:7.5},obstacles:[],projectiles:[],enemies:[],elapsed:0,finished:false});
 const actor=(kind='chicken',x=5.5,y=5.5)=>({id:kind,kind,x,y,hp:kind==='boar'?4:3,maxHp:4,home:{x,y},brainVersion:'0.11-B2',groupId:0,cooldown:0});

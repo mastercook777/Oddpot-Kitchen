@@ -1,4 +1,4 @@
-import {ING} from './data.js?v=0.12.0-alpha.1';
+import {ING} from './data.js?v=0.13.0-alpha.7';
 import {fieldTilePath} from './field_rules_v011a.js';
 // v0.8.1 base biomes; v0.11-A adds safe, seed-varying actual obstacle layouts.
 // The physical layout, resource concentration and color identity live together.
@@ -51,7 +51,15 @@ const hash=(name)=>[...String(name)].reduce((n,c)=>SEED(n+c.charCodeAt(0)),21661
 export function getFieldBiome(zoneId,route='safe'){
  const style=ZONES[zoneId]||(route.startsWith('spring')?'spring':'meadow');
  const base=STYLE[style];
- return {...base,style,zoneId:zoneId||style,
+ // The two entrances to the same mini-boss must have meaningful food ecology,
+ // not just a flipped copy of the same rocks and enemy roster.
+ const specialties={
+  spore_roots:{resources:[['mushroom',5],['beef',8],['chicken',2]],
+   enemyMix:['boar','boar','sporeling']},
+  ember_side:{resources:[['potato',5],['chili',5],['beef',4]],
+   enemyMix:['steam_crab','boar','steam_crab','pepper']}
+ };
+ return {...base,...(specialties[zoneId]||{}),style,zoneId:zoneId||style,
   // Adjacent exits share broad regional ecology, but their landmarks and
   // harvest pockets never look like the same copied board.
   flipped:['forest_secret','spore_roots','spring_market','ember_side'].includes(zoneId)};
