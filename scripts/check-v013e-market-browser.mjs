@@ -28,10 +28,10 @@ async function checkFour(page,s,{legacy=false}={}){
  assert.match(await page.locator('.sheet').innerText(),/每天从 8 种普通食材随机上架 4 种/);
  assert.equal(await page.locator('.sheet').getByText('今日缺货').count(),0);
  assert.equal(await page.locator('.stock-list[aria-label="今日可采购食材"] [data-act^="buy:"]').count(),8,'both buy quantities for exactly four product rows');
- for(const id of expected)assert.equal(await rows.locator('[data-market-id="'+id+'"]').count(),1);
+ for(const id of expected)assert.equal(await page.locator('.stock-list[aria-label="今日可采购食材"] .stock-line[data-market-id="'+id+'"]').count(),1);
  const first=expected.find(x=>ensureDailyMarket(s).goods[x].stock>0);
  const price=ensureDailyMarket(s).goods[first].price,before=s.coins,qty=ensureDailyMarket(s).goods[first].stock;
- const target=rows.locator('[data-market-id="'+first+'"]');
+ const target=page.locator('.stock-list[aria-label="今日可采购食材"] .stock-line[data-market-id="'+first+'"]');
  await target.locator('[data-act="buy:'+first+'"]').click();
  const result=await page.evaluate(k=>JSON.parse(localStorage.getItem(k)),key);
  assert.equal(result.coins,before-price,'buy button debits actual money');
