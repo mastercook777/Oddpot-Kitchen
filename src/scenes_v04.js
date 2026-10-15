@@ -908,13 +908,21 @@ function drawRestaurantV075(c,s,t,w,h){
    actors.push({id:o.id,x:loc.x,y:loc.y,kind:o.segment,walk:progress>0&&progress<1,seat:progress>=.999&&!leaving,order:o});
   }
   const crew=v.crew||s.crew;
-  if(crew?.helper?.hired){
-   const station=crew.helper.station||0,pt=g.helper[station]||g.helper[0];
-   actors.push({id:'helper',x:pt.x,y:pt.y,kind:'helper',level:crew.helper.level||1,walk:false,working:!!v.stations[['WOK','POT','CENTER'][station]]});
-  }
-  if(crew?.helper2?.hired){
-   const station=crew.helper2.station??2,pt=g.helper[station]||g.helper[2];
-   actors.push({id:'helper2',x:pt.x,y:pt.y,kind:'helper2',level:crew.helper2.level||1,walk:false,working:!!v.stations[['WOK','POT','CENTER'][station]]});
+  // The worker visibly walks between stations; the kitchen rules only credit
+  // them AFTER travel time has elapsed (never a magical production teleport).
+  for(const role of ['helper','helper2']){
+   const person=crew?.[role];if(!person?.hired)continue;
+   const station=person.currentStation??person.station??(role==='helper2'?2:0);
+   const start=person.moveStart,until=person.moveUntil;
+   const moving=until>0&&Number.isFinite(start)&&t<until;
+   let pt=g.helper[station]||g.helper[0];
+   if(moving){
+    const from=g.helper[person.moveFrom]||pt,to=g.helper[person.moveTo]||pt;
+    const alpha=Math.max(0,Math.min(1,(t-start)/Math.max(.1,until-start)));
+    pt={x:from.x+(to.x-from.x)*alpha,y:from.y+(to.y-from.y)*alpha};
+   }
+   actors.push({id:role,x:pt.x,y:pt.y,kind:role,level:person.level||1,
+    walk:moving?t*2:false,working:!moving&&!!v.stations[['WOK','POT','CENTER'][station]]});
   }
   if(crew?.waiter?.hired){
    const pos=waiterDeliveryPose(s,t);
