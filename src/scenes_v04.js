@@ -17,6 +17,7 @@ import {ING,RECIPES,CUSTOMERS} from './data.js?v=0.12.0-alpha.1';
 import {heroZone,waiterDeliveryPose,HERO_PASS} from './walkable_restaurant_v07.js?v=0.9.1';
 import {DINER_FLOOR,dinerFloor,dinerGuestRoute,dinerWeather,dinerQueueGuests} from './restaurant_scene_v075.js?v=0.9.2';
 import {selectDiningSpeech,selectStaffSpeech,diningBubbleLines,speechOpacity} from './diner_ambience_v077.js?v=0.9.2';
+import {selectOutdoorQueueSpeech} from './outdoor_queue_speech_v012f.js';
 const color={ink:'#24382a',leaf:'#386b43',soil:'#806044',stone:'#a6b392',cream:'#f4dfb0',gold:'#dfb873'};
 function rect(c,x,y,w,h,fill){c.fillStyle=fill;c.fillRect(x,y,w,h)}
 function circle(c,x,y,r,fill){c.fillStyle=fill;c.beginPath();c.arc(x,y,r,0,Math.PI*2);c.fill()}
@@ -687,6 +688,37 @@ function drawGuestSpeech077(c,cue,actor,w,h){
 function drawStaffSpeech078(c,cue,actor,w,h){
  drawSpeechCard(c,cue,actor.speechPlacement,true);
 }
+// Short, quiet talk follows an actual guest who is visibly waiting OUTSIDE.
+// The doorway clips this to its own window. Never adds an interaction layer.
+function drawOutdoorQueueChatter(c,queue,t,L,T,W,H){
+ const cue=selectOutdoorQueueSpeech(queue,t);
+ if(!cue||W<118||H<58)return null;
+ const slot=queue.slice(0,4).findIndex(o=>o.id===cue.orderId);
+ if(slot<0)return null;
+ const actorX=L+W*(.20+slot*.205),actorY=T+H*.77;
+ const glyphs=Array.from(cue.text);
+ const words=glyphs.length>10?glyphs.slice(0,9).join('')+'…':glyphs.join('');
+ const font=H<85?8:9;
+ const width=Math.min(W-12,Math.max(45,Math.ceil(Array.from(words).length*font+14)));
+ const height=H<85?20:23;
+ const X=speechClamp(actorX-width*.5,L+5,L+W-width-5);
+ // The status bar occupies the top 28 px. A small gap is always preserved.
+ const Y=T+Math.min(Math.max(31,H*.32),H-height-4);
+ const urgent=cue.kind==='urgent';
+ c.save();c.globalAlpha=Math.min(.93,speechOpacity(cue));
+ c.fillStyle=urgent?'#ffdfc4':'#eff3d9';c.strokeStyle=urgent?'#ca966c':'#83a18a';
+ c.lineWidth=1;
+ c.beginPath();c.roundRect(X,Y,width,height,6);c.fill();c.stroke();
+ const headY=actorY-19,base=speechClamp(actorX,X+9,X+width-9);
+ if(headY>Y+height&&headY-(Y+height)<24){
+  c.beginPath();c.moveTo(base-3,Y+height-1);c.lineTo(base+3,Y+height-1);
+  c.lineTo(actorX,headY);c.closePath();c.fill();
+ }
+ text(c,words,X+width/2,Y+height/2,urgent?'#77402f':'#395248',font);
+ c.restore();
+ return cue.orderId;
+}
+
 // Compact cutaway outside the entry: environmental context, not a modal panel.
 // Weather is consistent for the day; standing visitors are actual pending orders.
 export function drawDinerDoorway(c,s,t,w,h){
@@ -732,6 +764,7 @@ export function drawDinerDoorway(c,s,t,w,h){
  c.font='bold 11px system-ui';c.textBaseline='middle';
  c.fillStyle='#193a32c9';c.fillRect(L+6,T+6,Math.min(W-12,queue.length?94:102),22);
  text(c,(weather==='rain'?'☔':weather==='mist'?'☁️':weather==='breeze'?'🍃':'☀️')+' 等位 '+queue.length,L+51,T+17,'#fff0cc',11);
+ drawOutdoorQueueChatter(c,queue,t,L,T,W,H);
  // Door threshold and open-frame mullions sit above the outdoor strip.
  c.strokeStyle='#d7b07b';c.lineWidth=4;c.strokeRect(L+2,T+2,W-4,H-4);
  c.fillStyle='#79563d';c.fillRect(L+W*.475,T+H*.03,W*.05,H*.13);
