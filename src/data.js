@@ -24,7 +24,7 @@ export const RECIPES = {
   woodland_pot:{name:'森林浓汤',emoji:'🥣',ids:['mushroom','potato'],method:'stew',station:'POT',time:13,price:23,tags:['菌香','温和','饱腹'],cost:7,hint:'蘑菇与土豆，慢煮出浓郁'},
   harvest_stir:{name:'丰收三拼',emoji:'🥘',ids:['cabbage','onion','potato'],method:'stir',station:'WOK',time:10,price:29,tags:['清爽','温和','饱腹'],cost:9,hint:'卷心菜、洋葱和土豆，考验三种不同耐热'}
 };
-export const CUSTOMERS={adventurer:{name:'铁甲矮人',emoji:'⛏️',likes:['辣','肉','饱腹'],budget:40,patience:24},family:{name:'菌帽一家',emoji:'🍄',likes:['温和','菌香','甜香'],budget:28,patience:32},regular:{name:'史莱姆街坊',emoji:'🟢',likes:['清爽','菌香','鲜'],budget:26,patience:27},critic:{name:'幽灵鉴味师',emoji:'👻',likes:['辣','香','爆香'],budget:50,patience:26},stargazer:{name:'星砂旅人',emoji:'✦',likes:['清爽','甜香','菌香'],budget:44,patience:29}};
+export const CUSTOMERS={gardener:{name:'芽角鹿客',emoji:'🌱',likes:['蔬食','清爽','温和'],budget:32,patience:30},adventurer:{name:'铁甲矮人',emoji:'⛏️',likes:['辣','肉','饱腹'],budget:40,patience:24},family:{name:'菌帽一家',emoji:'🍄',likes:['温和','菌香','甜香'],budget:28,patience:32},regular:{name:'史莱姆街坊',emoji:'🟢',likes:['清爽','菌香','鲜'],budget:26,patience:27},critic:{name:'幽灵鉴味师',emoji:'👻',likes:['辣','香','爆香'],budget:50,patience:26},stargazer:{name:'星砂旅人',emoji:'✦',likes:['清爽','甜香','菌香'],budget:44,patience:29}};
 export const FORECAST=[
   {name:'菌帽家族的晚餐',hint:'菌帽一家偏爱暖汤与菌香，温和料理更受欢迎',segments:['family','regular','family','adventurer','regular','family','critic']},
   {name:'矮人探险团集会',hint:'矿井收工的矮人偏爱辛辣肉食，饱腹料理热卖',segments:['adventurer','family','adventurer','adventurer','regular','adventurer','critic']},
@@ -39,6 +39,9 @@ ING.ember_pepper={name:'熔心椒晶',emoji:'🌋',tags:['辣','香','爆香'],l
   acquisitionPolicy:'BOSS_ONLY',bossId:'ember_king'};
 ING.tide_sour_pulp={name:'逆潮酸浆',emoji:'🫐',tags:['酸','清爽','开胃'],lo:2,hi:6,cost:18,acquisitionPolicy:'MERCHANT_ONLY'};
 ING.starlit_nectar={name:'星露花蜜',emoji:'🍯',tags:['花香','甜香','温和'],lo:2,hi:5,cost:12,acquisitionPolicy:'ENCOUNTER_ONLY'};
+// Daily market rotates among ALL eight ordinary ingredients. FIELD_ONLY items remain
+// important in exploration and receive tighter shop quantities and higher prices.
+export const MARKET_ROTATION_STAPLES=['beef','chicken','chili','garlic','mushroom','cabbage','onion','potato'];
 export const SHOP_STAPLES=Object.keys(ING).filter(id=>ING[id].acquisitionPolicy==='SHOP_STAPLE');
 export const FIELD_INGREDIENTS=Object.keys(ING).filter(id=>ING[id].acquisitionPolicy!=='SHOP_STAPLE');
 export const DEFAULT_INVENTORY={beef:3,chicken:10,chili:2,garlic:9,mushroom:12,cabbage:8,onion:5,potato:5};
@@ -98,4 +101,11 @@ for(const station of ["WOK","POT"]){
       registerRecipe(id,RECIPES[id]);
     }
   }
+}
+
+// Vegetable-first recipes receive an independent affinity; mushroom+chicken is never vegetarian.
+for(const recipe of Object.values(RECIPES)){
+ const ids=recipe.ids||[];
+ if(!ids.some(id=>id==='beef'||id==='chicken')&&ids.some(id=>['cabbage','potato','onion'].includes(id)))
+  if(!recipe.tags.includes('蔬食'))recipe.tags.push('蔬食');
 }
