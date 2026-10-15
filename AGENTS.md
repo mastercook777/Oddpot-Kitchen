@@ -1,6 +1,6 @@
 # 🔒 最新项目工作约定（优先级高于本文件下方历史版本记录）
 
-**v0.13-H 新版生态探索（v0.13.0-alpha.7，[PR #68](https://github.com/mastercook777/Oddpot-Kitchen/pull/68)）**：按游戏正式代码，出发前**不再选择目标食材**；原 selectedTarget 不再写入新游戏，老存档字段只作兼容。新图首段与分支强制节点必须读取真实 `getFieldBiome(zone).primary`，不是任意所选食材，`targetMode='ecology'` 与旧在途分开。玩家选采集/狩猎和各段地域生态；采集路线增加有确定生态权重的静态蔬菜/菌菇/根茎收益，狩猎路线增加真怪敌种及死亡掉落机会，二者没有无条件高收益保证。14个原区域现可进入，每次仍3段。前后80种子/每区4组合审计、475项Node和Chrome/离线列于 [v0.13-H量化结果](docs/V0.13H_ECOLOGY_SUPPLY_RESULTS.md)。不改6–10采购、稀有Boss、HP、货币、研发或餐厅结算，第三星/传送门仍未开发。以下 alpha.6 / v0.11 记录都是历史。
+**v0.13-H 新版生态探索（v0.13.0-alpha.7，[PR #68](https://github.com/mastercook777/Oddpot-Kitchen/pull/68)已合并 main；475/475 Node、12/12 GitHub Actions 成功）**：按游戏正式代码，出发前**不再选择目标食材**；原 selectedTarget 不再写入新游戏，老存档字段只作兼容。新图首段与分支强制节点必须读取真实 `getFieldBiome(zone).primary`，不是任意所选食材，`targetMode='ecology'` 与旧在途分开。玩家选采集/狩猎和各段地域生态；采集路线增加有确定生态权重的静态蔬菜/菌菇/根茎收益，狩猎路线增加真怪敌种及死亡掉落机会，二者没有无条件高收益保证。14个原区域现可进入，每次仍3段。前后80种子/每区4组合审计、475项Node和Chrome/离线列于 [v0.13-H量化结果](docs/V0.13H_ECOLOGY_SUPPLY_RESULTS.md)。不改6–10采购、稀有Boss、HP、货币、研发或餐厅结算，第三星/传送门仍未开发。以下 alpha.6 / v0.11 记录都是历史。
 
 **当前交接入口**：[`docs/START_HERE.md`](docs/START_HERE.md)。**已实现状态权威**：[`docs/PROJECT_STATE.md`](docs/PROJECT_STATE.md)，以最新 `main` 源码和 `package.json` 核查；**未来方向**：[`docs/ROADMAP.md`](docs/ROADMAP.md)。
 
