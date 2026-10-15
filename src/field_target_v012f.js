@@ -1,6 +1,7 @@
 // v0.12-F: distinguish the run's user-selected daily ingredient from a
 // branch-local key:'target' which only unlocks progression to the next zone.
 export function fieldDailyTarget(f){
+ if(f?.targetMode==='ecology')return null;
  if(typeof f?.dailyTarget==='string'&&f.dailyTarget)return f.dailyTarget;
  // Legacy schema-4 expeditions preserve the original first-step target in
  // sequence even after branch maps replace their local target node.
