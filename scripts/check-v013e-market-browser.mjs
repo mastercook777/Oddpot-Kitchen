@@ -29,7 +29,11 @@ async function checkFour(page,s,{legacy=false}={}){
  assert.match(await page.locator('.sheet').innerText(),/每天从 8 种普通食材随机上架 4 种/);
  assert.equal(await page.locator('.sheet').getByText('今日缺货').count(),0);
  assert.equal(await page.locator('.stock-list[aria-label="今日可采购食材"] [data-act^="buy:"]').count(),8,'both buy quantities for exactly four product rows');
- for(const id of expected)assert.equal(await page.locator('.stock-list[aria-label="今日可采购食材"] .stock-line[data-market-id="'+id+'"]').count(),1);
+ for(const id of expected){
+  assert.equal(await page.locator('.stock-list[aria-label="今日可采购食材"] .stock-line[data-market-id="'+id+'"]').count(),1);
+  const offered=ensureDailyMarket(s).goods[id];
+  assert.ok(offered.initialStock>=6&&offered.initialStock<=10, 'new initial offer must be 6–10: '+id);
+ }
  const first=expected.find(x=>ensureDailyMarket(s).goods[x].stock>0);
  const price=ensureDailyMarket(s).goods[first].price,before=s.coins,qty=ensureDailyMarket(s).goods[first].stock;
  const target=page.locator('.stock-list[aria-label="今日可采购食材"] .stock-line[data-market-id="'+first+'"]');
@@ -39,7 +43,7 @@ async function checkFour(page,s,{legacy=false}={}){
  assert.equal(result.market.goods[first].stock,qty-1,'buy button decrements offer');
  assert.equal(result.inventory[first],(s.inventory[first]||0)+1,'buy button delivers actual stock');
  assert.equal(Object.keys(result.market.goods).length,4);
- if(legacy)assert.equal(result.market.schema,4,'legacy state persisted upgraded schema');
+ assert.equal(result.market.schema,5,'actual browser persists the current market schema');
  await page.screenshot({path:dir+'/'+(legacy?'legacy-':'new-')+page.viewportSize().width+'.png',fullPage:true});
  await page.locator('[data-act="close-sheet"]').last().click();
  assert.equal(await page.locator('.stock-list[aria-label="今日可采购食材"]').count(),0);
