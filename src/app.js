@@ -153,7 +153,7 @@ function starInvite(){
   const p=ensureSecondAppraisal(game),active=secondStarRequested(game);
   const stage=p.stage;
   const label=stage===1?'繁忙之夜':'拿手之夜';
-  const details=stage===1?'真实上菜、等位流失与经营利润 · 目标70分':'真实满意、工艺、菜品销售种类及协作 · 目标72分';
+  const details=stage===1?'真实上菜、等位流失与经营利润 · 目标70分':'真实满意、工艺、菜品销售种类及协作 · 目标84分';
   const ready=secondStarAvailable(game);
   const locked=(game.dining?.tableCount||2)<4?'需先扩到第四桌':totalBusinessDay(game)<7?'营业满7天后开放':p.lastAttemptDay===game.cycle+'-'+game.day?'今天已经评鉴，明天可再报名':'可在开门前报名';
   return `<div class="v12-star-invite"><strong>✦ 万味评鉴会 · 第二星第${stage}/2夜 · ${label}</strong><small>${details} · ${ready?'已开放':locked}</small>${ready?`<button type="button" data-act="second-star-request" aria-pressed="${active}">${active?'已预约今晚 · 取消评鉴':'申请今晚评鉴'}</button>`:''}</div>`;
