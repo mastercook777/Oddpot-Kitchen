@@ -2413,7 +2413,7 @@ const RECIPES = {
   woodland_pot:{name:'森林浓汤',emoji:'🥣',ids:['mushroom','potato'],method:'stew',station:'POT',time:13,price:23,tags:['菌香','温和','饱腹'],cost:7,hint:'蘑菇与土豆，慢煮出浓郁'},
   harvest_stir:{name:'丰收三拼',emoji:'🥘',ids:['cabbage','onion','potato'],method:'stir',station:'WOK',time:10,price:29,tags:['清爽','温和','饱腹'],cost:9,hint:'卷心菜、洋葱和土豆，考验三种不同耐热'}
 };
-const CUSTOMERS={adventurer:{name:'铁甲矮人',emoji:'⛏️',likes:['辣','肉','饱腹'],budget:40,patience:24},family:{name:'菌帽一家',emoji:'🍄',likes:['温和','菌香','甜香'],budget:28,patience:32},regular:{name:'史莱姆街坊',emoji:'🟢',likes:['清爽','菌香','鲜'],budget:26,patience:27},critic:{name:'幽灵鉴味师',emoji:'👻',likes:['辣','香','爆香'],budget:50,patience:26},stargazer:{name:'星砂旅人',emoji:'✦',likes:['清爽','甜香','菌香'],budget:44,patience:29}};
+const CUSTOMERS={gardener:{name:'芽角鹿客',emoji:'🌱',likes:['蔬食','清爽','温和'],budget:32,patience:30},adventurer:{name:'铁甲矮人',emoji:'⛏️',likes:['辣','肉','饱腹'],budget:40,patience:24},family:{name:'菌帽一家',emoji:'🍄',likes:['温和','菌香','甜香'],budget:28,patience:32},regular:{name:'史莱姆街坊',emoji:'🟢',likes:['清爽','菌香','鲜'],budget:26,patience:27},critic:{name:'幽灵鉴味师',emoji:'👻',likes:['辣','香','爆香'],budget:50,patience:26},stargazer:{name:'星砂旅人',emoji:'✦',likes:['清爽','甜香','菌香'],budget:44,patience:29}};
 const FORECAST=[
   {name:'菌帽家族的晚餐',hint:'菌帽一家偏爱暖汤与菌香，温和料理更受欢迎',segments:['family','regular','family','adventurer','regular','family','critic']},
   {name:'矮人探险团集会',hint:'矿井收工的矮人偏爱辛辣肉食，饱腹料理热卖',segments:['adventurer','family','adventurer','adventurer','regular','adventurer','critic']},
@@ -2428,6 +2428,9 @@ ING.ember_pepper={name:'熔心椒晶',emoji:'🌋',tags:['辣','香','爆香'],l
   acquisitionPolicy:'BOSS_ONLY',bossId:'ember_king'};
 ING.tide_sour_pulp={name:'逆潮酸浆',emoji:'🫐',tags:['酸','清爽','开胃'],lo:2,hi:6,cost:18,acquisitionPolicy:'MERCHANT_ONLY'};
 ING.starlit_nectar={name:'星露花蜜',emoji:'🍯',tags:['花香','甜香','温和'],lo:2,hi:5,cost:12,acquisitionPolicy:'ENCOUNTER_ONLY'};
+// Daily market rotates among ALL eight ordinary ingredients. FIELD_ONLY items remain
+// important in exploration and receive tighter shop quantities and higher prices.
+const MARKET_ROTATION_STAPLES=['beef','chicken','chili','garlic','mushroom','cabbage','onion','potato'];
 const SHOP_STAPLES=Object.keys(ING).filter(id=>ING[id].acquisitionPolicy==='SHOP_STAPLE');
 const FIELD_INGREDIENTS=Object.keys(ING).filter(id=>ING[id].acquisitionPolicy!=='SHOP_STAPLE');
 const DEFAULT_INVENTORY={beef:3,chicken:10,chili:2,garlic:9,mushroom:12,cabbage:8,onion:5,potato:5};
@@ -2487,6 +2490,13 @@ for(const station of ["WOK","POT"]){
       registerRecipe(id,RECIPES[id]);
     }
   }
+}
+
+// Vegetable-first recipes receive an independent affinity; mushroom+chicken is never vegetarian.
+for(const recipe of Object.values(RECIPES)){
+ const ids=recipe.ids||[];
+ if(!ids.some(id=>id==='beef'||id==='chicken')&&ids.some(id=>['cabbage','potato','onion'].includes(id)))
+  if(!recipe.tags.includes('蔬食'))recipe.tags.push('蔬食');
 }
 // v0.6.3-A: real-time ingredient-event adjudicator.
 // No timed turns, no universal style buffs and no direct inventory writes.
@@ -3322,7 +3332,7 @@ const restaurantDayKey=s=>s.cycle+'-'+s.day;
 function ensureChapterProgress(s){
  const p=s.chapterProgress??={chapterId:FIRST_STAR_CHAPTER,stars:0,requestDay:null,lastAttemptDay:null,lastScore:null};
  p.chapterId=FIRST_STAR_CHAPTER;
- p.stars=Math.max(0,Math.min(1,Number(p.stars)||0));
+ p.stars=Math.max(0,Math.min(2,Number(p.stars)||0));
  p.requestDay??=null;p.lastAttemptDay??=null;p.lastScore??=null;
  s.chapterProgress=p;
  return p;
@@ -3350,13 +3360,60 @@ function scoreFirstStar(orders=[]){
  const weakest=Object.entries({coverage,satisfaction,fit,craft}).sort((a,b)=>a[1]-b[1])[0]?.[0]||'coverage';
  return {coverage,satisfaction,fit,craft,score,target:FIRST_STAR_TARGET,served:served.length,total:all.length,passed,weakest};
 }
+// Second-star chapter milestone uses the original single service ledger and real orders.
+// No free guests, rewards, or offline-only shortcut is created in this module.
+const SECOND_STAR_TARGETS={1:70,2:72};
+const clamp=(n,a=0,b=100)=>Math.max(a,Math.min(b,Number(n)||0));
+const dayKey=s=>s.cycle+'-'+s.day;
+const absoluteDay=s=>(s.cycle-1)*3+s.day;
+function ensureSecondAppraisal(s){
+ const p=s.chapterProgress??={stars:0};
+ p.secondAppraisal??={stage:1,requestDay:null,lastAttemptDay:null,stage1Result:null,lastScore:null};
+ const q=p.secondAppraisal;
+ q.stage=q.stage===2?2:1;q.requestDay??=null;q.lastAttemptDay??=null;
+ q.stage1Result??=null;q.lastScore??=null;
+ return q;
+}
+function secondStarAvailable(s){
+ const p=s.chapterProgress||{},q=ensureSecondAppraisal(s);
+ return p.stars===1&&(s.dining?.tableCount||2)>=4&&absoluteDay(s)>=7&&
+  ['forecast','prep'].includes(s.phase)&&!s.service&&q.lastAttemptDay!==dayKey(s);
+}
+function secondStarRequested(s){return secondStarAvailable(s)&&ensureSecondAppraisal(s).requestDay===dayKey(s);}
+function requestSecondStar(s,requested=true){
+ if(!secondStarAvailable(s))return false;
+ ensureSecondAppraisal(s).requestDay=requested?dayKey(s):null;return true;
+}
+function scoreSecondStar(v,stage,profit,recipes={}){
+ const orders=v?.orders||[],served=orders.filter(o=>o.status==='served'),total=orders.length;
+ const coverage=total?Math.round(served.length*100/total):0;
+ const avg=k=>served.length?Math.round(served.reduce((n,o)=>n+clamp(o[k]),0)/served.length):0;
+ const queueEvents=(v?.events||[]).filter(e=>e.type==='queue_left'),seated=(v?.events||[]).filter(e=>e.type==='queue_seated');
+ const waitMean=seated.length?seated.reduce((n,e)=>n+(e.seconds||0),0)/seated.length:0;
+ const queueScore=clamp(Math.round(100-queueEvents.length*18-waitMean*1.1));
+ const earnings=served.length?clamp(Math.round(45+profit/served.length*5)):0;
+ const diversity=new Set(served.map(o=>o.recipeId).filter(Boolean)).size;
+ const actualWork=new Set((v?.events||[]).filter(e=>e.type==='helper_finished'||e.type==='waiter_pickup').map(e=>e.order)).size;
+ const teamwork=clamp(65+Math.min(35,actualWork*7));
+ const satisfaction=avg('sat'),craft=avg('quality');
+ const diversityScore=diversity>=3?100:diversity===2?95:diversity===1?35:0;
+ const score=stage===1?Math.round(coverage*.45+queueScore*.25+earnings*.30):
+   Math.round(satisfaction*.40+craft*.25+diversityScore*.20+teamwork*.15);
+ const target=SECOND_STAR_TARGETS[stage]||72;
+ const passed=served.length>=6&&coverage>=40&&score>=target&&(stage===1||diversity>=2);
+ const metrics=stage===1?{coverage,queueScore,earnings}:{satisfaction,craft,diversity:diversityScore,teamwork};
+ const weakest=Object.entries(metrics).sort((a,b)=>a[1]-b[1])[0]?.[0]||'coverage';
+ return {stage,score,target,passed,served:served.length,total,coverage,profit,queueAbandoned:queueEvents.length,
+  satisfaction,craft,diversity,teamwork,queueScore,earnings,weakest};
+}
 // v0.12-C · Single authoritative restaurant business rules.
 // No duplicate guest simulation: promotion/marketing/payroll all operate on the existing engine state.
 const CAMPAIGNS={
  none:{id:'none',name:'自然营业',cost:0,guests:[],desc:'安全营业 · 不增加客流'},
  flyer:{id:'flyer',name:'街头传单',cost:18,guests:['family','regular'],desc:'新增2位家庭/街坊食客 · 菌香和清爽'},
  guild:{id:'guild',name:'冒险公会告示',cost:35,guests:['adventurer','adventurer','adventurer'],desc:'高峰新增3位冒险者 · 辛辣与肉类'},
- tasting:{id:'tasting',name:'品鉴邀请',cost:45,guests:['critic'],stars:1,desc:'首星后邀请1位鉴味师 · 香与爆香'}
+ tasting:{id:'tasting',name:'品鉴邀请',cost:45,guests:['critic'],stars:1,desc:'首星后邀请1位鉴味师 · 香与爆香'},
+ garden:{id:'garden',name:'田园品鉴',cost:24,guests:['gardener','gardener'],stars:2,desc:'二星后定向邀请2位芽角鹿客 · 蔬食与清爽'}
 };
 const CREW_GROWTH={
  helper:{wages:[10,14,19],promotionCosts:[0,28,64]},
