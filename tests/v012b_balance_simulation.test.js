@@ -2,7 +2,7 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import {newGame,serviceDayPlan} from '../src/engine.js';
 import {simulateNight,aggregateNightCases,simulateSupplyRun,
-  aggregateSupplyRuns,FIELD_SUPPLY_ASSUMPTION} from '../scripts/simulate-restaurant-balance.mjs';
+  aggregateSupplyRuns,FIELD_SUPPLY_ASSUMPTION,auditRecipeMargins} from '../scripts/simulate-restaurant-balance.mjs';
 
 test('v012b: seeded real-engine service benchmark is fully deterministic',()=>{
  const opt={tables:4,helper:true,waiter:true,hero:'POT',quality:82};
@@ -62,4 +62,13 @@ test('v012b: 21-day market cash and an explicitly hypothetical field yield are t
  const b=aggregateSupplyRuns(3,7,{});
  assert.equal(b.fieldPerDay&&Object.keys(b.fieldPerDay).length,0);
  assert.equal(b.runs,3);
+});
+
+test('v012b: recipe unit value survey derives material valuation from actual recipes',()=>{
+ const r=auditRecipeMargins();
+ assert.ok(r.recipeCount>=100);
+ assert.ok(r.maxMargin>=r.medianMargin&&r.medianMargin>=r.minMargin);
+ assert.ok(r.bestNormalMarginPerSecond.unitMarginPerStationSecond>
+  r.worstNormalMarginPerSecond.unitMarginPerStationSecond);
+ assert.ok(r.rare.some(x=>x.id==='nectar_cabbage_wok'));
 });
