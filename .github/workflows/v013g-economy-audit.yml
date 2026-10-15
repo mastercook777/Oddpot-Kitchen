@@ -20,6 +20,7 @@ jobs:
           node-version: 22
       - name: Paired 21-day real market and restaurant simulation
         run: |
+          set -o pipefail
           mkdir -p docs/audits
           node scripts/simulate-economy-v013g.mjs --runs 32 --days 21 --star-runs 80 | tee docs/audits/v013g-economy-simulation-output.txt
       - uses: actions/upload-artifact@v4
