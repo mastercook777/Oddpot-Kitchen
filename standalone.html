@@ -1,4 +1,4 @@
-<!doctype html><html lang="zh-CN"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1.0,maximum-scale=1.0,viewport-fit=cover,user-scalable=no"><meta name="apple-mobile-web-app-capable" content="yes"><meta name="theme-color" content="#1b3c2b"><title>怪味食堂 · v0.12.0-alpha.2 离线版</title><style>.ingredient-icon{display:inline-block;width:var(--ingredient-size,24px);height:var(--ingredient-size,24px);max-width:none;object-fit:contain;image-rendering:pixelated;vertical-align:-.24em;flex:none;pointer-events:none;user-select:none}
+<!doctype html><html lang="zh-CN"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1.0,maximum-scale=1.0,viewport-fit=cover,user-scalable=no"><meta name="apple-mobile-web-app-capable" content="yes"><meta name="theme-color" content="#1b3c2b"><title>怪味食堂 · v0.12.0-alpha.3 离线版</title><style>.ingredient-icon{display:inline-block;width:var(--ingredient-size,24px);height:var(--ingredient-size,24px);max-width:none;object-fit:contain;image-rendering:pixelated;vertical-align:-.24em;flex:none;pointer-events:none;user-select:none}
 .stock-line>span .ingredient-icon{margin-right:3px}.target-chip .ingredient-icon{vertical-align:middle}.book-icon .ingredient-icon{display:block}
 .v063-food-icon .ingredient-icon{width:1em;height:1em;vertical-align:top;filter:none}.v063-receipt-line .ingredient-icon{vertical-align:middle}
 .v063-food-picker button>span,.v063-drop>span{line-height:1}.v063-food-picker .ingredient-icon,.v063-drop .ingredient-icon{vertical-align:top}
@@ -1202,6 +1202,17 @@
 .v12c-finance small{font-size:11px;color:#d5e2c6}
 @media(max-width:350px){.v12c-marketing{padding:6px;gap:4px}.v12c-marketing-title span{font-size:9px}.v12c-campaigns button{min-height:41px;padding:4px 5px}.v12c-campaigns button b{font-size:10px}.v12c-marketing-note{font-size:9px}}
 @media(max-height:650px){.v12c-marketing{padding:5px 7px}.v12c-campaigns button{min-height:38px}.v12c-marketing-note{font-size:9px}}
+
+/* v0.12-D: three-stage staff appearance. Portrait reuses original Canvas actor pixels. */
+.v12d-staff-identity{display:flex;align-items:center;gap:10px;padding:6px 7px;background:#1b4135;border:1px solid #779577;border-radius:9px;color:#fff0cb;min-height:76px}
+.v12d-staff-portrait{display:block;width:54px;height:65px;flex:0 0 54px;object-fit:contain;image-rendering:pixelated;background:radial-gradient(circle at 50% 45%,#59735c,#345546 82%);border:2px solid #a8aa7f;border-radius:8px}
+.v12d-staff-profile{min-width:0;display:flex;flex:1;flex-direction:column;gap:4px}
+.v12d-staff-profile strong{font-size:13px;line-height:1.25;color:#ffe1a0}
+.v12d-staff-profile small{font-size:10.5px;line-height:1.4;color:#dce6ce;overflow-wrap:anywhere}
+.v12d-tier{align-self:flex-start;flex:0 0 auto;padding:3px 6px;border:1px solid #dec17e;border-radius:7px;background:#78583a;color:#f9dda7;font-size:11px;font-weight:850}
+.staff-person .v12d-staff-identity + .staff-person-head{padding-top:2px}
+@media(max-width:350px){.v12d-staff-identity{padding:5px;gap:7px}.v12d-staff-portrait{width:46px;height:57px;flex-basis:46px}.v12d-staff-profile strong{font-size:12px}.v12d-staff-profile small{font-size:10px}.v12d-tier{font-size:10px;padding:2px 4px}}
+@media(max-height:650px){.v12d-staff-identity{min-height:63px;padding:4px 6px}.v12d-staff-portrait{width:46px;height:56px;flex-basis:46px}.staff-roster{gap:8px}}
 </style></head><body><div id="app"></div><script>// v0.6.3-A: curated recipe × technique metadata. Curated benefits now resolved per recipe/technique in v0.6.3-B.
 // The engine applies these per-recipe overrides at order snapshot, never as universal style buffs.
 const RECIPE_PROFILES = {
@@ -5280,7 +5291,68 @@ function specialEncounterHtml(s,n){
 // so these are maintainable gameplay sprites rather than platform emoji or external art.
 const P={outline:'#2b3334',skin:'#e4b18a',skinLight:'#f7d0a1',white:'#f5ead1',shadow:'#534b48'};
 function r(c,x,y,w,h,col){c.fillStyle=col;c.fillRect(x|0,y|0,w|0,h|0)}
-function person(c,kind,walk,attack){
+// v0.12-D staff apparel is layered onto the ORIGINAL working pixel actor.
+// The descriptor and the painted silhouette share one authoritative level contract.
+const CREW_APPEARANCES={
+ helper:[
+  {label:'见习帮厨',uniform:'经典橙色厨衣',accent:'#d27a46'},
+  {label:'熟练厨师',uniform:'铜红厨衣 · 奶油围裙 · 厨帽束带',accent:'#d49b68'},
+  {label:'火候大师',uniform:'金纹高帽 · 火焰徽章 · 大师围裙',accent:'#f2bf62'}],
+ waiter:[
+  {label:'见习跑堂',uniform:'经典草绿制服',accent:'#708d62'},
+  {label:'资深侍者',uniform:'湖绿马甲 · 金色领结 · 帽徽',accent:'#7fc0a2'},
+  {label:'明星管家',uniform:'松绿礼服 · 金色肩章 · 星纹帽徽',accent:'#e8cf7b'}]
+};
+function crewAppearance(kind,rawLevel=1){
+ const outfits=CREW_APPEARANCES[kind];
+ if(!outfits)return null;
+ const level=Number.isInteger(rawLevel)&&rawLevel>=1&&rawLevel<=3?rawLevel:1;
+ return {role:kind,level,...outfits[level-1]};
+}
+function paintCrewRank(c,kind,level,arm){
+ if(kind!=='helper'&&kind!=='waiter'||level<=1)return;
+ if(kind==='helper'){
+  // Same 18x24 actor. Rank 2: copper jacket, chef cap ribbon, cream apron.
+  r(c,4,10,11,3,'#bd6e45');
+  r(c,5,12,8,8,'#f1e3c2');
+  r(c,7,12,4,2,'#e2b46d');r(c,8,14,2,5,'#a95f3c');
+  r(c,4,15,2,3,'#d5a06a');r(c,13,15+arm,2,3,'#d5a06a');
+  r(c,4,0,11,2,'#b36b48');
+  r(c,6,-3,7,2,'#fff3dc');
+  if(level>=3){
+   // Rank 3: visibly taller layered master hat + copper flame crest.
+   r(c,5,-7,9,6,P.outline);r(c,6,-7,7,5,'#fff2d8');
+   r(c,7,-9,5,3,P.outline);r(c,8,-9,3,3,'#f2b85b');
+   r(c,3,0,13,2,'#edc26a');
+   r(c,4,10,11,3,'#773d33');r(c,5,12,8,8,'#f9e7b8');
+   r(c,8,13,2,7,'#bf693d');
+   r(c,3,11,3,3,'#edb763');r(c,14,11+arm,3,3,'#edb763');
+   // Tiny independent flame insignia remains visible at full diner size.
+   r(c,11,12,2,4,'#dd7c34');r(c,11,11,1,2,'#ffd473');
+   r(c,5,17,2,2,'#b77245');r(c,12,17,2,2,'#b77245');
+  }
+ }else{
+  // Rank 2: distinct lake-green waistcoat, pearl lapels and gold tie.
+  r(c,4,10,11,10,'#438a79');
+  r(c,6,11,3,5,'#e5e9c9');r(c,11,11,2,5,'#e5e9c9');
+  r(c,8,13,3,3,'#f1bc65');
+  r(c,6,18,8,2,'#2c6655');
+  r(c,3,0,13,2,'#518b76');r(c,7,-3,6,2,'#e4bd6b');
+  if(level>=3){
+   // Rank 3: deep emerald formal coat, luminous trim & high heraldic cap.
+   r(c,3,9,13,11,P.outline);r(c,4,10,11,10,'#254c47');
+   r(c,5,10,3,9,'#2f7166');r(c,11,10,3,9,'#2f7166');
+   r(c,7,11,4,7,'#f7e5c0');
+   r(c,8,12,2,4,'#d5a957');
+   r(c,3,10,4,2,'#dfbc6c');r(c,13,10+arm,4,2,'#dfbc6c');
+   r(c,6,18,8,2,'#d9be76');
+   r(c,4,-5,11,6,P.outline);r(c,5,-5,9,5,'#2a5750');
+   r(c,2,0,15,2,'#e0c271');
+   r(c,8,-5,3,3,'#f4d275');r(c,9,-7,1,4,'#f8e29b');
+  }
+ }
+}
+function person(c,kind,walk,attack,level=1){
  const p={chef:['#477a91','#e7d4a7','#7e4f37'],helper:['#d27a46','#f2d69a','#654730'],waiter:['#708d62','#dfc18e','#466251'],adventurer:['#4d8a66','#c59d55','#5d4630'],family:['#d67872','#f0cf79','#8a5747'],regular:['#729aba','#9bc1ce','#6c5440'],critic:['#795777','#bb9abd','#362e48'],stargazer:['#41576e','#c3b67e','#7f5c91']}[kind]||['#729aba','#9bc1ce','#6c5440'];
  const step=walk?Math.round(Math.sin(walk*13)*2):0,arm=attack? -7:Math.round(Math.sin(walk*13+2)*1);
  // Shoes, alternating leg pixels, outlined torso/arms, expressive large face.
@@ -5318,6 +5390,8 @@ function person(c,kind,walk,attack){
   // Slime villager: translucent turquoise head and bobbing droplets.
   r(c,3,0,13,4,'#52ae9d');r(c,4,3,5,2,'#70debc');r(c,1,1,2,2,'#8be9d3');r(c,15,1,2,2,'#8be9d3');
  }
+ // Outfits decorate an existing staff pixel actor rather than replace identity or hitbox.
+ paintCrewRank(c,kind,level,arm);
  if(attack){
   // A readable, off-center utensil silhouette synchronized to the attack state.
   r(c,17,-1,2,12,'#b7c4b8');r(c,14,-4,8,4,P.outline);r(c,15,-4,6,3,'#e2ddc3');
@@ -5327,7 +5401,7 @@ function pixelActor(c,kind,x,y,scale=2.4,options={}){
  c.save();c.translate(Math.round(x),Math.round(y));const face=options.face??1;
  c.scale((face<0?-1:1)*scale,scale);c.translate(-9,-12);
  if(options.hurt&&Math.floor(options.hurt*20)%2===0)c.globalAlpha=.44;
- person(c,kind,options.walk||0,options.attack||false);
+ person(c,kind,options.walk||0,options.attack||false,crewAppearance(kind,options.level)?.level||1);
  c.restore();
 }
 function pixelEnemy(c,kind,x,y,scale=2.4,options={}){
@@ -5373,6 +5447,28 @@ function pixelEnemy(c,kind,x,y,scale=2.4,options={}){
 function pixelImpact(c,x,y,size=13,accent='#fff0a1'){
  c.save();c.translate(x,y);r(c,-2,-size-3,4,size*2+6,accent);r(c,-size-3,-2,size*2+6,4,accent);
  c.rotate(Math.PI/4);r(c,-1,-size+2,2,size*2-4,'#fff9d8');r(c,-size+2,-1,size*2-4,2,'#fff9d8');c.restore();
+}
+// v0.12-D: one painter for the real service actor AND its magnified staff-sheet portrait.
+function drawCrewPortrait(canvas,role,level=1){
+ if(!canvas||typeof canvas.getContext!=='function')return false;
+ const look=crewAppearance(role,level);
+ if(!look)return false;
+ const c=canvas.getContext('2d');if(!c)return false;
+ c.clearRect(0,0,canvas.width,canvas.height);
+ c.imageSmoothingEnabled=false;
+ const scale=Math.min(canvas.width/28,canvas.height/36);
+ pixelActor(c,role,Math.round(canvas.width/2),Math.round(canvas.height*.59),scale,
+  {walk:0,attack:false,level:look.level,face:1});
+ return true;
+}
+function drawCrewPortraits(root){
+ if(!root||typeof root.querySelectorAll!=='function')return 0;
+ let count=0;
+ for(const canvas of root.querySelectorAll('canvas[data-crew-portrait]')){
+  const look=crewAppearance(canvas.dataset.crewPortrait,Number(canvas.dataset.level));
+  if(look&&drawCrewPortrait(canvas,look.role,look.level))count++;
+ }
+ return count;
 }
 // v0.10.4 - Guest encyclopedia portraits use the EXACT actor renderer
 // already used by live restaurant guests; never duplicate pixel art.
@@ -7524,13 +7620,13 @@ function paintDinerStaff(c,s,v,t,w,h){
  for(let i=0;i<2;i++){
   const x=w*(i===0?.21:.79),busy=!!jobs[i===0?'WOK':'POT'];
   if(staff.helper?.hired&&staff.helper.station===i){
-   pixelActor(c,'helper',x+(i===0?35:-35),h*.345,DINER_ACTOR_SCALE,{walk:busy?t:0,attack:busy});
+   pixelActor(c,'helper',x+(i===0?35:-35),h*.345,DINER_ACTOR_SCALE,{walk:busy?t:0,attack:busy,level:staff.helper.level||1});
   }
  }
  if(v?.walkable&&v.hero){
   if(staff.waiter?.hired){
    const pos=waiterDeliveryPose(s,t);
-   pixelActor(c,'waiter',pos.x*w,pos.y*h,DINER_ACTOR_SCALE,{walk:pos.moving?t:0});
+   pixelActor(c,'waiter',pos.x*w,pos.y*h,DINER_ACTOR_SCALE,{walk:pos.moving?t:0,level:staff.waiter.level||1});
    if(pos.plate)dish(c,pos.x*w+15,pos.y*h-13,'WOK');
   }
   // One authoritative movable chef. EXACT SAME scale as helper, waiter and guests.
@@ -7549,7 +7645,7 @@ function paintDinerStaff(c,s,v,t,w,h){
  }
  if(staff.waiter?.hired){
   const pos=waiterStagePosition(v,t,w,h);
-  pixelActor(c,'waiter',pos.x,pos.y,DINER_ACTOR_SCALE,{walk:pos.moving?t:0});
+  pixelActor(c,'waiter',pos.x,pos.y,DINER_ACTOR_SCALE,{walk:pos.moving?t:0,level:staff.waiter.level||1});
  }
  const recentThrow=(v?.events||[]).slice().reverse().find(e=>e.type==='throw'&&plateFlight(t,e.t,2).flying);
  pixelActor(c,'chef',w*.5,h*.34,DINER_ACTOR_SCALE,{attack:!!recentThrow,walk:jobs.WOK||jobs.POT?t:0});
@@ -7828,11 +7924,11 @@ function drawRestaurantV075(c,s,t,w,h){
   const crew=v.crew||s.crew;
   if(crew?.helper?.hired){
    const station=crew.helper.station===1?1:0,pt=g.helper[station];
-   actors.push({id:'helper',x:pt.x,y:pt.y,kind:'helper',walk:false,working:!!v.stations[station?'POT':'WOK']});
+   actors.push({id:'helper',x:pt.x,y:pt.y,kind:'helper',level:crew.helper.level||1,walk:false,working:!!v.stations[station?'POT':'WOK']});
   }
   if(crew?.waiter?.hired){
    const pos=waiterDeliveryPose(s,t);
-   actors.push({id:'waiter',x:pos.x,y:pos.y,kind:'waiter',walk:pos.moving,plate:pos.plate});
+   actors.push({id:'waiter',x:pos.x,y:pos.y,kind:'waiter',level:crew.waiter.level||1,walk:pos.moving,plate:pos.plate});
   }
   if(v.hero){
    const hero=v.hero,zone=heroZone(hero,s);
@@ -7859,7 +7955,7 @@ function drawRestaurantV075(c,s,t,w,h){
   const X=x(a.x),Y=y(a.y)+(a.order?.status==='eating'?Math.sin(t*5+Number(a.order.seatId||0))*.9:0);
   if(a.id==='hero')circle(c,X,Y+11,12,'#f6df9e2d');
   pixelActor(c,a.kind,X,Y,DINER_ACTOR_SCALE,{walk:a.walk?t*2:0,
-    face:a.direction==='left'?-1:1,attack:!!a.working});
+    face:a.direction==='left'?-1:1,attack:!!a.working,level:a.level||1});
   // Feet overlap the chair, not the floor next to it. The cushion lip
   // masks the lower legs, producing a seated read without a sprite sheet.
   if(a.seat&&a.order){
@@ -7978,7 +8074,7 @@ const itemCount=()=>Object.keys(game.recipes).length;
 
 function hud(){
  const home=game.phase==='forecast';
- return `<div class="hud ${home?'v076-home-hud':''}"><div class="brand"><span class="logo" aria-hidden="true">🍳</span><div><strong>怪味食堂</strong><small>${home?'今日营业':'ODDPOT · v0.12.0-alpha.2'}</small></div></div><div class="hud-meta"><span aria-label="金币">🪙 ${game.coins}</span><span aria-label="声望">⭐ ${game.reputation}</span></div><button class="hud-gear" data-act="settings" aria-label="设置">⚙</button></div><div class="day-strip ${home?'v076-home-day':''}"><b>营业第 ${totalBusinessDay(game)} 天 · ${tableCapacity(game)} 座</b><span class="day-phase">${home?'☀ 开店前':phaseLabels[game.phase]}</span>${home?'':`<span class="day-recipes">图鉴 ${itemCount()}/${Object.keys(RECIPES).length}</span>`}</div>`;
+ return `<div class="hud ${home?'v076-home-hud':''}"><div class="brand"><span class="logo" aria-hidden="true">🍳</span><div><strong>怪味食堂</strong><small>${home?'今日营业':'ODDPOT · v0.12.0-alpha.3'}</small></div></div><div class="hud-meta"><span aria-label="金币">🪙 ${game.coins}</span><span aria-label="声望">⭐ ${game.reputation}</span></div><button class="hud-gear" data-act="settings" aria-label="设置">⚙</button></div><div class="day-strip ${home?'v076-home-day':''}"><b>营业第 ${totalBusinessDay(game)} 天 · ${tableCapacity(game)} 座</b><span class="day-phase">${home?'☀ 开店前':phaseLabels[game.phase]}</span>${home?'':`<span class="day-recipes">图鉴 ${itemCount()}/${Object.keys(RECIPES).length}</span>`}</div>`;
 }
 function toast(){return `<div class="game-toast" role="status"><span>${esc(message)}</span></div>`}
 function playablePhase(){return game.phase==='service'||(game.phase==='field'&&!!game.field?.action)}
@@ -8045,18 +8141,22 @@ function overlayMarkup(){if(!overlay)return '';
      <span>${item.canPrepare?'准备':'缺料'}</span></button>`).join('')||'<p class="sheet-lead">尚未掌握特色便当菜谱。可以先探索研发，次日再带上。</p>'}</div>`}`;
  }else if(overlay==='crew'){
    const crew=ensureCrew(game),eff=crewEffects(game);
+   const identity=(role,level)=>{
+    const look=crewAppearance(role,level);
+    return '<div class="v12d-staff-identity"><canvas class="v12d-staff-portrait" width="68" height="82" data-crew-portrait="'+role+'" data-level="'+look.level+'" role="img" aria-label="'+(role==='helper'?'阿火':'小芽')+' '+esc(look.label)+'像素形象"></canvas><div class="v12d-staff-profile"><strong>'+esc(look.label)+'</strong><small>'+esc(look.uniform)+'</small></div><span class="v12d-tier" aria-label="职业阶级 '+look.level+'">Lv.'+look.level+'</span></div>';
+   };
    const row=role=>{
     const person=crew[role],def=CREW_ROLES[role],meal=activeCrewMeal(game,role),promotion=crewPromotion(game,role);
-    if(!person.hired)return '<div class="staff-person"><div class="staff-person-head"><b>'+(role==='helper'?'🍳':'🧺')+' '+def.name+' · '+def.job+'</b><span>入职 '+def.hireCost+' 金币</span></div>'+b('hire:'+role,'雇佣 '+def.name,'primary',game.coins<def.hireCost)+'</div>';
+    if(!person.hired)return '<div class="staff-person">'+identity(role,1)+'<div class="staff-person-head"><b>'+(role==='helper'?'🍳':'🧺')+' '+def.name+' · '+def.job+'</b><span>入职 '+def.hireCost+' 金币</span></div>'+b('hire:'+role,'雇佣 '+def.name,'primary',game.coins<def.hireCost)+'</div>';
     const current=role==='helper'?'岗位：'+(person.station===0?'左':'右')+'厨位 · 每单 -'+eff.helper.seconds+'秒':'顾客耐心 +'+eff.waiter.patience+'秒';
     const duty=game.phase==='prep'?'<div class="v12c-duty"><button data-act="duty:'+role+':on" class="'+(person.onDuty?'active':'')+'">✓ 今晚上岗</button><button data-act="duty:'+role+':off" class="'+(!person.onDuty?'active':'')+'">◌ 今晚休息</button></div>':'';
     const promote=promotion?'<div class="v12c-progress"><span>实际工作经验 '+person.xp+'/'+promotion.requiredXP+' · 晋升工资 '+promotion.nextWage+'/晚</span><i style="width:'+Math.min(100,Math.floor(person.xp/promotion.requiredXP*100))+'%"></i></div><button class="v12c-promote" data-act="promote:'+role+'" '+(promotion.ready&&game.coins>=promotion.cost&&['prep','upgrade'].includes(game.phase)?'':'disabled')+'>晋升 Lv.'+promotion.level+' · 培训 '+promotion.cost+' 金币 '+(promotion.ready?'✓':'· 经验不足')+'</button>':'<div class="v12c-progress">⭐ 已达满级 · 总工作量 '+person.xp+'</div>';
     const options=person.onDuty&&!meal&&game.phase==='prep'?'<div class="staff-feed-list">'+Object.keys(game.recipes).map(id=>'<button data-feed="'+role+':'+id+'" '+(!canUse(game,recipeCraftSnapshot(game,id).ingredientIds)?'disabled':'')+'>'+RECIPES[id].emoji+' '+RECIPES[id].name+'<small>品质 '+recipeCraftSnapshot(game,id).quality+'</small></button>').join('')+'</div>':'';
-    return '<div class="staff-person"><div class="staff-person-head"><b>'+(role==='helper'?'🍳':'🧺')+' '+def.name+' · '+def.job+' Lv.'+person.level+'</b><span>工资 '+crewWage(role,person.level)+'/晚</span></div><div class="staff-buff">'+(person.onDuty?current:'今晚休息：无工资，无岗位加成')+' · 员工餐羁绊 '+person.meals+'/3</div>'+duty+promote+(role==='helper'&&game.phase==='prep'&&person.onDuty?'<div class="staff-assign">'+[0,1].map(i=>'<button data-assign="'+i+'" class="'+(person.station===i?'active':'')+'">'+(i?'右':'左')+'厨位</button>').join('')+'</div>':'')+'<p>'+(meal?'今日员工餐：'+esc(RECIPES[meal.recipeId].name)+' · 品质 '+meal.quality:person.onDuty&&game.phase==='prep'?'可提供员工餐，临时强化当晚表现':'本次不安排员工餐')+'</p>'+options+'</div>';
+    return '<div class="staff-person">'+identity(role,person.level)+'<div class="staff-person-head"><b>'+(role==='helper'?'🍳':'🧺')+' '+def.name+' · '+def.job+' Lv.'+person.level+'</b><span>工资 '+crewWage(role,person.level)+'/晚</span></div><div class="staff-buff">'+(person.onDuty?current:'今晚休息：无工资，无岗位加成')+' · 员工餐羁绊 '+person.meals+'/3</div>'+duty+promote+(role==='helper'&&game.phase==='prep'&&person.onDuty?'<div class="staff-assign">'+[0,1].map(i=>'<button data-assign="'+i+'" class="'+(person.station===i?'active':'')+'">'+(i?'右':'左')+'厨位</button>').join('')+'</div>':'')+'<p>'+(meal?'今日员工餐：'+esc(RECIPES[meal.recipeId].name)+' · 品质 '+meal.quality:person.onDuty&&game.phase==='prep'?'可提供员工餐，临时强化当晚表现':'本次不安排员工餐')+'</p>'+options+'</div>';
    };
    body='<h2>👩‍🍳 食堂伙伴</h2><p class="sheet-lead">按实际工作订单累积经验，晋升带来更高效率与工资；可在开门前安排上岗/休息，员工餐依然提供当晚Buff。</p><div class="staff-roster">'+row('helper')+row('waiter')+'</div>';
  }else if(overlay==='settings'){
-  body=`<h2>⚙ 试玩设置</h2><p class="sheet-lead">版本 v0.12.0-alpha.2 · 固定 9:16 竖屏 · 单机 localStorage 存档</p>${b('reset','重置存档，从 DAY 1 重新开始','danger')}<p class="sheet-lead">切到后台时营业会自动暂停。更换设备不会同步存档。</p>`;
+  body=`<h2>⚙ 试玩设置</h2><p class="sheet-lead">版本 v0.12.0-alpha.3 · 固定 9:16 竖屏 · 单机 localStorage 存档</p>${b('reset','重置存档，从 DAY 1 重新开始','danger')}<p class="sheet-lead">切到后台时营业会自动暂停。更换设备不会同步存档。</p>`;
  }else if(overlay==='details'){
   const r=game.report;body=r?`<h2>营业账本详情</h2><p class="sheet-lead">本日订单由真实食材库存、工位工作秒数和顾客等待事件计算。</p><div class="book-list">${Object.entries(r.byDish).map(([id,d])=>`<div class="detail-row">${RECIPES[id].emoji} ${RECIPES[id].name}：售出 ${d.count} 份 · 满意 ${Math.round(d.totalSat/d.count)}</div>`).join('')}<div class="detail-row">WOK 占用 ${r.congestion.WOK} 秒 / POT ${r.congestion.POT} 秒</div><div class="detail-row">食材耗用估值 ${r.cost} · 宣传 ${r.finance?.marketingCost||0} · 工资 ${r.finance?.wage||0} · 招待支出 ${r.hospitalityCost||0} · 收入 ${r.revenue} · 经营利润 ${r.profit} · 现金净变动 ${r.finance?.cashChange??'旧版无记录'}</div></div>`:'';
  }
@@ -8336,6 +8436,7 @@ function render(){
  const [stage,dock]=({forecast,field,research,menu,prep,service,report,upgrade}[game.phase])();
  app.innerHTML=shell(stage,dock);
  if(overlay==='book'&&bookTab==='guests')drawGuestPortraits(app);
+ if(overlay==='crew')drawCrewPortraits(app);
  const target=app.querySelector('.target-scroller');if(target)target.scrollLeft=prevTargetScroll;
  const sheet=app.querySelector('.sheet-body');if(sheet)sheet.scrollTop=prevSheetScroll;
  // Preserve the on-screen floating stick when a second finger uses the skill.
