@@ -152,7 +152,7 @@ function twentyOneDays(seed,o){
    // Controlled gift of material; not a fabricated claim about the combat engine.
    for(const id of targets.slice(0,4))s.inventory[id]=(s.inventory[id]||0)+2;
   }
-  const p=purchases(s,o.menu,12);
+  const p=purchases(s,o.menu,o.target||12);
   if(o.campaign&&o.campaign!=='none')assert.equal(chooseCampaign(s,o.campaign),true);
   const r=night(s);
   const inventoryRemain=targets.reduce((n,id)=>n+(s.inventory[id]||0),0);
@@ -187,6 +187,8 @@ const multiCases=[
  {id:'mixed-three-new',oldCaps:false,third:true,menu:MIXED},
  {id:'veg-three-old',oldCaps:true,third:true,menu:VEG},
  {id:'veg-three-new',oldCaps:false,third:true,menu:VEG},
+ {id:'mixed-three-new-target20',oldCaps:false,third:true,menu:MIXED,target:20},
+ {id:'veg-three-new-target20',oldCaps:false,third:true,menu:VEG,target:20},
  {id:'mixed-three-new-forage8-assumed',oldCaps:false,third:true,menu:MIXED,foraging:true},
  {id:'veg-three-new-forage8-assumed',oldCaps:false,third:true,menu:VEG,foraging:true},
  {id:'mixed-three-new-garden',oldCaps:false,third:true,menu:MIXED,campaign:'garden'},
@@ -205,6 +207,7 @@ for(const c of multiCases){
   insolventPct:rnd(100*records.filter(x=>x.wageDebtDays>0).length/runs)};
 }
 const pairs=[['mixed-two-new','mixed-two-old'],['mixed-three-new','mixed-three-old'],
+ ['mixed-three-new-target20','mixed-three-new'],['veg-three-new-target20','veg-three-new'],
  ['veg-three-new','veg-three-old'],['mixed-three-new-forage8-assumed','mixed-three-new'],
  ['veg-three-new-forage8-assumed','veg-three-new'],
  ['mixed-three-new-garden','mixed-three-new'],['veg-three-new-garden','veg-three-new']];
@@ -233,7 +236,7 @@ assert.ok(single['veg-three-garden'].arrivals>single['veg-three-natural'].arriva
 const output={kind:'v0.13.0-alpha.6 actual-engine paired economy benchmark',
  protocol:{seeds21Day:runs,days,nightSeeds:starRuns,hero:'fixed at right kitchen',
   menuBehavior:'fixed three learned recipes at quality83, actual recipe/guest matching',
-  market:'four rotating offers, real purchase ledger, target 12 units each used ingredient',
+  market:'four rotating offers, real purchase ledger, baseline target 12 units per needed ingredient; target20 sensitivity',
   starting:'two-star four-table existing restaurant; starting 500 coins, 3 per ordinary ingredient; staff helper+waiter; third station and helper2 preowned in three-station cases',
   ignoredCosts:'prior unlock/third-station acquisition are sunk costs; no employee food, manual abilities, research or purchases of rare items',
   foraging:'assumed external 2 units of each of four selected menu ingredients every day; not actual field battle/loot',
