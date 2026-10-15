@@ -201,18 +201,20 @@ function bossHint(region){
 function field(){
  const f=game.field;
  if(!f){
-  const activeRoutes=selectedRegion==='forest'?ROUTES:[{id:'spring_safe',name:'热泉浅滩',emoji:'♨',subtitle:'火椒、蒜瓣 · 可避开战斗'},{id:'spring_risk',name:'热泉断坡',emoji:'🌋',subtitle:'深入第三段必遇熔壳椒王 · 熔心椒晶'}];
+  const activeRoutes=selectedRegion==='forest'?ROUTES:[{id:'spring_safe',name:'采集路线',emoji:'♨',subtitle:'热泉水岸 · 土豆、洋葱和火椒优先'},{id:'spring_risk',name:'狩猎路线',emoji:'🌋',subtitle:'熔岩兽群 · 椒怪、蟹群与战斗战利品'}];
+  const lowStock=[...new Set((game.menu||[]).flatMap(id=>RECIPES[id]?.ids||[]))].filter(id=>(game.inventory[id]||0)<6);
+  const stockHint=lowStock.length?'当前菜单库存偏低（少于6份）：'+lowStock.map(id=>ING[id].name).join('、'):'当前菜单食材储备相对充足';
   return [
  `<div class="forest-scene route-scene ux-route">${forestBackdrop()}<div class="route-panel">
    <div class="route-intro"><span class="ux-kicker">出发准备</span><h2>今天去哪找食材？</h2><p>缺什么，就去哪。</p></div>
-   <div class="ux-field-label"><strong>目标食材</strong><span>当前：${ING[game.selectedTarget]?.name||'未选'}</span></div>
-   <div class="target-scroller" role="group" aria-label="目标食材">${Object.entries(ING).filter(([id,ing])=>['SHOP_STAPLE','FIELD_ONLY'].includes(ing.acquisitionPolicy)).map(([id,ing])=>`<button class="target-chip ${game.selectedTarget===id?'chosen':''}" data-target="${id}" aria-pressed="${game.selectedTarget===id}">${ingredientIconHtml(id,24)} ${ing.name}</button>`).join('')}</div>
+   <div class="ux-field-label"><strong>经营备料提示</strong></div>
+   <div class="v013h-supply-hint" aria-label="当前菜单库存提示">${esc(stockHint)}<small>各生态有不同的主要产物；路线选择不保证指定食材掉落。</small></div>
    <div class="ux-field-label"><strong>探索区域</strong></div>
    <div class="region-tabs" role="group" aria-label="探索区域"><button data-region="forest" class="${selectedRegion==='forest'?'current':''}" aria-pressed="${selectedRegion==='forest'}">晨露森林</button><button data-region="spring" class="${selectedRegion==='spring'?'current':''}" aria-pressed="${selectedRegion==='spring'}">热泉峡谷</button></div>
    <div class="ux-field-label"><strong>携带厨具</strong><span>升级也会影响探索</span></div>
    <div class="v08-weapon-picks">${fieldWeaponChoices(game).map(({type,level,slotIndex,fitted})=>`<button class="v08-weapon-pick ${selectedFieldWeaponType(game)===type?'chosen':''}" data-weapon="${type}" aria-pressed="${selectedFieldWeaponType(game)===type}">${type==='WOK'?'🛡️ 炒锅剑盾':'🍲 炖锅投弹'} · Lv${level}<small>${fitted?`${slotIndex===0?'左':'右'}厨位强化`:'备用基础款'} · ${type==='WOK'?'自动正面格挡':'远程范围爆炸'}</small></button>`).join('')}</div>
    <div class="ux-field-label"><strong>路线</strong><span>点击出发</span></div>
-   <div class="route-options">${activeRoutes.map(r=>`<button class="route-card ${/risk/.test(r.id)?'route-risk':'route-safe'}" data-route="${r.id}"><span class="route-emoji" aria-hidden="true">${r.emoji}</span><div><strong>${r.name}</strong><small>${/risk/.test(r.id)?`${r.subtitle} · 第三段必遇${bossHint(selectedRegion).boss} · 掉落${bossHint(selectedRegion).name} ×${bossHint(selectedRegion).qty}，留 1 格背包`:r.subtitle}</small></div><span class="route-risk-label">${/risk/.test(r.id)?'高风险':'安全'}</span><b aria-hidden="true">›</b></button>`).join('')}</div>
+   <div class="route-options">${activeRoutes.map(r=>`<button class="route-card ${/risk/.test(r.id)?'route-risk':'route-safe'}" data-route="${r.id}"><span class="route-emoji" aria-hidden="true">${r.emoji}</span><div><strong>${r.name}</strong><small>${/risk/.test(r.id)?`${r.subtitle} · 需要战斗，第三段挑战${bossHint(selectedRegion).boss}，击败后可拾取${bossHint(selectedRegion).name}，记得留背包格`:r.subtitle+' · 可在后续分支转向首领挑战'}</small></div><span class="route-risk-label">${/risk/.test(r.id)?'狩猎':'采集'}</span><b aria-hidden="true">›</b></button>`).join('')}</div>
   </div></div>`,
  `<div class="dock-head"><span>最多三段探索 · 可随时回店</span><span>背包 ${game.bagSlots||8} 格</span></div><div class="action-row">${b('bento','🍱 便当','secondary')}${b('skip-field','暂不探索 · 去研发','secondary wide')}</div>`]
  }
@@ -222,8 +224,8 @@ function field(){
   <p>背包 ${slots}/${f.capacity} 格 · 生命 ${f.hp}/3 · ${f.weapon?.type||'WOK'} Lv${f.weapon?.level||1}</p>
   ${f.dangerCommitment?`<div class="v082-boss-promise">⚔️ 第三段必遇 ${boss.boss} · ${boss.icon}${boss.name} ×${boss.qty}</div>`:''}
   <div class="v08-branch-cards">${f.choices.map(c=>`<button class="v08-branch-card" data-branch="${c.choiceId}">
-  <strong>${c.danger?'⚠️':'🌿'} ${c.name}</strong><span>${c.description}</span>
-  <small>${c.danger?`⚔️ 第三段 ${boss.boss} · ${boss.name} ×${boss.qty}`:'🌱 普通资源 / 特殊事件'}</small>
+  <strong>${c.danger?'⚔️':'🌿'} ${c.name}</strong><span>${c.description}</span>
+  <small>${c.danger?`狩猎深入 · 最终挑战 ${boss.boss}，击败可拾取 ${boss.name}`:'🌱 采集为主 · 普通食材与奇遇'}</small>
   </button>`).join('')}</div>
   ${full?`<div class="v082-bag-warning">🎒 背包已满！Boss 奖励需要空格。可从背包丢弃一格材料。</div><button class="v082-manage-bag" data-act="field-bag">整理背包</button>`:`<p class="v082-bag-reminder">🎒 建议为后续稀有食材保留至少 1 格。</p>`}
   <button type="button" class="v08-home-choice" data-act="retreat">🏠 带着收获回饭店</button></div></div>`, ''];
@@ -509,7 +511,6 @@ app.addEventListener('click',e=>{
   if(result)startActionField(game);note(result?'继续前进！新的区段开始。':'无法进入该分支');return;
  }
  const route=e.target.closest('[data-route]');if(route){const entered=enterField(game,route.dataset.route);if(entered)startActionField(game);if(entered){message='出发！';flashUntil=0;render()}else note('无法进入路线');return}
- const target=e.target.closest('[data-target]');if(target){game.selectedTarget=target.dataset.target;render();return}
  const item=e.target.closest('[data-ingredient]');if(item){const id=item.dataset.ingredient;if(selectedIngredients.includes(id))selectedIngredients=selectedIngredients.filter(i=>i!==id);else if(selectedIngredients.length<3)selectedIngredients=[...selectedIngredients,id];else message='一锅最多放三种食材。';render();return}
  const tab=e.target.closest('[data-book-tab]');if(tab){bookTab=tab.dataset.bookTab==='guests'?'guests':'recipes';render();return}
  const book=e.target.closest('[data-book]');if(book){const r=RECIPES[book.dataset.book];selectedIngredients=[...r.ids];selectedMethod=r.method;overlay='';note(`已选择实验线索：${r.hint}`);return}
