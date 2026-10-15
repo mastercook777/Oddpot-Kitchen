@@ -27,7 +27,9 @@ for(let k=0;k<N;k++){
   for(const a of [0,1])for(const b of [0,1]){
    const s=newGame(720013+k*7919);s.phase='field';
    assert.equal(enterField(s,route),true);
-   const path=[],gather=zero(),potential=zero(),bag=zero(),finalBag=zero();
+   const path=[],gather=zero(),potential=zero();
+   const harvestBag={bag:{},capacity:s.bagSlots||8};
+   const combatBag={bag:{},capacity:s.bagSlots||8};
    let enemies=0,bagHarvest=0,bagWithCombat=0,zoneRepeats=0;
    for(let segment=1;segment<=3;segment++){
     assert.equal(startActionField(s),true);
@@ -38,12 +40,11 @@ for(let k=0;k<N;k++){
     for(const enemy of f.enemies){if(enemy.isBoss||!enemyToItem[enemy.kind])continue;
      enemyCounts[enemyToItem[enemy.kind]]++;potential[enemyToItem[enemy.kind]]++;enemies++;}
     for(const id of items){
-     addFieldBag(f,id,nodeCounts[id]); 
+     if(nodeCounts[id]>0){addFieldBag(harvestBag,id,nodeCounts[id]);addFieldBag(combatBag,id,nodeCounts[id]);} 
     }
-    const withHarvest=Object.values(f.bag).reduce((n,x)=>n+x,0);
-    bagHarvest=withHarvest;
-    for(const id of items)addFieldBag(f,id,enemyCounts[id]);
-    bagWithCombat=Object.values(f.bag).reduce((n,x)=>n+x,0);
+    bagHarvest=Object.values(harvestBag.bag).reduce((n,x)=>n+x,0);
+    for(const id of items)if(enemyCounts[id]>0)addFieldBag(combatBag,id,enemyCounts[id]);
+    bagWithCombat=Object.values(combatBag.bag).reduce((n,x)=>n+x,0);
     path.push({zone,style,forage:Object.fromEntries(Object.entries(nodeCounts).filter(([,n])=>n)),enemies:Object.fromEntries(Object.entries(enemyCounts).filter(([,n])=>n))});
     zones[zone]??=[];zones[zone].push({resource:nodeCounts,combat:enemyCounts,bagUsed:fieldBagSlotsUsed(f)});
     if(segment>1&&path[segment-2].style===style)zoneRepeats++;
