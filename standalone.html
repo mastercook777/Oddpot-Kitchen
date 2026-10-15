@@ -1,4 +1,4 @@
-<!doctype html><html lang="zh-CN"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1.0,maximum-scale=1.0,viewport-fit=cover,user-scalable=no"><meta name="apple-mobile-web-app-capable" content="yes"><meta name="theme-color" content="#1b3c2b"><title>怪味食堂 · v0.13.0-alpha.6 离线版</title><style>.ingredient-icon{display:inline-block;width:var(--ingredient-size,24px);height:var(--ingredient-size,24px);max-width:none;object-fit:contain;image-rendering:pixelated;vertical-align:-.24em;flex:none;pointer-events:none;user-select:none}
+<!doctype html><html lang="zh-CN"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1.0,maximum-scale=1.0,viewport-fit=cover,user-scalable=no"><meta name="apple-mobile-web-app-capable" content="yes"><meta name="theme-color" content="#1b3c2b"><title>怪味食堂 · v0.13.0-alpha.7 离线版</title><style>.ingredient-icon{display:inline-block;width:var(--ingredient-size,24px);height:var(--ingredient-size,24px);max-width:none;object-fit:contain;image-rendering:pixelated;vertical-align:-.24em;flex:none;pointer-events:none;user-select:none}
 .stock-line>span .ingredient-icon{margin-right:3px}.target-chip .ingredient-icon{vertical-align:middle}.book-icon .ingredient-icon{display:block}
 .v063-food-icon .ingredient-icon{width:1em;height:1em;vertical-align:top;filter:none}.v063-receipt-line .ingredient-icon{vertical-align:middle}
 .v063-food-picker button>span,.v063-drop>span{line-height:1}.v063-food-picker .ingredient-icon,.v063-drop .ingredient-icon{vertical-align:top}
@@ -1038,6 +1038,12 @@
  .v08-branch-card span{font-size:10px}
  .v08-home-choice{min-height:37px}
 }
+
+/* v0.13-H: compact read-only menu shortage, not another target selector. */
+.v013h-supply-hint{font:600 11px/1.35 system-ui;color:#f1e6c5;background:#213e32dc;
+ border:1px solid #b4a46d88;border-radius:8px;padding:7px 9px;overflow-wrap:anywhere}
+.v013h-supply-hint small{display:block;font:500 10px/1.35 system-ui;color:#d5dab4;margin-top:3px}
+@media(max-height:620px){.v013h-supply-hint{font-size:10px;padding:5px 7px}.v013h-supply-hint small{font-size:9px}}
 
 /* Biome identity lives INSIDE the Canvas scene; the label is click-through. */
 .v081-biome-name{
@@ -2434,7 +2440,7 @@ const MARKET_ROTATION_STAPLES=['beef','chicken','chili','garlic','mushroom','cab
 const SHOP_STAPLES=Object.keys(ING).filter(id=>ING[id].acquisitionPolicy==='SHOP_STAPLE');
 const FIELD_INGREDIENTS=Object.keys(ING).filter(id=>ING[id].acquisitionPolicy!=='SHOP_STAPLE');
 const DEFAULT_INVENTORY={beef:3,chicken:10,chili:2,garlic:9,mushroom:12,cabbage:8,onion:5,potato:5};
-const ROUTES=[{id:'safe',name:'晨露林间',subtitle:'安全路线 · 菌菇、蔬菜、调料',emoji:'🌿'}, {id:'risk',name:'野牛草场',subtitle:'危险路线 · 肉类、辣椒与更多惊喜',emoji:'🦬'}];
+const ROUTES=[{id:'safe',name:'采集路线',subtitle:'草甸与菜圃 · 包菜、蒜瓣、菌菇集中采集',emoji:'🌿'}, {id:'risk',name:'狩猎路线',subtitle:'古树兽巢 · 野牛与鸡怪战斗掉肉，最终可挑战菌王',emoji:'🦬'}];
 
 // v0.6.3-A: all 8-ingredient, 2/3-item combinations are researchable,
 // even without hand-curated text. Original twelve recipe IDs stay unchanged.
@@ -3005,7 +3011,15 @@ const hash=(name)=>[...String(name)].reduce((n,c)=>SEED(n+c.charCodeAt(0)),21661
 function getFieldBiome(zoneId,route='safe'){
  const style=ZONES[zoneId]||(route.startsWith('spring')?'spring':'meadow');
  const base=STYLE[style];
- return {...base,style,zoneId:zoneId||style,
+ // The two entrances to the same mini-boss must have meaningful food ecology,
+ // not just a flipped copy of the same rocks and enemy roster.
+ const specialties={
+  spore_roots:{resources:[['mushroom',5],['beef',8],['chicken',2]],
+   enemyMix:['boar','boar','sporeling']},
+  ember_side:{resources:[['potato',5],['chili',5],['beef',4]],
+   enemyMix:['steam_crab','boar','steam_crab','pepper']}
+ };
+ return {...base,...(specialties[zoneId]||{}),style,zoneId:zoneId||style,
   // Adjacent exits share broad regional ecology, but their landmarks and
   // harvest pockets never look like the same copied board.
   flipped:['forest_secret','spore_roots','spring_market','ember_side'].includes(zoneId)};
@@ -3541,6 +3555,7 @@ function queueServiceReport(shift){
 // v0.12-F: distinguish the run's user-selected daily ingredient from a
 // branch-local key:'target' which only unlocks progression to the next zone.
 function fieldDailyTarget(f){
+ if(f?.targetMode==='ecology')return null;
  if(typeof f?.dailyTarget==='string'&&f.dailyTarget)return f.dailyTarget;
  // Legacy schema-4 expeditions preserve the original first-step target in
  // sequence even after branch maps replace their local target node.
@@ -3960,6 +3975,39 @@ const SPRING_ZONES={
  finishBoss:[{id:'ember_gate',name:'熔岩正坡',description:'密集小怪 · 熔壳椒王',danger:true,target:'chili'},
        {id:'ember_side',name:'蒸汽绕行',description:'更多喷气地形 · 熔壳椒王',danger:true,target:'chili'}]
 };
+// v0.13-H: displayed routes express material strategy, not a 'better/worse'
+// difficulty tier. Older in-progress expeditions still use the historical
+// FOREST_ZONES/SPRING_ZONES via targetMode !== 'ecology'.
+const ECOLOGY_ZONES={
+ forest:{
+  gathering:[
+   {id:'forest_garden',name:'野蔬采集圃',description:'包菜、土豆与蒜瓣 · 菜圃集中采集',danger:false,target:'cabbage'},
+   {id:'glow_mushroom',name:'幽光菌沼',description:'蘑菇密集 · 少量菌怪巡视',danger:false,target:'mushroom'}],
+  hunting:[
+   {id:'herb_path',name:'野牛觅食草场',description:'野牛、鸡怪 · 狩猎补肉',danger:true,target:'garlic'},
+   {id:'glow_mushroom',name:'孢怪栖息沼',description:'孢怪与鸡怪 · 菌菇和肉类',danger:true,target:'mushroom'}],
+  forageFinish:f=>f.zoneId==='forest_garden'?
+   {id:'forest_secret',name:'菌光秘径',description:'蘑菇采集 · 最后补一包菌香',danger:false,target:'mushroom'}:
+   {id:'forest_garden',name:'深林采集圃',description:'蔬菜采集 · 最后补齐根茎',danger:false,target:'cabbage'},
+  bossFinal:[
+   {id:'spore_gate',name:'孢巢正门',description:'孢怪密集 · 菌王孢心',danger:true,target:'mushroom'},
+   {id:'spore_roots',name:'枯根兽径',description:'野牛更多 · 菌王孢心',danger:true,target:'mushroom'}]
+ },
+ spring:{
+  gathering:[
+   {id:'steam_lake',name:'矿泉晶池',description:'土豆、洋葱 · 根茎类聚集',danger:false,target:'potato'},
+   {id:'steam_crack',name:'蒸汽裂隙',description:'火椒、洋葱 · 蒸汽蟹巡视',danger:false,target:'chili'}],
+  hunting:[
+   {id:'steam_crack',name:'蒸汽猎径',description:'蒸汽蟹、椒怪 · 战斗采料',danger:true,target:'chili'},
+   {id:'hot_spring_shallows',name:'蟹群浅滩',description:'蒸汽蟹与椒怪 · 土豆火椒',danger:true,target:'potato'}],
+  forageFinish:f=>f.zoneId==='steam_lake'?
+   {id:'spring_market',name:'矿泉秘泉',description:'土豆与火椒 · 深层水岸采集',danger:false,target:'potato'}:
+   {id:'steam_lake',name:'晶池后湾',description:'土豆、洋葱 · 根茎丰收',danger:false,target:'potato'},
+  bossFinal:[
+   {id:'ember_gate',name:'赤焰正坡',description:'椒怪密集 · 熔心椒晶',danger:true,target:'chili'},
+   {id:'ember_side',name:'焦土兽径',description:'野牛与蒸汽蟹 · 熔心椒晶',danger:true,target:'chili'}]
+ }
+};
 // Both starter cookware modes are owned from day one. Physical stations
 // affect the combat level only while fitted: a stored spare always remains
 // usable as a Lv1 expedition weapon, without changing the kitchen layout.
@@ -4022,6 +4070,16 @@ function addFieldBag(f,id,count){
  syncFieldBagStacks(f);if(f.ecologyStats)f.ecologyStats.collected+=gained;return gained;
 }
 function fieldBranchChoices(f){
+ if(f.targetMode==='ecology'){
+  const eco=ECOLOGY_ZONES[f.region==='spring'?'spring':'forest'];
+  if(f.segmentIndex===1)return f.dangerCommitment?eco.hunting:eco.gathering;
+  if(f.segmentIndex===2){
+   if(f.dangerCommitment)return eco.bossFinal;
+   return [eco.forageFinish(f),eco.bossFinal[0]];
+  }
+  return [];
+ }
+ // Old ongoing runs retain their old exploration branch contract.
  const zones=f.region==='spring'?SPRING_ZONES:FOREST_ZONES;
  return f.segmentIndex===1&&!f.dangerCommitment?zones.safe:
    f.dangerCommitment?zones.finishBoss:
@@ -4032,15 +4090,19 @@ function fieldBranchChoices(f){
 }
 function enterField(s,route){
  if(s.phase!=='field'||s.field||!['safe','risk','spring_safe','spring_risk'].includes(route))return false;
- const target=['SHOP_STAPLE','FIELD_ONLY'].includes(ING[s.selectedTarget]?.acquisitionPolicy)?s.selectedTarget:'mushroom';
  const risk=route==='risk'||route==='spring_risk';
+ const startZone=route==='risk'?'old_tree_edge':route==='spring_risk'?'ember_edge':
+  route==='spring_safe'?'hot_spring_shallows':'herb_path';
+ const target=getFieldBiome(startZone,route).primary;
  const sequence=risk?[{type:'gather',id:target,n:2,label:'定向采集'},{type:'danger',id:'beef',n:2,label:'野牛领地'},{type:'event',id:'mushroom',n:2,label:'菌菇奇遇'}]:
   [{type:'gather',id:target,n:2,label:'目标采集'},{type:'gather',id:s.day===2?'chili':'mushroom',n:3,label:'林间采集'},{type:'event',id:'chicken',n:2,label:'流浪农夫'}];
  s.route=route;
- const encounterPlan=makeSpecialEncounterPlan(s,route),map=insertPlannedFieldEncounter(buildFieldMap(s,route,target),encounterPlan,1);
- s.field={route,hp:3,node:0,dailyTarget:target,target,bag:{},bagStacks:[],capacity:s.bagSlots||8,sequence,
-  segmentIndex:1,segmentStatus:'active',encounterPlan,zoneId:route.startsWith('spring')?'hot_spring_shallows':'herb_path',
-  zoneTitle:route.startsWith('spring')?'热泉浅滩':'香草小径',
+ const encounterPlan=makeSpecialEncounterPlan(s,route),map=insertPlannedFieldEncounter(
+  buildFieldMap({...s,fieldZoneId:startZone},route,target),encounterPlan,1);
+ s.field={route,hp:3,node:0,dailyTarget:null,targetMode:'ecology',target,bag:{},bagStacks:[],capacity:s.bagSlots||8,sequence,
+  segmentIndex:1,segmentStatus:'active',encounterPlan,zoneId:startZone,
+  zoneTitle:route==='risk'?'古树兽巢':route==='spring_risk'?'赤焰猎场':
+   route==='spring_safe'?'热泉浅滩':'香草小径',
   dangerCommitment:risk,selectedBranches:[],choices:[],weapon:fieldWeaponSnapshot(s),
   finished:false,...map,bento:s.bento?.day===kitchenDayKey(s)?clone(s.bento):null};
  return true;
@@ -4066,10 +4128,11 @@ function chooseFieldBranch(s,choiceId){
  f.segmentIndex++;f.zoneId=branch.id;f.zoneTitle=branch.name;f.segmentStatus='active';f.choices=[];
  f.route=f.region==='spring'?(f.dangerCommitment?'spring_risk':'spring_safe'):(f.dangerCommitment?'risk':'safe');
  const segmentSeed=(f.segmentIndex*1307+branch.id.split('').reduce((n,c)=>n+c.charCodeAt(0),0)*17);
- const map=insertPlannedFieldEncounter(buildFieldMap({...s,seed:s.seed+segmentSeed,fieldZoneId:branch.id,fieldSegmentIndex:f.segmentIndex},f.route,branch.target),f.encounterPlan,f.segmentIndex);
+ const ecologicalTarget=f.targetMode==='ecology'?getFieldBiome(branch.id,f.route).primary:branch.target;
+ const map=insertPlannedFieldEncounter(buildFieldMap({...s,seed:s.seed+segmentSeed,fieldZoneId:branch.id,fieldSegmentIndex:f.segmentIndex},f.route,ecologicalTarget),f.encounterPlan,f.segmentIndex);
  for(const key of ['region','biome','bossSpawn','spawn','x','y','steps','worldW','worldH','worldVersion','scenery','visitedHazards','nodes','obstacles','hazards'])f[key]=map[key];
  if(map.nodes.some(n=>['merchant','traveler'].includes(n.kind)))f.specialNpcOpportunity=true;
- f.action=false;f.target=branch.target;f.harvestProgress=0;f.harvestNode=null;f.activeEvent=null;
+ f.action=false;f.target=ecologicalTarget;f.harvestProgress=0;f.harvestNode=null;f.activeEvent=null;
  // HP, bag, bento, skill cooldown and equipped cookware persist across all three segments.
  return true;
 }
@@ -8455,7 +8518,7 @@ const itemCount=()=>Object.keys(game.recipes).length;
 
 function hud(){
  const home=game.phase==='forecast';
- return `<div class="hud ${home?'v076-home-hud':''}"><div class="brand"><span class="logo" aria-hidden="true">🍳</span><div><strong>怪味食堂</strong><small>${home?'今日营业':'ODDPOT · v0.13.0-alpha.6'}</small></div></div><div class="hud-meta"><span aria-label="金币">🪙 ${game.coins}</span><span aria-label="声望">⭐ ${game.reputation}</span></div><button class="hud-gear" data-act="settings" aria-label="设置">⚙</button></div><div class="day-strip ${home?'v076-home-day':''}"><b>营业第 ${totalBusinessDay(game)} 天 · ${tableCapacity(game)} 座</b><span class="day-phase">${home?'☀ 开店前':phaseLabels[game.phase]}</span>${home?'':`<span class="day-recipes">图鉴 ${itemCount()}/${Object.keys(RECIPES).length}</span>`}</div>`;
+ return `<div class="hud ${home?'v076-home-hud':''}"><div class="brand"><span class="logo" aria-hidden="true">🍳</span><div><strong>怪味食堂</strong><small>${home?'今日营业':'ODDPOT · v0.13.0-alpha.7'}</small></div></div><div class="hud-meta"><span aria-label="金币">🪙 ${game.coins}</span><span aria-label="声望">⭐ ${game.reputation}</span></div><button class="hud-gear" data-act="settings" aria-label="设置">⚙</button></div><div class="day-strip ${home?'v076-home-day':''}"><b>营业第 ${totalBusinessDay(game)} 天 · ${tableCapacity(game)} 座</b><span class="day-phase">${home?'☀ 开店前':phaseLabels[game.phase]}</span>${home?'':`<span class="day-recipes">图鉴 ${itemCount()}/${Object.keys(RECIPES).length}</span>`}</div>`;
 }
 function toast(){return `<div class="game-toast" role="status"><span>${esc(message)}</span></div>`}
 function playablePhase(){return game.phase==='service'||(game.phase==='field'&&!!game.field?.action)}
@@ -8550,7 +8613,7 @@ function overlayMarkup(){if(!overlay)return '';
    };
    body='<h2>👩‍🍳 食堂伙伴</h2><p class="sheet-lead">每位帮厨按本人实际完成的订单获得经验；增加厨位必须配备人手才能真正出餐。开门前直接选择左、中、右优先站位；已选位置不可重复安排。营业时，空闲帮厨仍会自动走到缺人的炉台支援。</p><div class="staff-roster">'+row('helper')+row('waiter')+(crew.helper2.hired?row('helper2'):'')+'</div>';
  }else if(overlay==='settings'){
-  body=`<h2>⚙ 试玩设置</h2><p class="sheet-lead">版本 v0.13.0-alpha.6 · 固定 9:16 竖屏 · 单机 localStorage 存档</p>${b('reset','重置存档，从 DAY 1 重新开始','danger')}<p class="sheet-lead">切到后台时营业会自动暂停。更换设备不会同步存档。</p>`;
+  body=`<h2>⚙ 试玩设置</h2><p class="sheet-lead">版本 v0.13.0-alpha.7 · 固定 9:16 竖屏 · 单机 localStorage 存档</p>${b('reset','重置存档，从 DAY 1 重新开始','danger')}<p class="sheet-lead">切到后台时营业会自动暂停。更换设备不会同步存档。</p>`;
  }else if(overlay==='details'){
   const r=game.report;body=r?`<h2>营业账本详情</h2><p class="sheet-lead">本日订单由真实食材库存、工位工作秒数和顾客等待事件计算。</p><div class="book-list">${Object.entries(r.byDish).map(([id,d])=>`<div class="detail-row">${RECIPES[id].emoji} ${RECIPES[id].name}：售出 ${d.count} 份 · 满意 ${Math.round(d.totalSat/d.count)}</div>`).join('')}<div class="detail-row">左厨位占用 ${r.congestion.WOK||0} 秒 / 右厨位 ${r.congestion.POT||0} 秒${r.congestion.CENTER!==undefined?' / 中厨位 '+r.congestion.CENTER+' 秒':''}</div><div class="detail-row">食材耗用估值 ${r.cost} · 宣传 ${r.finance?.marketingCost||0} · 工资 ${r.finance?.wage||0} · 招待支出 ${r.hospitalityCost||0} · 收入 ${r.revenue} · 经营利润 ${r.profit} · 现金净变动 ${r.finance?.cashChange??'旧版无记录'}</div></div>`:'';
  }
@@ -8625,18 +8688,20 @@ function bossHint(region){
 function field(){
  const f=game.field;
  if(!f){
-  const activeRoutes=selectedRegion==='forest'?ROUTES:[{id:'spring_safe',name:'热泉浅滩',emoji:'♨',subtitle:'火椒、蒜瓣 · 可避开战斗'},{id:'spring_risk',name:'热泉断坡',emoji:'🌋',subtitle:'深入第三段必遇熔壳椒王 · 熔心椒晶'}];
+  const activeRoutes=selectedRegion==='forest'?ROUTES:[{id:'spring_safe',name:'采集路线',emoji:'♨',subtitle:'热泉水岸 · 土豆、洋葱和火椒优先'},{id:'spring_risk',name:'狩猎路线',emoji:'🌋',subtitle:'熔岩兽群 · 椒怪、蟹群与战斗战利品'}];
+  const lowStock=[...new Set((game.menu||[]).flatMap(id=>RECIPES[id]?.ids||[]))].filter(id=>(game.inventory[id]||0)<6);
+  const stockHint=lowStock.length?'当前菜单库存偏低（少于6份）：'+lowStock.map(id=>ING[id].name).join('、'):'当前菜单食材储备相对充足';
   return [
  `<div class="forest-scene route-scene ux-route">${forestBackdrop()}<div class="route-panel">
    <div class="route-intro"><span class="ux-kicker">出发准备</span><h2>今天去哪找食材？</h2><p>缺什么，就去哪。</p></div>
-   <div class="ux-field-label"><strong>目标食材</strong><span>当前：${ING[game.selectedTarget]?.name||'未选'}</span></div>
-   <div class="target-scroller" role="group" aria-label="目标食材">${Object.entries(ING).filter(([id,ing])=>['SHOP_STAPLE','FIELD_ONLY'].includes(ing.acquisitionPolicy)).map(([id,ing])=>`<button class="target-chip ${game.selectedTarget===id?'chosen':''}" data-target="${id}" aria-pressed="${game.selectedTarget===id}">${ingredientIconHtml(id,24)} ${ing.name}</button>`).join('')}</div>
+   <div class="ux-field-label"><strong>经营备料提示</strong></div>
+   <div class="v013h-supply-hint" aria-label="当前菜单库存提示">${esc(stockHint)}<small>各生态有不同的主要产物；路线选择不保证指定食材掉落。</small></div>
    <div class="ux-field-label"><strong>探索区域</strong></div>
    <div class="region-tabs" role="group" aria-label="探索区域"><button data-region="forest" class="${selectedRegion==='forest'?'current':''}" aria-pressed="${selectedRegion==='forest'}">晨露森林</button><button data-region="spring" class="${selectedRegion==='spring'?'current':''}" aria-pressed="${selectedRegion==='spring'}">热泉峡谷</button></div>
    <div class="ux-field-label"><strong>携带厨具</strong><span>升级也会影响探索</span></div>
    <div class="v08-weapon-picks">${fieldWeaponChoices(game).map(({type,level,slotIndex,fitted})=>`<button class="v08-weapon-pick ${selectedFieldWeaponType(game)===type?'chosen':''}" data-weapon="${type}" aria-pressed="${selectedFieldWeaponType(game)===type}">${type==='WOK'?'🛡️ 炒锅剑盾':'🍲 炖锅投弹'} · Lv${level}<small>${fitted?`${slotIndex===0?'左':'右'}厨位强化`:'备用基础款'} · ${type==='WOK'?'自动正面格挡':'远程范围爆炸'}</small></button>`).join('')}</div>
    <div class="ux-field-label"><strong>路线</strong><span>点击出发</span></div>
-   <div class="route-options">${activeRoutes.map(r=>`<button class="route-card ${/risk/.test(r.id)?'route-risk':'route-safe'}" data-route="${r.id}"><span class="route-emoji" aria-hidden="true">${r.emoji}</span><div><strong>${r.name}</strong><small>${/risk/.test(r.id)?`${r.subtitle} · 第三段必遇${bossHint(selectedRegion).boss} · 掉落${bossHint(selectedRegion).name} ×${bossHint(selectedRegion).qty}，留 1 格背包`:r.subtitle}</small></div><span class="route-risk-label">${/risk/.test(r.id)?'高风险':'安全'}</span><b aria-hidden="true">›</b></button>`).join('')}</div>
+   <div class="route-options">${activeRoutes.map(r=>`<button class="route-card ${/risk/.test(r.id)?'route-risk':'route-safe'}" data-route="${r.id}"><span class="route-emoji" aria-hidden="true">${r.emoji}</span><div><strong>${r.name}</strong><small>${/risk/.test(r.id)?`${r.subtitle} · 需要战斗，第三段挑战${bossHint(selectedRegion).boss}，击败后可拾取${bossHint(selectedRegion).name}，记得留背包格`:r.subtitle+' · 可在后续分支转向首领挑战'}</small></div><span class="route-risk-label">${/risk/.test(r.id)?'狩猎':'采集'}</span><b aria-hidden="true">›</b></button>`).join('')}</div>
   </div></div>`,
  `<div class="dock-head"><span>最多三段探索 · 可随时回店</span><span>背包 ${game.bagSlots||8} 格</span></div><div class="action-row">${b('bento','🍱 便当','secondary')}${b('skip-field','暂不探索 · 去研发','secondary wide')}</div>`]
  }
@@ -8646,8 +8711,8 @@ function field(){
   <p>背包 ${slots}/${f.capacity} 格 · 生命 ${f.hp}/3 · ${f.weapon?.type||'WOK'} Lv${f.weapon?.level||1}</p>
   ${f.dangerCommitment?`<div class="v082-boss-promise">⚔️ 第三段必遇 ${boss.boss} · ${boss.icon}${boss.name} ×${boss.qty}</div>`:''}
   <div class="v08-branch-cards">${f.choices.map(c=>`<button class="v08-branch-card" data-branch="${c.choiceId}">
-  <strong>${c.danger?'⚠️':'🌿'} ${c.name}</strong><span>${c.description}</span>
-  <small>${c.danger?`⚔️ 第三段 ${boss.boss} · ${boss.name} ×${boss.qty}`:'🌱 普通资源 / 特殊事件'}</small>
+  <strong>${c.danger?'⚔️':'🌿'} ${c.name}</strong><span>${c.description}</span>
+  <small>${c.danger?`狩猎深入 · 最终挑战 ${boss.boss}，击败可拾取 ${boss.name}`:'🌱 采集为主 · 普通食材与奇遇'}</small>
   </button>`).join('')}</div>
   ${full?`<div class="v082-bag-warning">🎒 背包已满！Boss 奖励需要空格。可从背包丢弃一格材料。</div><button class="v082-manage-bag" data-act="field-bag">整理背包</button>`:`<p class="v082-bag-reminder">🎒 建议为后续稀有食材保留至少 1 格。</p>`}
   <button type="button" class="v08-home-choice" data-act="retreat">🏠 带着收获回饭店</button></div></div>`, ''];
@@ -8933,7 +8998,6 @@ app.addEventListener('click',e=>{
   if(result)startActionField(game);note(result?'继续前进！新的区段开始。':'无法进入该分支');return;
  }
  const route=e.target.closest('[data-route]');if(route){const entered=enterField(game,route.dataset.route);if(entered)startActionField(game);if(entered){message='出发！';flashUntil=0;render()}else note('无法进入路线');return}
- const target=e.target.closest('[data-target]');if(target){game.selectedTarget=target.dataset.target;render();return}
  const item=e.target.closest('[data-ingredient]');if(item){const id=item.dataset.ingredient;if(selectedIngredients.includes(id))selectedIngredients=selectedIngredients.filter(i=>i!==id);else if(selectedIngredients.length<3)selectedIngredients=[...selectedIngredients,id];else message='一锅最多放三种食材。';render();return}
  const tab=e.target.closest('[data-book-tab]');if(tab){bookTab=tab.dataset.bookTab==='guests'?'guests':'recipes';render();return}
  const book=e.target.closest('[data-book]');if(book){const r=RECIPES[book.dataset.book];selectedIngredients=[...r.ids];selectedMethod=r.method;overlay='';note(`已选择实验线索：${r.hint}`);return}
