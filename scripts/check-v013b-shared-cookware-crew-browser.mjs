@@ -34,7 +34,7 @@ try{
   await page.locator('[data-act="crew"]').first().click();
   assert.equal(await page.locator('[data-assign="helper:2"]').count(),1);
   assert.equal(await page.locator('[data-assign="helper:2"]').isDisabled(),true);
-  assert.deepEqual(await page.locator('[data-assign^="helper:"]').allTextContents(),['左','右','中']);
+  assert.deepEqual(await page.locator('[data-assign^="helper:"]').allTextContents(),['左','中','右']);
   await page.locator('[data-assign="helper:1"]').click();
   const selected=await page.evaluate(k=>JSON.parse(localStorage.getItem(k)),key);
   assert.equal(selected.crew.helper.station,1);
