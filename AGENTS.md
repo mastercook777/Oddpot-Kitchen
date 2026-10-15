@@ -2,6 +2,8 @@
 
 **当前交接入口**：[`docs/START_HERE.md`](docs/START_HERE.md)。**已实现状态权威**：[`docs/PROJECT_STATE.md`](docs/PROJECT_STATE.md)，以最新 `main` 源码和 `package.json` 核查；**未来方向**：[`docs/ROADMAP.md`](docs/ROADMAP.md)。
 
+**最新实装（2026-10-15，v0.13.0-alpha.6）**：PR #66 已合入 main。最新市场按确定性 seed 从八种普通材料每日选四种，每款初始可买量 6–10 份；原探索来源普通材料采购仍加价、稀有 Boss/奇遇材料不进入商店；schema5 一次性升级旧 2–4 份上限，保留历史已购份数/单价，不能反复补货。星砂旅人和芽角鹿客图鉴正文/Canvas 像素头像已接原客群/人物系统，只有实际入座才登记为已遇见；六客群全部绘制同源。二星双夜评鉴、第四桌、第三厨位小炭、两名厨师跨炉调度均为**已实现**，不要误用下面 v0.12-A 时期“后续未开发”的旧结论。470/470 Node + 11/11 CI（含手机 Chrome/离线）成功，不代表 iPhone 主观验收和 Pages 线上发布。权威交接：[v0.13-F 审计](docs/V0.13F_MARKET_GUEST_DEX_AUDIT.md)、[PROJECT_STATE](docs/PROJECT_STATE.md)、[ROADMAP](docs/ROADMAP.md)。下一步优先看更大供货量对探索目标、日利润、营销和二星难度的真实经济影响，传送门/第三星仍未开发。
+
 ### 新功能必须「GitHub 设计稿先行」
 
 1. **开始任何新内容开发前**，先检查已实现代码及原有 `docs/`，将确定的玩法、UI、经济、数据、验收和未定问题写入版本设计稿并提交到仓库，最好单独的 docs PR。**仅口头在聊天里规划不算交接完成。**
