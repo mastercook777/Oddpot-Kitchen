@@ -1,4 +1,4 @@
-<!doctype html><html lang="zh-CN"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1.0,maximum-scale=1.0,viewport-fit=cover,user-scalable=no"><meta name="apple-mobile-web-app-capable" content="yes"><meta name="theme-color" content="#1b3c2b"><title>怪味食堂 · v0.12.0-alpha.4 离线版</title><style>.ingredient-icon{display:inline-block;width:var(--ingredient-size,24px);height:var(--ingredient-size,24px);max-width:none;object-fit:contain;image-rendering:pixelated;vertical-align:-.24em;flex:none;pointer-events:none;user-select:none}
+<!doctype html><html lang="zh-CN"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1.0,maximum-scale=1.0,viewport-fit=cover,user-scalable=no"><meta name="apple-mobile-web-app-capable" content="yes"><meta name="theme-color" content="#1b3c2b"><title>怪味食堂 · v0.12.0-alpha.5 离线版</title><style>.ingredient-icon{display:inline-block;width:var(--ingredient-size,24px);height:var(--ingredient-size,24px);max-width:none;object-fit:contain;image-rendering:pixelated;vertical-align:-.24em;flex:none;pointer-events:none;user-select:none}
 .stock-line>span .ingredient-icon{margin-right:3px}.target-chip .ingredient-icon{vertical-align:middle}.book-icon .ingredient-icon{display:block}
 .v063-food-icon .ingredient-icon{width:1em;height:1em;vertical-align:top;filter:none}.v063-receipt-line .ingredient-icon{vertical-align:middle}
 .v063-food-picker button>span,.v063-drop>span{line-height:1}.v063-food-picker .ingredient-icon,.v063-drop .ingredient-icon{vertical-align:top}
@@ -3468,6 +3468,25 @@ function queueServiceReport(shift){
   waitSeconds:enter.reduce((n,e)=>n+(e.seconds||0),0),maxWaitSeconds:enter.reduce((n,e)=>Math.max(n,e.seconds||0),0),
   remaining:(shift?.orders||[]).filter(o=>o.status==='waiting').length};
 }
+// v0.12-F: distinguish the run's user-selected daily ingredient from a
+// branch-local key:'target' which only unlocks progression to the next zone.
+function fieldDailyTarget(f){
+ if(typeof f?.dailyTarget==='string'&&f.dailyTarget)return f.dailyTarget;
+ // Legacy schema-4 expeditions preserve the original first-step target in
+ // sequence even after branch maps replace their local target node.
+ return f?.sequence?.[0]?.type==='gather'?f.sequence[0].id:null;
+}
+function fieldHarvestTargetKind(f,node){
+ if(!node||node.key!=='target')return null;
+ const daily=fieldDailyTarget(f);
+ return daily&&node.id===daily?'daily':'segment';
+}
+function fieldHarvestTargetSuffix(f,node,{action=false}={}){
+ const kind=fieldHarvestTargetKind(f,node);
+ if(kind==='daily')return action?' · 今日目标已完成，可撤离！':' · 今日目标已完成！';
+ if(kind==='segment')return action?' · 本区采集完成，可继续探索！':' · 本区采集完成！';
+ return '';
+}
 function promoteCrew(s,role){return applyCrewPromotion(s,role,transact)}
 const PHASES=['forecast','field','research','menu','prep','service','report','upgrade'];
 const SAVE_KEY='oddpot-prototype-v04'; // v0.2 兼容先前试玩存档
@@ -3872,7 +3891,7 @@ function enterField(s,route){
   [{type:'gather',id:target,n:2,label:'目标采集'},{type:'gather',id:s.day===2?'chili':'mushroom',n:3,label:'林间采集'},{type:'event',id:'chicken',n:2,label:'流浪农夫'}];
  s.route=route;
  const encounterPlan=makeSpecialEncounterPlan(s,route),map=insertPlannedFieldEncounter(buildFieldMap(s,route,target),encounterPlan,1);
- s.field={route,hp:3,node:0,bag:{},bagStacks:[],capacity:s.bagSlots||8,sequence,
+ s.field={route,hp:3,node:0,dailyTarget:target,target,bag:{},bagStacks:[],capacity:s.bagSlots||8,sequence,
   segmentIndex:1,segmentStatus:'active',encounterPlan,zoneId:route.startsWith('spring')?'hot_spring_shallows':'herb_path',
   zoneTitle:route.startsWith('spring')?'热泉浅滩':'香草小径',
   dangerCommitment:risk,selectedBranches:[],choices:[],weapon:fieldWeaponSnapshot(s),
@@ -4575,7 +4594,7 @@ function interactExplorer(s){
  }
  const n=Math.min(node.n,3-(f.bag[node.id]||0));f.bag[node.id]=(f.bag[node.id]||0)+n;node.claimed=true;
  f.finished=f.nodes.every(v=>v.claimed);
- return {ok:true,message:`${node.type==='danger'?'⚔️ 成功应对野牛！':'✨ 采集成功！'}获得${ING[node.id].name} ×${n}${node.key==='target'?' · 今日目标已完成！':''}`};
+ return {ok:true,message:`${node.type==='danger'?'⚔️ 成功应对野牛！':'✨ 采集成功！'}获得${ING[node.id].name} ×${n}${fieldHarvestTargetSuffix(f,node)}`};
 }
 
 // Restaurant v0.3: attention is spent on actual guests, not repeated wok puzzles.
@@ -5171,7 +5190,7 @@ function gather(f,n){
  }
  gained+=bonus;n.claimed=true;f.popFx??=[];
  f.popFx.push({x:n.x,y:n.y,text:'+'+gained,ttl:.76,color:'#ffe8a3'});
- pushMsg(f,(bonus?'🍱 便当采集加成！':'')+'采到 '+ING[n.id].name+' ×'+gained+(n.key==='target'?' · 今日目标已完成，可撤离！':''));
+ pushMsg(f,(bonus?'🍱 便当采集加成！':'')+'采到 '+ING[n.id].name+' ×'+gained+fieldHarvestTargetSuffix(f,n,{action:true}));
  return true;
 }
 function useFieldSkill(s){
@@ -5948,6 +5967,46 @@ function diningBubbleLines(words,maxChars=16){
  if(Array.from(String(words||'')).length>maxChars)chars.splice(Math.max(0,maxChars-1),1,'…');
  const midpoint=chars.length>9?Math.ceil(chars.length/2):chars.length;
  return [chars.slice(0,midpoint).join(''),chars.slice(midpoint).join('')].filter(Boolean);
+}
+// v0.12-F: real outdoor waiters talk; no extra customers or gameplay RNG calls.
+// Speech is deterministic for a given order list and restaurant clock, including reload.
+const OUTDOOR_QUEUE_LINES=Object.freeze({
+ adventurer:Object.freeze(['还没轮到我？','矿车可不等人！','锅气都飘出来啦。','待会儿点份肉！']),
+ family:Object.freeze(['小菌帽们饿啦。','闻着有菌汤香！','排好队，别乱跑。','先找个暖位置。']),
+ regular:Object.freeze(['咕噜，真热闹！','我想吃脆脆的。','今天好多人呀！','好香，快到了！']),
+ critic:Object.freeze(['好味值得等。','门前竟有长队。','希望火候不负盛名。','再看一会儿吧。']),
+ stargazer:Object.freeze(['星砂都在排队。','这香气真亮呀。','夜路还长呢。','轮到我就好了。'])
+});
+const OUTDOOR_QUEUE_URGENT=Object.freeze({
+ adventurer:'我的矿车快开啦！',
+ family:'孩子们快困啦。',
+ regular:'咕噜，要排多久？',
+ critic:'等待也是考验。',
+ stargazer:'星砂快散尽了。'
+});
+function phraseHash(str){
+ let h=2166136261;
+ for(const c of String(str)){h^=c.codePointAt(0);h=Math.imul(h,16777619)}
+ return h>>>0;
+}
+function selectOutdoorQueueSpeech(orders,clock){
+ if(!Array.isArray(orders)||!Number.isFinite(clock))return null;
+ const waiting=orders.filter(o=>o&&o.status==='waiting'&&Number.isFinite(o.arrival)&&o.arrival<=clock).slice(0,4);
+ if(!waiting.length)return null;
+ const slot=Math.floor(clock/7),elapsed=clock-slot*7;
+ // Quiet intervals are intentional; 4.0 seconds of speech in seven.
+ if(elapsed<.65||elapsed>4.65)return null;
+ const ids=waiting.map(o=>o.id).join('|');
+ const offset=phraseHash(ids+'|'+slot)%waiting.length;
+ const order=waiting[offset];
+ const waited=clock-order.arrival;
+ if(!Number.isFinite(waited)||waited<1)return null;
+ const urgent=waited>=18;
+ const lines=OUTDOOR_QUEUE_LINES[order.segment]||OUTDOOR_QUEUE_LINES.regular;
+ const text=urgent?(OUTDOOR_QUEUE_URGENT[order.segment]||OUTDOOR_QUEUE_URGENT.regular):
+  lines[phraseHash(order.id+'|'+slot+'|chat')%lines.length];
+ return {id:'outdoor-'+order.id+'-'+slot,orderId:order.id,segment:order.segment,
+  text,kind:urgent?'urgent':'chat',phase:Math.max(0,Math.min(1,(elapsed-.65)/4))};
 }
 // v0.8.3: procedural held-utensil geometry. All offsets are Canvas pixels
 // relative to the current chef sprite; no external art or new equipment rules.
@@ -7808,6 +7867,37 @@ function drawGuestSpeech077(c,cue,actor,w,h){
 function drawStaffSpeech078(c,cue,actor,w,h){
  drawSpeechCard(c,cue,actor.speechPlacement,true);
 }
+// Short, quiet talk follows an actual guest who is visibly waiting OUTSIDE.
+// The doorway clips this to its own window. Never adds an interaction layer.
+function drawOutdoorQueueChatter(c,queue,t,L,T,W,H){
+ const cue=selectOutdoorQueueSpeech(queue,t);
+ if(!cue||W<118||H<58)return null;
+ const slot=queue.slice(0,4).findIndex(o=>o.id===cue.orderId);
+ if(slot<0)return null;
+ const actorX=L+W*(.20+slot*.205),actorY=T+H*.77;
+ const glyphs=Array.from(cue.text);
+ const words=glyphs.length>10?glyphs.slice(0,9).join('')+'…':glyphs.join('');
+ const font=H<85?8:9;
+ const width=Math.min(W-12,Math.max(45,Math.ceil(Array.from(words).length*font+14)));
+ const height=H<85?20:23;
+ const X=speechClamp(actorX-width*.5,L+5,L+W-width-5);
+ // The status bar occupies the top 28 px. A small gap is always preserved.
+ const Y=T+Math.min(Math.max(31,H*.32),H-height-4);
+ const urgent=cue.kind==='urgent';
+ c.save();c.globalAlpha=Math.min(.93,speechOpacity(cue));
+ c.fillStyle=urgent?'#ffdfc4':'#eff3d9';c.strokeStyle=urgent?'#ca966c':'#83a18a';
+ c.lineWidth=1;
+ c.beginPath();c.roundRect(X,Y,width,height,6);c.fill();c.stroke();
+ const headY=actorY-19,base=speechClamp(actorX,X+9,X+width-9);
+ if(headY>Y+height&&headY-(Y+height)<24){
+  c.beginPath();c.moveTo(base-3,Y+height-1);c.lineTo(base+3,Y+height-1);
+  c.lineTo(actorX,headY);c.closePath();c.fill();
+ }
+ text(c,words,X+width/2,Y+height/2,urgent?'#77402f':'#395248',font);
+ c.restore();
+ return cue.orderId;
+}
+
 // Compact cutaway outside the entry: environmental context, not a modal panel.
 // Weather is consistent for the day; standing visitors are actual pending orders.
 function drawDinerDoorway(c,s,t,w,h){
@@ -7853,6 +7943,7 @@ function drawDinerDoorway(c,s,t,w,h){
  c.font='bold 11px system-ui';c.textBaseline='middle';
  c.fillStyle='#193a32c9';c.fillRect(L+6,T+6,Math.min(W-12,queue.length?94:102),22);
  text(c,(weather==='rain'?'☔':weather==='mist'?'☁️':weather==='breeze'?'🍃':'☀️')+' 等位 '+queue.length,L+51,T+17,'#fff0cc',11);
+ drawOutdoorQueueChatter(c,queue,t,L,T,W,H);
  // Door threshold and open-frame mullions sit above the outdoor strip.
  c.strokeStyle='#d7b07b';c.lineWidth=4;c.strokeRect(L+2,T+2,W-4,H-4);
  c.fillStyle='#79563d';c.fillRect(L+W*.475,T+H*.03,W*.05,H*.13);
@@ -8146,7 +8237,7 @@ const itemCount=()=>Object.keys(game.recipes).length;
 
 function hud(){
  const home=game.phase==='forecast';
- return `<div class="hud ${home?'v076-home-hud':''}"><div class="brand"><span class="logo" aria-hidden="true">🍳</span><div><strong>怪味食堂</strong><small>${home?'今日营业':'ODDPOT · v0.12.0-alpha.4'}</small></div></div><div class="hud-meta"><span aria-label="金币">🪙 ${game.coins}</span><span aria-label="声望">⭐ ${game.reputation}</span></div><button class="hud-gear" data-act="settings" aria-label="设置">⚙</button></div><div class="day-strip ${home?'v076-home-day':''}"><b>营业第 ${totalBusinessDay(game)} 天 · ${tableCapacity(game)} 座</b><span class="day-phase">${home?'☀ 开店前':phaseLabels[game.phase]}</span>${home?'':`<span class="day-recipes">图鉴 ${itemCount()}/${Object.keys(RECIPES).length}</span>`}</div>`;
+ return `<div class="hud ${home?'v076-home-hud':''}"><div class="brand"><span class="logo" aria-hidden="true">🍳</span><div><strong>怪味食堂</strong><small>${home?'今日营业':'ODDPOT · v0.12.0-alpha.5'}</small></div></div><div class="hud-meta"><span aria-label="金币">🪙 ${game.coins}</span><span aria-label="声望">⭐ ${game.reputation}</span></div><button class="hud-gear" data-act="settings" aria-label="设置">⚙</button></div><div class="day-strip ${home?'v076-home-day':''}"><b>营业第 ${totalBusinessDay(game)} 天 · ${tableCapacity(game)} 座</b><span class="day-phase">${home?'☀ 开店前':phaseLabels[game.phase]}</span>${home?'':`<span class="day-recipes">图鉴 ${itemCount()}/${Object.keys(RECIPES).length}</span>`}</div>`;
 }
 function toast(){return `<div class="game-toast" role="status"><span>${esc(message)}</span></div>`}
 function playablePhase(){return game.phase==='service'||(game.phase==='field'&&!!game.field?.action)}
@@ -8239,7 +8330,7 @@ function overlayMarkup(){if(!overlay)return '';
    };
    body='<h2>👩‍🍳 食堂伙伴</h2><p class="sheet-lead">按实际工作订单累积经验，晋升带来更高效率与工资；可在开门前安排上岗/休息，员工餐依然提供当晚Buff。</p><div class="staff-roster">'+row('helper')+row('waiter')+'</div>';
  }else if(overlay==='settings'){
-  body=`<h2>⚙ 试玩设置</h2><p class="sheet-lead">版本 v0.12.0-alpha.4 · 固定 9:16 竖屏 · 单机 localStorage 存档</p>${b('reset','重置存档，从 DAY 1 重新开始','danger')}<p class="sheet-lead">切到后台时营业会自动暂停。更换设备不会同步存档。</p>`;
+  body=`<h2>⚙ 试玩设置</h2><p class="sheet-lead">版本 v0.12.0-alpha.5 · 固定 9:16 竖屏 · 单机 localStorage 存档</p>${b('reset','重置存档，从 DAY 1 重新开始','danger')}<p class="sheet-lead">切到后台时营业会自动暂停。更换设备不会同步存档。</p>`;
  }else if(overlay==='details'){
   const r=game.report;body=r?`<h2>营业账本详情</h2><p class="sheet-lead">本日订单由真实食材库存、工位工作秒数和顾客等待事件计算。</p><div class="book-list">${Object.entries(r.byDish).map(([id,d])=>`<div class="detail-row">${RECIPES[id].emoji} ${RECIPES[id].name}：售出 ${d.count} 份 · 满意 ${Math.round(d.totalSat/d.count)}</div>`).join('')}<div class="detail-row">WOK 占用 ${r.congestion.WOK} 秒 / POT ${r.congestion.POT} 秒</div><div class="detail-row">食材耗用估值 ${r.cost} · 宣传 ${r.finance?.marketingCost||0} · 工资 ${r.finance?.wage||0} · 招待支出 ${r.hospitalityCost||0} · 收入 ${r.revenue} · 经营利润 ${r.profit} · 现金净变动 ${r.finance?.cashChange??'旧版无记录'}</div></div>`:'';
  }
