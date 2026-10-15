@@ -1,3 +1,4 @@
+import {fieldHarvestTargetSuffix} from './field_target_v012f.js';
 import {makeSpecialEncounterPlan,previewSpecialEncounter,SPECIAL_ENCOUNTER_KINDS} from './field_encounters_v011c.js';
 import {ING,RECIPES,CUSTOMERS,FORECAST,DEFAULT_INVENTORY,SHOP_STAPLES} from './data.js?v=0.12.0-alpha.4';
 import {LIVE_ACTIONS,evaluateLiveCook,liveIngredientState,liveIngredientHeatFeedback,legacyVariant,makeLiveVariant,resolveTechnique} from './cooking_v063.js?v=0.12.0-alpha.4';
@@ -416,7 +417,7 @@ export function enterField(s,route){
   [{type:'gather',id:target,n:2,label:'目标采集'},{type:'gather',id:s.day===2?'chili':'mushroom',n:3,label:'林间采集'},{type:'event',id:'chicken',n:2,label:'流浪农夫'}];
  s.route=route;
  const encounterPlan=makeSpecialEncounterPlan(s,route),map=insertPlannedFieldEncounter(buildFieldMap(s,route,target),encounterPlan,1);
- s.field={route,hp:3,node:0,bag:{},bagStacks:[],capacity:s.bagSlots||8,sequence,
+ s.field={route,hp:3,node:0,dailyTarget:target,target,bag:{},bagStacks:[],capacity:s.bagSlots||8,sequence,
   segmentIndex:1,segmentStatus:'active',encounterPlan,zoneId:route.startsWith('spring')?'hot_spring_shallows':'herb_path',
   zoneTitle:route.startsWith('spring')?'热泉浅滩':'香草小径',
   dangerCommitment:risk,selectedBranches:[],choices:[],weapon:fieldWeaponSnapshot(s),
@@ -1119,7 +1120,7 @@ export function interactExplorer(s){
  }
  const n=Math.min(node.n,3-(f.bag[node.id]||0));f.bag[node.id]=(f.bag[node.id]||0)+n;node.claimed=true;
  f.finished=f.nodes.every(v=>v.claimed);
- return {ok:true,message:`${node.type==='danger'?'⚔️ 成功应对野牛！':'✨ 采集成功！'}获得${ING[node.id].name} ×${n}${node.key==='target'?' · 今日目标已完成！':''}`};
+ return {ok:true,message:`${node.type==='danger'?'⚔️ 成功应对野牛！':'✨ 采集成功！'}获得${ING[node.id].name} ×${n}${fieldHarvestTargetSuffix(f,node)}`};
 }
 
 // Restaurant v0.3: attention is spent on actual guests, not repeated wok puzzles.
