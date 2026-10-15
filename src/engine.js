@@ -778,7 +778,7 @@ export function createService(s,options={}){if(s.phase!=='service'||s.service||!
   marketing:{id:plan.campaignId,cost:plan.marketingCost,guests:plan.marketingGuests},
   ratingAttempt:ensureChapterProgress(s).stars===0&&
    ensureChapterProgress(s).requestDay===kitchenDayKey(s)&&totalBusinessDay(s)>=4,
-  secondStarStage:secondStarRequested(s)?ensureSecondAppraisal(s).stage:null,
+  secondStarStage:ensureChapterProgress(s).stars===1&&(s.dining?.tableCount||2)>=4&&totalBusinessDay(s)>=7&&ensureSecondAppraisal(s).requestDay===kitchenDayKey(s)?ensureSecondAppraisal(s).stage:null,
   crew:clone(crewEffects(s)),crewDispatch:ensureKitchen(s).slots.length>=3,staffStats:{helperSeconds:0,helperOrders:0,helper2Seconds:0,helper2Orders:0,waiterBonus:0,waiterOrders:0,waiterSaved:0},
   stations:Object.fromEntries(ensureKitchen(s).slots.map((_,i)=>[stationId(i),null])),kitchenSnapshot:clone(ensureKitchen(s).slots),stationStats:Object.fromEntries(ensureKitchen(s).slots.map((_,i)=>[stationId(i),{count:0,secondsSaved:0}])),
   queued:[],wave:0,done:false,events:[],income:0,cost:0,tableCount:s.dining?.tableCount||2,congestion:Object.fromEntries(ensureKitchen(s).slots.map((_,i)=>[stationId(i),0])),initialInventory:clone(s.inventory),
