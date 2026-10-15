@@ -8,8 +8,8 @@ const source=p=>readFileSync(new URL(p,import.meta.url),'utf8');
 const app=source('../src/app.js'),css=source('../src/forecast_home_v076.css');
 const index=source('../index.html'),pkg=JSON.parse(source('../package.json'));
 
-test('the internal, browser, offline and package versions all target v0.13.0-alpha.4',()=>{
- assert.equal(pkg.version,'0.13.0-alpha.4');
+test('the internal, browser, offline and package versions all target v0.13.0-alpha.5',()=>{
+ assert.equal(pkg.version,'0.13.0-alpha.5');
  assert.match(index,/<title>怪味食堂 · Oddpot Kitchen v0\.13\.0-alpha\.4<\/title>/);
  assert.match(index,/src\/app\.js\?v=0\.13\.0-alpha\.4/);
  assert.match(index,/forecast_home_v076\.css\?v=0\.9\.3/);
