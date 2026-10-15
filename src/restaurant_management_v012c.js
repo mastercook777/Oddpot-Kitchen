@@ -61,7 +61,7 @@ export function crewPromotion(s,role){
  return {level,requiredXP:CREW_XP_THRESHOLDS[level],cost:growth.promotionCosts[level-1],
   nextWage:crewWage(role,level),ready:person.xp>=CREW_XP_THRESHOLDS[level]};
 }
-export function promoteCrew(s,role,transact){
+export function applyCrewPromotion(s,role,transact){
  if(!['prep','upgrade'].includes(s.phase))return false;
  const next=crewPromotion(s,role);
  if(!next?.ready||s.coins<next.cost)return false;
