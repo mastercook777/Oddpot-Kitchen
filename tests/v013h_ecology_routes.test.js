@@ -21,7 +21,8 @@ const step=(s,choice)=>{
 };
 test('new explorations ignore any stale selected ingredient; every mandatory pickup comes from actual zone ecology',()=>{
  for(const route of routes)for(const ingredient of MARKET_ROTATION_STAPLES){
-  const s=newGame(26001);s.phase='field';s.selectedTarget=ingredient;
+  const s=newGame(26001);assert.equal(Object.hasOwn(s,'selectedTarget'),false);
+  s.phase='field';s.selectedTarget=ingredient;
   assert.equal(enterField(s,route),true);
   const f=s.field,zone=startZone[route];
   assert.equal(f.targetMode,'ecology');
