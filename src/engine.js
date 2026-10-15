@@ -967,7 +967,7 @@ function advanceGuestOrders(s){
    if(o.fit<45||!o.recipeId){o.status='rejected';o.rejectReason='菜单不匹配';o.leftAt=v.time;record(s,{type:'rejected',order:o.id,reason:'菜单不匹配'});continue;}
    o.basePatience=o.patience;const bonus=v.crew?.waiter?.patience||0;
    // Outdoor waiting uses up real customer patience; reset at ordering must not be a free time bank.
-   const queuePenalty=Math.min(22,Math.round((o.queueSeconds||0)*.9));
+   const queuePenalty=Math.min(24,Math.round((o.queueSeconds||0)*1.15));
    o.patience=Math.max(8,o.patience+bonus-queuePenalty);v.staffStats.waiterBonus+=bonus;if(bonus)v.staffStats.waiterOrders++;
    o.status='queued';o.arrival=v.time; o.orderedAt=v.time;
    v.queued.push(o.id);record(s,{type:'ordered',order:o.id,recipeId:o.recipeId,table:o.tableId,seat:o.seatId});
