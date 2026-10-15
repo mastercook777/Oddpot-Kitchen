@@ -3,7 +3,8 @@ import {createEcologyEnemies,ecologyEngagedEnemies,stepEcologyEnemy} from './fie
 import {stepMiniBoss,stepBossZones} from './field_bosses_v011g.js';
 // v0.4 real-time forest encounter. The underlying kitchen inventory remains
 // governed by engine.settleField; this file only mutates the expedition bag.
-import {ING} from './data.js?v=0.12.0-alpha.1';
+import {ING} from './data.js?v=0.12.0-alpha.5';
+import {fieldHarvestTargetSuffix} from './field_target_v012f.js';
 import {meleeProfile,meleeAttackWouldHit} from './field_combat_feedback_v084.js?v=0.8.4';
 import {clamp, rand, settleField,addFieldBag,resolveSpecialFieldEvent} from './engine.js?v=0.12.0-alpha.1';
 import {hazardPhase} from './field_rules_v011a.js';
@@ -177,7 +178,7 @@ function gather(f,n){
  }
  gained+=bonus;n.claimed=true;f.popFx??=[];
  f.popFx.push({x:n.x,y:n.y,text:'+'+gained,ttl:.76,color:'#ffe8a3'});
- pushMsg(f,(bonus?'🍱 便当采集加成！':'')+'采到 '+ING[n.id].name+' ×'+gained+(n.key==='target'?' · 今日目标已完成，可撤离！':''));
+ pushMsg(f,(bonus?'🍱 便当采集加成！':'')+'采到 '+ING[n.id].name+' ×'+gained+fieldHarvestTargetSuffix(f,n,{action:true}));
  return true;
 }
 export function useFieldSkill(s){
