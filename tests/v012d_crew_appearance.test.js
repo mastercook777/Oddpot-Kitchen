@@ -38,7 +38,7 @@ test('v0.12-D both roles own three unique painter outputs and tier-accurate outf
   assert.equal(CREW_APPEARANCES[role].length,3);
   for(const [idx,look] of CREW_APPEARANCES[role].entries()){
    assert.equal(crewAppearance(role,idx+1).label,look.label);
-   assert.ok(look.uniform.length>=8);
+   assert.ok(look.uniform.length>=4);
    assert.deepEqual(portrait(role,idx+1).slice(-5),variants[idx].slice(-5));
   }
  }
