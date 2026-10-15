@@ -30,7 +30,7 @@ function newScenario(seed,{third=false,menu=MIXED,stars=2,stage=0,startingCoins=
  s.phase='prep';
  s.management={dayKey:'4-1',openingCoins:startingCoins,campaignId:'none',wageDebt:0};
  s.menu=[...menu];
- for(const id of s.menu)assert.ok(RECIPES[id])&&(s.recipes[id]=83);
+ for(const id of s.menu){assert.ok(RECIPES[id]);s.recipes[id]=83;}
  for(const id of Object.keys(s.inventory))s.inventory[id]=MARKET_ROTATION_STAPLES.includes(id)?inventory:0;
  if(stage){
   s.chapterProgress.stars=1;
@@ -61,7 +61,7 @@ function night(s){
  return r;
 }
 function oneNight(seed,o){
- const s=newScenario(seed,{third:o.third,menu:o.menu,stars:o.stage?1:2,stage:o.stage,inventory:100});
+ const s=newScenario(seed,{third:o.third,menu:o.menu,stars:o.stage?1:2,stage:o.stage,inventory:o.stock??100});
  if(o.campaign&&o.campaign!=='none')assert.equal(chooseCampaign(s,o.campaign),true);
  const r=night(s);
  return {arrivals:r.totalOrders,served:r.served,rejected:r.rejected,queueLoss:r.queue.abandoned,
@@ -79,7 +79,7 @@ const singleCases=[
  {id:'star1-three',third:true,menu:MIXED,stage:1},
  {id:'star2-two',third:false,menu:MIXED,stage:2},
  {id:'star2-three',third:true,menu:MIXED,stage:2},
- {id:'star1-three-low-stock',third:true,menu:MIXED,stage:1}
+ {id:'star1-three-low-stock',third:true,menu:MIXED,stage:1,stock:3}
 ];
 const single={};const singleRaw={};
 for(const c of singleCases){
@@ -92,19 +92,6 @@ for(const c of singleCases){
  single[c.id]={n:starRuns,...summarize(records,['arrivals','served','rejected','queueLoss','revenue',
   'profit','wage','marketing','adServed','adRevenue','starScore','starPass']),
   profitP10:quant(records.map(x=>x.profit),.1),profitP90:quant(records.map(x=>x.profit),.9)};
-}
-// Low-supply star case is an actual engine night with only 3 units of each material.
-single['star1-three-low-stock']={};
-{
- const c=singleCases.at(-1);
- const records=Array.from({length:starRuns},(_,i)=>{
-  const s=newScenario(183719+i*3719,{third:true,stage:1,menu:MIXED,inventory:3});
-  const r=night(s);
-  return {arrivals:r.totalOrders,served:r.served,rejected:r.rejected,queueLoss:r.queue.abandoned,
-   revenue:r.revenue,profit:r.profit,starScore:r.secondRating.score,starPass:Number(r.secondRating.passed)};
- });
- singleRaw[c.id]=records;
- single[c.id]={n:starRuns,...summarize(records,['arrivals','served','rejected','queueLoss','revenue','profit','starScore','starPass'])};
 }
 function seedOldCapacity(s,market){
  // Counterfactual ONLY: reconstruct the former RNG cap while keeping the same
