@@ -5,14 +5,16 @@ export const OUTDOOR_QUEUE_LINES=Object.freeze({
  family:Object.freeze(['小菌帽们饿啦。','闻着有菌汤香！','排好队，别乱跑。','先找个暖位置。']),
  regular:Object.freeze(['咕噜，真热闹！','我想吃脆脆的。','今天好多人呀！','好香，快到了！']),
  critic:Object.freeze(['好味值得等。','门前竟有长队。','希望火候不负盛名。','再看一会儿吧。']),
- stargazer:Object.freeze(['星砂都在排队。','这香气真亮呀。','夜路还长呢。','轮到我就好了。'])
+ stargazer:Object.freeze(['星砂都在排队。','这香气真亮呀。','夜路还长呢。','轮到我就好了。']),
+ gardener:Object.freeze(['芽角闻到青菜香！','还要排多久？','今天有蔬食吗？','春天快轮到我啦。'])
 });
 export const OUTDOOR_QUEUE_URGENT=Object.freeze({
  adventurer:'我的矿车快开啦！',
  family:'孩子们快困啦。',
  regular:'咕噜，要排多久？',
  critic:'等待也是考验。',
- stargazer:'星砂快散尽了。'
+ stargazer:'星砂快散尽了。',
+ gardener:'嫩叶快等蔫啦！'
 });
 function phraseHash(str){
  let h=2166136261;
