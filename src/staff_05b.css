@@ -13,3 +13,5 @@
 .staff-report{display:flex;flex-direction:column;gap:4px;background:#30533e;border:1px solid #aac18d;border-radius:10px;padding:9px 11px;font-size:12px;line-height:1.45}
 .staff-report b{font-size:14px;color:#ffe0a0}.staff-report span{color:#e7e8c8}.staff-report small{color:#cfdbc4}
 @media(max-height:650px){.kitchen-prep-card{gap:2px}.staff-open-prep{min-height:33px;font-size:12px;padding:4px 7px}.staff-open-prep span{font-size:11px}}
+/* v0.13.0-alpha.3: occupied priority spots stay visible but cannot be assigned twice. */
+.staff-assign button:disabled{opacity:.38;cursor:not-allowed;filter:saturate(.45)}
