@@ -45,7 +45,7 @@ function night(s){
  if(s.coins<selectedCampaign(s).cost){
   assert.equal(s.phase,'prep');
   assert.equal(chooseCampaign(s,'none'),true);
-  s._auditSkippedCampaigns=(s._auditSkippedCampaigns||0)+1;
+  s._auditSkippedCampaignDay=s.cycle+'-'+s.day;
  }
  s.phase='service';
  assert.equal(createService(s,{walkable:true}),true,
@@ -161,7 +161,7 @@ function twentyOneDays(seed,o){
    endCoins:s.coins,inventoryRemain,debt:r.finance.debt,
    marketingSpent:r.finance.marketingCost,marketingServed:r.finance.marketingServed,
    wage:r.finance.wage,shortageDay:Number(r.rejected>0),
-   skippedCampaign:Number(!!s._auditSkippedCampaigns),
+   skippedCampaign:Number(s._auditSkippedCampaignDay===dayKey),
    inDeficit:Number(s.coins<0),unpaidWages:Number(r.finance.debt>0)});
   s.phase='upgrade';assert.equal(advanceDay(s),true);
  }
