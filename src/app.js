@@ -10,6 +10,8 @@ import {PHASES,newGame,save,load,beginLiveResearch,dropLiveIngredient,performLiv
 import {startActionField,stepActionField,useFieldSkill,resolveFieldEvent} from './field_v04.js?v=0.12.0-alpha.2';
 import {drawField,drawDiner} from './scenes_v04.js?v=0.12.0-alpha.2';
 import {drawGuestPortraits} from './guest_portraits_v104.js?v=0.10.4';
+import {crewAppearance} from './pixels_v041.js?v=0.12.0-alpha.3';
+import {drawCrewPortraits} from './crew_portraits_v012d.js?v=0.12.0-alpha.3';
 
 let game=load()||newGame();
 let flashUntil=0;
@@ -96,14 +98,18 @@ function overlayMarkup(){if(!overlay)return '';
      <span>${item.canPrepare?'准备':'缺料'}</span></button>`).join('')||'<p class="sheet-lead">尚未掌握特色便当菜谱。可以先探索研发，次日再带上。</p>'}</div>`}`;
  }else if(overlay==='crew'){
    const crew=ensureCrew(game),eff=crewEffects(game);
+   const identity=(role,level)=>{
+    const look=crewAppearance(role,level);
+    return '<div class="v12d-staff-identity"><canvas class="v12d-staff-portrait" width="68" height="82" data-crew-portrait="'+role+'" data-level="'+look.level+'" role="img" aria-label="'+(role==='helper'?'阿火':'小芽')+' '+esc(look.label)+'像素形象"></canvas><div class="v12d-staff-profile"><strong>'+esc(look.label)+'</strong><small>'+esc(look.uniform)+'</small></div><span class="v12d-tier" aria-label="职业阶级 '+look.level+'">Lv.'+look.level+'</span></div>';
+   };
    const row=role=>{
     const person=crew[role],def=CREW_ROLES[role],meal=activeCrewMeal(game,role),promotion=crewPromotion(game,role);
-    if(!person.hired)return '<div class="staff-person"><div class="staff-person-head"><b>'+(role==='helper'?'🍳':'🧺')+' '+def.name+' · '+def.job+'</b><span>入职 '+def.hireCost+' 金币</span></div>'+b('hire:'+role,'雇佣 '+def.name,'primary',game.coins<def.hireCost)+'</div>';
+    if(!person.hired)return '<div class="staff-person">'+identity(role,1)+'<div class="staff-person-head"><b>'+(role==='helper'?'🍳':'🧺')+' '+def.name+' · '+def.job+'</b><span>入职 '+def.hireCost+' 金币</span></div>'+b('hire:'+role,'雇佣 '+def.name,'primary',game.coins<def.hireCost)+'</div>';
     const current=role==='helper'?'岗位：'+(person.station===0?'左':'右')+'厨位 · 每单 -'+eff.helper.seconds+'秒':'顾客耐心 +'+eff.waiter.patience+'秒';
     const duty=game.phase==='prep'?'<div class="v12c-duty"><button data-act="duty:'+role+':on" class="'+(person.onDuty?'active':'')+'">✓ 今晚上岗</button><button data-act="duty:'+role+':off" class="'+(!person.onDuty?'active':'')+'">◌ 今晚休息</button></div>':'';
     const promote=promotion?'<div class="v12c-progress"><span>实际工作经验 '+person.xp+'/'+promotion.requiredXP+' · 晋升工资 '+promotion.nextWage+'/晚</span><i style="width:'+Math.min(100,Math.floor(person.xp/promotion.requiredXP*100))+'%"></i></div><button class="v12c-promote" data-act="promote:'+role+'" '+(promotion.ready&&game.coins>=promotion.cost&&['prep','upgrade'].includes(game.phase)?'':'disabled')+'>晋升 Lv.'+promotion.level+' · 培训 '+promotion.cost+' 金币 '+(promotion.ready?'✓':'· 经验不足')+'</button>':'<div class="v12c-progress">⭐ 已达满级 · 总工作量 '+person.xp+'</div>';
     const options=person.onDuty&&!meal&&game.phase==='prep'?'<div class="staff-feed-list">'+Object.keys(game.recipes).map(id=>'<button data-feed="'+role+':'+id+'" '+(!canUse(game,recipeCraftSnapshot(game,id).ingredientIds)?'disabled':'')+'>'+RECIPES[id].emoji+' '+RECIPES[id].name+'<small>品质 '+recipeCraftSnapshot(game,id).quality+'</small></button>').join('')+'</div>':'';
-    return '<div class="staff-person"><div class="staff-person-head"><b>'+(role==='helper'?'🍳':'🧺')+' '+def.name+' · '+def.job+' Lv.'+person.level+'</b><span>工资 '+crewWage(role,person.level)+'/晚</span></div><div class="staff-buff">'+(person.onDuty?current:'今晚休息：无工资，无岗位加成')+' · 员工餐羁绊 '+person.meals+'/3</div>'+duty+promote+(role==='helper'&&game.phase==='prep'&&person.onDuty?'<div class="staff-assign">'+[0,1].map(i=>'<button data-assign="'+i+'" class="'+(person.station===i?'active':'')+'">'+(i?'右':'左')+'厨位</button>').join('')+'</div>':'')+'<p>'+(meal?'今日员工餐：'+esc(RECIPES[meal.recipeId].name)+' · 品质 '+meal.quality:person.onDuty&&game.phase==='prep'?'可提供员工餐，临时强化当晚表现':'本次不安排员工餐')+'</p>'+options+'</div>';
+    return '<div class="staff-person">'+identity(role,person.level)+'<div class="staff-person-head"><b>'+(role==='helper'?'🍳':'🧺')+' '+def.name+' · '+def.job+' Lv.'+person.level+'</b><span>工资 '+crewWage(role,person.level)+'/晚</span></div><div class="staff-buff">'+(person.onDuty?current:'今晚休息：无工资，无岗位加成')+' · 员工餐羁绊 '+person.meals+'/3</div>'+duty+promote+(role==='helper'&&game.phase==='prep'&&person.onDuty?'<div class="staff-assign">'+[0,1].map(i=>'<button data-assign="'+i+'" class="'+(person.station===i?'active':'')+'">'+(i?'右':'左')+'厨位</button>').join('')+'</div>':'')+'<p>'+(meal?'今日员工餐：'+esc(RECIPES[meal.recipeId].name)+' · 品质 '+meal.quality:person.onDuty&&game.phase==='prep'?'可提供员工餐，临时强化当晚表现':'本次不安排员工餐')+'</p>'+options+'</div>';
    };
    body='<h2>👩‍🍳 食堂伙伴</h2><p class="sheet-lead">按实际工作订单累积经验，晋升带来更高效率与工资；可在开门前安排上岗/休息，员工餐依然提供当晚Buff。</p><div class="staff-roster">'+row('helper')+row('waiter')+'</div>';
  }else if(overlay==='settings'){
@@ -387,6 +393,7 @@ function render(){
  const [stage,dock]=({forecast,field,research,menu,prep,service,report,upgrade}[game.phase])();
  app.innerHTML=shell(stage,dock);
  if(overlay==='book'&&bookTab==='guests')drawGuestPortraits(app);
+ if(overlay==='crew')drawCrewPortraits(app);
  const target=app.querySelector('.target-scroller');if(target)target.scrollLeft=prevTargetScroll;
  const sheet=app.querySelector('.sheet-body');if(sheet)sheet.scrollTop=prevSheetScroll;
  // Preserve the on-screen floating stick when a second finger uses the skill.
