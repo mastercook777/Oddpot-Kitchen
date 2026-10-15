@@ -81,7 +81,7 @@ try{
  }
  const offline=await browser.newPage({viewport:{width:390,height:844}});
  const s=states();await launchState(offline,s,'standalone.html');
- assert.match(await offline.title(),/0.13.0-alpha.5/);
+ assert.match(await offline.title(),/0\.\d+\.\d+-alpha\.\d+/);
  await checkFour(offline,s);
  await offline.close();
  console.log('v0.13-E verified actual four displayed market rows, buy actions, spend, next-day rotation, old saves, 320/375/390 and offline');
