@@ -8,6 +8,8 @@ import {expandFieldMap} from './field_world_v011b1.js';
 import {newServiceHero,heroZone} from './walkable_restaurant_v07.js?v=0.9.2';
 import {CAMPAIGNS,CREW_GROWTH,CREW_XP_THRESHOLDS,ensureManagement,selectedCampaign,chooseCampaign,crewWage,ensureStaffProgress,setCrewDuty,crewPromotion,applyCrewPromotion,payroll,settleCrewExperience} from './restaurant_management_v012c.js';
 export {CAMPAIGNS,CREW_GROWTH,CREW_XP_THRESHOLDS,ensureManagement,selectedCampaign,chooseCampaign,crewWage,setCrewDuty,crewPromotion};
+import {naturalStarAttendance,serviceArrivalWave,serviceArrivalSecond,outdoorQueueCount,outdoorQueueExpired,queueServiceReport} from './restaurant_demand_v012e.js';
+export {QUEUE_PATIENCE_SECONDS,NATURAL_STAR_GUEST_CAP,starWordOfMouthBoost,naturalStarAttendance,serviceArrivalWave,serviceArrivalSecond,queueServiceReport} from './restaurant_demand_v012e.js';
 export function promoteCrew(s,role){return applyCrewPromotion(s,role,transact)}
 import {ensureChapterProgress,firstStarAvailable,firstStarRequested,requestFirstStar,scoreFirstStar,FOURTH_TABLE_COST} from './restaurant_star_v012a.js';
 export {ensureChapterProgress,firstStarAvailable,firstStarRequested,requestFirstStar,FOURTH_TABLE_COST};
@@ -600,7 +602,10 @@ export function serviceDayPlan(s){
   '集市热闹夜':{min:10,spread:2,spacing:1,favorite:'adventurer'}
  };
  const rule=crowdRules[pressure];
- const count=Math.min(s.cycle===1?11:14,rule.min+((key>>>5)%rule.spread)+(firstChallenge(s)?1:0)+(s.cycle>1?2:0)+(s.reputation>=10?1:0));
+ const baselineCount=Math.min(s.cycle===1?11:14,rule.min+((key>>>5)%rule.spread)+(firstChallenge(s)?1:0)+(s.cycle>1?2:0)+(s.reputation>=10?1:0));
+ // The star earns local word-of-mouth; tables DO NOT generate customers.
+ const starred=ensureChapterProgress(s).stars>=1;
+ const count=naturalStarAttendance(baselineCount,starred?1:0,pressure,s.reputation);
  const favorite=rule.favorite;
  const baseline=today(s).segments;
  const guests=Array.from({length:count},(_,i)=>{
@@ -638,7 +643,7 @@ export function serviceDayPlan(s){
   {kind:'flavor',target:2,label:'卖出至少 2 道辛辣料理'}
  ];
  const goal=goals[(key>>>9)%goals.length];
- return {seed:key,pressure,count:fullCount,baseCount:count,guests,goal,arrivalSpacing:rule.spacing,campaignId:campaign.id,marketingCost:campaign.cost,marketingGuests:fullCount-count};
+ return {seed:key,pressure,count:fullCount,baseCount:count,starred,guests,goal,arrivalSpacing:rule.spacing,campaignId:campaign.id,marketingCost:campaign.cost,marketingGuests:fullCount-count};
 }
 // A physical chair stays occupied until the guest has finished leaving.
 // This prevents a newly seated diner overlapping an exiting actor.
@@ -686,11 +691,11 @@ export function createService(s,options={}){if(s.phase!=='service'||s.service||!
  const orders=plan.guests.map((segment,i)=>{
   const guest=REGULAR_GUESTS[segment],guestId=guest&&!namedToday.has(segment)?guest.id:null;
   if(guestId)namedToday.add(segment);
-  const plannedWave=j=>j<plan.baseCount?Math.min(2,Math.floor(j*3/plan.baseCount)):(plan.campaignId==='guild'||plan.campaignId==='tasting'?2:(j-plan.baseCount)%2+1);
+  const plannedWave=j=>j<plan.baseCount?serviceArrivalWave(j,plan.baseCount,plan.starred):(plan.campaignId==='guild'||plan.campaignId==='tasting'?2:(j-plan.baseCount)%2+1);
   const wave=plannedWave(i);
   const waveIndex=plan.guests.slice(0,i).filter((_,j)=>plannedWave(j)===wave).length;
   return {id:`${s.cycle}-${s.day}-o${i}`,segment,recipeId:null,fit:0,wave,
-   arrival:wave*21+waveIndex*(i>=plan.baseCount&&plan.campaignId==='guild'?1:plan.arrivalSpacing),promotionGuest:i>=plan.baseCount,status:'waiting',patience:CUSTOMERS[segment].patience,
+   arrival:serviceArrivalSecond(wave,waveIndex,i>=plan.baseCount&&plan.campaignId==='guild'?1:plan.arrivalSpacing,plan.starred),promotionGuest:i>=plan.baseCount,status:'waiting',patience:CUSTOMERS[segment].patience,
    elapsed:0,quality:null,started:null,served:null,tableId:null,seatId:null,partySize:1,guestId};
  });
  // Pairs are formed from adjacent visitors in a wave. Their orders remain
@@ -985,10 +990,21 @@ function spawnArrivals(s){
     const candidate=[0,1].find(j=>!used.has(j));if(candidate!==undefined){table=i;seat=candidate;break;}}}
   if(table===null)continue;
   o.status='entering';o.doorAt=v.time;o.tableId=table;o.seatId=seat;
+  if(v.time>o.arrival)record(s,{type:'queue_seated',order:o.id,seconds:v.time-o.arrival});
   const dex=ensureGuestDex(s);
   dex.seenSegments[o.segment]=true;
   if(o.guestId)dex.metGuests[o.guestId]=true;
   record(s,{type:'arrived',order:o.id,table,seat});
+ }
+}
+// A real customer can walk away while waiting outdoors, with no order or revenue.
+// The order keeps tableId=null so the existing sales and seat rules cannot fake a sale.
+function expireOutdoorQueue(s){
+ const v=s.service;
+ for(const o of v.orders){
+  if(!outdoorQueueExpired(o,v.time))continue;
+  o.status='left';o.leftReason='等位超时';o.leftAt=v.time;
+  record(s,{type:'queue_left',order:o.id,seconds:v.time-o.arrival,reason:'等位超时'});
  }
 }
 
@@ -998,8 +1014,9 @@ if((v.time===20||v.time===41)&&!v.breakSeen.includes(v.time)){
  v.breakAt=v.time===20?1:2;v.breakSeen.push(v.time);v.breakUsed=false;v.eventEffects={WOK:0,POT:0};
  record(s,{type:'wave_break',wave:v.breakAt});break;
 }
+expireOutdoorQueue(s);
 spawnArrivals(s);
-v.queuePeak=Math.max(v.queuePeak||0,v.orders.filter(o=>o.status==='waiting'&&o.arrival<=v.time).length);
+v.queuePeak=Math.max(v.queuePeak||0,outdoorQueueCount(v.orders,v.time));
 advanceGuestOrders(s);
 advanceGuestMeals(s);
 if(v.walkable)stepWalkableShift(s);
@@ -1054,7 +1071,7 @@ const goal=serviceGoalResult(v);if(goal?.success&&uniqueAdd(s.ledger,`goal-${s.c
 const premiumOrders=v.orders.filter(o=>o.premium),premiumSales=premiumOrders.filter(o=>o.status==='served');
 const premiumReport={recipeId:v.premiumOffered?.recipeId||null,limit:v.premiumOffered?.limit||0,ordered:premiumOrders.length,sold:premiumSales.length,revenue:premiumSales.reduce((sum,o)=>sum+(o.craft?.price||0),0),qualifiedVisitors:v.orders.filter(o=>o.segment==='critic'||premiumGuestEligible(s,o)).length,regularVisits:v.events.filter(e=>e.type==='regular_visit').length};
 const regularGuests=v.events.filter(e=>e.type==='regular_visit').map(e=>({guestId:e.guestId,name:s.guestRelationships?.[e.guestId]?.name||'熟客',happyMeals:e.happyMeals,sat:e.sat}));
-s.report={rating,premium:premiumReport,regularGuests,day:s.day,absoluteDay:totalBusinessDay(s),tableCount:v.tableCount,unseated:v.orders.filter(o=>o.tableId==null).length,queuePeak:v.queuePeak||0,goal,scenario:v.scenario||'常规晚餐',totalOrders:v.orders.length,revenue,cost,profit:revenue-cost-hospitalityCost-eventExpense-finance.wage-(v.marketing?.cost||0),finance:{...finance,marketingCost:v.marketing?.cost||0,campaignId:v.marketing?.id||'none',promotionGuests:v.marketing?.guests||0,marketingArrived:v.orders.filter(o=>o.promotionGuest&&o.doorAt!==undefined).length,marketingServed:served.filter(o=>o.promotionGuest).length,marketingRevenue:served.filter(o=>o.promotionGuest).reduce((n,o)=>n+(o.craft?.price??RECIPES[o.recipeId]?.price??0),0),cashChange:s.coins-ensureManagement(s).openingCoins},growth,hospitalityCost,eventExpense,choices:v.events.filter(e=>e.type==='management_choice'||e.type==='menu_swap'),served:served.length,left:left.length,rejected:rej.length,sat:Math.round(served.reduce((a,o)=>a+o.sat,0)/Math.max(1,served.length)),byDish,byCraft,guestReviews:v.events.filter(e=>e.type==='reviewed').map(e=>({recipeId:e.recipeId,sat:e.sat,text:e.text,reason:e.reason})),congestion:v.congestion,kitchen:{slots:clone(v.kitchenSnapshot||ensureKitchen(s).slots),stats:clone(v.stationStats||{})},staff:{crew:clone(v.crew||{}),stats:clone(v.staffStats||{}),foodCost:staffFoodCost},synergy:synergyFor(s.menu),suggested,challenge,won};s.result=won?'win':challenge?'loss':null;
+s.report={rating,premium:premiumReport,regularGuests,day:s.day,absoluteDay:totalBusinessDay(s),tableCount:v.tableCount,unseated:v.orders.filter(o=>o.tableId==null).length,queuePeak:v.queuePeak||0,queue:queueServiceReport(v),goal,scenario:v.scenario||'常规晚餐',totalOrders:v.orders.length,revenue,cost,profit:revenue-cost-hospitalityCost-eventExpense-finance.wage-(v.marketing?.cost||0),finance:{...finance,marketingCost:v.marketing?.cost||0,campaignId:v.marketing?.id||'none',promotionGuests:v.marketing?.guests||0,marketingArrived:v.orders.filter(o=>o.promotionGuest&&o.doorAt!==undefined).length,marketingServed:served.filter(o=>o.promotionGuest).length,marketingRevenue:served.filter(o=>o.promotionGuest).reduce((n,o)=>n+(o.craft?.price??RECIPES[o.recipeId]?.price??0),0),cashChange:s.coins-ensureManagement(s).openingCoins},growth,hospitalityCost,eventExpense,choices:v.events.filter(e=>e.type==='management_choice'||e.type==='menu_swap'),served:served.length,left:left.length,rejected:rej.length,sat:Math.round(served.reduce((a,o)=>a+o.sat,0)/Math.max(1,served.length)),byDish,byCraft,guestReviews:v.events.filter(e=>e.type==='reviewed').map(e=>({recipeId:e.recipeId,sat:e.sat,text:e.text,reason:e.reason})),congestion:v.congestion,kitchen:{slots:clone(v.kitchenSnapshot||ensureKitchen(s).slots),stats:clone(v.stationStats||{})},staff:{crew:clone(v.crew||{}),stats:clone(v.staffStats||{}),foodCost:staffFoodCost},synergy:synergyFor(s.menu),suggested,challenge,won};s.result=won?'win':challenge?'loss':null;
  s.history??=[];s.history.push({day:totalBusinessDay(s),revenue:s.report.revenue,profit:s.report.profit,
    served:s.report.served,arrivals:s.report.totalOrders,unseated:s.report.unseated,
    reputation:s.reputation,tables:v.tableCount,satisfaction:s.report.sat,marketing:v.marketing?.id||'none',payroll:finance.wage,cashDelta:s.report.finance.cashChange});
