@@ -1,17 +1,17 @@
 import {specialEncounterHtml} from './field_encounter_ui_v011c.js';
 import {ingredientIconHtml} from './ingredient_icons_v011g.js';
 import {joystickVector} from './controls_v041.js?v=0.5.5';
-import {ING,RECIPES,FORECAST,ROUTES,CUSTOMERS} from './data.js?v=0.13.0-alpha.5';
-import {LIVE_ACTIONS,LIVE_STYLES,LIVE_AFFINITY,liveRecipeId,reviewLiveCook,liveHeatSummary} from './cooking_v063.js?v=0.13.0-alpha.5';
-import {RECIPE_PROFILES} from './recipe_profiles_v063.js?v=0.13.0-alpha.5';
+import {ING,RECIPES,FORECAST,ROUTES,CUSTOMERS} from './data.js?v=0.13.0-alpha.6';
+import {LIVE_ACTIONS,LIVE_STYLES,LIVE_AFFINITY,liveRecipeId,reviewLiveCook,liveHeatSummary} from './cooking_v063.js?v=0.13.0-alpha.6';
+import {RECIPE_PROFILES} from './recipe_profiles_v063.js?v=0.13.0-alpha.6';
 import {livePanMotion} from './cook_motion_v063.js?v=0.6.3';
 import {walkServiceHero} from './walkable_restaurant_v07.js?v=0.9.2';
-import {PHASES,newGame,save,load,beginLiveResearch,dropLiveIngredient,performLiveAction,finishLiveResearch,stepLiveResearch,liveCookPreview,ensureRecipeVariants,activeRecipeVariant,chooseRecipeVariant,recipeCraftSnapshot,availableBento,prepareBento,today,serviceDayPlan,tableSeatState,enterField,settleField,discardFieldStack,fieldBagSlotsUsed,completeFieldSegment,chooseFieldBranch,selectFieldWeapon,fieldWeaponChoices,selectedFieldWeaponType,skipField,purchase,startCook,moveTile,beat,finishCook,synergyFor,canMenu,prepDish,createService,tick,expedite,walkableSpecial,activateWalkableSpecial,advanceWalkableInteraction,closeService,nextPhase,advanceDay,buyUpgrade,buyKitchenUpgrade,kitchenUpgradeCost,buyCookwareUpgrade,cookwareUpgradeCost,configureKitchenSlot,kitchenPreview,kitchenRefitCost,kitchenHasMenuCoverage,ensureKitchen,ensureCrew,CREW_ROLES,hireCrew,assignCrew,feedCrew,activeCrewMeal,crewEffects,CAMPAIGNS,ensureManagement,selectedCampaign,chooseCampaign,setCrewDuty,crewWage,crewPromotion,promoteCrew,buyBagUpgrade,bagUpgradePrice,canUse,setServicePaused,resumeBreak,breakPrep,setFlame,tossWok,previewHeat,moveExplorer,interactExplorer,sootheGuest,newRecipeLead,currentServiceEvent,chooseServiceEvent,swapBreakMenu,serviceGoalResult,serviceSupplyStatus,prepStockForecast,premiumMenuOptions,premiumMenuActive,recipeAvailableServings,setPremiumMenu,REGULAR_GUESTS,guestBookEntries,ensureDailyMarket,DAILY_STAPLE_MIN_PURCHASES,expandDiningRoom,ROOM_EXPANSION_COST,roomExpansionAvailable,totalBusinessDay,firstChallenge,tableCapacity,ensureChapterProgress,firstStarAvailable,firstStarRequested,requestFirstStar,secondStarAvailable,secondStarRequested,requestSecondStar,ensureSecondAppraisal,FOURTH_TABLE_COST,THIRD_KITCHEN_BUNDLE_COST,thirdKitchenBundleAvailable,buyThirdKitchenBundle} from './engine.js?v=0.13.0-alpha.5';
-import {startActionField,stepActionField,useFieldSkill,resolveFieldEvent} from './field_v04.js?v=0.13.0-alpha.5';
-import {drawField,drawDiner} from './scenes_v04.js?v=0.13.0-alpha.5';
+import {PHASES,newGame,save,load,beginLiveResearch,dropLiveIngredient,performLiveAction,finishLiveResearch,stepLiveResearch,liveCookPreview,ensureRecipeVariants,activeRecipeVariant,chooseRecipeVariant,recipeCraftSnapshot,availableBento,prepareBento,today,serviceDayPlan,tableSeatState,enterField,settleField,discardFieldStack,fieldBagSlotsUsed,completeFieldSegment,chooseFieldBranch,selectFieldWeapon,fieldWeaponChoices,selectedFieldWeaponType,skipField,purchase,startCook,moveTile,beat,finishCook,synergyFor,canMenu,prepDish,createService,tick,expedite,walkableSpecial,activateWalkableSpecial,advanceWalkableInteraction,closeService,nextPhase,advanceDay,buyUpgrade,buyKitchenUpgrade,kitchenUpgradeCost,buyCookwareUpgrade,cookwareUpgradeCost,configureKitchenSlot,kitchenPreview,kitchenRefitCost,kitchenHasMenuCoverage,ensureKitchen,ensureCrew,CREW_ROLES,hireCrew,assignCrew,feedCrew,activeCrewMeal,crewEffects,CAMPAIGNS,ensureManagement,selectedCampaign,chooseCampaign,setCrewDuty,crewWage,crewPromotion,promoteCrew,buyBagUpgrade,bagUpgradePrice,canUse,setServicePaused,resumeBreak,breakPrep,setFlame,tossWok,previewHeat,moveExplorer,interactExplorer,sootheGuest,newRecipeLead,currentServiceEvent,chooseServiceEvent,swapBreakMenu,serviceGoalResult,serviceSupplyStatus,prepStockForecast,premiumMenuOptions,premiumMenuActive,recipeAvailableServings,setPremiumMenu,REGULAR_GUESTS,guestBookEntries,ensureDailyMarket,DAILY_STAPLE_MIN_PURCHASES,expandDiningRoom,ROOM_EXPANSION_COST,roomExpansionAvailable,totalBusinessDay,firstChallenge,tableCapacity,ensureChapterProgress,firstStarAvailable,firstStarRequested,requestFirstStar,secondStarAvailable,secondStarRequested,requestSecondStar,ensureSecondAppraisal,FOURTH_TABLE_COST,THIRD_KITCHEN_BUNDLE_COST,thirdKitchenBundleAvailable,buyThirdKitchenBundle} from './engine.js?v=0.13.0-alpha.6';
+import {startActionField,stepActionField,useFieldSkill,resolveFieldEvent} from './field_v04.js?v=0.13.0-alpha.6';
+import {drawField,drawDiner} from './scenes_v04.js?v=0.13.0-alpha.6';
 import {drawGuestPortraits} from './guest_portraits_v104.js?v=0.10.4';
-import {crewAppearance} from './pixels_v041.js?v=0.13.0-alpha.5';
-import {drawCrewPortraits} from './crew_portraits_v012d.js?v=0.13.0-alpha.5';
+import {crewAppearance} from './pixels_v041.js?v=0.13.0-alpha.6';
+import {drawCrewPortraits} from './crew_portraits_v012d.js?v=0.13.0-alpha.6';
 
 let game=load()||newGame();
 let flashUntil=0;
@@ -31,7 +31,7 @@ const itemCount=()=>Object.keys(game.recipes).length;
 
 function hud(){
  const home=game.phase==='forecast';
- return `<div class="hud ${home?'v076-home-hud':''}"><div class="brand"><span class="logo" aria-hidden="true">🍳</span><div><strong>怪味食堂</strong><small>${home?'今日营业':'ODDPOT · v0.13.0-alpha.5'}</small></div></div><div class="hud-meta"><span aria-label="金币">🪙 ${game.coins}</span><span aria-label="声望">⭐ ${game.reputation}</span></div><button class="hud-gear" data-act="settings" aria-label="设置">⚙</button></div><div class="day-strip ${home?'v076-home-day':''}"><b>营业第 ${totalBusinessDay(game)} 天 · ${tableCapacity(game)} 座</b><span class="day-phase">${home?'☀ 开店前':phaseLabels[game.phase]}</span>${home?'':`<span class="day-recipes">图鉴 ${itemCount()}/${Object.keys(RECIPES).length}</span>`}</div>`;
+ return `<div class="hud ${home?'v076-home-hud':''}"><div class="brand"><span class="logo" aria-hidden="true">🍳</span><div><strong>怪味食堂</strong><small>${home?'今日营业':'ODDPOT · v0.13.0-alpha.6'}</small></div></div><div class="hud-meta"><span aria-label="金币">🪙 ${game.coins}</span><span aria-label="声望">⭐ ${game.reputation}</span></div><button class="hud-gear" data-act="settings" aria-label="设置">⚙</button></div><div class="day-strip ${home?'v076-home-day':''}"><b>营业第 ${totalBusinessDay(game)} 天 · ${tableCapacity(game)} 座</b><span class="day-phase">${home?'☀ 开店前':phaseLabels[game.phase]}</span>${home?'':`<span class="day-recipes">图鉴 ${itemCount()}/${Object.keys(RECIPES).length}</span>`}</div>`;
 }
 function toast(){return `<div class="game-toast" role="status"><span>${esc(message)}</span></div>`}
 function playablePhase(){return game.phase==='service'||(game.phase==='field'&&!!game.field?.action)}
@@ -56,12 +56,12 @@ function overlayMarkup(){if(!overlay)return '';
  if(overlay==='book'){
   if(bookTab==='guests'){
    const entries=guestBookEntries(game),met=entries.filter(x=>x.seen).length;
-   const descriptions={adventurer:'从矿井带来猛烈的胃口，格外偏爱辛辣肉香。',family:'雨林的小菌帽一家，温和暖汤最容易打动他们。',regular:'会跳动的史莱姆街坊，喜欢清爽有弹性的菜。',critic:'飘过灵界只为寻找难忘味道的鉴味师。'};
+   const descriptions={adventurer:'从矿井带来猛烈的胃口，格外偏爱辛辣肉香。',family:'雨林的小菌帽一家，温和暖汤最容易打动他们。',regular:'会跳动的史莱姆街坊，喜欢清爽有弹性的菜。',critic:'飘过灵界只为寻找难忘味道的鉴味师。',stargazer:'背着星光行囊的旅人，喜欢清爽、甜香与菌菇风味。',gardener:'长着嫩枝鹿角的田园食客，偏爱真正的蔬食与温和清爽的料理。'};
    body=`<h2>👥 客人图鉴</h2><p class="sheet-lead">已认识 ${met}/${entries.length} 类食客 · 只有真实到店才会解锁资料。满意用餐 2 次的具名熟客可尝试隐藏菜。</p>
    <div class="v102-guest-list">${entries.map(g=>`<article class="v102-guest-card ${g.seen?'':'unknown'}">
      <div class="v102-guest-icon v104-portrait-frame" aria-hidden="true">${g.seen?`<canvas class="v104-guest-portrait" width="64" height="80" data-guest-portrait="${g.segment}"></canvas>`:'<span class="v104-guest-unknown">?</span>'}</div>
      <div class="v102-guest-detail"><strong>${g.seen?esc(g.name):'未遇见的食客'}</strong>
-       ${g.seen?`<small>${esc(descriptions[g.segment])}</small><small>偏好 · ${g.likes.map(esc).join(' / ')}</small>`:'<small>等真正的客人来到餐厅，再了解他们。</small>'}
+       ${g.seen?`<small>${esc(descriptions[g.segment]||'这位食客的故事正在被记录。')}</small><small>偏好 · ${g.likes.map(esc).join(' / ')}</small>`:'<small>等真正的客人来到餐厅，再了解他们。</small>'}
        ${g.seen&&g.segment==='critic'?'<span class="v102-guest-status ready">可品尝隐藏菜 · 鉴味师</span>':''}
        ${g.seen&&g.guestId?`<div class="v102-regular-info"><span>${g.met?`熟客代表 · ${esc(g.guestName)}`:'熟客代表 · 尚未结识'}</span><small>真实用餐 ${g.visits} 次 · 满意用餐 ${Math.min(2,g.happyMeals)}/2</small><span class="v102-guest-status ${g.premiumEligible?'ready':''}">${g.premiumEligible?'✓ 已获隐藏菜资格':'继续积累好评，解锁隐藏菜'}</span></div>`:''}
      </div></article>`).join('')}</div>`;
@@ -126,7 +126,7 @@ function overlayMarkup(){if(!overlay)return '';
    };
    body='<h2>👩‍🍳 食堂伙伴</h2><p class="sheet-lead">每位帮厨按本人实际完成的订单获得经验；增加厨位必须配备人手才能真正出餐。开门前直接选择左、中、右优先站位；已选位置不可重复安排。营业时，空闲帮厨仍会自动走到缺人的炉台支援。</p><div class="staff-roster">'+row('helper')+row('waiter')+(crew.helper2.hired?row('helper2'):'')+'</div>';
  }else if(overlay==='settings'){
-  body=`<h2>⚙ 试玩设置</h2><p class="sheet-lead">版本 v0.13.0-alpha.5 · 固定 9:16 竖屏 · 单机 localStorage 存档</p>${b('reset','重置存档，从 DAY 1 重新开始','danger')}<p class="sheet-lead">切到后台时营业会自动暂停。更换设备不会同步存档。</p>`;
+  body=`<h2>⚙ 试玩设置</h2><p class="sheet-lead">版本 v0.13.0-alpha.6 · 固定 9:16 竖屏 · 单机 localStorage 存档</p>${b('reset','重置存档，从 DAY 1 重新开始','danger')}<p class="sheet-lead">切到后台时营业会自动暂停。更换设备不会同步存档。</p>`;
  }else if(overlay==='details'){
   const r=game.report;body=r?`<h2>营业账本详情</h2><p class="sheet-lead">本日订单由真实食材库存、工位工作秒数和顾客等待事件计算。</p><div class="book-list">${Object.entries(r.byDish).map(([id,d])=>`<div class="detail-row">${RECIPES[id].emoji} ${RECIPES[id].name}：售出 ${d.count} 份 · 满意 ${Math.round(d.totalSat/d.count)}</div>`).join('')}<div class="detail-row">左厨位占用 ${r.congestion.WOK||0} 秒 / 右厨位 ${r.congestion.POT||0} 秒${r.congestion.CENTER!==undefined?' / 中厨位 '+r.congestion.CENTER+' 秒':''}</div><div class="detail-row">食材耗用估值 ${r.cost} · 宣传 ${r.finance?.marketingCost||0} · 工资 ${r.finance?.wage||0} · 招待支出 ${r.hospitalityCost||0} · 收入 ${r.revenue} · 经营利润 ${r.profit} · 现金净变动 ${r.finance?.cashChange??'旧版无记录'}</div></div>`:'';
  }

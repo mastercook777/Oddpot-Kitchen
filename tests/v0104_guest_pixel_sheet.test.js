@@ -3,6 +3,7 @@ import assert from 'node:assert/strict';
 import {readFileSync} from 'node:fs';
 import {drawGuestPortrait,drawGuestPortraits} from '../src/guest_portraits_v104.js';
 import {newGame,guestBookEntries} from '../src/engine.js';
+import {CUSTOMERS} from '../src/data.js';
 
 function canvas(){
  const drawn=[],ops=[];
@@ -15,9 +16,9 @@ function canvas(){
  };
  return {node:{width:64,height:80,getContext(){return ctx}},ctx,drawn,ops};
 }
-test('same live restaurant pixel actor renders all four known groups, with distinct silhouettes',()=>{
+test('all six guest segments draw distinct live restaurant actors',()=>{
  const portraits=new Map();
- for(const kind of ['adventurer','family','regular','critic']){
+ for(const kind of Object.keys(CUSTOMERS)){
   const {node,drawn,ctx,ops}=canvas();
   assert.equal(drawGuestPortrait(node,kind),true);
   assert.equal(ctx.imageSmoothingEnabled,false);
@@ -25,7 +26,7 @@ test('same live restaurant pixel actor renders all four known groups, with disti
   assert.ok(ops.includes('save')&&ops.includes('restore'));
   portraits.set(kind,JSON.stringify(drawn));
  }
- assert.equal(new Set(portraits.values()).size,4,'each group must have its original pixel silhouette');
+ assert.equal(new Set(portraits.values()).size,Object.keys(CUSTOMERS).length,'every guest must have a distinct actor');
 });
 test('a guest never encountered is NOT painted as an already-known guest; no bogus kinds',()=>{
  const {node,drawn}=canvas();
@@ -34,11 +35,23 @@ test('a guest never encountered is NOT painted as an already-known guest; no bog
  assert.equal(drawGuestPortrait(null,'adventurer'),false);
 });
 test('paint occurs only on stamped seen canvas nodes, and is safe when no sheet exists',()=>{
- const canvases=['adventurer','family','regular','critic'].map(kind=>{
+ const canvases=Object.keys(CUSTOMERS).map(kind=>{
   const {node}=canvas();node.dataset={guestPortrait:kind};return node;
  });
  assert.equal(drawGuestPortraits(null),0);
- assert.equal(drawGuestPortraits({querySelectorAll(){return canvases}}),4);
+ assert.equal(drawGuestPortraits({querySelectorAll(){return canvases}}),Object.keys(CUSTOMERS).length);
+});
+test('star guests receive biographies and portraits without unearned sightings or relationships',()=>{
+ const s=newGame(),entries=guestBookEntries(s),app=readFileSync(new URL('../src/app.js',import.meta.url),'utf8');
+ assert.deepEqual(new Set(entries.map(x=>x.segment)),new Set(Object.keys(CUSTOMERS)));
+ for(const kind of ['stargazer','gardener']){
+  const {node,drawn}=canvas();assert.equal(drawGuestPortrait(node,kind),true);assert.ok(drawn.length>20);
+  assert.equal(entries.find(x=>x.segment===kind).seen,false);
+  assert.match(app,new RegExp(kind+":'[^']+'"));
+  s.guestDex.seenSegments[kind]=true;
+  assert.equal(guestBookEntries(s).find(x=>x.segment===kind).seen,true);
+ }
+ assert.deepEqual(s.guestRelationships,{});
 });
 test('portrait is the actual game pixelActor renderer, not an independently invented art path',()=>{
  const code=readFileSync(new URL('../src/guest_portraits_v104.js',import.meta.url),'utf8');
