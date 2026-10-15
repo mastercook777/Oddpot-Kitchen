@@ -30,7 +30,7 @@ test('the top-level inventory shortcut is labelled 采购 and still opens existi
 
 test('copy-only correction keeps the same randomly limited market and prep-phase purchase',()=>{
  const s=newGame(223),market=ensureDailyMarket(s);
- assert.ok(Object.keys(market.goods).length>=3&&Object.keys(market.goods).length<=4);
+ assert.equal(Object.keys(market.goods).length,4);
  const [id,o]=Object.entries(market.goods)[0],before=s.coins;
  s.phase='prep';
  assert.equal(purchase(s,id,1),true);
