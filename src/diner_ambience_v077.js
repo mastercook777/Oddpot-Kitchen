@@ -1,7 +1,7 @@
 // v0.7.7 - transient, state-grounded dining dialogue for real orders.
 // Data only: never mutate gameplay, advance clocks or spend resources.
 // Max one speech per table, max two across the entire restaurant.
-import {RECIPES,ING} from './data.js?v=0.12.0-alpha.1';
+import {RECIPES,ING} from './data.js?v=0.13.0-alpha.4';
 
 const clampSpeech=x=>Math.max(0,Math.min(1,x));
 const speechWhen=(t,start,duration)=>Number.isFinite(start)&&t>=start&&t<start+duration;
@@ -164,6 +164,18 @@ export const DINER_VOICES={
    "今天的菜单不太合胃口。",
    "想吃清爽一点的呀。"
   ]
+ },
+ gardener: {
+  order:['有新鲜卷卷魔菜吗？','今天想吃点绿油油的。','树叶说这里的蔬食好吃！'],
+  choose:['不想吃肉，来份田园菜吧。','芽角闻到青菜香了。','哪道是脆脆的蔬菜？'],
+  kitchen:['菜叶可别焖软了。','闻到土豆和洋葱了。','锅里有春天的香气。'],
+  ready:['像刚从菜园端出来！','这一盘真好看呀。','叶香扑面而来！'],
+  delivery:['把新鲜的端来吧。','小心别碰掉我的鹿角。','这道菜看着真嫩！'],
+  eat:['脆脆的好幸福。','这一口像春天。','卷卷魔菜真香！'],
+  hurry:['叶子要蔫啦，老板！','芽角的肚子咕咕叫。','还没轮到我的菜吗？'],
+  furious:['下次等菜长出来再来。','等太久，叶子都黄了。','芽角先回菜园啦。'],
+  stockout:['菜园里都缺菜吗？','那我明天再来采菜。','看来今日青菜卖光了。'],
+  mismatch:['只有肉菜吗？','想吃清爽的蔬食呀。','有没有真正的田园菜？']
  },
  stargazer: {
   order: ["走过夜路，想尝一口清亮的。","星砂落到锅边啦。","有没有带花香的料理？"],

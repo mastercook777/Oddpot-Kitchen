@@ -34,14 +34,16 @@ test('catalog retains normal recipes and all four Boss dishes alongside the enco
   assert.equal(result.sellable,true,recipe+': '+JSON.stringify(result.doneness));
  }
 });
-test('four staples only are purchasable, exploration and boss ingredients cannot be bought',()=>{
+test('market offers four rotating ordinary staples, while boss ingredients remain field-only',()=>{
  const s=newGame();s.coins=400;
  const offered=ensureDailyMarket(s).goods;
  for(const id of ['garlic','mushroom','cabbage','chicken']){
   assert.equal(ING[id].acquisitionPolicy,'SHOP_STAPLE');
   assert.equal(purchase(s,id),Boolean(offered[id]),id);
  }
- for(const id of ['beef','chili','onion','potato','mushroom_heart','ember_pepper'])
+ for(const id of ['beef','chili','onion','potato'])
+  assert.equal(purchase(s,id),Boolean(offered[id]),id);
+ for(const id of ['mushroom_heart','ember_pepper','tide_sour_pulp','starlit_nectar'])
   assert.equal(purchase(s,id),false,id);
 });
 test('two explicit branch choices each, no fourth segment, one authoritative inventory settlement',()=>{

@@ -4,7 +4,8 @@ export const CAMPAIGNS={
  none:{id:'none',name:'自然营业',cost:0,guests:[],desc:'安全营业 · 不增加客流'},
  flyer:{id:'flyer',name:'街头传单',cost:18,guests:['family','regular'],desc:'新增2位家庭/街坊食客 · 菌香和清爽'},
  guild:{id:'guild',name:'冒险公会告示',cost:35,guests:['adventurer','adventurer','adventurer'],desc:'高峰新增3位冒险者 · 辛辣与肉类'},
- tasting:{id:'tasting',name:'品鉴邀请',cost:45,guests:['critic'],stars:1,desc:'首星后邀请1位鉴味师 · 香与爆香'}
+ tasting:{id:'tasting',name:'品鉴邀请',cost:45,guests:['critic'],stars:1,desc:'首星后邀请1位鉴味师 · 香与爆香'},
+ garden:{id:'garden',name:'田园品鉴',cost:24,guests:['gardener','gardener'],stars:2,desc:'二星后定向邀请2位芽角鹿客 · 蔬食与清爽'}
 };
 export const CREW_GROWTH={
  helper:{wages:[10,14,19],promotionCosts:[0,28,64]},

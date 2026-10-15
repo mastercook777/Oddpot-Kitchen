@@ -69,7 +69,7 @@ function paintCrewRank(c,kind,level,arm){
  }
 }
 function person(c,kind,walk,attack,level=1){
- const p={chef:['#477a91','#e7d4a7','#7e4f37'],helper:['#d27a46','#f2d69a','#654730'],helper2:['#517d85','#ead2ae','#36595b'],waiter:['#708d62','#dfc18e','#466251'],adventurer:['#4d8a66','#c59d55','#5d4630'],family:['#d67872','#f0cf79','#8a5747'],regular:['#729aba','#9bc1ce','#6c5440'],critic:['#795777','#bb9abd','#362e48'],stargazer:['#41576e','#c3b67e','#7f5c91']}[kind]||['#729aba','#9bc1ce','#6c5440'];
+ const p={chef:['#477a91','#e7d4a7','#7e4f37'],helper:['#d27a46','#f2d69a','#654730'],helper2:['#517d85','#ead2ae','#36595b'],waiter:['#708d62','#dfc18e','#466251'],adventurer:['#4d8a66','#c59d55','#5d4630'],family:['#d67872','#f0cf79','#8a5747'],regular:['#729aba','#9bc1ce','#6c5440'],critic:['#795777','#bb9abd','#362e48'],stargazer:['#41576e','#c3b67e','#7f5c91'],gardener:['#688947','#b6d27b','#465d37']}[kind]||['#729aba','#9bc1ce','#6c5440'];
  const step=walk?Math.round(Math.sin(walk*13)*2):0,arm=attack? -7:Math.round(Math.sin(walk*13+2)*1);
  // Shoes, alternating leg pixels, outlined torso/arms, expressive large face.
  r(c,3,18+step,5,5,P.outline);r(c,10,18-step,5,5,P.outline);
@@ -96,6 +96,12 @@ function person(c,kind,walk,attack,level=1){
   // Spotted mushroom-cap people, silhouette still legible at phone size.
   r(c,1,1,17,4,'#a34c5b');r(c,3,-3,13,5,'#d26c79');r(c,5,-2,3,2,'#fff0c6');r(c,12,0,2,2,'#fff0c6');
   r(c,2,3,4,8,p[2]);r(c,15,3,3,8,p[2]);
+ }else if(kind==='gardener'){
+  // A leaf-green deer visitor with two distinct twig antlers and a sprout cloak.
+  r(c,3,-8,3,10,P.outline);r(c,4,-9,2,9,'#a7c482');r(c,1,-7,5,2,'#a7c482');
+  r(c,13,-8,3,10,P.outline);r(c,14,-9,2,9,'#a7c482');r(c,14,-7,5,2,'#a7c482');
+  r(c,2,10,15,8,'#507c52');r(c,5,10,9,6,'#a7ca7b');
+  r(c,7,-5,5,3,'#91bd5c');r(c,9,-8,2,7,'#4d935b');
  }else if(kind==='stargazer'){
   // Pointed night-blue hood, gold star pin and a small travel satchel.
   r(c,3,-2,13,7,P.outline);r(c,5,-4,9,7,'#41576e');
