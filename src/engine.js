@@ -293,7 +293,8 @@ export function assignCrew(s,position,role='helper'){
  const crew=ensureCrew(s),c=crew[role];
  if(!c?.hired||!Number.isInteger(position)||position<0||position>=ensureKitchen(s).slots.length||c.station===position)return false;
  const other=role==='helper'?'helper2':'helper';
- if(crew[other]?.hired&&crew[other].station===position)crew[other].station=c.station;
+ // Keep priority positions independent: an occupied choice cannot silently move someone else.
+ if(crew[other]?.hired&&crew[other].station===position)return false;
  c.station=position;return true;
 }
 export function activeCrewMeal(s,role){
