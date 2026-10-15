@@ -6,7 +6,7 @@ import {resolve} from 'node:path';
 import {newGame,createService,setServicePaused,tick,currentServiceEvent,
   chooseServiceEvent,resumeBreak,closeService,advanceDay,ensureDailyMarket,
   purchase} from '../src/engine.js';
-import {ING,SHOP_STAPLES} from '../src/data.js';
+import {ING,RECIPES,SHOP_STAPLES} from '../src/data.js';
 import {scoreFirstStar} from '../src/restaurant_star_v012a.js';
 import {DINER_FLOOR} from '../src/restaurant_scene_v075.js';
 
@@ -100,6 +100,23 @@ export function aggregateNightCases(runs=250,scenarios=DEFAULT_SCENARIOS){
  });
 }
 
+// Unit-margin audit reuses actual recipe ingredients and ING valuation.
+// Never substitute these unit estimates for real sold orders, demand or cash flow.
+export function auditRecipeMargins(){
+ const rows=Object.entries(RECIPES).map(([id,r])=>{
+  const materialValue=(r.ids||[]).reduce((sum,ing)=>sum+(ING[ing]?.cost||0),0);
+  return {id,name:r.name,station:r.station,rare:!!r.rare,price:r.price,
+   materialValue,unitMargin:r.price-materialValue,
+   cookSeconds:r.time,unitMarginPerStationSecond:round((r.price-materialValue)/r.time)};
+ });
+ const margins=rows.map(x=>x.unitMargin).sort((a,b)=>a-b);
+ const regular=rows.filter(x=>!x.rare).sort((a,b)=>b.unitMarginPerStationSecond-a.unitMarginPerStationSecond);
+ return {recipeCount:rows.length,minMargin:margins[0],medianMargin:margins[Math.floor(rows.length/2)],
+  maxMargin:margins.at(-1),bestNormalMarginPerSecond:regular[0],
+  worstNormalMarginPerSecond:regular.at(-1),
+  rare:rows.filter(x=>x.rare).sort((a,b)=>b.unitMarginPerStationSecond-a.unitMarginPerStationSecond)};
+}
+
 // 21-day cash / inventory experiment. "fieldPerDay" is an EXOGENOUS guaranteed
 // yield assumption, not an execution of the exploration/battle engine.
 // Purchases, pricing, quotas, production, revenue and failures are real engine actions.
@@ -166,6 +183,7 @@ if(process.argv[1]&&pathToFileURL(resolve(process.argv[1])).href===import.meta.u
  const output={baseline:'v0.12.0-alpha.1',kind:'deterministic-controlled-balance-audit',
   assumptions:'stationary chef, abundant inventory for service tests; explicit exogenous safe-yield for supply tests',
   service:aggregateNightCases(runs),
+  recipeMargins:auditRecipeMargins(),
   supply:{
    fieldEightPerDay:aggregateSupplyRuns(Math.min(40,runs),days,FIELD_SUPPLY_ASSUMPTION),
    skipExploration:aggregateSupplyRuns(Math.min(40,runs),days,{})
