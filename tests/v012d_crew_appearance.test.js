@@ -75,7 +75,7 @@ test('v0.12-D renderer routes live frozen crew levels, role portraits and offlin
  const scene=readFileSync(new URL('../src/scenes_v04.js',import.meta.url),'utf8');
  const app=readFileSync(new URL('../src/app.js',import.meta.url),'utf8');
  const build=readFileSync(new URL('../scripts/build-standalone.py',import.meta.url),'utf8');
- assert.match(scene,/level:crew\.helper\.level\|\|1/);
+ assert.match(scene,/level:person\.level\|\|1/); // shared v0.13-B staff loop preserves each person's rank
  assert.match(scene,/level:crew\.waiter\.level\|\|1/);
  assert.match(scene,/level:a\.level\|\|1/);
  assert.match(scene,/level:staff\.helper\.level\|\|1/);

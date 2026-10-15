@@ -11,7 +11,7 @@ import {drawExpandedLandscape,drawExpandedObstacle} from './field_world_render_v
 import {isHerbPixelSlice,drawHerbPixelGround,drawHerbPixelObstacle,drawHerbPixelNode,drawHerbPixelHazard,drawHerbPixelEnemy,drawHerbPixelProjectile} from './field_pixel_herb_v011c.js?v=0.12.0-alpha.1';
 import {isHybridMeadow,drawHybridMeadowGround,drawHybridMeadowObstacle,drawHybridMeadowHazard} from './field_hybrid_meadow_v011e.js?v=0.12.0-alpha.1';
 import {meleeProfile,meleeWindupProgress} from './field_combat_feedback_v084.js?v=0.8.4';
-import {pixelActor,pixelEnemy,pixelImpact} from './pixels_v041.js?v=0.13.0-alpha.1';
+import {pixelActor,pixelEnemy,pixelImpact} from './pixels_v041.js?v=0.13.0-alpha.2';
 // Lightweight procedural game graphics: original Canvas shapes, no art pack.
 import {ING,RECIPES,CUSTOMERS} from './data.js?v=0.12.0-alpha.1';
 import {heroZone,waiterDeliveryPose,HERO_PASS} from './walkable_restaurant_v07.js?v=0.9.1';
@@ -908,13 +908,21 @@ function drawRestaurantV075(c,s,t,w,h){
    actors.push({id:o.id,x:loc.x,y:loc.y,kind:o.segment,walk:progress>0&&progress<1,seat:progress>=.999&&!leaving,order:o});
   }
   const crew=v.crew||s.crew;
-  if(crew?.helper?.hired){
-   const station=crew.helper.station||0,pt=g.helper[station]||g.helper[0];
-   actors.push({id:'helper',x:pt.x,y:pt.y,kind:'helper',level:crew.helper.level||1,walk:false,working:!!v.stations[['WOK','POT','CENTER'][station]]});
-  }
-  if(crew?.helper2?.hired){
-   const station=crew.helper2.station??2,pt=g.helper[station]||g.helper[2];
-   actors.push({id:'helper2',x:pt.x,y:pt.y,kind:'helper2',level:crew.helper2.level||1,walk:false,working:!!v.stations[['WOK','POT','CENTER'][station]]});
+  // The worker visibly walks between stations; the kitchen rules only credit
+  // them AFTER travel time has elapsed (never a magical production teleport).
+  for(const role of ['helper','helper2']){
+   const person=crew?.[role];if(!person?.hired)continue;
+   const station=person.currentStation??person.station??(role==='helper2'?2:0);
+   const start=person.moveStart,until=person.moveUntil;
+   const moving=until>0&&Number.isFinite(start)&&t<until;
+   let pt=g.helper[station]||g.helper[0];
+   if(moving){
+    const from=g.helper[person.moveFrom]||pt,to=g.helper[person.moveTo]||pt;
+    const alpha=Math.max(0,Math.min(1,(t-start)/Math.max(.1,until-start)));
+    pt={x:from.x+(to.x-from.x)*alpha,y:from.y+(to.y-from.y)*alpha};
+   }
+   actors.push({id:role,x:pt.x,y:pt.y,kind:role,level:person.level||1,
+    walk:moving?t*2:false,working:!moving&&!!v.stations[['WOK','POT','CENTER'][station]]});
   }
   if(crew?.waiter?.hired){
    const pos=waiterDeliveryPose(s,t);

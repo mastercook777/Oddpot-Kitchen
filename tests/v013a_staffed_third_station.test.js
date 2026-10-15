@@ -46,9 +46,10 @@ test('v0.13-A one purchase provides BOTH a real new station and employee, no fre
 test('v0.13-A staff site is an actual unique assignment with independent promotion and pay',()=>{
  const s=prepared(1652,true);
  assert.equal(crewWage('helper2',1),12);
- assert.equal(assignCrew(s,0,'helper2'),false,'cannot overlap 阿火');
+ assert.equal(assignCrew(s,0,'helper2'),true,'taking an occupied position swaps the preferred cooking stations');
+ assert.equal(s.crew.helper.station,2);
  assert.equal(assignCrew(s,1,'helper2'),true);
- assert.equal(assignCrew(s,2,'helper'),true);
+ assert.equal(assignCrew(s,2,'helper'),false,'阿火 is already assigned to centre after swap');
  assert.equal(crewEffects(s).helper.station,2);
  assert.equal(crewEffects(s).helper2.station,1);
  assert.equal(configureKitchenSlot(s,2,'POT'),true);
@@ -110,6 +111,6 @@ test('v0.13-A static UI/scene and offline source all include new staffed expansi
  const scene=readFileSync(new URL('../src/scenes_v04.js',import.meta.url),'utf8');
  const build=readFileSync(new URL('../scripts/build-standalone.py',import.meta.url),'utf8');
  assert.match(app,/third-kitchen-bundle/);assert.match(app,/row\('helper2'\)/);assert.match(app,/中厨位/);
- assert.match(scene,/\['WOK','POT','CENTER'\]/);assert.match(scene,/kind:'helper2'/);
+ assert.match(scene,/\['WOK','POT','CENTER'\]/);assert.match(scene,/kind:role/);
  assert.match(build,/third_kitchen_v013a\.css/);
 });

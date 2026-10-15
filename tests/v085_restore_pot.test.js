@@ -31,7 +31,8 @@ test('fitting two WOK kitchen stations does not remove the spare Lv1 POT weapon'
  const weapon=fieldWeaponSnapshot(s);
  assert.equal(weapon.type,'POT');assert.equal(weapon.level,1);assert.equal(weapon.slotIndex,null);
  assert.equal(weapon.attackId,'pot_onion');assert.equal(weapon.skillId,'pot_pressure');
- assert.equal(JSON.stringify(k.slots),before,'temporary spare does not refit kitchen');
+ assert.deepEqual(k.slots.map(x=>x.type),JSON.parse(before).map(x=>x.type),'spare expedition weapon does not refit kitchen');
+ assert.equal(k.slots[1].level,2,'both WOK stoves inherit one shared type mastery, instead of requiring separate upgrades');
  assert.equal(enterField(s,'safe'),true);
  assert.equal(s.field.weapon.type,'POT');
  assert.equal(s.field.weapon.level,1);
