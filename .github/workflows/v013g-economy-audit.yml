@@ -1,0 +1,30 @@
+name: v0.13-G real-engine economy audit
+on:
+  pull_request:
+    paths:
+      - 'scripts/simulate-economy-v013g.mjs'
+      - 'docs/V0.13G_ECONOMY_SIM_AUDIT.md'
+      - '.github/workflows/v013g-economy-audit.yml'
+  push:
+    branches: ['main']
+    paths: ['scripts/simulate-economy-v013g.mjs','.github/workflows/v013g-economy-audit.yml']
+permissions: {contents: read}
+jobs:
+  real-economy:
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - name: Paired 21-day real market and restaurant simulation
+        run: |
+          set -o pipefail
+          mkdir -p docs/audits
+          node scripts/simulate-economy-v013g.mjs --runs 32 --days 21 --star-runs 80 | tee docs/audits/v013g-economy-simulation-output.txt
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: oddpot-v013g-economy-32seeds-21days
+          path: docs/audits/v013g-economy-simulation-output.txt
