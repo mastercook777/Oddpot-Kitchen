@@ -23,11 +23,11 @@ const order=(s,status='pickup',tableId=0)=>{
 };
 const dwell=(s,secs)=>{for(let t=0;t<secs;t+=.04)advanceWalkableInteraction(s,.04)};
 
-test('package, main website, and in-game visible brand agree on current release v0.12.0-alpha.1',()=>{
+test('package, main website, and in-game visible brand agree on current release v0.12.0-alpha.2',()=>{
  const pkg=JSON.parse(read('../package.json')),html=read('../index.html');
- assert.equal(pkg.version,'0.12.0-alpha.1');
- assert.match(html,/<title>怪味食堂 · Oddpot Kitchen v0\.12\.0-alpha\.1<\/title>/);
- assert.match(app,/ODDPOT · v0\.12\.0-alpha\.1/);
+ assert.equal(pkg.version,'0.12.0-alpha.2');
+ assert.match(html,/<title>怪味食堂 · Oddpot Kitchen v0\.12\.0-alpha\.2<\/title>/);
+ assert.match(app,/ODDPOT · v0\.12\.0-alpha\.2/);
  assert.match(html,/restaurant_scene_v075\.css/);
 });
 test('canonical layout is the sole source of cooking and table service positions',()=>{

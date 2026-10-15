@@ -1,0 +1,83 @@
+import {chromium} from 'playwright';
+import {spawn} from 'node:child_process';
+import {mkdir} from 'node:fs/promises';
+import assert from 'node:assert/strict';
+import {newGame,createService,tick,closeService,resumeBreak,setServicePaused} from '../src/engine.js';
+import {DINER_FLOOR} from '../src/restaurant_scene_v075.js';
+const out='docs/screenshots/v012c-browser';
+await mkdir(out,{recursive:true});
+const server=spawn(process.execPath,['node_modules/vite/bin/vite.js','--host','127.0.0.1','--port','5173','--strictPort'],{stdio:'ignore'});
+const wait=ms=>new Promise(resolve=>setTimeout(resolve,ms));
+const storageKey='oddpot-prototype-v04';
+let browser;
+const fixture=()=>{
+ const s=newGame(154326);s.phase='prep';s.cycle=3;s.day=1;s.coins=500;
+ s.management={dayKey:'3-1',openingCoins:500,campaignId:'none',wageDebt:0};
+ s.chapterProgress.stars=1;s.dining.tableCount=4;
+ s.crew.helper.hired=true;s.crew.helper.onDuty=true;s.crew.helper.xp=8;
+ s.crew.waiter.hired=true;s.crew.waiter.onDuty=true;
+ return s;
+};
+try{
+ let ready=false;for(let i=0;i<60;i++){try{if((await fetch('http://127.0.0.1:5173/index.html')).ok){ready=true;break;}}catch{}await wait(300);}
+ assert.ok(ready,'Vite server started');
+ browser=await chromium.launch({headless:true,executablePath:process.env.CHROME_PATH||'/usr/bin/google-chrome',args:['--no-sandbox','--disable-dev-shm-usage']});
+ for(const [width,height] of [[320,568],[375,667],[390,844]]){
+  const page=await browser.newPage({viewport:{width,height},locale:'zh-CN',deviceScaleFactor:2,isMobile:true,hasTouch:true});
+  const errors=[];page.on('pageerror',e=>errors.push(e.message));
+  await page.addInitScript(([k,s])=>localStorage.setItem(k,JSON.stringify(s)),[storageKey,fixture()]);
+  await page.goto('http://127.0.0.1:5173/index.html',{waitUntil:'networkidle'});
+  const read=()=>page.evaluate(k=>JSON.parse(localStorage.getItem(k)),storageKey);
+  await page.locator('[data-act="promo:flyer"]').click();
+  assert.equal((await read()).management.campaignId,'flyer');
+  assert.equal(await page.locator('[data-act="promo:flyer"]').getAttribute('aria-pressed'),'true');
+  await page.locator('[data-act="crew"]').last().click();
+  await page.locator('[data-act="duty:helper:off"]').click();
+  assert.equal((await read()).crew.helper.onDuty,false);
+  await page.locator('[data-act="duty:helper:on"]').click();
+  assert.equal((await read()).crew.helper.onDuty,true);
+  await page.locator('[data-act="promote:helper"]').click();
+  const mid=await read();assert.equal(mid.crew.helper.level,2);assert.equal(mid.coins,472);
+  await page.screenshot({path:`${out}/staff-${width}.png`});
+  await page.locator('[data-act="close-sheet"]').last().click();
+  await page.screenshot({path:`${out}/preopen-${width}.png`});
+  await page.locator('[data-act="open"]').click();
+  const after=await read();assert.equal(after.phase,'service');
+  assert.equal(after.management.campaignId,'flyer');
+  assert.equal(after.ledger.filter(x=>x.type==='marketing').length,1);
+  assert.equal(after.coins,454);
+  assert.equal(after.service.orders.filter(x=>x.promotionGuest).length,2);
+  assert.equal(after.service.crew.helper.salary,14);
+  const canvas=page.locator('#diner-canvas');await canvas.waitFor();
+  assert.ok(await canvas.evaluate(c=>c.width>0&&c.height>0));
+  await page.screenshot({path:`${out}/service-${width}.png`});
+  assert.deepEqual(errors,[],'no runtime exception in '+width+'×'+height);
+  await page.close();
+ }
+ const s=fixture();s.crew.helper.level=2;s.management.campaignId='guild';s.phase='service';
+ for(const id of Object.keys(s.inventory))s.inventory[id]=150;
+ assert.equal(createService(s,{walkable:true}),true);Object.assign(s.service.hero,DINER_FLOOR.right);
+ setServicePaused(s,false);
+ for(let t=0;t<140&&!s.service.done;t++){if(s.service.breakAt)resumeBreak(s);tick(s,1)}
+ assert.ok(s.service.done);
+ const report=closeService(s);assert.ok(report.finance.marketingArrived>0);
+ const page=await browser.newPage({viewport:{width:390,height:844},locale:'zh-CN'});
+ const errors=[];page.on('pageerror',e=>errors.push(e.message));
+ await page.addInitScript(([k,s])=>localStorage.setItem(k,JSON.stringify(s)),[storageKey,s]);
+ await page.goto('http://127.0.0.1:5173/index.html',{waitUntil:'networkidle'});
+ assert.equal(await page.locator('.v12c-finance').count(),1);
+ assert.match(await page.locator('.v12c-finance').innerText(),/工资|现金净变动/);
+ assert.equal(await page.locator('.v12c-growth-report').count(),1);
+ await page.screenshot({path:`${out}/report-390.png`,fullPage:true});
+ await page.close();
+ const offline=await browser.newPage({viewport:{width:390,height:844},locale:'zh-CN'});
+ offline.on('pageerror',e=>errors.push(e.message));
+ await offline.addInitScript(([k,s])=>localStorage.setItem(k,JSON.stringify(s)),[storageKey,fixture()]);
+ await offline.goto('http://127.0.0.1:5173/standalone.html',{waitUntil:'networkidle'});
+ await offline.locator('[data-act="promo:flyer"]').click();
+ assert.equal(await offline.evaluate(k=>JSON.parse(localStorage.getItem(k)).management.campaignId,storageKey),'flyer');
+ await offline.screenshot({path:`${out}/offline-390.png`});
+ await offline.close();
+ assert.deepEqual(errors,[]);
+ console.log('v0.12-C real Chrome: 320×568/375×667/390×844 prep, ads, staff promotion, duty, live orders, real report and regenerated offline passed. iPhone subjective play pending.');
+}finally{if(browser)await browser.close();server.kill('SIGTERM')}

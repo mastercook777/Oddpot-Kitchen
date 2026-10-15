@@ -15,3 +15,5 @@ jobs:
         run: npm install --no-audit --no-fund
       - name: Run deterministic game rules tests and check production bundle
         run: npm test
+      - name: Audit marketing, payroll and employee growth in real engine (80 seeded shifts)
+        run: node scripts/simulate-management-v012c.mjs --runs 80
