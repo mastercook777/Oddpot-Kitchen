@@ -62,7 +62,8 @@ export function crewPromotion(s,role){
   nextWage:crewWage(role,level),ready:person.xp>=CREW_XP_THRESHOLDS[level]};
 }
 export function applyCrewPromotion(s,role,transact){
- if(!['prep','upgrade'].includes(s.phase))return false;
+ // Promotion after end-of-day payroll applies only to future shifts; existing payroll and work XP stay frozen.
+ if(!['prep','upgrade','report'].includes(s.phase))return false;
  const next=crewPromotion(s,role);
  if(!next?.ready||s.coins<next.cost)return false;
  if(!transact(s,'crew-promote-'+role+'-lv'+next.level,'crew_promotion',{},-next.cost))return false;
