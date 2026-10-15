@@ -53,7 +53,7 @@ try{
  await page.goto('http://127.0.0.1:5173/index.html',{waitUntil:'networkidle'});
  const actual=await page.evaluate(key=>JSON.parse(localStorage.getItem(key)),k);
  assert.equal(actual.field.dailyTarget,'chili');assert.equal(actual.field.nodes.find(n=>n.key==='target').id,'mushroom');
- assert.equal(await page.locator('#forest-canvas').count(),0,'choice scene or action scene depends on saved action flag');
+ assert.equal(await page.locator('#forest-canvas').count(),1,'active exploration should still render its field Canvas');
  await page.close();
 
  const offline=await browser.newPage({viewport:{width:390,height:844},locale:'zh-CN'});
