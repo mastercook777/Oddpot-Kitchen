@@ -9,7 +9,7 @@ test('v012b: seeded real-engine service benchmark is fully deterministic',()=>{
  const first=simulateNight(20261015,opt);
  assert.deepEqual(simulateNight(20261015,opt),first);
  assert.ok(first.orders>=6);
- assert.ok(first.orders<=14);
+ assert.ok(first.orders<=19,'post-star word of mouth expands natural demand up to 19');
  assert.ok(first.served+first.left+first.rejected===first.orders);
  assert.ok(first.rating.score>=0&&first.rating.score<=100);
  assert.ok(first.revenue>=0&&first.materialCost>=0);
