@@ -54,7 +54,7 @@ const avg=(a,k)=>Number((a.reduce((n,x)=>n+x[k],0)/a.length).toFixed(2));
 const out=cases.map(opt=>{
  const sample=Array.from({length:runs},(_,i)=>one(154326+i*7919,opt));
  return {case:opt.name,runs,orders:avg(sample,'arrivals'),served:avg(sample,'served'),
-  cashDelta:avg(sample,'cashDelta'),profit:avg(sample,'profit'),
+  cashDelta:avg(sample,'cashDelta'),revenue:avg(sample,'revenue'),profit:avg(sample,'profit'),
   adArrived:avg(sample,'adArrived'),adServed:avg(sample,'adServed'),
   unseated:avg(sample,'unseated'),queuePeak:avg(sample,'queuePeak'),queueSeated:avg(sample,'queueSeated'),queueLost:avg(sample,'queueLost'),shortage:avg(sample,'shortage'),
   xpHelper:avg(sample,'xpHelper'),xpWaiter:avg(sample,'xpWaiter'),
