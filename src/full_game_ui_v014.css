@@ -92,7 +92,7 @@
 .v014-menu-notes .menu-balance{margin-bottom:6px}.v010-premium-entry{min-height:44px}
 
 /* Prep and growth expose the restaurant behind the workbench. */
-.stage.prep .prep-card,.stage.upgrade .upgrade-card{top:auto;bottom:2%;left:3%;right:3%;max-height:72%;border:3px solid #bb955f;border-radius:11px;background:#203b30f7;box-shadow:0 5px 0 #4e3926,0 0 25px #0c2019b5}
+.stage.prep .kitchen-prep-card,.stage.upgrade .kitchen-upgrade-card{top:auto!important;bottom:2%!important;left:3%!important;right:3%!important;max-height:72%!important;border:3px solid #bb955f;border-radius:11px;background:#203b30f7;box-shadow:0 5px 0 #4e3926,0 0 25px #0c2019b5}
 .prep-card h2,.upgrade-card h2{color:#ffe2ab;font-size:19px}
 .kitchen-prep-card .service-day-brief{border-color:#ba995f}
 .v014-marketing,.v014-upgrade-notes{border:1px solid #8da17b;border-radius:8px;margin:8px 0;background:#294837;color:#f5e9c9}
@@ -120,7 +120,7 @@
 @media(max-height:700px){
  .v013j-guide{padding:3px 7px;min-height:37px}.v013j-guide strong{font-size:11px}.v013j-guide small{font-size:10px}
  .v076-mission{padding:6px 10px}.v076-mission h1{font-size:16px}
- .stage.prep .prep-card,.stage.upgrade .upgrade-card{max-height:76%;bottom:1%}
+ .stage.prep .kitchen-prep-card,.stage.upgrade .kitchen-upgrade-card{max-height:75%!important;bottom:1%!important}
  .menu-scene{padding:8px 9px 12px;gap:7px}.menu-line{min-height:58px;padding:6px}
  .v063-receipt-metrics>div{padding:6px 2px}.v063-receipt-metrics b{font-size:18px}
 }

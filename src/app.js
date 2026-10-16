@@ -175,6 +175,7 @@ function starInvite(){
 function forecast(){
  const plan=serviceDayPlan(game);
  const stock=Object.values(game.inventory).reduce((sum,n)=>sum+n,0);
+ const market=ensureDailyMarket(game);
  const bentoReady=game.bento?.day===game.cycle+'-'+game.day;
  const title=firstChallenge(game)?'爆炎厨王踢馆':plan.pressure;
  const brief=firstChallenge(game)?'评委会关注辛辣与爆香。':'达成目标，积累食堂口碑。';
@@ -191,7 +192,7 @@ function forecast(){
     ${restaurantView(false)}
   </section>
   <section class="v076-home-controls" aria-label="开店前可用操作">
-    <div class="v076-home-resources"><strong>今天先备料</strong><span>🎒 ${stock} 份食材</span></div>
+    <div class="v076-home-resources"><strong>今天先备料</strong><span>🎒 ${stock} 份 · 市场 ${Object.keys(market.goods).length} 款</span></div>
     <div class="v076-home-shortcuts">
       <button type="button" data-act="stock"><span aria-hidden="true">🧺</span> 采购</button>
       <button type="button" data-act="bento"><span aria-hidden="true">🍱</span> 便当${bentoReady?' ✓':''}</button>
@@ -431,6 +432,8 @@ function render(){
  const prevTargetScroll=app.querySelector('.target-scroller')?.scrollLeft||0;
  const prevSheetScroll=app.querySelector('.sheet-body')?.scrollTop||0;
  const prevMarketingOpen=app.querySelector('.v014-marketing')?.open||false;
+ const stageScrollSelector='.route-panel,.v063-setup,.menu-scene,.kitchen-prep-card,.report-scene,.kitchen-upgrade-card';
+ const prevStageScroll=app.querySelector('.stage')?.classList.contains(game.phase)?app.querySelector(stageScrollSelector)?.scrollTop||0:0;
  const [stage,dock]=({forecast,field,research,menu,prep,service,report,upgrade}[game.phase])();
  app.innerHTML=shell(stage,dock);
  if(prevMarketingOpen&&game.phase==='prep')app.querySelector('.v014-marketing')?.setAttribute('open','');
@@ -448,6 +451,7 @@ function render(){
  if(overlay==='crew')drawCrewPortraits(app);
  const target=app.querySelector('.target-scroller');if(target)target.scrollLeft=prevTargetScroll;
  const sheet=app.querySelector('.sheet-body');if(sheet)sheet.scrollTop=prevSheetScroll;
+ const scroller=app.querySelector(stageScrollSelector);if(scroller)scroller.scrollTop=prevStageScroll;
  // Preserve the on-screen floating stick when a second finger uses the skill.
  if(stick.pointer!==null){const pad=app.querySelector('#field-stick, #diner-stick'),knob=app.querySelector('#field-stick-knob, #diner-stick-knob');if(pad){pad.classList.add('active');pad.style.left=stick.originX+'px';pad.style.top=stick.originY+'px';}if(knob)knob.style.transform=`translate(${stick.x*54}px,${stick.y*54}px)`;}
  save(game);

@@ -1350,7 +1350,7 @@
 .v014-menu-notes .menu-balance{margin-bottom:6px}.v010-premium-entry{min-height:44px}
 
 /* Prep and growth expose the restaurant behind the workbench. */
-.stage.prep .prep-card,.stage.upgrade .upgrade-card{top:auto;bottom:2%;left:3%;right:3%;max-height:72%;border:3px solid #bb955f;border-radius:11px;background:#203b30f7;box-shadow:0 5px 0 #4e3926,0 0 25px #0c2019b5}
+.stage.prep .kitchen-prep-card,.stage.upgrade .kitchen-upgrade-card{top:auto!important;bottom:2%!important;left:3%!important;right:3%!important;max-height:72%!important;border:3px solid #bb955f;border-radius:11px;background:#203b30f7;box-shadow:0 5px 0 #4e3926,0 0 25px #0c2019b5}
 .prep-card h2,.upgrade-card h2{color:#ffe2ab;font-size:19px}
 .kitchen-prep-card .service-day-brief{border-color:#ba995f}
 .v014-marketing,.v014-upgrade-notes{border:1px solid #8da17b;border-radius:8px;margin:8px 0;background:#294837;color:#f5e9c9}
@@ -1378,7 +1378,7 @@
 @media(max-height:700px){
  .v013j-guide{padding:3px 7px;min-height:37px}.v013j-guide strong{font-size:11px}.v013j-guide small{font-size:10px}
  .v076-mission{padding:6px 10px}.v076-mission h1{font-size:16px}
- .stage.prep .prep-card,.stage.upgrade .upgrade-card{max-height:76%;bottom:1%}
+ .stage.prep .kitchen-prep-card,.stage.upgrade .kitchen-upgrade-card{max-height:75%!important;bottom:1%!important}
  .menu-scene{padding:8px 9px 12px;gap:7px}.menu-line{min-height:58px;padding:6px}
  .v063-receipt-metrics>div{padding:6px 2px}.v063-receipt-metrics b{font-size:18px}
 }
@@ -8892,6 +8892,7 @@ function starInvite(){
 function forecast(){
  const plan=serviceDayPlan(game);
  const stock=Object.values(game.inventory).reduce((sum,n)=>sum+n,0);
+ const market=ensureDailyMarket(game);
  const bentoReady=game.bento?.day===game.cycle+'-'+game.day;
  const title=firstChallenge(game)?'爆炎厨王踢馆':plan.pressure;
  const brief=firstChallenge(game)?'评委会关注辛辣与爆香。':'达成目标，积累食堂口碑。';
@@ -8908,7 +8909,7 @@ function forecast(){
     ${restaurantView(false)}
   </section>
   <section class="v076-home-controls" aria-label="开店前可用操作">
-    <div class="v076-home-resources"><strong>今天先备料</strong><span>🎒 ${stock} 份食材</span></div>
+    <div class="v076-home-resources"><strong>今天先备料</strong><span>🎒 ${stock} 份 · 市场 ${Object.keys(market.goods).length} 款</span></div>
     <div class="v076-home-shortcuts">
       <button type="button" data-act="stock"><span aria-hidden="true">🧺</span> 采购</button>
       <button type="button" data-act="bento"><span aria-hidden="true">🍱</span> 便当${bentoReady?' ✓':''}</button>
@@ -9148,6 +9149,8 @@ function render(){
  const prevTargetScroll=app.querySelector('.target-scroller')?.scrollLeft||0;
  const prevSheetScroll=app.querySelector('.sheet-body')?.scrollTop||0;
  const prevMarketingOpen=app.querySelector('.v014-marketing')?.open||false;
+ const stageScrollSelector='.route-panel,.v063-setup,.menu-scene,.kitchen-prep-card,.report-scene,.kitchen-upgrade-card';
+ const prevStageScroll=app.querySelector('.stage')?.classList.contains(game.phase)?app.querySelector(stageScrollSelector)?.scrollTop||0:0;
  const [stage,dock]=({forecast,field,research,menu,prep,service,report,upgrade}[game.phase])();
  app.innerHTML=shell(stage,dock);
  if(prevMarketingOpen&&game.phase==='prep')app.querySelector('.v014-marketing')?.setAttribute('open','');
@@ -9165,6 +9168,7 @@ function render(){
  if(overlay==='crew')drawCrewPortraits(app);
  const target=app.querySelector('.target-scroller');if(target)target.scrollLeft=prevTargetScroll;
  const sheet=app.querySelector('.sheet-body');if(sheet)sheet.scrollTop=prevSheetScroll;
+ const scroller=app.querySelector(stageScrollSelector);if(scroller)scroller.scrollTop=prevStageScroll;
  // Preserve the on-screen floating stick when a second finger uses the skill.
  if(stick.pointer!==null){const pad=app.querySelector('#field-stick, #diner-stick'),knob=app.querySelector('#field-stick-knob, #diner-stick-knob');if(pad){pad.classList.add('active');pad.style.left=stick.originX+'px';pad.style.top=stick.originY+'px';}if(knob)knob.style.transform=`translate(${stick.x*54}px,${stick.y*54}px)`;}
  save(game);

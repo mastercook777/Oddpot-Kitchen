@@ -57,6 +57,7 @@ try{
   await page.goto('http://127.0.0.1:5173/index.html',{waitUntil:'networkidle'});
   assert.equal(await page.locator('.v12e-promotion-alert').count(),1);
   assert.match(await page.locator('.v12e-promotion-alert').innerText(),/阿火.*可晋升/);
+  await page.locator('.v014-report-more summary').click();
   assert.match(await page.locator('.v12e-queue-report').innerText(),/等位后入店.*等位流失/);
   await page.screenshot({path:output+'/report-'+width+'.png',fullPage:true});
   await page.locator('.v12e-promotion-alert [data-act="crew"]').click();

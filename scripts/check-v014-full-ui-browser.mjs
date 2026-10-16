@@ -38,6 +38,7 @@ try{
     return {shellBottom:shell.bottom,stageBottom:stage.bottom,stageHeight:stage.height};
    });
    assert.ok(layout.shellBottom<=height+1&&layout.stageBottom<=height+1&&layout.stageHeight>120,`${phase} fits ${width}×${height}: ${JSON.stringify(layout)}`);
+   if(width!==375&&['prep','report'].includes(phase))await page.screenshot({path:`${output}/${phase}-${width}.png`});
    if(phase==='forecast')assert.ok((await page.locator('.v076-preview').boundingBox()).height>=80,'living scene stays visible');
    if(phase==='field')assert.equal(await page.locator('[data-route]').count(),2);
    if(phase==='research')assert.equal(await page.locator('.v063-food-picker button').count(),12);
@@ -61,7 +62,7 @@ try{
    }
    if(phase==='upgrade')assert.ok(await page.locator('.kitchen-upgrade-card').isVisible());
    assert.deepEqual(errors,[],`${phase} runtime errors at ${width}`);
-   if(width!==375)await page.screenshot({path:`${output}/${phase}-${width}.png`});
+   if(width!==375)await page.screenshot({path:`${output}/${phase}${['prep','report'].includes(phase)?'-details':''}-${width}.png`});
    await page.close();
   }
  }
