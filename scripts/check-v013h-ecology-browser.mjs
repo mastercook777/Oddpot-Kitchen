@@ -24,7 +24,7 @@ try{
   // v0.13-I: the REAL pickup painter must deposit opaque color without
   // calling drawImage on a 16x16 offscreen Canvas. Mobile GPU regression guard.
   const opaque=await page.evaluate(async()=>{
-   const {drawHerbPixelNode}=await import('/src/field_pixel_herb_v011c.js?v=0.13.0-alpha.8');
+   const {drawHerbPixelNode}=await import('/src/field_pixel_herb_v011c.js?v=0.13.0-alpha.9');
    const items=['beef','chicken','chili','garlic','mushroom','cabbage','onion','potato','mushroom_heart','ember_pepper','tide_sour_pulp','starlit_nectar'];
    return items.map(id=>{
     const cv=document.createElement('canvas');cv.width=100;cv.height=100;
@@ -78,7 +78,7 @@ try{
  offline.on('pageerror',e=>errors.push(e.message));
  await offline.addInitScript(([k,state])=>localStorage.setItem(k,JSON.stringify(state)),[key,setup()]);
  await offline.goto(url+'standalone.html',{waitUntil:'networkidle'});
- assert.match(await offline.title(),/alpha\.8/);
+ assert.match(await offline.title(),/v0\.\d+\.\d+-alpha\.\d+/);
  assert.equal(await offline.locator('[data-target]').count(),0);
  assert.equal(await offline.locator('[data-route]').count(),2);
  await offline.locator('[data-route="risk"]').click();
