@@ -5,7 +5,7 @@ import {newGame,enterField,completeFieldSegment,chooseFieldBranch} from '../src/
 import {generateBiomeMap} from '../src/field_biomes_v081.js';
 import {expandFieldMap} from '../src/field_world_v011b1.js';
 import {startActionField,stepActionField,useFieldSkill} from '../src/field_v04.js';
-import {fieldArtGroundPlan} from '../src/field_pixel_herb_v011c.js?v=0.12.0-alpha.1';
+import {fieldArtGroundPlan} from '../src/field_pixel_herb_v011c.js?v=0.13.0-alpha.8';
 import {isHybridFieldArt,hybridFieldLandscapePlan,drawHybridFieldGround,drawHybridFieldObstacle,drawHybridFieldHazard,HYBRID_FIELD_STYLES} from '../src/field_hybrid_biomes_v011f.js';
 import * as fx from '../src/field_effects_v011e2.js';
 import {drawField} from '../src/scenes_v04.js';
