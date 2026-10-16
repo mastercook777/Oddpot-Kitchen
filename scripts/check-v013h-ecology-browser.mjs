@@ -21,6 +21,23 @@ try{
   page.on('pageerror',e=>errors.push(e.message));
   await page.addInitScript(([k,state])=>localStorage.setItem(k,JSON.stringify(state)),[key,setup()]);
   await page.goto(url+'index.html',{waitUntil:'networkidle'});
+  // v0.13-I: the REAL pickup painter must deposit opaque color without
+  // calling drawImage on a 16x16 offscreen Canvas. Mobile GPU regression guard.
+  const opaque=await page.evaluate(async()=>{
+   const {drawHerbPixelNode}=await import('/src/field_pixel_herb_v011c.js?v=0.13.0-alpha.8');
+   const items=['beef','chicken','chili','garlic','mushroom','cabbage','onion','potato','mushroom_heart','ember_pepper','tide_sour_pulp','starlit_nectar'];
+   return items.map(id=>{
+    const cv=document.createElement('canvas');cv.width=100;cv.height=100;
+    const c=cv.getContext('2d',{willReadFrequently:true});c.scale(38,38);
+    c.drawImage=()=>{throw Error('material painter used canvas-to-canvas drawImage: '+id)};
+    drawHerbPixelNode(c,{key:'real-drop',id,n:1,type:'gather',claimed:false,x:1.4,y:1.4},3,false,38);
+    const pixels=c.getImageData(0,0,100,100).data;let colored=0;
+    for(let p=0;p<pixels.length;p+=4)if(pixels[p+3]>200)colored++;
+    return {id,colored};
+   });
+  });
+  assert.ok(opaque.every(x=>x.colored>=80),JSON.stringify(opaque));
+
   assert.equal(await page.locator('[data-target]').count(),0,'no selectable material target is allowed');
   assert.equal(await page.locator('.target-scroller').count(),0,'obsolete target strip must not render');
   assert.match(await page.locator('.v013h-supply-hint').innerText(),/库存偏低/);
