@@ -126,7 +126,7 @@ test('long daily report scrolls from TOP and semantic title does not clip or dra
 });
 test('version, offline bundle and complete JavaScript stay parseable',()=>{
  const html=source('../index.html'),app=source('../src/app.js'),build=source('../scripts/build-standalone.py');
- assert.equal(JSON.parse(source('../package.json')).version,'0.13.0-alpha.7');
+ assert.equal(JSON.parse(source('../package.json')).version,'0.13.0-alpha.8');
  assert.match(html,/Oddpot Kitchen v0\.13\.0-alpha\.7/);
  assert.match(html,/app\.js\?v=0\.13\.0-alpha\.7/);
  assert.match(app,/ODDPOT · v0\.13\.0-alpha\.7/);
