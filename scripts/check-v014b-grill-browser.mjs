@@ -21,17 +21,16 @@ try{
  assert.ok(ready,'Vite starts');
  browser=await chromium.launch({headless:true,executablePath:process.env.CHROME_PATH||'/usr/bin/google-chrome',args:['--no-sandbox','--disable-dev-shm-usage']});
  for(const [width,height] of [[320,568],[375,667],[390,844]]){
-  const page=await browser.newPage({viewport:{width,height},isMobile:true,hasTouch:true,locale:'zh-CN'});
-  const errors=[];page.on('pageerror',e=>errors.push(e.message));
-  await page.addInitScript(([k,s])=>localStorage.getItem(k)||localStorage.setItem(k,JSON.stringify(s)),[key,base('upgrade',width)]);
-  await page.goto(url,{waitUntil:'networkidle'});
+  let page;const errors=[];
+  const openState=async state=>{if(page)await page.close();page=await browser.newPage({viewport:{width,height},isMobile:true,hasTouch:true,locale:'zh-CN'});page.on('pageerror',e=>errors.push(e.message));await page.addInitScript(([k,s])=>localStorage.setItem(k,JSON.stringify(s)),[key,state]);await page.goto(url,{waitUntil:'networkidle'});};
+  await openState(base('upgrade',width));
   await page.locator('[data-act="buy-grill"]').click();
   assert.ok(await page.locator('.v014b-grill-unlock').innerText().then(x=>x.includes('已购入')));
   await page.screenshot({path:`${out}/upgrade-${width}.png`});
   const purchased=await page.evaluate(k=>JSON.parse(localStorage.getItem(k)),key);
   assert.equal(purchased.kitchen.grillOwned,true);
   purchased.phase='research';
-  await page.evaluate(([k,s])=>localStorage.setItem(k,JSON.stringify(s)),[key,purchased]);await page.reload({waitUntil:'networkidle'});
+  await openState(purchased);
   await page.locator('[data-act="method:grill"]').click();
   await page.locator('[data-ingredient="chicken"]').click();await page.locator('[data-ingredient="chili"]').click();
   await page.locator('[data-ingredient="beef"]').click();await page.locator('[data-ingredient="garlic"]').click();
@@ -47,7 +46,7 @@ try{
   const crafted=await page.evaluate(k=>JSON.parse(localStorage.getItem(k)),key);
   assert.ok(crafted.recipes.grill_beef>0);
   crafted.phase='prep';crafted.menu=['grill_beef','chicken_stew','mushroom_stir'];
-  await page.evaluate(([k,s])=>localStorage.setItem(k,JSON.stringify(s)),[key,crafted]);await page.reload({waitUntil:'networkidle'});
+  await openState(crafted);
   assert.ok((await page.locator('.kitchen-config-head').innerText()).includes('烤架'));
   await page.locator('[data-act="kitchen:2:GRILL"]').click();
   assert.equal(await page.locator('[data-act="open"]').isDisabled(),false);
