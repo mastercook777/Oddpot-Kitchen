@@ -276,7 +276,17 @@ export function drawHerbPixelNode(c,n,time=0,markers=true,screenScale=null){
   else c.drawImage(herbGetSprite(name),n.x-.41,n.y-.80,.82,1.10);
   if(markers)c.drawImage(herbGetSprite('spark'),n.x+.28,n.y-.90,.27,.27);
  }else{
-  c.drawImage(herbGetSprite(name),n.x-.38,n.y-.49+bob,.76,.76);
+  // v0.13-I Android hardening: material pickups use the SAME authoritative
+  // 16x16 pixel painter directly on the visible field context. Some Android
+  // GPU/compositor paths can silently miss the canvas -> canvas drawImage
+  // upload despite drawing direct shapes correctly. No offscreen texture,
+  // PNG decode or external asset is needed for actual gameplay food nodes.
+  // This also keeps the harvested icon source identical to the DOM sprite.
+  c.save();
+  c.translate(n.x-.38,n.y-.49+bob);
+  c.scale(.76/16,.76/16);
+  herbPaintFood(c,name);
+  c.restore();
   if(markers&&n.key==='target'){
    // A clear 4-corner pixel target bracket replaces the old antialiased ellipse.
    c.fillStyle='#ffe4a0';
