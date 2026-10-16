@@ -1,8 +1,8 @@
 import {fieldHarvestTargetSuffix} from './field_target_v012f.js?v=0.13.0-alpha.9';
 import {craftedPrice} from './recipe_value_v013j.js';
 import {makeSpecialEncounterPlan,previewSpecialEncounter,SPECIAL_ENCOUNTER_KINDS} from './field_encounters_v011c.js';
-import {ING,RECIPES,CUSTOMERS,FORECAST,DEFAULT_INVENTORY,SHOP_STAPLES,MARKET_ROTATION_STAPLES} from './data.js?v=0.13.0-alpha.9';
-import {LIVE_ACTIONS,evaluateLiveCook,liveIngredientState,liveIngredientHeatFeedback,legacyVariant,makeLiveVariant,resolveTechnique} from './cooking_v063.js?v=0.13.0-alpha.9';
+import {ING,RECIPES,CUSTOMERS,FORECAST,DEFAULT_INVENTORY,SHOP_STAPLES,MARKET_ROTATION_STAPLES} from './data.js?v=0.14.0-alpha.2';
+import {LIVE_ACTIONS,evaluateLiveCook,liveIngredientState,liveIngredientHeatFeedback,legacyVariant,makeLiveVariant,resolveTechnique} from './cooking_v063.js?v=0.14.0-alpha.2';
 import {RECIPE_PROFILES} from './recipe_profiles_v063.js?v=0.13.0-alpha.9';
 import {generateBiomeMap,getFieldBiome} from './field_biomes_v081.js?v=0.13.0-alpha.9';
 import {makeFieldEncounterPlan,insertPlannedFieldEncounter} from './field_encounter_plan_v011b.js?v=0.13.0-alpha.9';
@@ -212,14 +212,15 @@ export function ensureKitchen(s){
   POT:Math.max(1,...old.filter(x=>x.type==='POT').map(x=>x.level===2?2:1))};
  }
  for(const type of ['WOK','POT'])s.kitchen.mastery[type]=Math.max(s.kitchen.mastery[type]===2?2:1,...s.kitchen.slots.filter(slot=>slot.type===type).map(slot=>slot.level===2?2:1),1);
- s.kitchen.slots=(s.kitchen.thirdUnlocked?[0,1,2]:[0,1]).map(i=>{const v=s.kitchen.slots[i]||{};const type=v.type==='WOK'?'WOK':'POT';return {type,level:s.kitchen.mastery[type]}});
+ s.kitchen.grillOwned??=false;
+ s.kitchen.slots=(s.kitchen.thirdUnlocked?[0,1,2]:[0,1]).map(i=>{const v=s.kitchen.slots[i]||{};const type=i===2&&s.kitchen.grillOwned&&v.type==='GRILL'?'GRILL':v.type==='WOK'?'WOK':'POT';return {type,level:type==='GRILL'?1:s.kitchen.mastery[type]}});
  s.kitchen.extraRefits??=0;s.kitchen.freeRefitUsed??=false;
  return s.kitchen;
 }
 export function kitchenDayKey(s){return `${s.cycle}-${s.day}`}
 export function kitchenRefitCost(s){const k=ensureKitchen(s);return k.refitDay===kitchenDayKey(s)&&k.freeRefitUsed?12:0}
 export function configureKitchenSlot(s,index,type){
- if(s.phase!=='prep'||index<0||index>=ensureKitchen(s).slots.length||!['WOK','POT'].includes(type))return false;
+ if(s.phase!=='prep'||index<0||index>=ensureKitchen(s).slots.length||!['WOK','POT','GRILL'].includes(type)||type==='GRILL'&&(index!==2||!ensureKitchen(s).grillOwned))return false;
  const k=ensureKitchen(s);if(k.slots[index].type===type)return false;
  const today=kitchenDayKey(s),normalFee=kitchenRefitCost(s);
  // Never soft-lock a player who experimented with a free refit. If the
@@ -231,19 +232,26 @@ export function configureKitchenSlot(s,index,type){
  const seq=k.extraRefits||0;
  if(fee&&!transact(s,`kitchen-refit-${today}-${seq}`,'kitchen_refit',{},-fee))return false;
  if(fee)k.extraRefits=seq+1;
- k.refitDay=today;k.freeRefitUsed=true;k.slots[index].type=type;k.slots[index].level=k.mastery[type];return true;
+ k.refitDay=today;k.freeRefitUsed=true;k.slots[index].type=type;k.slots[index].level=type==='GRILL'?1:k.mastery[type];return true;
 }
 export function kitchenHasMenuCoverage(s){
  const k=ensureKitchen(s),needed=new Set(s.menu.filter(id=>s.recipes[id]&&RECIPES[id]).map(id=>RECIPES[id].station));
  return [...needed].every(type=>k.slots.some(slot=>slot.type===type));
 }
 export function kitchenPreview(s){
- const k=ensureKitchen(s),demand={WOK:0,POT:0};
+ const k=ensureKitchen(s),demand={WOK:0,POT:0,GRILL:0};
  for(const id of s.menu)if(s.recipes[id]&&RECIPES[id])demand[RECIPES[id].station]++;
- const capacity={WOK:k.slots.filter(x=>x.type==='WOK').length,POT:k.slots.filter(x=>x.type==='POT').length};
- const risk=['WOK','POT'].filter(type=>demand[type]&&!capacity[type]);
- const pressure=['WOK','POT'].map(type=>({type,menu:demand[type],capacity:capacity[type],pressure:capacity[type]?demand[type]/capacity[type]:null}));
+ const capacity=Object.fromEntries(['WOK','POT','GRILL'].map(type=>[type,k.slots.filter(x=>x.type===type).length]));
+ const types=['WOK','POT',...(k.grillOwned||demand.GRILL?['GRILL']:[])];
+ const risk=types.filter(type=>demand[type]&&!capacity[type]);
+ const pressure=types.map(type=>({type,menu:demand[type],capacity:capacity[type],pressure:capacity[type]?demand[type]/capacity[type]:null}));
  return {pressure,risk,valid:risk.length===0};
+}
+export const GRILL_COST=180;
+export function grillAvailable(s){return s.phase==='upgrade'&&(s.chapterProgress?.stars||0)>=2&&ensureKitchen(s).thirdUnlocked&&!s.kitchen.grillOwned&&s.coins>=GRILL_COST}
+export function buyGrill(s){
+ if(!grillAvailable(s)||!transact(s,'grill-fork-bundle','upgrade',{},-GRILL_COST))return false;
+ s.kitchen.grillOwned=true;return true;
 }
 export const COOKWARE_UPGRADE_COST={WOK:60,POT:75};
 export function cookwareUpgradeCost(s,type){
@@ -457,15 +465,16 @@ const ECOLOGY_ZONES={
 // usable as a Lv1 expedition weapon, without changing the kitchen layout.
 export function fieldWeaponChoices(s){
  const slots=ensureKitchen(s).slots;
- return ['WOK','POT'].map(type=>{
+ return ['WOK','POT',...(ensureKitchen(s).grillOwned?['GRILL']:[])].map(type=>{
   const installed=slots.map((slot,index)=>({...slot,index}))
    .filter(slot=>slot.type===type)
    .sort((a,b)=>b.level-a.level||a.index-b.index)[0];
-  return {type,level:ensureKitchen(s).mastery[type],slotIndex:installed?.index??null,
+  return {type,level:type==='GRILL'?1:ensureKitchen(s).mastery[type],slotIndex:installed?.index??null,
     fitted:!!installed,source:installed?'kitchen':'reserve'};
  });
 }
 export function selectedFieldWeaponType(s){
+ if(s.selectedWeaponType==='GRILL'&&ensureKitchen(s).grillOwned)return 'GRILL';
  if(s.selectedWeaponType==='WOK'||s.selectedWeaponType==='POT')return s.selectedWeaponType;
  const slot=Math.min(1,Math.max(0,Number(s.selectedWeaponSlot)||0));
  return ensureKitchen(s).slots[slot].type;
@@ -476,7 +485,7 @@ export function fieldWeaponSnapshot(s){
  const type=selectedFieldWeaponType(s);
  const choice=fieldWeaponChoices(s).find(x=>x.type===type);
  return {slotIndex:choice.slotIndex,type,level:choice.level,source:choice.source,
-  attackId:type==='WOK'?'wok_sweep':'pot_onion',skillId:type==='WOK'?'wok_guard':'pot_pressure'};
+  attackId:type==='GRILL'?'fork_thrust':type==='WOK'?'wok_sweep':'pot_onion',skillId:type==='GRILL'?'fork_skewer':type==='WOK'?'wok_guard':'pot_pressure'};
 }
 export function selectFieldWeapon(s,selection){
  if(s.phase!=='field'||s.field)return false;
@@ -485,7 +494,7 @@ export function selectFieldWeapon(s,selection){
   const kitchen=ensureKitchen(s);s.selectedWeaponSlot=selection;
   s.selectedWeaponType=kitchen.slots[selection].type;return true;
  }
- if(!['WOK','POT'].includes(selection))return false;
+ if(!fieldWeaponChoices(s).some(x=>x.type===selection))return false;
  s.selectedWeaponType=selection;
  const selected=fieldWeaponChoices(s).find(x=>x.type===selection);
  if(selected.slotIndex!==null)s.selectedWeaponSlot=selected.slotIndex;
@@ -1110,7 +1119,7 @@ function advanceGuestOrders(s){
  }
 }
 export function expedite(s,orderId){const v=s.service;if(!v||s.phase!=='service')return false;const i=v.queued.indexOf(orderId);if(i<0)return false;v.queued.splice(i,1);v.queued.unshift(orderId);return true}
-export function markManual(s,orderId){const v=s.service;if(!v||v.manualUsed>=2||s.cook)return false;const o=v.orders.find(x=>x.id===orderId);if(!o||o.status!=='queued'||o.manual||!s.recipes[o.recipeId])return false;const r=RECIPES[o.recipeId];if(!canUse(s,r.ids,!!o.premium))return false;const started=startCook(s,r.ids,r.method,'service',orderId);if(started)v.manualUsed++;return started}
+export function markManual(s,orderId){const v=s.service;if(!v||v.manualUsed>=2||s.cook)return false;const o=v.orders.find(x=>x.id===orderId);if(!o||o.status!=='queued'||o.manual||!s.recipes[o.recipeId])return false;const r=RECIPES[o.recipeId];if(r.station==='GRILL'||!canUse(s,r.ids,!!o.premium))return false;const started=startCook(s,r.ids,r.method,'service',orderId);if(started)v.manualUsed++;return started}
 function spawnArrivals(s){
  const v=s.service;
  for(const o of v.orders){
@@ -1325,7 +1334,7 @@ export function chooseRecipeVariant(s,id,variantId){
  s.activeVariantIds[id]=variantId;return true;
 }
 export function beginLiveResearch(s,ids,vessel='WOK'){
- if(s.phase!=='research'||s.cook||!['WOK','POT'].includes(vessel)||
+ if(s.phase!=='research'||s.cook||!['WOK','POT','GRILL'].includes(vessel)||vessel==='GRILL'&&!ensureKitchen(s).grillOwned||
   !Array.isArray(ids)||ids.length<2||ids.length>3||new Set(ids).size!==ids.length||
   ids.some(id=>!ING[id])||!canUse(s,ids))return false;
  ensureRecipeVariants(s);
@@ -1346,6 +1355,7 @@ export function performLiveAction(s,type){
  if(c?.mode!=='v063-live'||!c.dropped.length||c.elapsed>=19||
   !LIVE_ACTIONS[c.vessel].some(a=>a.id===type)||
   c.actions.some(a=>a.type===type))return false;
+ if(c.vessel==='GRILL'&&(c.dropped.length<c.ids.length||type==='brush'&&!c.actions.some(a=>a.type==='turn')))return false;
  c.actions.push({type,t:+c.elapsed.toFixed(3),with:c.dropped.map(x=>x.id)});
  return true;
 }

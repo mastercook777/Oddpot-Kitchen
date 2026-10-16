@@ -1,15 +1,17 @@
 // v0.6.3-A: real-time ingredient-event adjudicator.
 // No timed turns, no universal style buffs and no direct inventory writes.
-import {ING,RECIPES,RECIPE_INDEX,recipeSignature} from './data.js?v=0.12.0-alpha.1';
+import {ING,RECIPES,RECIPE_INDEX,recipeSignature} from './data.js?v=0.14.0-alpha.2';
 import {RECIPE_PROFILES} from './recipe_profiles_v063.js?v=0.12.0-alpha.1';
+import {evaluateGrillCook,grillHeat,grillTechnique} from './grill_cooking_v014b.js';
 
 export const LIVE_ACTIONS={
   WOK:[{id:'flip',name:'翻炒',emoji:'🍳'},{id:'toss',name:'颠勺',emoji:'↗'}],
-  POT:[{id:'gentle',name:'轻搅',emoji:'🥄'},{id:'reduce',name:'收汁',emoji:'💧'}]
+  POT:[{id:'gentle',name:'轻搅',emoji:'🥄'},{id:'reduce',name:'收汁',emoji:'💧'}],
+  GRILL:[{id:'turn',name:'翻面',emoji:'🍢'},{id:'brush',name:'刷香料',emoji:'🖌️'}]
 };
 export const LIVE_STYLES={
   home:'家常',home_even:'均匀翻炒',burst:'爆炒',aroma:'香味十足',
-  pot_home:'家常炖煮',gentle:'清润慢炖',reduced:'浓香收汁',legacy:'标准工艺'
+  pot_home:'家常炖煮',gentle:'清润慢炖',reduced:'浓香收汁',even:'双面原味',glazed:'双面刷香',legacy:'标准工艺'
 };
 export const LIVE_AFFINITY={signature:'招牌适配',viable:'适合',ordinary:'普通',off:'不契合'};
 const REQUIRE={beef:5.4,chicken:6.1,chili:1.3,garlic:1.3,mushroom:2.9,cabbage:2.5,onion:2.8,potato:6.2,mushroom_heart:3.9,ember_pepper:1.9,tide_sour_pulp:1.8,starlit_nectar:1.2};
@@ -41,6 +43,10 @@ export function liveIngredientState(drop,t,actions,vessel){
 // describes progress to readiness, not an invented power/temperature stat.
 export function liveIngredientHeatFeedback(drop,t,actions,vessel){
  if(!drop)return {state:'待下锅',baseState:'待下锅',progress:0,tone:'idle',nearBurn:false};
+ if(vessel==='GRILL'){
+  const h=grillHeat(drop.id,t-drop.t,(actions||[]).map(a=>({...a,t:a.t-drop.t})));
+  return {state:h.state,baseState:h.state,progress:Math.min(h.frontProgress,h.backProgress),frontProgress:h.frontProgress,backProgress:h.backProgress,tone:h.tone,nearBurn:false};
+ }
  const divisor=REQUIRE[drop.id]*(vessel==='POT'?1.18:1);
  const ratio=liveCookAmount(drop,t,actions,vessel)/divisor,age=Math.max(0,t-drop.t);
  const baseState=liveIngredientState(drop,t,actions,vessel);
@@ -83,6 +89,7 @@ export function readCookFacts(ids,vessel,drops,actions,t){
    primaryIngredient:main?.id||null,ingredientOrder:ds.map(d=>d.id)};
 }
 export function resolveTechnique(recipeId,style){
+ const grill=grillTechnique(recipeId,style);if(grill)return grill;
  const profile=RECIPE_PROFILES[recipeId];
  const match=profile?.styles?.find(s=>s.code===style);
  // A generic dish may use a family template for neutral flavor narration;
@@ -98,6 +105,7 @@ export function resolveTechnique(recipeId,style){
  };
 }
 export function evaluateLiveCook(ids,vessel,drops,actions,elapsed){
+ if(vessel==='GRILL')return evaluateGrillCook(ids,drops,actions,elapsed);
  const id=liveRecipeId(ids,vessel);
  const recipe=id&&RECIPES[id];
  const sorted=[...drops].sort((a,b)=>a.t-b.t||a.index-b.index);
@@ -136,6 +144,12 @@ export function evaluateLiveCook(ids,vessel,drops,actions,elapsed){
 // amber, not fabricated "mistakes"; only actual raw/burnt/missing food is red.
 export function reviewLiveCook(result){
  if(!result)return {steps:[],maxQuality:0,atReachableMax:false};
+ if(result.vessel==='GRILL'){
+  const rows=(result.events||[]).map(d=>({type:'drop',time:d.t,grade:result.doneness?.find(x=>x.id===d.id)?.label==='熟透'?'good':'bad',label:`穿上 ${ING[d.id]?.name||d.id}`,detail:result.doneness?.find(x=>x.id===d.id)?.label||'待判定'}));
+  for(const a of result.actions||[])rows.push({type:'action',time:a.t,grade:'good',label:a.type==='turn'?'翻面':'刷香料',detail:a.type==='turn'?'正反面分别受热':'翻面后形成香料焦边'});
+  rows.push({type:'finish',time:result.duration,grade:result.sellable?'good':'bad',label:'起锅鉴定',detail:result.reason});
+  return {steps:rows.sort((a,b)=>a.time-b.time),maxQuality:85,atReachableMax:result.sellable&&result.quality>=85};
+ }
  const events=result.events||[],actions=result.actions||[],facts=result.facts||
   readCookFacts(result.ids||[],result.vessel,events,actions,result.duration||0);
  const main=events.find(d=>d.id===facts.primaryIngredient);

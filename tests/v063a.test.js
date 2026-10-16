@@ -31,8 +31,8 @@ test('regenerated standalone JS is syntactically valid and includes all v0.6.3-A
 });
 test('full catalog has 84 pairs/triples for each vessel, and retains legacy 12 plus six curated recipes',()=>{
  assert.equal(Object.keys(ING).length,12);
- assert.equal(Object.keys(RECIPE_INDEX).length,176);
- assert.equal(Object.keys(RECIPES).length,175); // one original chili-meat recipe has beef/chicken substitution
+ assert.equal(Object.keys(RECIPE_INDEX).length,179);
+ assert.equal(Object.keys(RECIPES).length,178); // one original chili-meat recipe has beef/chicken substitution
  const ids=Object.keys(ING).filter(id=>['SHOP_STAPLE','FIELD_ONLY'].includes(ING[id].acquisitionPolicy));
  for(let i=0;i<ids.length;i++)for(let j=i+1;j<ids.length;j++){
   const choices=[[ids[i],ids[j]]];

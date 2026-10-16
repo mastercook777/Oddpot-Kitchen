@@ -14,7 +14,7 @@ import {meleeProfile,meleeWindupProgress} from './field_combat_feedback_v084.js?
 import {pixelActor,pixelEnemy,pixelImpact} from './pixels_v041.js?v=0.13.0-alpha.4';
 import {homeKitchenActors,homeKitchenChatter} from './home_kitchen_v013j.js';
 // Lightweight procedural game graphics: original Canvas shapes, no art pack.
-import {ING,RECIPES,CUSTOMERS} from './data.js?v=0.13.0-alpha.4';
+import {ING,RECIPES,CUSTOMERS} from './data.js?v=0.14.0-alpha.2';
 import {heroZone,waiterDeliveryPose,HERO_PASS} from './walkable_restaurant_v07.js?v=0.9.1';
 import {DINER_FLOOR,dinerFloor,dinerGuestRoute,dinerWeather,dinerQueueGuests} from './restaurant_scene_v075.js?v=0.9.2';
 import {selectDiningSpeech,selectStaffSpeech,diningBubbleLines,speechOpacity} from './diner_ambience_v077.js?v=0.13.0-alpha.4';
@@ -294,7 +294,8 @@ export function drawField(canvas,s,clock){const size=setCanvas(canvas);if(!size|
  }
  if(smoothFx)for(const e of f.enemies||[])drawFieldDeath(c,e);
  // Attack swipe uses the *same* direction and trigger as combat hit detection.
- if(smoothFx)drawFieldSwipe(c,f);
+ if(smoothFx&&f.weapon?.type!=='GRILL')drawFieldSwipe(c,f);
+ if(f.weapon?.type==='GRILL'&&f.attackFx?.ttl>0){const a=f.attackFx;c.save();c.strokeStyle='#ffd58a';c.lineWidth=a.fork?.18:.11;c.lineCap='round';c.beginPath();c.moveTo(f.pos.x,f.pos.y);c.lineTo(f.pos.x+a.dx*(a.fork?2.4:1.9),f.pos.y+a.dy*(a.fork?2.4:1.9));c.stroke();c.restore();}
  if(!smoothFx&&f.attackFx?.ttl>0&&!f.attackFx.pot){
   const fx=f.attackFx,progress=1-fx.ttl/fx.duration,angle=Math.atan2(fx.dy,fx.dx);
   c.save();c.translate(f.pos.x,f.pos.y);c.rotate(angle);c.globalAlpha=Math.min(1,fx.ttl*4);
@@ -312,9 +313,9 @@ export function drawField(canvas,s,clock){const size=setCanvas(canvas);if(!size|
  c.save();c.translate(f.pos.x,f.pos.y);c.scale(1/sc,1/sc);
  const attackPose=fieldAttackPose(f);c.translate(attackPose.x,attackPose.y);
  const chefFace=(f.facing?.x||0)<-.15?-1:1;
- const isWok=f.weapon?.type==='WOK';
+ const isWok=f.weapon?.type==='WOK',isGrill=f.weapon?.type==='GRILL';
  const posture=isWok?fieldWokPose(f.facing,f.moving,clock,(f.guardTime||0)>0):null;
- const potPose=!isWok?fieldPotPose(f.facing,f.moving,clock,!!(f.attackFx?.pot&&f.attackFx?.ttl>0)):null;
+ const potPose=!isWok&&!isGrill?fieldPotPose(f.facing,f.moving,clock,!!(f.attackFx?.pot&&f.attackFx?.ttl>0)):null;
  if(isWok){
   // BACK LAYER: pan handle runs from the rear hand to a compact wok.
   // This replaces the oversized circular pan beside the face.
@@ -340,6 +341,13 @@ export function drawField(canvas,s,clock){const size=setCanvas(canvas);if(!size|
   line(c,hand.x,hand.y,held.x-potPose.side*5,held.y-1,'#d0aa76',2.6);
  }
  chef(c,0,Math.sin(clock*9)*(f.moving?1.5:.35),clock,{scale:1.55,walk:f.moving,attack:!!f.attackFx,face:chefFace,hurt:f.hurtFx});
+ if(isGrill){
+  const reach=f.attackFx?.ttl>0?8:0,side=chefFace;
+  line(c,side*8,8,side*(20+reach),-15,'#e1bb7b',3.4);
+  line(c,side*(20+reach),-15,side*(26+reach),-22,'#d8dfe0',2.2);
+  line(c,side*(26+reach),-22,side*(27+reach),-29,'#d8dfe0',1.6);
+  line(c,side*(26+reach),-22,side*(31+reach),-26,'#d8dfe0',1.6);
+ }
  if(isWok){
   const sh=posture.shield,ready=f.shieldCharge!==false,parry=(f.guardTime||0)>0,flash=(f.shieldFlash||0)>0;
   // FOREGROUND: lid is in front of the off-hand at waist/shoulder height,
@@ -801,7 +809,8 @@ function drawRestaurantV075(c,s,t,w,h){
   rr(X-rw/2,Y-24,rw,51,7,'#513c30','#b99765');
   rr(X-rw*.43,Y-20,rw*.86,39,5,'#916d49','#d8ae74');
   circle(c,X,Y-4,Math.min(21,w*.057),'#d7c19b');
-  circle(c,X,Y-4,Math.min(17,w*.047),type==='WOK'?'#394b49':'#587580','#d5c9a7');
+  circle(c,X,Y-4,Math.min(17,w*.047),type==='GRILL'?'#91572f':type==='WOK'?'#394b49':'#587580','#d5c9a7');
+  if(type==='GRILL'){for(let g=-2;g<=2;g++)line(c,X-13+g*6,Y-15,X-13+g*6,Y+7,'#e0ae6b',1.7)}
   if(type==='POT'){circle(c,X,Y-4,Math.min(11,w*.034),'#ac7a51');rect(c,X-18,Y-7,36,4,'#dbc39a')}
   else line(c,X+12,Y-8,X+24,Y-16,'#d5b47a',4);
   if(busy){for(let j=0;j<2;j++)circle(c,X-7+j*14,Y-18+Math.sin(t*4+j)*2.5,2.5,'#f2e9bcaa')}
