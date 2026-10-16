@@ -1,6 +1,6 @@
 // Field sprites and all ingredient UI use one raster definition and cache.
 import {ING} from './data.js?v=0.12.0-alpha.1';
-import {ingredientSpriteCanvas} from './field_pixel_herb_v011c.js?v=0.12.0-alpha.1';
+import {ingredientSpriteCanvas} from './field_pixel_herb_v011c.js?v=0.13.0-alpha.8';
 const ingredientIconUrls=new Map();
 export function ingredientIconUrl(id){
  if(!Object.hasOwn(ING,id))return null;
