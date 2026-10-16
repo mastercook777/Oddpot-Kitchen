@@ -1,17 +1,18 @@
 import {specialEncounterHtml} from './field_encounter_ui_v011c.js';
 import {ingredientIconHtml} from './ingredient_icons_v011g.js';
 import {joystickVector} from './controls_v041.js?v=0.5.5';
-import {ING,RECIPES,FORECAST,ROUTES,CUSTOMERS} from './data.js?v=0.13.0-alpha.8';
-import {LIVE_ACTIONS,LIVE_STYLES,LIVE_AFFINITY,liveRecipeId,reviewLiveCook,liveHeatSummary} from './cooking_v063.js?v=0.13.0-alpha.8';
-import {RECIPE_PROFILES} from './recipe_profiles_v063.js?v=0.13.0-alpha.8';
+import {ING,RECIPES,FORECAST,ROUTES,CUSTOMERS} from './data.js?v=0.13.0-alpha.9';
+import {LIVE_ACTIONS,LIVE_STYLES,LIVE_AFFINITY,liveRecipeId,reviewLiveCook,liveHeatSummary} from './cooking_v063.js?v=0.13.0-alpha.9';
+import {RECIPE_PROFILES} from './recipe_profiles_v063.js?v=0.13.0-alpha.9';
 import {livePanMotion} from './cook_motion_v063.js?v=0.6.3';
 import {walkServiceHero} from './walkable_restaurant_v07.js?v=0.9.2';
-import {PHASES,newGame,save,load,beginLiveResearch,dropLiveIngredient,performLiveAction,finishLiveResearch,stepLiveResearch,liveCookPreview,ensureRecipeVariants,activeRecipeVariant,chooseRecipeVariant,recipeCraftSnapshot,availableBento,prepareBento,today,serviceDayPlan,tableSeatState,enterField,settleField,discardFieldStack,fieldBagSlotsUsed,completeFieldSegment,chooseFieldBranch,selectFieldWeapon,fieldWeaponChoices,selectedFieldWeaponType,skipField,purchase,startCook,moveTile,beat,finishCook,synergyFor,canMenu,prepDish,createService,tick,expedite,walkableSpecial,activateWalkableSpecial,advanceWalkableInteraction,closeService,nextPhase,advanceDay,buyUpgrade,buyKitchenUpgrade,kitchenUpgradeCost,buyCookwareUpgrade,cookwareUpgradeCost,configureKitchenSlot,kitchenPreview,kitchenRefitCost,kitchenHasMenuCoverage,ensureKitchen,ensureCrew,CREW_ROLES,hireCrew,assignCrew,feedCrew,activeCrewMeal,crewEffects,CAMPAIGNS,ensureManagement,selectedCampaign,chooseCampaign,setCrewDuty,crewWage,crewPromotion,promoteCrew,buyBagUpgrade,bagUpgradePrice,canUse,setServicePaused,resumeBreak,breakPrep,setFlame,tossWok,previewHeat,moveExplorer,interactExplorer,sootheGuest,newRecipeLead,currentServiceEvent,chooseServiceEvent,swapBreakMenu,serviceGoalResult,serviceSupplyStatus,prepStockForecast,premiumMenuOptions,premiumMenuActive,recipeAvailableServings,setPremiumMenu,REGULAR_GUESTS,guestBookEntries,ensureDailyMarket,DAILY_STAPLE_MIN_PURCHASES,expandDiningRoom,ROOM_EXPANSION_COST,roomExpansionAvailable,totalBusinessDay,firstChallenge,tableCapacity,ensureChapterProgress,firstStarAvailable,firstStarRequested,requestFirstStar,secondStarAvailable,secondStarRequested,requestSecondStar,ensureSecondAppraisal,FOURTH_TABLE_COST,THIRD_KITCHEN_BUNDLE_COST,thirdKitchenBundleAvailable,buyThirdKitchenBundle} from './engine.js?v=0.13.0-alpha.8';
-import {startActionField,stepActionField,useFieldSkill,resolveFieldEvent} from './field_v04.js?v=0.13.0-alpha.8';
-import {drawField,drawDiner} from './scenes_v04.js?v=0.13.0-alpha.8';
+import {PHASES,newGame,save,load,beginLiveResearch,dropLiveIngredient,performLiveAction,finishLiveResearch,stepLiveResearch,liveCookPreview,ensureRecipeVariants,activeRecipeVariant,chooseRecipeVariant,recipeCraftSnapshot,availableBento,prepareBento,today,serviceDayPlan,tableSeatState,enterField,settleField,discardFieldStack,fieldBagSlotsUsed,completeFieldSegment,chooseFieldBranch,selectFieldWeapon,fieldWeaponChoices,selectedFieldWeaponType,skipField,purchase,startCook,moveTile,beat,finishCook,synergyFor,canMenu,prepDish,createService,tick,expedite,walkableSpecial,activateWalkableSpecial,advanceWalkableInteraction,closeService,nextPhase,advanceDay,buyUpgrade,buyKitchenUpgrade,kitchenUpgradeCost,buyCookwareUpgrade,cookwareUpgradeCost,configureKitchenSlot,kitchenPreview,kitchenRefitCost,kitchenHasMenuCoverage,ensureKitchen,ensureCrew,CREW_ROLES,hireCrew,assignCrew,feedCrew,activeCrewMeal,crewEffects,CAMPAIGNS,ensureManagement,selectedCampaign,chooseCampaign,setCrewDuty,crewWage,crewPromotion,promoteCrew,buyBagUpgrade,bagUpgradePrice,canUse,setServicePaused,resumeBreak,breakPrep,setFlame,tossWok,previewHeat,moveExplorer,interactExplorer,sootheGuest,newRecipeLead,currentServiceEvent,chooseServiceEvent,swapBreakMenu,serviceGoalResult,serviceSupplyStatus,prepStockForecast,premiumMenuOptions,premiumMenuActive,recipeAvailableServings,setPremiumMenu,REGULAR_GUESTS,guestBookEntries,ensureDailyMarket,DAILY_STAPLE_MIN_PURCHASES,expandDiningRoom,ROOM_EXPANSION_COST,roomExpansionAvailable,totalBusinessDay,firstChallenge,tableCapacity,ensureChapterProgress,firstStarAvailable,firstStarRequested,requestFirstStar,secondStarAvailable,secondStarRequested,requestSecondStar,ensureSecondAppraisal,FOURTH_TABLE_COST,THIRD_KITCHEN_BUNDLE_COST,thirdKitchenBundleAvailable,buyThirdKitchenBundle} from './engine.js?v=0.13.0-alpha.9';
+import {startActionField,stepActionField,useFieldSkill,resolveFieldEvent} from './field_v04.js?v=0.13.0-alpha.9';
+import {drawField,drawDiner} from './scenes_v04.js?v=0.13.0-alpha.9';
 import {drawGuestPortraits} from './guest_portraits_v104.js?v=0.10.4';
-import {crewAppearance} from './pixels_v041.js?v=0.13.0-alpha.8';
-import {drawCrewPortraits} from './crew_portraits_v012d.js?v=0.13.0-alpha.8';
+import {crewAppearance} from './pixels_v041.js?v=0.13.0-alpha.9';
+import {drawCrewPortraits} from './crew_portraits_v012d.js?v=0.13.0-alpha.9';
+import {firstDayGuide} from './first_day_guide_v013j.js';
 
 let game=load()||newGame();
 let flashUntil=0;
@@ -31,14 +32,19 @@ const itemCount=()=>Object.keys(game.recipes).length;
 
 function hud(){
  const home=game.phase==='forecast';
- return `<div class="hud ${home?'v076-home-hud':''}"><div class="brand"><span class="logo" aria-hidden="true">🍳</span><div><strong>怪味食堂</strong><small>${home?'今日营业':'ODDPOT · v0.13.0-alpha.8'}</small></div></div><div class="hud-meta"><span aria-label="金币">🪙 ${game.coins}</span><span aria-label="声望">⭐ ${game.reputation}</span></div><button class="hud-gear" data-act="settings" aria-label="设置">⚙</button></div><div class="day-strip ${home?'v076-home-day':''}"><b>营业第 ${totalBusinessDay(game)} 天 · ${tableCapacity(game)} 座</b><span class="day-phase">${home?'☀ 开店前':phaseLabels[game.phase]}</span>${home?'':`<span class="day-recipes">图鉴 ${itemCount()}/${Object.keys(RECIPES).length}</span>`}</div>`;
+ return `<div class="hud ${home?'v076-home-hud':''}"><div class="brand"><span class="logo" aria-hidden="true">🍳</span><div><strong>怪味食堂</strong><small>${home?'今日营业':'ODDPOT · v0.13.0-alpha.9'}</small></div></div><div class="hud-meta"><span aria-label="金币">🪙 ${game.coins}</span><span aria-label="声望">⭐ ${game.reputation}</span></div><button class="hud-gear" data-act="settings" aria-label="设置">⚙</button></div><div class="day-strip ${home?'v076-home-day':''}"><b>营业第 ${totalBusinessDay(game)} 天 · ${tableCapacity(game)} 座</b><span class="day-phase">${home?'☀ 开店前':phaseLabels[game.phase]}</span>${home?'':`<span class="day-recipes">图鉴 ${itemCount()}/${Object.keys(RECIPES).length}</span>`}</div>`;
 }
 function toast(){return `<div class="game-toast" role="status"><span>${esc(message)}</span></div>`}
 function playablePhase(){return game.phase==='service'||(game.phase==='field'&&!!game.field?.action)}
 function sceneNotice(){return `<div class="ingame-notice" role="status" id="ingame-notice" ${performance.now()>flashUntil?'hidden':''}>${esc(message.slice(0,28))}</div>`}
+function guideMarkup(){
+ const guide=firstDayGuide(game);
+ if(!guide||game.onboarding.seen?.includes(game.phase))return '';
+ return `<aside class="v013j-guide" aria-label="第一天引导"><div><strong>✦ ${esc(guide.title)}</strong><p>${esc(guide.body)}</p><small>${esc(guide.action)}</small></div><button type="button" data-act="guide-ack" aria-label="收起这一步引导">✓</button><button type="button" data-act="guide-skip" aria-label="跳过全部新手引导">跳过</button></aside>`;
+}
 function shell(stage,dock){
  const walk=game.phase==='service'&&game.service?.walkable,home=game.phase==='forecast';
- return `<div class="game-shell ${walk?'v075-game-shell':''} ${home?'v076-home-shell':''} ${game.phase==='field'&&game.field?.action?'is-field-playing':''}">${hud()}<main class="stage ${game.phase}${game.cook?' wok-active':''}">${stage}${playablePhase()?sceneNotice():''}</main>${playablePhase()||home?'':toast()}${walk||home?'':`<nav class="dock">${dock}</nav>`}${overlayMarkup()}</div>`;
+ return `<div class="game-shell ${walk?'v075-game-shell':''} ${home?'v076-home-shell':''} ${game.phase==='field'&&game.field?.action?'is-field-playing':''}">${hud()}${guideMarkup()}<main class="stage ${game.phase}${game.cook?' wok-active':''}">${stage}${playablePhase()?sceneNotice():''}</main>${playablePhase()||home?'':toast()}${walk||home?'':`<nav class="dock">${dock}</nav>`}${overlayMarkup()}</div>`;
 }
 function earnedPromotions(){
  return Object.keys(CREW_ROLES).map(role=>({role,name:CREW_ROLES[role].name,promotion:crewPromotion(game,role)}))
@@ -126,7 +132,7 @@ function overlayMarkup(){if(!overlay)return '';
    };
    body='<h2>👩‍🍳 食堂伙伴</h2><p class="sheet-lead">每位帮厨按本人实际完成的订单获得经验；增加厨位必须配备人手才能真正出餐。开门前直接选择左、中、右优先站位；已选位置不可重复安排。营业时，空闲帮厨仍会自动走到缺人的炉台支援。</p><div class="staff-roster">'+row('helper')+row('waiter')+(crew.helper2.hired?row('helper2'):'')+'</div>';
  }else if(overlay==='settings'){
-  body=`<h2>⚙ 试玩设置</h2><p class="sheet-lead">版本 v0.13.0-alpha.8 · 固定 9:16 竖屏 · 单机 localStorage 存档</p>${b('reset','重置存档，从 DAY 1 重新开始','danger')}<p class="sheet-lead">切到后台时营业会自动暂停。更换设备不会同步存档。</p>`;
+  body=`<h2>⚙ 试玩设置</h2><p class="sheet-lead">版本 v0.13.0-alpha.9 · 固定 9:16 竖屏 · 单机 localStorage 存档</p>${b('guide-replay','重看第一轮引导','secondary')}${b('reset','重置存档，从 DAY 1 重新开始','danger')}<p class="sheet-lead">切到后台时营业会自动暂停。更换设备不会同步存档。</p>`;
  }else if(overlay==='details'){
   const r=game.report;body=r?`<h2>营业账本详情</h2><p class="sheet-lead">本日订单由真实食材库存、工位工作秒数和顾客等待事件计算。</p><div class="book-list">${Object.entries(r.byDish).map(([id,d])=>`<div class="detail-row">${RECIPES[id].emoji} ${RECIPES[id].name}：售出 ${d.count} 份 · 满意 ${Math.round(d.totalSat/d.count)}</div>`).join('')}<div class="detail-row">左厨位占用 ${r.congestion.WOK||0} 秒 / 右厨位 ${r.congestion.POT||0} 秒${r.congestion.CENTER!==undefined?' / 中厨位 '+r.congestion.CENTER+' 秒':''}</div><div class="detail-row">食材耗用估值 ${r.cost} · 宣传 ${r.finance?.marketingCost||0} · 工资 ${r.finance?.wage||0} · 招待支出 ${r.hospitalityCost||0} · 收入 ${r.revenue} · 经营利润 ${r.profit} · 现金净变动 ${r.finance?.cashChange??'旧版无记录'}</div></div>`:'';
  }
@@ -438,6 +444,9 @@ function stepMove(dx,dy){const result=moveExplorer(game,dx,dy);if(result.ok)mess
 function findPath(x,y){const f=game.field;if(!f)return [];const start=[f.x,f.y];const seen=new Set([start.join(',')]);let paths=[[...start,[]]];while(paths.length){const [cx,cy,path]=paths.shift();if(cx===x&&cy===y)return path;for(const [dx,dy] of [[0,-1],[1,0],[0,1],[-1,0]]){const nx=cx+dx,ny=cy+dy,key=`${nx},${ny}`;if(nx<0||ny<0||nx>=f.worldW||ny>=f.worldH||seen.has(key)||f.obstacles.some(o=>o.x===nx&&o.y===ny))continue;seen.add(key);paths.push([nx,ny,[...path,[dx,dy]]]);}}return []}
 function walkTo(x,y){if(walking)clearInterval(walking);const path=findPath(x,y);if(!path.length){note('点击可到达的地图格，或用方向键行走。');return}walking=setInterval(()=>{const step=path.shift();if(!step||game.phase!=='field'||!game.field||game.field.settled){clearInterval(walking);walking=null;return}const old=game.field.nodes.filter(n=>n.claimed).length;stepMove(...step);if(game.phase!=='field'||game.field.nodes.filter(n=>n.claimed).length>old||!path.length){clearInterval(walking);walking=null;}},130)}
 function action(act){
+ if(act==='guide-ack'){game.onboarding.seen??=[];if(!game.onboarding.seen.includes(game.phase))game.onboarding.seen.push(game.phase);render();return}
+ if(act==='guide-skip'){game.onboarding.enabled=false;render();return}
+ if(act==='guide-replay'){game.onboarding={enabled:true,replay:true,seen:[]};overlay='';render();return}
  if(act==='first-star-request'){note(requestFirstStar(game,!firstStarRequested(game))?(firstStarRequested(game)?'万味评鉴会已预约今晚营业。':'已取消今晚评鉴，可继续准备。'):'今日尚不能申请评鉴。');return}
  if(act==='second-star-request'){note(requestSecondStar(game,!secondStarRequested(game))?(secondStarRequested(game)?'第二星当前主题已预约今晚。':'已取消今晚评鉴。'):'今天尚不能申请第二星评鉴。');return}
  if(act==='hero-special'){if(activateWalkableSpecial(game)){message='主厨技能发动！';render()}return}
