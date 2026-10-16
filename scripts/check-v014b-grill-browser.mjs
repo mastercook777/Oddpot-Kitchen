@@ -23,7 +23,7 @@ try{
  for(const [width,height] of [[320,568],[375,667],[390,844]]){
   const page=await browser.newPage({viewport:{width,height},isMobile:true,hasTouch:true,locale:'zh-CN'});
   const errors=[];page.on('pageerror',e=>errors.push(e.message));
-  await page.addInitScript(([k,s])=>localStorage.setItem(k,JSON.stringify(s)),[key,base('upgrade',width)]);
+  await page.addInitScript(([k,s])=>localStorage.getItem(k)||localStorage.setItem(k,JSON.stringify(s)),[key,base('upgrade',width)]);
   await page.goto(url,{waitUntil:'networkidle'});
   await page.locator('[data-act="buy-grill"]').click();
   assert.ok(await page.locator('.v014b-grill-unlock').innerText().then(x=>x.includes('已购入')));
