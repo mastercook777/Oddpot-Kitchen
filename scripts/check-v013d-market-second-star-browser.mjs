@@ -35,6 +35,7 @@ try {
   assert.match(await page.locator('.v12-star-invite').first().innerText(),/芽角鹿客/);
   const garden=page.locator('[data-act="promo:garden"]');
   assert.equal(await garden.count(),1);
+  await page.locator('.v014-marketing summary').click();
   await garden.click();
   const targeted=await page.evaluate(k=>JSON.parse(localStorage.getItem(k)),storageKey);
   assert.equal(targeted.management.campaignId,'garden');

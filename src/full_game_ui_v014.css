@@ -1,0 +1,133 @@
+/* v0.14: one visual language across the restaurant, field, lab and records.
+   This file follows older phase CSS so the existing interaction hit maps stay put. */
+:root{--v014-ink:#17352a;--v014-night:#122920;--v014-leaf:#284838;--v014-warm:#f4dfb1;--v014-gold:#f2c77d;--v014-line:#b68c54}
+.game-shell{background:linear-gradient(145deg,#2b4b38,#142d23 82%);box-shadow:0 0 0 1px #aa8b5d inset,0 0 65px #07150e}
+.hud,.v076-home-shell .v076-home-hud{height:calc(53px + env(safe-area-inset-top));padding:calc(5px + env(safe-area-inset-top)) 11px 5px;background:linear-gradient(180deg,#2d513c,#1c3b2e);border-bottom:1px solid #b18751}
+.brand .logo{display:grid;place-items:center;width:35px;height:35px;border:1px solid #be9a64;border-radius:9px;background:#193729;box-shadow:inset 0 1px #f7dca635;font-size:22px}
+.brand strong,.v076-home-hud .brand strong{font-size:18px;letter-spacing:.6px;color:#ffe8b8}
+.brand small,.v076-home-hud .brand small{display:block;font-size:10px;color:#d4ddbf;letter-spacing:.1px;margin-top:2px}
+.hud-meta{font-variant-numeric:tabular-nums;gap:6px;font-size:12px}
+.hud-meta>span{padding:4px 5px;border-radius:7px;background:#143327a1;white-space:nowrap}
+.hud-gear,.v076-home-hud .hud-gear{min-height:40px;min-width:40px;font-size:21px;color:#f6e3bc;border-radius:9px}
+.day-strip,.v076-home-shell .v076-home-day{height:29px;flex:none;padding:4px 11px;display:flex;align-items:center;gap:9px;background:#74583b;color:#fff0ca;border-bottom:1px solid #d6a965;font-size:11px}
+.day-strip>b{font-size:12px;white-space:nowrap}.day-strip .day-phase{margin-left:auto;color:#f8dfac;font-size:11px;white-space:nowrap}
+.v014-journey{display:flex;gap:5px;align-items:center;margin-left:3px}
+.v014-journey i{width:5px;height:5px;border-radius:50%;background:#e3d0a36b;border:1px solid #f6d6a67a}
+.v014-journey i.passed{background:#f8dfac}.v014-journey i.current{width:17px;border-radius:6px;background:#ffe4a9;box-shadow:0 0 6px #ffdb8d8c}
+.v013j-guide{min-height:42px;max-height:none;padding:5px 10px;gap:7px;background:#efd8a4;color:#263d30;border-bottom:2px solid #ad7949}
+.v013j-guide strong{font-size:12px}.v013j-guide small{font-size:11px;color:#425841;margin-top:2px}
+.v013j-guide button,.v013j-guide button:first-of-type{min-height:38px;min-width:38px;font-size:12px}
+.game-toast{border-top:1px solid #a88a57;border-bottom:0;background:#1a382c}
+.dock{border-top:2px solid #b18b53;background:linear-gradient(180deg,#2e503b,#1e382c);box-shadow:0 -6px 18px #091e1842}
+.dock-head{color:#f7e5c3;font-size:11px}.game-btn{border-radius:10px;border-color:#8daa80;background:#355a42;color:#fff1d4;font-weight:800;box-shadow:0 3px #10291f}
+.game-btn.primary{background:linear-gradient(#f6d897,#dca45d);border-color:#ffe3a7;color:#392d1d;box-shadow:0 3px #875e33}
+.game-btn.secondary{background:#365744;color:#f5e9cd;border-color:#809879}
+.game-btn:active,.v076-home-primary:active{transform:translateY(2px);box-shadow:0 1px #58402b}
+
+/* The home scene remains the largest object, and its notice is a compact prop. */
+.v076-home{background:linear-gradient(180deg,#274b37 0%,#1d392e 55%,#10291f);gap:7px}
+.v076-mission{position:relative;border:2px solid #d1a96d;border-radius:7px;background:repeating-linear-gradient(0deg,#4d382a,#4d382a 10px,#503b2c 11px);box-shadow:0 3px #17241b, inset 0 0 0 3px #77573a;padding:9px 12px}
+.v076-mission:before{content:'●';position:absolute;top:3px;left:7px;font-size:9px;color:#d8b98b}
+.v076-mission-meta{color:#f8d998;font-size:11px}.v076-mission h1{margin:3px 0;font-size:18px;color:#fff1cc}
+.v076-mission p{font-size:13px;line-height:1.35}
+.v076-mission details{font-size:11px;margin-top:4px;color:#e9d8b2}.v076-mission details summary{cursor:pointer}.v076-mission details small{margin-top:4px;color:#e9d8b2;font-size:11px}
+.v076-preview{border:3px solid #a27c4d;border-radius:9px;box-shadow:0 0 0 2px #203627,0 5px 13px #091c15b0}
+.v076-home-resources{font-size:11px}.v076-home-resources strong{font-size:12px}.v076-home-resources span{font-size:11px}
+.v076-home-shortcuts button{background:#31503c;border:1px solid #94a27a;border-radius:8px;box-shadow:0 2px #142b20}
+.v076-home-primary{border-radius:9px;box-shadow:0 3px #8c5e34}
+
+/* The two route cards read as destinations; details live with the choice. */
+.route-scene.ux-route{background:radial-gradient(circle at 60% 20%,#50754a,#294c38 56%,#142e24)}
+.ux-route .route-panel{padding:14px 13px 16px;gap:8px}
+.route-intro .ux-kicker{font-size:10px}.route-intro h2{font-size:21px}
+.v013h-supply-hint{font-size:12px;background:#1b3b2ee6;border-color:#c6a86a;padding:9px 11px}
+.v013h-supply-hint summary{font-size:11px;color:#e9d39c;margin-top:4px;cursor:pointer}
+.v013h-supply-hint details small{font-size:11px;color:#e9e0c2}
+.ux-route .ux-field-label strong{color:#ffe4b2;font-size:12px}
+.ux-route .route-card{background:#eddfba;border:2px solid #d2ac70;box-shadow:0 3px #182e22;border-radius:10px;min-height:84px}
+.ux-route .route-card.route-risk{background:#e9cfaa;border-color:#ca956a}
+.ux-route .route-card small{font-size:12px;line-height:1.3}
+.v08-branch-panel{border:2px solid #b89a63;background:#243c2ef5;box-shadow:0 5px 0 #15291e}
+.v08-branch-card{border:2px solid #a9b88a;box-shadow:0 2px #182f24}
+.field-event,.management-card,.v075-event-card{border-color:#bc955d;background:#f0dfb9;color:#3a3022;box-shadow:0 5px 0 #513b27,0 15px 24px #0a1a148c}
+.field-event>button,.management-card>button{border-color:#b79464;background:#fff1d1}
+.action-hud,.v075-status{box-shadow:0 2px 7px #071e186b}
+
+/* Research: ingredients form a tray, the pot owns the playing space. */
+.v063-setup{overflow-y:auto;overscroll-behavior:contain;background:radial-gradient(circle at 50% 12%,#3b5940,#193328 70%,#11281f);gap:9px}
+.v063-setup-title strong{font-size:19px}.v063-setup-title small{color:#e1ddc0;font-size:12px}
+.v063-vessel{border:2px solid #799176;background:#2e4d38;box-shadow:0 2px #112c20}
+.v063-vessel.chosen{background:#795535;border-color:#f1bf7b}
+.v063-food-picker button{min-height:70px;border:1px solid #8ca27e;background:#2d4d3a;box-shadow:0 2px #112b20}
+.v063-food-picker button.picked{border:2px solid #ffce88;background:#705036}
+.v063-recipe-clue{border:2px solid #b69a65;background:#4a382c;color:#fff0ce;box-shadow:0 3px #142b21;font-size:13px}
+.v063-recipe-clue strong{font-size:16px;color:#ffdda0}.v063-recipe-clue small{font-size:11px;color:#e3d5b5}
+.v063-live-scene{background:radial-gradient(circle at 50% 40%,#3a4f39,#132b23 77%)}
+.v063-live-pan{border:3px solid #ad8555;box-shadow:0 3px #11271e, inset 0 0 25px #030e0a88}
+.v063-receipt{background:radial-gradient(circle at 50% 0%,#4c5e3f,#20372b 65%,#142a23)}
+.v063-receipt-head h2{font-size:24px}.v063-receipt-metrics{margin:10px 0;gap:5px}
+.v063-receipt-metrics>div{border:2px solid #a99162;background:#2e4d38;padding:10px 2px;min-width:0}
+.v063-receipt-metrics b{font-size:21px}.v063-receipt-metrics small{text-align:center;font-size:10px;line-height:1.25}
+.v063-receipt-metrics .v014-value-gain{background:#684e32;border-color:#e9bb70}
+.v063-receipt-metrics .v014-value-gain b{color:#fff1c3}
+.v014-craft-details{margin:8px 0;border-top:1px solid #9aab86;padding-top:9px}
+.v014-craft-details summary{cursor:pointer;min-height:42px;padding:10px;color:#ffe1a1;font-weight:850;border:1px solid #78906f;background:#244334;border-radius:8px}
+.v014-craft-details section{margin:7px 0}
+
+/* The menu is a board the player edits, with value visible on every row. */
+.menu-scene{justify-content:flex-start;align-items:stretch;gap:10px;padding:16px 12px 20px;background:radial-gradient(circle at 50% 0%,#4b6645,#243c2f 60%,#152d24)}
+.menu-title{margin:0;text-align:center;font-size:20px;color:#ffe5ae}
+.menu-blackboard{width:100%;border:6px solid #84623b;background:#213c30;box-shadow:0 4px #3a2b20,inset 0 0 0 1px #c7a16a}
+.menu-line{min-height:72px;border:1px solid #78927a;border-radius:7px;background:#2d503e;box-shadow:0 2px #172f25;text-align:left}
+.menu-line>div{min-width:0}.menu-line strong{color:#fff0c9;font-size:15px}
+.v014-menu-value{display:flex;flex-wrap:wrap;align-items:center;gap:5px;margin-top:4px;font-size:11px;line-height:1.2}
+.v014-menu-value>*{font-style:normal;font-weight:800;background:#1c3c30;padding:3px 5px;border:1px solid #749073;border-radius:5px;color:#f5e5be;white-space:nowrap}
+.v014-menu-value b{background:#6b4c30;border-color:#c59b5b;color:#ffe0a1;font-size:13px}
+.v014-menu-value .shortage{color:#ffb5a0;border-color:#c9765e}
+.menu-line small{font-size:11px;color:#d2ddc8;margin-top:3px}
+.synergy-box{background:#695134;border:1px solid #dcaf68;margin:0;width:100%;padding:8px}
+.v014-menu-notes{border:1px solid #879b77;background:#294939;border-radius:8px;padding:0 10px;font-size:12px;color:#eee1c1}
+.v014-menu-notes summary{cursor:pointer;min-height:42px;padding:12px 0;font-weight:800}
+.v014-menu-notes p{margin:0 0 8px}.v014-menu-notes small{display:block;margin:8px 0 11px;font-size:11px}
+.v014-menu-notes .menu-balance{margin-bottom:6px}.v010-premium-entry{min-height:44px}
+
+/* Prep and growth expose the restaurant behind the workbench. */
+.stage.prep .prep-card,.stage.upgrade .upgrade-card{top:auto;bottom:2%;left:3%;right:3%;max-height:72%;border:3px solid #bb955f;border-radius:11px;background:#203b30f7;box-shadow:0 5px 0 #4e3926,0 0 25px #0c2019b5}
+.prep-card h2,.upgrade-card h2{color:#ffe2ab;font-size:19px}
+.kitchen-prep-card .service-day-brief{border-color:#ba995f}
+.v014-marketing,.v014-upgrade-notes{border:1px solid #8da17b;border-radius:8px;margin:8px 0;background:#294837;color:#f5e9c9}
+.v014-marketing>summary,.v014-upgrade-notes>summary{cursor:pointer;min-height:44px;padding:12px 10px;font-size:13px;font-weight:800}
+.v014-marketing .v12c-marketing{margin:2px 5px 7px}.v014-marketing .v12c-marketing-note{font-size:11px}
+.v014-upgrade-label{font-size:13px;color:#ffe1a5;margin:12px 0 5px}
+.v014-upgrade-notes p{padding:0 10px 10px;margin:0;font-size:12px;line-height:1.45}
+.v075-service .v075-status,.service-scene .service-mini-hud{border-color:#c5a36a}
+
+/* A report has an answer above the ledger; the ledger remains available. */
+.stage.report>.report-scene{background:radial-gradient(circle at 50% 0%,#586a48,#223c2d 60%,#152d23);gap:10px;padding:14px 12px 20px}
+.report-header{color:#ffe5b1}.report-stats>div{background:#314f3b;border:2px solid #a88e5e;box-shadow:0 2px #1b3025}
+.daily-goal-result,.guest-verdict,.recipe-lead{width:100%;margin:0;flex:none}
+.v014-report-more{width:100%;border:1px solid #b39868;border-radius:10px;padding:0 9px 8px;background:#203c2f}
+.v014-report-more summary{cursor:pointer;min-height:47px;padding:14px 3px 10px;font-size:13px;color:#ffe0aa;font-weight:850}
+.v014-report-more>*{max-width:100%;margin-left:0!important;margin-right:0!important}
+.v014-report-more .v063-craft-report{max-height:none;overflow:visible}
+
+/* Drawers are one consistent ledger surface, never a new full page. */
+.sheet{max-height:min(84dvh,700px);border:3px solid #ad8251;background:#f0dfbb;box-shadow:0 -6px 0 #5b4229,0 -14px 30px #091b14a8}
+.sheet-header{height:36px}.sheet-close{min-height:36px;min-width:42px;right:7px;top:1px}
+.sheet-body{padding:5px 14px 24px}.sheet-body h2{font-size:20px;color:#443322}
+.book-item,.detail-row{background:#fff1ce;border-color:#c5a272;box-shadow:0 2px #d5b989}
+.stock-line{border-color:#c4a77c}
+@media(max-height:700px){
+ .v013j-guide{padding:3px 7px;min-height:37px}.v013j-guide strong{font-size:11px}.v013j-guide small{font-size:10px}
+ .v076-mission{padding:6px 10px}.v076-mission h1{font-size:16px}
+ .stage.prep .prep-card,.stage.upgrade .upgrade-card{max-height:76%;bottom:1%}
+ .menu-scene{padding:8px 9px 12px;gap:7px}.menu-line{min-height:58px;padding:6px}
+ .v063-receipt-metrics>div{padding:6px 2px}.v063-receipt-metrics b{font-size:18px}
+}
+@media(max-width:350px){
+ .hud-meta{font-size:11px;gap:2px}.hud-meta>span{padding:3px}.brand strong{font-size:16px}
+ .v014-journey{gap:3px}.v014-journey i{width:4px}.v014-journey i.current{width:11px}
+ .v014-menu-value{gap:3px;font-size:10px}.v014-menu-value>*{padding:2px 3px}
+ .menu-line strong{font-size:13px}.menu-line .menu-icon{font-size:20px}
+}
+@media(prefers-reduced-motion:reduce){.v014-journey i,.game-btn,.v076-home-primary{transition:none!important}}

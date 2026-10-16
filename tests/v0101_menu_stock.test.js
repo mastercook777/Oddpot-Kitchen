@@ -47,7 +47,8 @@ test('read-only stock capacity changes when market replenishes pantry',()=>{
 test('menu UI and mobile CSS render distinct serving counts, avoid floating overlays, preserve scroll',()=>{
  const app=readFileSync(new URL('../src/app.js',import.meta.url),'utf8');
  const css=readFileSync(new URL('../src/kitchen_050.css',import.meta.url),'utf8');
- assert.match(app,/当前可做 \$\{recipeAvailableServings\(game,id\)\} 份/);
+ assert.match(app,/count=recipeAvailableServings\(game,id\)/);
+ assert.match(app,/可做 \$\{count\} 份/);
  assert.match(app,/v101-serving-tag/);
  assert.match(app,/hidden?.*/i);
  assert.match(app,/v101-premium-summary/);
