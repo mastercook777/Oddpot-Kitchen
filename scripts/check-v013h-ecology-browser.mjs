@@ -61,7 +61,7 @@ try{
  offline.on('pageerror',e=>errors.push(e.message));
  await offline.addInitScript(([k,state])=>localStorage.setItem(k,JSON.stringify(state)),[key,setup()]);
  await offline.goto(url+'standalone.html',{waitUntil:'networkidle'});
- assert.match(await offline.title(),/alpha\.7/);
+ assert.match(await offline.title(),/alpha\.8/);
  assert.equal(await offline.locator('[data-target]').count(),0);
  assert.equal(await offline.locator('[data-route]').count(),2);
  await offline.locator('[data-route="risk"]').click();
