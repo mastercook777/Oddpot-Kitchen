@@ -33,6 +33,7 @@ try{
   purchased.phase='research';
   await page.evaluate(([k,s])=>localStorage.setItem(k,JSON.stringify(s)),[key,purchased]);await page.reload({waitUntil:'networkidle'});
   await page.locator('[data-act="method:grill"]').click();
+  await page.locator('[data-ingredient="chicken"]').click();await page.locator('[data-ingredient="chili"]').click();
   await page.locator('[data-ingredient="beef"]').click();await page.locator('[data-ingredient="garlic"]').click();
   assert.ok((await page.locator('.v063-recipe-clue').innerText()).includes('野牛蒜香串'));
   await page.locator('[data-act="start-research"]').click();
