@@ -1,6 +1,6 @@
 // F1/F2/F3: quiet painted habitats around the SAME physical maps. Static
 // ground plans/textures are cached; ecology motion reads the simulation clock.
-import {fieldArtGroundPlan} from './field_pixel_herb_v011c.js?v=0.13.0-alpha.8';
+import {fieldArtGroundPlan} from './field_pixel_herb_v011c.js?v=0.13.0-alpha.9';
 import {buildHybridFieldDetailPlan,drawHybridFieldTrail,drawHybridMeadowGround,drawHybridMeadowObstacle} from './field_hybrid_meadow_v011e.js?v=0.12.0-alpha.1';
 export const HYBRID_FIELD_STYLES=Object.freeze(['meadow','glow','roots','garden','spring','oasis','steam','ember']);
 export const HYBRID_FIELD_PALETTES=Object.freeze({

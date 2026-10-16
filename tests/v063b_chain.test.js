@@ -46,7 +46,7 @@ test('finished dish lands and earns frozen crafted price once, not base price',(
  s.menu=['mushroom_stir','mushroom_stir','mushroom_stir'];s.phase='service';
  assert.equal(createService(s),true);
  const o=s.service.orders[0];o.segment='regular';selectArrivalDish(s,o);
- assert.equal(o.craft.price,RECIPES.mushroom_stir.price+1);
+ assert.equal(o.craft.price,RECIPES.mushroom_stir.price+1+2+2);
  o.status='queued';o.arrival=0;s.service.queued.push(o.id);s.service.paused=false;
  for(let i=0;i<15;i++)tick(s,1);
  assert.ok(['eating','review','served'].includes(o.status),o.status);

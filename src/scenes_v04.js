@@ -8,10 +8,11 @@ import {fieldWokPose,fieldPotPose} from './field_pose_v083.js?v=0.8.5';
 import {hazardPhase,fieldTilePath} from './field_rules_v011a.js';
 import {fieldCamera} from './field_camera_v011b1.js';
 import {drawExpandedLandscape,drawExpandedObstacle} from './field_world_render_v011b1.js';
-import {isHerbPixelSlice,drawHerbPixelGround,drawHerbPixelObstacle,drawHerbPixelNode,drawHerbPixelHazard,drawHerbPixelEnemy,drawHerbPixelProjectile} from './field_pixel_herb_v011c.js?v=0.13.0-alpha.8';
+import {isHerbPixelSlice,drawHerbPixelGround,drawHerbPixelObstacle,drawHerbPixelNode,drawHerbPixelHazard,drawHerbPixelEnemy,drawHerbPixelProjectile} from './field_pixel_herb_v011c.js?v=0.13.0-alpha.9';
 import {isHybridMeadow,drawHybridMeadowGround,drawHybridMeadowObstacle,drawHybridMeadowHazard} from './field_hybrid_meadow_v011e.js?v=0.12.0-alpha.1';
 import {meleeProfile,meleeWindupProgress} from './field_combat_feedback_v084.js?v=0.8.4';
 import {pixelActor,pixelEnemy,pixelImpact} from './pixels_v041.js?v=0.13.0-alpha.4';
+import {homeKitchenActors,homeKitchenChatter} from './home_kitchen_v013j.js';
 // Lightweight procedural game graphics: original Canvas shapes, no art pack.
 import {ING,RECIPES,CUSTOMERS} from './data.js?v=0.13.0-alpha.4';
 import {heroZone,waiterDeliveryPose,HERO_PASS} from './walkable_restaurant_v07.js?v=0.9.1';
@@ -937,6 +938,15 @@ function drawRestaurantV075(c,s,t,w,h){
       zone?.startsWith('TABLE')&&v.orders.some(o=>o.tableId===Number(zone.slice(5))&&['queued','cooking','pickup','delivering'].includes(o.status))?'💛':null});
   }
  }
+ else {
+  const reduced=globalThis.matchMedia?.('(prefers-reduced-motion: reduce)').matches||false;
+  for(const person of homeKitchenActors(s,t,reduced))actors.push(person);
+  // The idle room has no active orders. This is a small visual cue only.
+  for(const stove of reduced?[]:[g.stoveLeft,g.stoveRight,...(s.kitchen?.thirdUnlocked?[g.reservedStove]:[])]){
+   const X=x(stove.x),Y=y(stove.y);
+   for(let i=0;i<2;i++)circle(c,X+(i?5:-4),Y-23-((t*8+i*7)%14),2.1,'#eee0b286');
+  }
+ }
  actors.sort((a,b)=>a.y-b.y);
  // The dialogue slots attach to actual seated actors. Only high-signal
  // transient phrases survive, with one bubble per table and no stick overlays.
@@ -991,6 +1001,16 @@ function drawRestaurantV075(c,s,t,w,h){
  }
  for(const cue of visibleSpeech){const speaker=speechActors.get(cue.id);if(speaker)drawGuestSpeech077(c,cue,speaker,w,h)}
  if(workerCue&&workerActor)drawStaffSpeech078(c,workerCue,workerActor,w,h);
+ if(!v){
+  const reduced=globalThis.matchMedia?.('(prefers-reduced-motion: reduce)').matches||false;
+  const cue=homeKitchenChatter(s,t,reduced),speaker=actors.find(a=>a.id===cue?.actor);
+  if(speaker){
+   const X=x(speaker.x),Y=y(speaker.y)-40,wide=Math.min(w-16,Math.max(96,cue.text.length*10+15));
+   const bx=Math.max(8,Math.min(w-wide-8,X-wide/2)),by=Math.max(8,Y-25);
+   c.save();c.globalAlpha=Math.min(.95,(2.4-t%19)*1.7);rr(bx,by,wide,24,7,'#eff2da','#8ba789');
+   text(c,cue.text,bx+wide/2,by+13,'#2e4b3b',10);c.restore();
+  }
+ }
 }
 
 export function drawDiner(canvas,s,clock,simTime=s.service?.time??clock){
