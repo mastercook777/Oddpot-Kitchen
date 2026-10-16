@@ -96,7 +96,7 @@ test('legacy plan/offer and source identities remain compatible through normal s
  try{const x=encounter('merchant').s;save(x);const y=load();assert.deepEqual(y.field.encounterPlan,x.field.encounterPlan);assert.deepEqual(y.field.nodes,x.field.nodes);assert.ok(resolveFieldEvent(y,'buy'));save(y);const z=load();assert.equal(resolveFieldEvent(z,'buy'),false);assert.equal(z.field.bag.tide_sour_pulp,2);assert.equal(z.coins,84);}finally{globalThis.localStorage=old;}
 });
 test('twelve ingredients/four new curated recipes extend catalog without generic rare combinations or source leakage',()=>{
- assert.equal(Object.keys(ING).length,12);assert.equal(Object.keys(RECIPES).length,175);assert.equal(Object.keys(RECIPE_INDEX).length,176);
+ assert.equal(Object.keys(ING).length,12);assert.equal(Object.keys(RECIPES).length,178);assert.equal(Object.keys(RECIPE_INDEX).length,179);
  for(const id of ['tide_sour_pulp','starlit_nectar']){
   const s=newGame();s.phase='field';s.selectedTarget=id;enterField(s,'safe');assert.ok(s.field.nodes.every(n=>n.id!==id));assert.ok(buildFieldMap(s,'safe',id).nodes.every(n=>n.id!==id));assert.equal(purchase(newGame(),id),false);
   assert.equal(liveRecipeId([id,'beef'],'WOK'),null);assert.equal(liveRecipeId([id,'mushroom'],'POT'),null);
