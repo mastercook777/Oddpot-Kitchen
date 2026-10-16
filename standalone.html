@@ -2928,8 +2928,11 @@ function homeKitchenChatter(s,time,reducedMotion=false){
  if(reducedMotion)return null;
  const seconds=time%19;
  if(seconds>2.4)return null;
- if(s.crew?.helper?.hired)return {actor:'home-helper',text:seconds<1.2?'今晚试试新味道？':'锅已经热起来啦！'};
- return {actor:'home-chef',text:'今天会遇见谁呢？'};
+ if(seconds<1.2)return s.crew?.helper?.hired?
+  {actor:'home-helper',text:'今晚试试新味道？'}:{actor:'home-chef',text:'今天会遇见谁呢？'};
+ if(s.crew?.waiter?.hired)return {actor:'home-waiter',text:'我把餐桌收拾好啦！'};
+ if(s.crew?.helper2?.hired&&s.kitchen?.thirdUnlocked)return {actor:'home-helper2',text:'中间这锅交给我！'};
+ return {actor:'home-chef',text:'锅已经热起来啦！'};
 }
 // Optional prompts for the first loop. A missing field means an existing save.
 function firstDayGuide(s){
@@ -8462,7 +8465,7 @@ function drawRestaurantV075(c,s,t,w,h){
   const reduced=globalThis.matchMedia?.('(prefers-reduced-motion: reduce)').matches||false;
   for(const person of homeKitchenActors(s,t,reduced))actors.push(person);
   // The idle room has no active orders. This is a small visual cue only.
-  for(const stove of [g.stoveLeft,g.stoveRight,...(s.kitchen?.thirdUnlocked?[g.reservedStove]:[])]){
+  for(const stove of reduced?[]:[g.stoveLeft,g.stoveRight,...(s.kitchen?.thirdUnlocked?[g.reservedStove]:[])]){
    const X=x(stove.x),Y=y(stove.y);
    for(let i=0;i<2;i++)circle(c,X+(i?5:-4),Y-23-((t*8+i*7)%14),2.1,'#eee0b286');
   }
