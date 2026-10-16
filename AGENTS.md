@@ -1,5 +1,7 @@
 # 🔒 最新项目工作约定（优先级高于本文件下方历史版本记录）
 
+**v0.14.0-alpha.1 全游戏 UI 第一轮（2026-10-16，[PR #71](https://github.com/mastercook777/Oddpot-Kitchen/pull/71)）**：首页至成长和常用抽屉已统一信息层级与游戏内视觉，481项 Node、14组 Actions、三手机宽度及离线通过。真实经济、订单与旧档保留；偏强制操作引导及经济多日复盘为后续切片。CI 截图缺中文字库，iPhone/Android 主观视觉待验收。以 [v0.14 规格](docs/V0.14_FULL_GAME_UI_SYSTEM_SPEC.md)、[状态](docs/PROJECT_STATE.md)、[路线图](docs/ROADMAP.md)接续；下方旧“当前”均为历史。
+
 **当前 main · v0.13.0-alpha.9（2026-10-16，[PR #70](https://github.com/mastercook777/Oddpot-Kitchen/pull/70)已合并；Pages入口已显示alpha.9）**：第一天可跳过阶段引导、空店同源Canvas中的真实已雇员工待机闲聊、品质与菜谱专属招牌工艺的售价提升，均已实装。旧存档不自动补发教程，旧订单不重新计价；空店演出不生成经营交易。481/481 Node、13/13 PR GitHub Actions（含320/375/390手机Chrome与离线）通过。玩家iPhone/Android主观体验仍待验收。详情见 [v0.13-J](docs/V0.13J_HOME_VALUE_ONBOARDING_SPEC.md)。
 
 **v0.13-H 新版生态探索（v0.13.0-alpha.7，[PR #68](https://github.com/mastercook777/Oddpot-Kitchen/pull/68)已合并 main；475/475 Node、12/12 GitHub Actions 成功）**：按游戏正式代码，出发前**不再选择目标食材**；原 selectedTarget 不再写入新游戏，老存档字段只作兼容。新图首段与分支强制节点必须读取真实 `getFieldBiome(zone).primary`，不是任意所选食材，`targetMode='ecology'` 与旧在途分开。玩家选采集/狩猎和各段地域生态；采集路线增加有确定生态权重的静态蔬菜/菌菇/根茎收益，狩猎路线增加真怪敌种及死亡掉落机会，二者没有无条件高收益保证。14个原区域现可进入，每次仍3段。前后80种子/每区4组合审计、475项Node和Chrome/离线列于 [v0.13-H量化结果](docs/V0.13H_ECOLOGY_SUPPLY_RESULTS.md)。不改6–10采购、稀有Boss、HP、货币、研发或餐厅结算，第三星/传送门仍未开发。以下 alpha.6 / v0.11 记录都是历史。

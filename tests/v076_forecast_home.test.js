@@ -8,16 +8,16 @@ const source=p=>readFileSync(new URL(p,import.meta.url),'utf8');
 const app=source('../src/app.js'),css=source('../src/forecast_home_v076.css');
 const index=source('../index.html'),pkg=JSON.parse(source('../package.json'));
 
-test('the internal, browser, offline and package versions all target v0.13.0-alpha.9',()=>{
- assert.equal(pkg.version,'0.13.0-alpha.9');
- assert.match(index,/<title>怪味食堂 · Oddpot Kitchen v0\.13\.0-alpha\.9<\/title>/);
- assert.match(index,/src\/app\.js\?v=0\.13\.0-alpha\.9/);
+test('the internal, browser, offline and package versions all target v0.14.0-alpha.1',()=>{
+ assert.equal(pkg.version,'0.14.0-alpha.1');
+ assert.match(index,/<title>怪味食堂 · Oddpot Kitchen v0\.14\.0-alpha\.1<\/title>/);
+ assert.match(index,/src\/app\.js\?v=0\.14\.0-alpha\.1/);
  assert.match(index,/forecast_home_v076\.css\?v=0\.9\.3/);
- assert.match(app,/ODDPOT · v0\.13\.0-alpha\.9/);
- assert.match(app,/版本 v0\.13\.0-alpha\.9/);
+ assert.match(app,/ODDPOT · v0\.14\.0-alpha\.1/);
+ assert.match(index,/full_game_ui_v014\.css/);
  const script=source('../scripts/build-standalone.py');
  assert.match(script,/forecast_home_v076\.css/);
- assert.match(script,/v0\.13\.0-alpha\.9 离线版/);
+ assert.match(script,/v0\.14\.0-alpha\.1 离线版/);
 });
 test('home is its own phase UI, without historical large message bar or old bottom dock',()=>{
  const s=app.slice(app.indexOf('function shell('),app.indexOf('\nfunction overlayMarkup(',app.indexOf('function shell(')));
@@ -52,13 +52,13 @@ test('one main button and three small shortcuts retain real action handlers',()=
  nextPhase(s,'field');
  assert.equal(s.phase,'field');
 });
-test('the book progress moves out of header only on forecast; settings retains accurate version',()=>{
+test('the compact game HUD shows the current phase and a journey, with version in settings',()=>{
  const hud=app.slice(app.indexOf('function hud(){'),app.indexOf('\nfunction toast(){'));
  assert.match(hud,/home=game\.phase==='forecast'/);
- assert.match(hud,/home\?'☀ 开店前'/);
- assert.match(hud,/home\?'':/);
- assert.match(hud,/图鉴/);
- assert.match(hud,/今日营业/);
+ assert.match(hud,/v014-journey/);
+ assert.match(hud,/phaseLabels\[game\.phase\]/);
+ assert.doesNotMatch(hud,/ODDPOT · v/);
+ assert.match(app,/ODDPOT · v0\.14\.0-alpha\.1/);
 });
 test('small-phone responsive CSS protects the preview, touch targets and bottom safe area',()=>{
  assert.match(css,/\.v076-preview\{flex:1 1 0/);

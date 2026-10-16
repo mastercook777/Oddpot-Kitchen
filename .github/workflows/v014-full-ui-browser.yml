@@ -1,0 +1,29 @@
+name: v0.14 full game mobile UI
+on:
+  pull_request:
+    paths: ['src/**','scripts/**','index.html','standalone.html','docs/V0.14_*','.github/workflows/v014-full-ui-browser.yml']
+  push:
+    branches: ['main']
+permissions: {contents: read}
+jobs:
+  ui-journey:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with: {node-version: 22}
+      - name: Build browser and offline versions
+        run: |
+          npm install --no-package-lock --no-audit --no-fund
+          npm run build
+          python scripts/build-standalone.py
+      - name: Test eight real game stages at three phone sizes
+        run: |
+          npm install --no-save --package-lock=false playwright@1.56.1
+          node scripts/check-v014-full-ui-browser.mjs
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: oddpot-v014-full-game-ui
+          path: docs/screenshots/v014-full-ui/*.png

@@ -28,6 +28,7 @@ try{
   await page.addInitScript(([k,s])=>localStorage.setItem(k,JSON.stringify(s)),[storageKey,fixture()]);
   await page.goto('http://127.0.0.1:5173/index.html',{waitUntil:'networkidle'});
   const read=()=>page.evaluate(k=>JSON.parse(localStorage.getItem(k)),storageKey);
+  await page.locator('.v014-marketing summary').click();
   await page.locator('[data-act="promo:flyer"]').click();
   assert.equal((await read()).management.campaignId,'flyer');
   assert.equal(await page.locator('[data-act="promo:flyer"]').getAttribute('aria-pressed'),'true');
@@ -66,6 +67,7 @@ try{
  await page.addInitScript(([k,s])=>localStorage.setItem(k,JSON.stringify(s)),[storageKey,s]);
  await page.goto('http://127.0.0.1:5173/index.html',{waitUntil:'networkidle'});
  assert.equal(await page.locator('.v12c-finance').count(),1);
+ await page.locator('.v014-report-more summary').click();
  assert.match(await page.locator('.v12c-finance').innerText(),/工资|现金净变动/);
  assert.equal(await page.locator('.v12c-growth-report').count(),1);
  await page.screenshot({path:`${out}/report-390.png`,fullPage:true});
@@ -74,6 +76,7 @@ try{
  offline.on('pageerror',e=>errors.push(e.message));
  await offline.addInitScript(([k,s])=>localStorage.setItem(k,JSON.stringify(s)),[storageKey,fixture()]);
  await offline.goto('http://127.0.0.1:5173/standalone.html',{waitUntil:'networkidle'});
+ await offline.locator('.v014-marketing summary').click();
  await offline.locator('[data-act="promo:flyer"]').click();
  assert.equal(await offline.evaluate(k=>JSON.parse(localStorage.getItem(k)).management.campaignId,storageKey),'flyer');
  await offline.screenshot({path:`${out}/offline-390.png`});

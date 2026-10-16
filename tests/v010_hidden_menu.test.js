@@ -146,5 +146,5 @@ test('minimal interface references original sheet and not extra regular menu slo
  assert.match(src,/v010-premium-report/);
  assert.match(css,/\.v010-premium-entry/);
  assert.match(css,/@media\(max-width:350px\)/);
- assert.match(src,/今晚菜单 · 3 道/);
+ assert.match(src,/今晚的三道菜/);
 });

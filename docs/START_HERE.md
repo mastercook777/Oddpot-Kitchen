@@ -1,5 +1,7 @@
 # 《怪味食堂》新对话 / 新开发任务从这里开始
 
+**v0.14.0-alpha.1 · 全游戏 UI 第一轮（2026-10-16，[PR #71](https://github.com/mastercook777/Oddpot-Kitchen/pull/71)）**：首页、出发、探索分支、研发、菜单、备餐、营业、日报、成长及常用抽屉统一游戏内信息层级与短屏触控；关键售价/耗时/可做份数、缺料和结算优先可见，详细规则可展开。保留真实厨房、人物、订单和存档逻辑。481/481 Node、14/14 PR Actions、三种手机 Chrome 宽度及离线版通过；CI 截图缺中文字库，不代表真机中文字形验收。详细交付与后续[偏强制操作引导](V0.14_FULL_GAME_UI_SYSTEM_SPEC.md)见规格；引导及进一步经济调参尚未进入 alpha.1。以下 alpha.9 为上一正式版本的历史记录。
+
 **当前 main · v0.13.0-alpha.9（2026-10-16，[PR #70](https://github.com/mastercook777/Oddpot-Kitchen/pull/70)已合并；Pages入口已显示alpha.9）**：玩家完整重开反馈对应的活厨房首页、工艺/品质售价与第一日阶段引导均已实装。仅已雇员工参与空店闲聊；新档引导可跳过/重看，旧档不突发引导；订单价格仍冻结。481/481 Node与13/13 PR Actions（含手机Chrome三尺寸、离线）通过；玩家iPhone/Android体验待验收。规格、经济80种子对照和边界见 [v0.13-J](V0.13J_HOME_VALUE_ONBOARDING_SPEC.md)。以下alpha.8是上一正式版本。
 
 **v0.13-I · 安卓地面食材可见性兼容修复（v0.13.0-alpha.8，[PR #69](https://github.com/mastercook777/Oddpot-Kitchen/pull/69)已合并）**：用户提供 Android Chrome 截图，地图与主角正常、实际采到牛肉，但报告食材掉落没有画面。源码分析：材料由16×16离屏Canvas程序绘制并经Canvas`drawImage()`贴回地图，**无外网贴图请求**；具体 Android GPU 根因尚未证实。仅食材节点改用相同像素画法在主Canvas直接绘制，含8种普通+4种特殊原料；不改采集判定、材料经济、Boss奖励、探索路线或存档。同步缓存参数、v0.13.0-alpha.8 和离线包，增加绘制像素测试。**477/477 Node 与 12/12 PR GitHub Actions 已通过**，含移动Chrome 320/375/390及离线；Android真机需另行验收，截图本身为已拾取后，不足以证明未拾取前消失。详见[故障调查与兼容修复](V0.13I_ANDROID_LOOT_VISIBILITY_FIX.md)。
