@@ -1407,11 +1407,11 @@
 .v014c-hearth{height:175px;position:relative;overflow:hidden;border:5px solid #816a56;border-radius:22px;background:repeating-linear-gradient(90deg,#221d1a 0 9px,#38302a 9px 13px,#211b19 13px 22px);box-shadow:inset 0 0 0 4px #2d2421,inset 0 16px 30px #0e0c0b,0 9px 0 #453a33}
 .v014c-hearth:before,.v014c-hearth:after{content:'';position:absolute;inset:13px 0 auto;height:5px;background:#6d625c;box-shadow:0 126px #6d625c}.v014c-hearth:after{inset:22px 0 auto;height:2px;background:#a39582;box-shadow:0 109px #a39582}
 .v014c-coals{position:absolute;inset:25px 12px 21px;display:flex;align-items:center;justify-content:space-around;opacity:.24;transition:opacity .3s}.v014c-hearth.lit .v014c-coals{opacity:1}.v014c-coals i{display:block;width:16%;height:40%;transform:rotate(25deg);background:linear-gradient(110deg,#713e26,#c96331 58%,#f5af51 65%,#4e342c 72%);box-shadow:0 0 20px #ea753c;animation:v014c-ember 1.9s infinite alternate}.v014c-coals i:nth-child(even){animation-delay:-.7s}.v014c-hearth.edge .v014c-coals{opacity:.45}.v014c-hearth.flame .v014c-coals{filter:saturate(1.35) brightness(1.3)}
-.v014c-rail{position:absolute;inset:0;display:grid;place-items:center}.v014c-skewer{display:flex;align-items:center;justify-content:center;position:relative;min-width:82%;height:68px;transform:rotate(-5deg);transition:transform .4s}.v014c-skewer.cooking{animation:v014c-heat 2.5s ease-in-out infinite}.v014c-skewer.turned{transform:rotate(5deg)}.v014c-stick{height:6px;background:linear-gradient(#e4d7b2,#af8861,#52392b);position:absolute;width:95%;left:-3%;box-shadow:0 3px 2px #130d0c}.v014c-stick:before{content:'';position:absolute;left:-9px;top:-4px;border-top:7px solid transparent;border-bottom:7px solid transparent;border-right:11px solid #d3c69e}.v014c-handle{position:absolute;right:-13px;width:30px;height:13px;background:linear-gradient(#b48454,#553424);border:2px solid #3d291f;border-radius:4px 8px 8px 4px}.v014c-bead{z-index:1;width:46px;height:46px;border-radius:12px;background:radial-gradient(circle at 35% 25%,#f6c888,#ab613d 65%,#513028);border:3px solid #68412b;box-shadow:3px 5px 2px #100e0bb0;display:grid;place-items:center;transform:rotate(calc((var(--i) - 1)*9deg));animation:v014c-bead .3s both;animation-delay:calc(var(--i)*.08s)}.v014c-empty{z-index:1;font-size:12px;background:#211b18dc;padding:8px 12px;border-radius:9px}.v014c-brush{position:absolute;right:10%;top:-30px;opacity:0;transition:top .35s,opacity .25s}.v014c-brush.brushed{top:28px;opacity:1;animation:v014c-brush 1.2s ease-in-out}
+.v014c-rail{position:absolute;inset:0;display:grid;place-items:center}.v014c-skewer{display:flex;align-items:center;justify-content:center;position:relative;min-width:82%;height:68px;transform:rotate(-5deg);transition:transform .4s}.v014c-skewer.cooking{animation:v014c-heat 2.5s ease-in-out infinite}.v014c-skewer.turned{transform:rotate(5deg)}.v014c-stick{height:6px;background:linear-gradient(#e4d7b2,#af8861,#52392b);position:absolute;width:95%;left:-3%;box-shadow:0 3px 2px #130d0c}.v014c-stick:before{content:'';position:absolute;left:-9px;top:-4px;border-top:7px solid transparent;border-bottom:7px solid transparent;border-right:11px solid #d3c69e}.v014c-handle{position:absolute;right:-13px;width:30px;height:13px;background:linear-gradient(#b48454,#553424);border:2px solid #3d291f;border-radius:4px 8px 8px 4px}.v014c-bead{z-index:1;width:46px;height:46px;border-radius:12px;background:radial-gradient(circle at 35% 25%,#f6c888,#ab613d 65%,#513028);border:3px solid #68412b;box-shadow:3px 5px 2px #100e0bb0;display:grid;place-items:center;transform:rotate(calc((var(--i) - 1)*9deg));animation:v014c-bead .22s both}.v014c-empty{z-index:1;font-size:12px;background:#211b18dc;padding:8px 12px;border-radius:9px}.v014c-brush{position:absolute;right:10%;top:-30px;opacity:0;transition:top .35s,opacity .25s}.v014c-brush.brushed{top:28px;opacity:1;animation:v014c-brush 1.2s ease-in-out}
 .v014c-gauges{display:grid;gap:5px;margin:15px 0 9px}.v014c-gauge{display:flex;align-items:center;gap:7px;padding:5px 8px;background:#26362f;border:1px solid #627d5e;border-radius:10px;min-height:39px}.v014c-gauge>div:nth-child(2){display:flex;flex:1;align-items:center;justify-content:space-between;min-width:0}.v014c-gauge b{font-size:12px}.v014c-gauge small{font-size:11px;color:#d6cbb1}.v014c-gauge[data-heat-tone=good]{border-color:#a4c66c}.v014c-gauge[data-heat-tone=bad]{border-color:#e36e4a}.v014c-faces{display:grid;gap:4px;width:62px;flex:none}.v014c-faces i{height:7px;border:1px solid #b79162;border-radius:6px;background:linear-gradient(90deg,#f3b75e var(--fill),#414043 var(--fill))}.v014c-faces i:last-child{background:linear-gradient(90deg,#db7950 var(--fill),#414043 var(--fill))}
 .v014c-status{text-align:center;font-size:12px;color:#f5d493;min-height:24px}.v014c-tray{display:flex;gap:6px;justify-content:center;margin-top:7px}.v014c-tray button{min-height:56px;min-width:68px;flex:1;max-width:130px;border-radius:12px;border:1px solid #9eaa7a;background:#354a3c;color:#fff4d8;display:grid;grid-template-columns:28px 1fr;text-align:left;align-items:center;padding:5px;gap:0 4px}.v014c-tray button span{grid-row:span 2}.v014c-tray button b{font-size:12px}.v014c-tray button small{font-size:10px;color:#c5d8ad}.v014c-tray button:disabled{opacity:.45}
 .v014c-dock{width:100%;max-width:630px;margin:auto}.v014c-lanes{display:flex;gap:7px}.v014c-lanes button{flex:1;min-height:54px;background:#7b4e32;color:#fff3d3;border:2px solid #d1a268;border-radius:13px;display:grid;place-content:center;gap:2px}.v014c-lanes button strong{font-size:14px}.v014c-lanes button small{font-size:10px}.v014c-lanes button:disabled{opacity:.4}.v014c-dock .action-row{margin-bottom:4px}
-@keyframes v014c-ember{to{opacity:.6;transform:rotate(22deg) scale(.92)}}@keyframes v014c-heat{50%{translate:0 -3px}}@keyframes v014c-bead{from{opacity:0;transform:translateY(-16px) rotate(30deg)}}@keyframes v014c-brush{50%{transform:rotate(-20deg) translateX(-18px)}}
+@keyframes v014c-ember{to{opacity:.6;transform:rotate(22deg) scale(.92)}}@keyframes v014c-heat{50%{translate:0 -3px}}@keyframes v014c-bead{from{transform:translateY(-13px) rotate(20deg)}}@keyframes v014c-brush{50%{transform:rotate(-20deg) translateX(-18px)}}
 @media(max-width:390px){.v014c-grill-scene{padding:7px 9px 18px}.v014c-hearth{height:139px}.v014c-hearth:before{box-shadow:0 90px #6d625c}.v014c-hearth:after{box-shadow:0 75px #a39582}.v014c-skewer{min-width:90%}.v014c-bead{width:39px;height:39px}.v014c-gauges{margin:11px 0 5px}.v014c-grill-head strong{font-size:19px}}
 @media(max-height:600px){.v014c-hearth{height:115px}.v014c-gauges{margin:7px 0 4px}.v014c-gauge{min-height:31px;padding:2px 6px}.v014c-tray button{min-height:46px}.v014c-grill-head{margin-bottom:6px}}
 @media(prefers-reduced-motion:reduce){.v014c-hearth *, .v014c-hearth *:before{animation:none!important;transition:none!important}}
@@ -5790,7 +5790,7 @@ function useFieldSkill(s){
   const facing={x:(f.facing?.x||0)/length,y:(f.facing?.y??-1)/length};
   const hits=f.enemies.filter(e=>e.hp>0&&inForkFlameCone(f.pos,facing,e)&&clearLineOfFire(f,f.pos,e));
   for(const e of hits)damageEnemy(s,e,FORK_FLAME.damage,'fork_flame');
-  f.skillCd=6.5;f.skillFx=.55;f.skillOrigin={...f.pos,type:'GRILL',dx:facing.x,dy:facing.y};
+  f.skillCd=6.5;f.skillFx=.85;f.skillOrigin={...f.pos,type:'GRILL',dx:facing.x,dy:facing.y};
   f.attackFx={ttl:.38,duration:.38,dx:facing.x,dy:facing.y,forkFlame:true,x:f.pos.x,y:f.pos.y};
   pushMsg(f,'🔥 烤叉喷焰！扇区命中 '+hits.length+' 个敌人。');return true;
  }
@@ -7911,19 +7911,26 @@ function drawForkThrustFx(c,f){
 }
 function drawForkFlameFx(c,f){
  if(!(f.skillFx>0)||f.skillOrigin?.type!=='GRILL')return;
- const o=f.skillOrigin,p=1-Math.min(1,f.skillFx/.55),fade=Math.min(1,p*8)*(1-p)**.75;
+ const o=f.skillOrigin,p=1-Math.min(1,f.skillFx/.85),fade=Math.min(1,p*12)*Math.min(1,(1-p)*3);
  const angle=Math.atan2(o.dy??-1,o.dx??0),half=FORK_FLAME.halfAngle;
- c.save();c.translate(o.x,o.y);c.rotate(angle);c.globalAlpha=fade;
- const reach=FORK_FLAME.range*Math.min(1,.24+p*3.2);
- const layers=[{r:reach,a:half,fill:'#e95c3288'},{r:reach*.82,a:half*.79,fill:'#ffae4dba'},{r:reach*.64,a:half*.53,fill:'#fff2b7bd'}];
+ c.save();c.translate(o.x,o.y);c.rotate(angle);c.globalAlpha=fade*.93;
+ const reach=FORK_FLAME.range*Math.min(1,.36+p*4.2);
+ const layers=[{r:reach,a:half,fill:'#df4d23'},{r:reach*.82,a:half*.79,fill:'#ff972f'},{r:reach*.64,a:half*.53,fill:'#ffe49a'}];
  for(const layer of layers){
   c.beginPath();c.moveTo(.16,0);c.arc(0,0,layer.r,-layer.a,layer.a);c.closePath();
   c.fillStyle=layer.fill;c.fill();
  }
- for(let i=-4;i<=4;i++){
-  const a=i*half/4,r=reach*(.70+(i%3)*.06),x=Math.cos(a)*r,y=Math.sin(a)*r;
+ for(let i=-5;i<=5;i++){
+  const a=i*half/5,r=reach*(.72+(i%3)*.06),x=Math.cos(a)*r,y=Math.sin(a)*r;
   c.beginPath();c.moveTo(x-.15,y);c.quadraticCurveTo(x+.12,y-.08,x+.30,y-.04-.18*(1-p));
   c.quadraticCurveTo(x+.08,y+.13,x-.15,y);c.fillStyle=i%2?'#ffb958':'#ffe1a2';c.fill();
+ }
+ for(let i=-4;i<=4;i++){
+  const a=(i+.45)*half/5,r=reach*(.87+(i%2)*.06);
+  c.beginPath();c.moveTo(Math.cos(a)*r,Math.sin(a)*r);
+  c.quadraticCurveTo(Math.cos(a)*reach*1.12,Math.sin(a)*reach*1.13-.16,
+   Math.cos(a)*reach*.92,Math.sin(a)*reach*.92-.23);
+  c.strokeStyle=i%2?'#ff8b34':'#f9c46e';c.lineWidth=.08;c.stroke();
  }
  for(let i=0;i<8;i++){
   const a=-half+((i*5)%9)*half/4,r=reach*(.35+((i*3)%5)*.11);

@@ -195,7 +195,7 @@ export function useFieldSkill(s){
   const facing={x:(f.facing?.x||0)/length,y:(f.facing?.y??-1)/length};
   const hits=f.enemies.filter(e=>e.hp>0&&inForkFlameCone(f.pos,facing,e)&&clearLineOfFire(f,f.pos,e));
   for(const e of hits)damageEnemy(s,e,FORK_FLAME.damage,'fork_flame');
-  f.skillCd=6.5;f.skillFx=.55;f.skillOrigin={...f.pos,type:'GRILL',dx:facing.x,dy:facing.y};
+  f.skillCd=6.5;f.skillFx=.85;f.skillOrigin={...f.pos,type:'GRILL',dx:facing.x,dy:facing.y};
   f.attackFx={ttl:.38,duration:.38,dx:facing.x,dy:facing.y,forkFlame:true,x:f.pos.x,y:f.pos.y};
   pushMsg(f,'🔥 烤叉喷焰！扇区命中 '+hits.length+' 个敌人。');return true;
  }

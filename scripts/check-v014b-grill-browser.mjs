@@ -72,6 +72,6 @@ try{
  const field=await browser.newPage({viewport:{width:390,height:844},isMobile:true,hasTouch:true,locale:'zh-CN'});
  await field.addInitScript(([k,v])=>localStorage.setItem(k,JSON.stringify(v)),[key,combat]);
  await field.goto(url,{waitUntil:'networkidle'});assert.ok(await field.locator('.field-skill').isVisible());
- await field.locator('[data-act="skill"]').click();await field.screenshot({path:`${out}/fork-flame-390.png`});await field.close();
+ await field.locator('[data-act="skill"]').click();await field.waitForTimeout(170);await field.screenshot({path:`${out}/fork-flame-390.png`});await field.close();
  console.log('v0.14-C Chrome 320/375/390: purchase, threading, heat lanes, two-sided cook, value receipt, prep, service, fork flame and offline passed');
 }finally{await browser?.close();server.kill('SIGTERM');}

@@ -74,19 +74,26 @@ export function drawForkThrustFx(c,f){
 }
 export function drawForkFlameFx(c,f){
  if(!(f.skillFx>0)||f.skillOrigin?.type!=='GRILL')return;
- const o=f.skillOrigin,p=1-Math.min(1,f.skillFx/.55),fade=Math.min(1,p*8)*(1-p)**.75;
+ const o=f.skillOrigin,p=1-Math.min(1,f.skillFx/.85),fade=Math.min(1,p*12)*Math.min(1,(1-p)*3);
  const angle=Math.atan2(o.dy??-1,o.dx??0),half=FORK_FLAME.halfAngle;
- c.save();c.translate(o.x,o.y);c.rotate(angle);c.globalAlpha=fade;
- const reach=FORK_FLAME.range*Math.min(1,.24+p*3.2);
- const layers=[{r:reach,a:half,fill:'#e95c3288'},{r:reach*.82,a:half*.79,fill:'#ffae4dba'},{r:reach*.64,a:half*.53,fill:'#fff2b7bd'}];
+ c.save();c.translate(o.x,o.y);c.rotate(angle);c.globalAlpha=fade*.93;
+ const reach=FORK_FLAME.range*Math.min(1,.36+p*4.2);
+ const layers=[{r:reach,a:half,fill:'#df4d23'},{r:reach*.82,a:half*.79,fill:'#ff972f'},{r:reach*.64,a:half*.53,fill:'#ffe49a'}];
  for(const layer of layers){
   c.beginPath();c.moveTo(.16,0);c.arc(0,0,layer.r,-layer.a,layer.a);c.closePath();
   c.fillStyle=layer.fill;c.fill();
  }
- for(let i=-4;i<=4;i++){
-  const a=i*half/4,r=reach*(.70+(i%3)*.06),x=Math.cos(a)*r,y=Math.sin(a)*r;
+ for(let i=-5;i<=5;i++){
+  const a=i*half/5,r=reach*(.72+(i%3)*.06),x=Math.cos(a)*r,y=Math.sin(a)*r;
   c.beginPath();c.moveTo(x-.15,y);c.quadraticCurveTo(x+.12,y-.08,x+.30,y-.04-.18*(1-p));
   c.quadraticCurveTo(x+.08,y+.13,x-.15,y);c.fillStyle=i%2?'#ffb958':'#ffe1a2';c.fill();
+ }
+ for(let i=-4;i<=4;i++){
+  const a=(i+.45)*half/5,r=reach*(.87+(i%2)*.06);
+  c.beginPath();c.moveTo(Math.cos(a)*r,Math.sin(a)*r);
+  c.quadraticCurveTo(Math.cos(a)*reach*1.12,Math.sin(a)*reach*1.13-.16,
+   Math.cos(a)*reach*.92,Math.sin(a)*reach*.92-.23);
+  c.strokeStyle=i%2?'#ff8b34':'#f9c46e';c.lineWidth=.08;c.stroke();
  }
  for(let i=0;i<8;i++){
   const a=-half+((i*5)%9)*half/4,r=reach*(.35+((i*3)%5)*.11);
