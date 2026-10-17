@@ -1,6 +1,6 @@
 // v0.6.3-A: real-time ingredient-event adjudicator.
 // No timed turns, no universal style buffs and no direct inventory writes.
-import {ING,RECIPES,RECIPE_INDEX,recipeSignature} from './data.js?v=0.14.0-alpha.2';
+import {ING,RECIPES,RECIPE_INDEX,recipeSignature} from './data.js?v=0.14.0-alpha.3';
 import {RECIPE_PROFILES} from './recipe_profiles_v063.js?v=0.12.0-alpha.1';
 import {evaluateGrillCook,grillHeat,grillTechnique} from './grill_cooking_v014b.js';
 
@@ -146,9 +146,11 @@ export function reviewLiveCook(result){
  if(!result)return {steps:[],maxQuality:0,atReachableMax:false};
  if(result.vessel==='GRILL'){
   const rows=(result.events||[]).map(d=>({type:'drop',time:d.t,grade:result.doneness?.find(x=>x.id===d.id)?.label==='熟透'?'good':'bad',label:`穿上 ${ING[d.id]?.name||d.id}`,detail:result.doneness?.find(x=>x.id===d.id)?.label||'待判定'}));
+  if(result.facts?.lane)rows.push({type:'action',time:0,grade:'good',label:'摆上'+({edge:'边火',middle:'均火',flame:'猛火'}[result.facts.lane]||'烤架'),detail:result.facts.ordered?'串序契合，品质 +3':'串序不影响可售'});
   for(const a of result.actions||[])rows.push({type:'action',time:a.t,grade:'good',label:a.type==='turn'?'翻面':'刷香料',detail:a.type==='turn'?'正反面分别受热':'翻面后形成香料焦边'});
   rows.push({type:'finish',time:result.duration,grade:result.sellable?'good':'bad',label:'起锅鉴定',detail:result.reason});
-  return {steps:rows.sort((a,b)=>a.time-b.time),maxQuality:85,atReachableMax:result.sellable&&result.quality>=85};
+  const maxQuality=result.facts?.lane?90:85;
+  return {steps:rows.sort((a,b)=>a.time-b.time),maxQuality,atReachableMax:result.sellable&&result.quality>=maxQuality};
  }
  const events=result.events||[],actions=result.actions||[],facts=result.facts||
   readCookFacts(result.ids||[],result.vessel,events,actions,result.duration||0);

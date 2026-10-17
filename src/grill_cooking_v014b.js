@@ -2,10 +2,10 @@ import {ING,RECIPES,RECIPE_INDEX,recipeSignature} from './data.js';
 
 const MIN_FACE={beef:3.2,chicken:3.0,garlic:1.5,chili:1.5,mushroom:2.0,cabbage:1.8,onion:1.9};
 const MAX_FACE={beef:8.4,chicken:8.2,garlic:8.0,chili:8.0,mushroom:8.2,cabbage:8.0,onion:8.1};
-export function grillHeat(id,elapsed,actions=[]){
+export function grillHeat(id,elapsed,actions=[],rate=1.05){
  const turn=actions.find(x=>x.type==='turn');
- const faceA=Math.max(0,Math.min(elapsed,turn?.t??elapsed))*1.05;
- const faceB=turn?Math.max(0,elapsed-turn.t)*1.05:0;
+ const faceA=Math.max(0,Math.min(elapsed,turn?.t??elapsed))*rate;
+ const faceB=turn?Math.max(0,elapsed-turn.t)*rate:0;
  const low=MIN_FACE[id]??2.2,high=MAX_FACE[id]??8;
  const state=faceA>high||faceB>high?'焦糊':faceA<low||faceB<low?'偏生':'熟透';
  return {front:faceA,back:faceB,frontProgress:Math.min(100,Math.round(faceA/low*100)),backProgress:Math.min(100,Math.round(faceB/low*100)),state,tone:state==='焦糊'?'bad':state==='熟透'?'good':'warming'};

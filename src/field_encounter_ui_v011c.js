@@ -1,4 +1,4 @@
-import {ING} from './data.js?v=0.14.0-alpha.2';
+import {ING} from './data.js?v=0.14.0-alpha.3';
 import {ingredientIconHtml} from './ingredient_icons_v011g.js';
 import {specialEncounterDetails,specialEncounterChoices,previewSpecialEncounter,specialBagSlots} from './field_encounters_v011c.js';
 const encounterEsc=s=>String(s??'').replaceAll('&','&amp;').replaceAll('<','&lt;').replaceAll('>','&gt;').replaceAll('"','&quot;');

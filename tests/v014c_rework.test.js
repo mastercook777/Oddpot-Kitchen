@@ -1,0 +1,72 @@
+import test from 'node:test';
+import assert from 'node:assert/strict';
+import {readFileSync} from 'node:fs';
+import {newGame,beginLiveResearch,threadGrillIngredient,placeGrillSkewer,performLiveAction,stepLiveResearch,finishLiveResearch,grillCookPreview,dropLiveIngredient,enterField} from '../src/engine.js';
+import {evaluatePlacedGrill} from '../src/grill_cooking_v014c.js';
+import {startActionField,stepActionField,useFieldSkill,inForkFlameCone,FORK_FLAME} from '../src/field_v04.js';
+
+const ready=()=>{const s=newGame(1403);s.phase='research';s.kitchen.grillOwned=true;s.inventory.beef=4;s.inventory.garlic=4;return s};
+const cook=(lane,order=['beef','garlic'],finish=9.5,turn=4.5,brush=5.5)=>evaluatePlacedGrill({mode:'v014c-grill',ids:['beef','garlic'],skewer:order,lane,elapsed:finish,actions:turn===null?[]:[{type:'turn',t:turn,with:order},...(brush===null?[]:[{type:'brush',t:brush,with:order}]) ]});
+test('lane rate, order and brushing make distinct deterministic outcomes',()=>{
+ assert.equal(cook('edge').sellable,true);
+ assert.equal(cook('middle').quality,88);
+ assert.equal(cook('flame').quality,90);
+ assert.equal(cook('flame',undefined,14).status,'焦糊失败');
+ assert.equal(cook('edge',undefined,7).status,'夹生失败');
+ assert.equal(cook('middle',['garlic','beef']).quality,85);
+ assert.equal(cook('middle',undefined,9.5,4.5,null).quality,83);
+ assert.equal(cook('middle',undefined,9.5,null).sellable,false);
+});
+test('grill threading and placement gate timer, and completion spends materials exactly once',()=>{
+ const s=ready(),before=s.inventory.beef;
+ assert.equal(beginLiveResearch(s,['beef','garlic'],'GRILL'),true);
+ assert.equal(stepLiveResearch(s,.1),null);assert.equal(s.cook.elapsed,0);
+ assert.equal(threadGrillIngredient(s,'beef'),true);assert.equal(threadGrillIngredient(s,'beef'),false);
+ assert.equal(placeGrillSkewer(s,'flame'),false);assert.equal(performLiveAction(s,'turn'),false);
+ assert.equal(threadGrillIngredient(s,'garlic'),true);assert.equal(placeGrillSkewer(s,'invalid'),false);
+ assert.equal(placeGrillSkewer(s,'middle'),true);assert.equal(placeGrillSkewer(s,'flame'),false);
+ assert.equal(performLiveAction(s,'brush'),false);
+ for(let i=0;i<45;i++)stepLiveResearch(s,.1);
+ assert.equal(performLiveAction(s,'turn'),true);assert.equal(performLiveAction(s,'turn'),false);
+ for(let i=0;i<10;i++)stepLiveResearch(s,.1);
+ assert.equal(performLiveAction(s,'brush'),true);
+ for(let i=0;i<40;i++)stepLiveResearch(s,.1);
+ assert.equal(grillCookPreview(s).items.every(x=>x.state==='熟透'),true);
+ assert.equal(finishLiveResearch(s).quality,88);assert.equal(finishLiveResearch(s),false);
+ assert.equal(s.inventory.beef,before-1);
+ assert.equal(s.ledger.filter(x=>x.id.startsWith('live-research-')).length,1);
+});
+test('in-progress legacy grill save completes under its original evaluator',()=>{
+ const s=ready();assert.equal(beginLiveResearch(s,['beef','garlic'],'GRILL'),true);
+ s.cook.mode='v063-live';s.cook.skewer=[];s.cook.lane=null;
+ assert.equal(threadGrillIngredient(s,'beef'),false);
+ assert.equal(dropLiveIngredient(s,'beef'),true);assert.equal(dropLiveIngredient(s,'garlic'),true);
+ for(let i=0;i<45;i++)stepLiveResearch(s,.1);
+ assert.equal(performLiveAction(s,'turn'),true);
+ for(let i=0;i<10;i++)stepLiveResearch(s,.1);
+ assert.equal(performLiveAction(s,'brush'),true);
+ for(let i=0;i<40;i++)stepLiveResearch(s,.1);
+ assert.equal(finishLiveResearch(s).quality,85);
+});
+test('fork basic attack thrusts one nearby target; flame cone hits only unblocked facing targets',()=>{
+ const s=newGame(142);s.phase='field';s.kitchen.grillOwned=true;s.selectedWeaponType='GRILL';
+ assert.equal(enterField(s,'safe'),true);assert.equal(startActionField(s),true);
+ const f=s.field;f.enemies=[];f.hazards=[];f.obstacles=[];f.pos={x:4.5,y:5};f.x=4.5;f.y=5;f.facing={x:1,y:0};
+ const e=(id,x,y)=>({id,kind:'chicken',x,y,hp:8,maxHp:8,cooldown:10,warning:0,phase:0});
+ const a=e('a',5,5),b=e('b',5.9,5),side=e('side',5,6.4);
+ f.enemies=[a,b,side];
+ stepActionField(s,0,0,.04);
+ assert.equal(a.hp,7);assert.equal(b.hp,8);assert.equal(f.attackFx.forkThrust,true);
+ assert.equal(inForkFlameCone(f.pos,f.facing,b),true);
+ assert.equal(inForkFlameCone(f.pos,f.facing,side),false);
+ assert.equal(useFieldSkill(s),true);assert.equal(a.hp,5);assert.equal(b.hp,6);assert.equal(side.hp,8);
+ assert.equal(FORK_FLAME.range,2.7);assert.equal(useFieldSkill(s),false);
+});
+test('new cookware and grill screens are bundled into both web and offline entrypoints',()=>{
+ const root=new URL('../',import.meta.url),read=p=>readFileSync(new URL(p,root),'utf8');
+ assert.match(read('index.html'),/grill_v014c\.css/);
+ assert.match(read('scripts/build-standalone.py'),/grill_cooking_v014c\.js/);
+ assert.match(read('standalone.html'),/v014c-hearth/);
+ assert.match(read('src/scenes_v04.js'),/drawForkFlameFx/);
+ assert.match(read('src/field_cookware_v014c.js'),/FORK_FLAME\.range/);
+});

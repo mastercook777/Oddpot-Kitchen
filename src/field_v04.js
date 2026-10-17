@@ -3,13 +3,20 @@ import {createEcologyEnemies,ecologyEngagedEnemies,stepEcologyEnemy} from './fie
 import {stepMiniBoss,stepBossZones} from './field_bosses_v011g.js';
 // v0.4 real-time forest encounter. The underlying kitchen inventory remains
 // governed by engine.settleField; this file only mutates the expedition bag.
-import {ING} from './data.js?v=0.14.0-alpha.2';
+import {ING} from './data.js?v=0.14.0-alpha.3';
 import {fieldHarvestTargetSuffix} from './field_target_v012f.js?v=0.13.0-alpha.9';
 import {meleeProfile,meleeAttackWouldHit} from './field_combat_feedback_v084.js?v=0.8.4';
-import {clamp, rand, settleField,addFieldBag,resolveSpecialFieldEvent} from './engine.js?v=0.14.0-alpha.2';
+import {clamp, rand, settleField,addFieldBag,resolveSpecialFieldEvent} from './engine.js?v=0.14.0-alpha.3';
 import {hazardPhase} from './field_rules_v011a.js';
 import {fieldEnemySpawnCandidates} from './field_world_v011b1.js';
 const dist=(a,b)=>Math.hypot(a.x-b.x,a.y-b.y);
+export const FORK_FLAME={range:2.7,halfAngle:35*Math.PI/180,damage:2};
+export function inForkFlameCone(origin,facing,point){
+ const dx=point.x-origin.x,dy=point.y-origin.y,r=Math.hypot(dx,dy);
+ const length=Math.hypot(facing?.x||0,facing?.y||0)||1;
+ return r>.08&&r<=FORK_FLAME.range&&
+  (dx*(facing?.x??0)+dy*(facing?.y??-1))/(r*length)>=Math.cos(FORK_FLAME.halfAngle);
+}
 const pushMsg=(f,message)=>{f.actionMessage=message;f.actionMessageTTL=2.7;};
 export function startActionField(s){
  const f=s.field;if(!f||f.action)return false;
@@ -184,17 +191,13 @@ function gather(f,n){
 export function useFieldSkill(s){
  const f=s.field;if(s.phase!=='field'||!f?.action||f.skillCd>0||f.finished||f.segmentStatus==='choice'||f.activeEvent)return false;
  if(f.weapon?.type==='GRILL'){
-  const target=f.enemies.filter(e=>e.hp>0&&dist(f.pos,e)<=2.6&&clearLineOfFire(f,f.pos,e))
-   .sort((a,b)=>dist(f.pos,a)-dist(f.pos,b))[0];
-  if(!target){pushMsg(f,'烤叉突刺：前方没有可接近的目标。');return false;}
-  const d=dist(f.pos,target)||1;f.facing={x:(target.x-f.pos.x)/d,y:(target.y-f.pos.y)/d};
-  const hits=f.enemies.filter(e=>{const dx=e.x-f.pos.x,dy=e.y-f.pos.y,forward=dx*f.facing.x+dy*f.facing.y;
-   return e.hp>0&&forward>.1&&forward<=2.6&&Math.abs(dx*f.facing.y-dy*f.facing.x)<.38&&clearLineOfFire(f,f.pos,e);
-  }).sort((a,b)=>dist(f.pos,a)-dist(f.pos,b)).slice(0,2);
-  for(const e of hits)damageEnemy(s,e,2,'fork_skill');
-  f.skillCd=6.5;f.skillFx=.42;f.skillOrigin={...f.pos,type:'GRILL'};
-  f.attackFx={ttl:.30,duration:.30,dx:f.facing.x,dy:f.facing.y,fork:true};
-  pushMsg(f,'🍢 烤叉穿刺！击中 '+hits.length+' 个敌人。');return true;
+  const length=Math.hypot(f.facing?.x||0,f.facing?.y||0)||1;
+  const facing={x:(f.facing?.x||0)/length,y:(f.facing?.y??-1)/length};
+  const hits=f.enemies.filter(e=>e.hp>0&&inForkFlameCone(f.pos,facing,e)&&clearLineOfFire(f,f.pos,e));
+  for(const e of hits)damageEnemy(s,e,FORK_FLAME.damage,'fork_flame');
+  f.skillCd=6.5;f.skillFx=.55;f.skillOrigin={...f.pos,type:'GRILL',dx:facing.x,dy:facing.y};
+  f.attackFx={ttl:.38,duration:.38,dx:facing.x,dy:facing.y,forkFlame:true,x:f.pos.x,y:f.pos.y};
+  pushMsg(f,'🔥 烤叉喷焰！扇区命中 '+hits.length+' 个敌人。');return true;
  }
  if(f.weapon?.type==='POT'){
   const target=f.enemies.filter(e=>e.hp>0&&dist(f.pos,e)<=3.9&&clearLineOfFire(f,f.pos,e))
@@ -326,7 +329,8 @@ export function stepActionField(s,axisX,axisY,dt){
    const distance=Math.max(.001,dist(f.pos,target));
    f.facing={x:(target.x-f.pos.x)/distance,y:(target.y-f.pos.y)/distance};
    if(isFork){
-    f.attackCd=.88;f.attackFx={ttl:.25,duration:.25,dx:f.facing.x,dy:f.facing.y,fork:true};
+    f.attackCd=.88;f.attackFx={ttl:.30,duration:.30,dx:f.facing.x,dy:f.facing.y,
+     x:f.pos.x,y:f.pos.y,hitX:target.x,hitY:target.y,forkThrust:true};
     damageEnemy(s,target,1,'fork_thrust');
    }else if(isPot){
     f.attackCd=f.weapon?.level>1?1.1:1.2;
