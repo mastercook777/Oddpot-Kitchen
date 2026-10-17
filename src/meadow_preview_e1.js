@@ -2,7 +2,7 @@ import {specialEncounterHtml} from './field_encounter_ui_v011c.js';
 import {stepActionField,useFieldSkill,resolveFieldEvent} from './field_v04.js?v=0.12.0-alpha.1';
 import {drawField} from './scenes_v04.js?v=0.12.0-alpha.1';
 import {joystickVector} from './controls_v041.js';
-import {ING} from './data.js?v=0.14.0-alpha.2';
+import {ING} from './data.js?v=0.14.0-alpha.3';
 import {createMeadowPreview,setMeadowPreviewMode,meadowPreviewPose,prepareGPreview,prepareEcologyPreview,prepareSpecialPreview,prepareCombatPreview} from './meadow_preview_state_e1.js?v=0.12.0-alpha.1';
 const $=id=>document.getElementById(id),canvas=$('scene');
 const params=new URLSearchParams(location.search);

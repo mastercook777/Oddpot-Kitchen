@@ -3,7 +3,8 @@ import assert from 'node:assert/strict';
 import {spawn} from 'node:child_process';
 import {mkdir} from 'node:fs/promises';
 import {newGame} from '../src/engine.js';
-const url='http://127.0.0.1:5173/',key='oddpot-prototype-v04',out='docs/screenshots/v014b-grill';
+import {startActionField} from '../src/field_v04.js';
+const url='http://127.0.0.1:5173/',key='oddpot-prototype-v04',out='docs/screenshots/v014c-grill';
 await mkdir(out,{recursive:true});
 const server=spawn(process.execPath,['node_modules/vite/bin/vite.js','--host','127.0.0.1','--port','5173','--strictPort'],{stdio:'ignore'});
 let browser;
@@ -36,7 +37,10 @@ try{
   await page.locator('[data-ingredient="beef"]').click();await page.locator('[data-ingredient="garlic"]').click();
   assert.ok((await page.locator('.v063-recipe-clue').innerText()).includes('野牛蒜香串'));
   await page.locator('[data-act="start-research"]').click();
-  await page.locator('[data-live-drop="beef"]').click();await page.locator('[data-live-drop="garlic"]').click();
+  await page.locator('[data-grill-thread="beef"]').click();await page.locator('[data-grill-thread="garlic"]').click();
+  assert.equal(await page.locator('#v014c-clock').innerText(),'未入炉');
+  await page.screenshot({path:`${out}/thread-${width}.png`});
+  await page.locator('[data-grill-lane="middle"]').click();
   await page.waitForTimeout(4500);await page.locator('[data-act="live-action:turn"]').click();
   await page.locator('[data-act="live-action:brush"]').click();
   await page.waitForTimeout(4800);await page.screenshot({path:`${out}/research-${width}.png`});
@@ -62,5 +66,12 @@ try{
  await offline.addInitScript(([k,v])=>localStorage.setItem(k,JSON.stringify(v)),[key,s]);
  await offline.goto(url+'standalone.html',{waitUntil:'networkidle'});
  assert.ok(await offline.locator('[data-act="method:grill"]').isVisible());await offline.close();
- console.log('v0.14-B Chrome 320/375/390: purchase, two-sided cook, value receipt, prep coverage, service and offline passed');
+ const combat=base('field',390);combat.kitchen.grillOwned=true;combat.selectedWeaponType='GRILL';
+ const {enterField}=await import('../src/engine.js');assert.equal(enterField(combat,'safe'),true);assert.equal(startActionField(combat),true);
+ combat.field.pos={x:4.5,y:5};combat.field.x=4.5;combat.field.y=5;combat.field.facing={x:1,y:0};combat.field.enemies=[];combat.field.obstacles=[];
+ const field=await browser.newPage({viewport:{width:390,height:844},isMobile:true,hasTouch:true,locale:'zh-CN'});
+ await field.addInitScript(([k,v])=>localStorage.setItem(k,JSON.stringify(v)),[key,combat]);
+ await field.goto(url,{waitUntil:'networkidle'});assert.ok(await field.locator('.field-skill').isVisible());
+ await field.locator('[data-act="skill"]').click();await field.waitForTimeout(170);await field.screenshot({path:`${out}/fork-flame-390.png`});await field.close();
+ console.log('v0.14-C Chrome 320/375/390: purchase, threading, heat lanes, two-sided cook, value receipt, prep, service, fork flame and offline passed');
 }finally{await browser?.close();server.kill('SIGTERM');}

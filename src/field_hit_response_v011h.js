@@ -3,7 +3,9 @@ export const FIELD_HIT_PROFILES={
  wok:{distance:.22,duration:.14,hold:.035,color:'#fff0bc'},
  pot:{distance:.17,duration:.14,hold:.030,color:'#e3efc4'},
  wok_skill:{distance:.55,duration:.20,hold:.050,color:'#fff0bc'},
- pot_skill:{distance:.36,duration:.18,hold:.050,color:'#d3f3dc'}
+ pot_skill:{distance:.36,duration:.18,hold:.050,color:'#d3f3dc'},
+ fork_thrust:{distance:.24,duration:.16,hold:.040,color:'#ffe7b7'},
+ fork_flame:{distance:.35,duration:.19,hold:.045,color:'#ffb76c'}
 };
 export function queueFieldImpact(f,fx){
  f.impactFx??=[];f.impactFx.push(fx);

@@ -5,6 +5,7 @@ import {drawPixelMiniBoss,drawMiniBossWarning,drawBossZones} from './field_bosse
 import {isHybridFieldArt,drawHybridFieldGround,drawHybridFieldObstacle,drawHybridFieldHazard,drawHybridFieldAtmosphere} from './field_hybrid_biomes_v011f.js?v=0.12.0-alpha.1';
 import {drawFieldImpact,drawFieldProjectile,drawFieldSwipe,drawFieldSkillWave,drawFieldBurst,drawFieldCollection,drawFieldDeath,drawFieldActorIndicators,drawFieldNodeMarkers} from './field_effects_v011e2.js?v=0.12.0-alpha.1';
 import {fieldWokPose,fieldPotPose} from './field_pose_v083.js?v=0.8.5';
+import {drawPixelWok,drawPixelPot,drawPixelFork,drawForkThrustFx,drawForkFlameFx} from './field_cookware_v014c.js';
 import {hazardPhase,fieldTilePath} from './field_rules_v011a.js';
 import {fieldCamera} from './field_camera_v011b1.js';
 import {drawExpandedLandscape,drawExpandedObstacle} from './field_world_render_v011b1.js';
@@ -14,7 +15,7 @@ import {meleeProfile,meleeWindupProgress} from './field_combat_feedback_v084.js?
 import {pixelActor,pixelEnemy,pixelImpact} from './pixels_v041.js?v=0.13.0-alpha.4';
 import {homeKitchenActors,homeKitchenChatter} from './home_kitchen_v013j.js';
 // Lightweight procedural game graphics: original Canvas shapes, no art pack.
-import {ING,RECIPES,CUSTOMERS} from './data.js?v=0.14.0-alpha.2';
+import {ING,RECIPES,CUSTOMERS} from './data.js?v=0.14.0-alpha.3';
 import {heroZone,waiterDeliveryPose,HERO_PASS} from './walkable_restaurant_v07.js?v=0.9.1';
 import {DINER_FLOOR,dinerFloor,dinerGuestRoute,dinerWeather,dinerQueueGuests} from './restaurant_scene_v075.js?v=0.9.2';
 import {selectDiningSpeech,selectStaffSpeech,diningBubbleLines,speechOpacity} from './diner_ambience_v077.js?v=0.13.0-alpha.4';
@@ -295,8 +296,8 @@ export function drawField(canvas,s,clock){const size=setCanvas(canvas);if(!size|
  if(smoothFx)for(const e of f.enemies||[])drawFieldDeath(c,e);
  // Attack swipe uses the *same* direction and trigger as combat hit detection.
  if(smoothFx&&f.weapon?.type!=='GRILL')drawFieldSwipe(c,f);
- if(f.weapon?.type==='GRILL'&&f.attackFx?.ttl>0){const a=f.attackFx;c.save();c.strokeStyle='#ffd58a';c.lineWidth=a.fork?.18:.11;c.lineCap='round';c.beginPath();c.moveTo(f.pos.x,f.pos.y);c.lineTo(f.pos.x+a.dx*(a.fork?2.4:1.9),f.pos.y+a.dy*(a.fork?2.4:1.9));c.stroke();c.restore();}
- if(!smoothFx&&f.attackFx?.ttl>0&&!f.attackFx.pot){
+ if(f.weapon?.type==='GRILL')drawForkThrustFx(c,f);
+ if(!smoothFx&&f.attackFx?.ttl>0&&!f.attackFx.pot&&f.weapon?.type!=='GRILL'){
   const fx=f.attackFx,progress=1-fx.ttl/fx.duration,angle=Math.atan2(fx.dy,fx.dx);
   c.save();c.translate(f.pos.x,f.pos.y);c.rotate(angle);c.globalAlpha=Math.min(1,fx.ttl*4);
   if(herbPixelArt){c.fillStyle='#ffe6a1';for(let i=0;i<6;i++)c.fillRect(.32+i*.12,-.38+i*.12,.16,.13);
@@ -306,8 +307,9 @@ export function drawField(canvas,s,clock){const size=setCanvas(canvas);if(!size|
    c.strokeStyle='#fff9e0';c.lineWidth=.07;c.beginPath();c.arc(0,0,1.05,-.65+progress*.65,.30+progress*.65);c.stroke();}
   c.restore();
  }
- if(smoothFx){drawFieldSkillWave(c,f);drawFieldHitEffects(c,f);}
- if(!smoothFx&&f.skillFx>0){c.save();c.strokeStyle=`rgba(255,231,151,${Math.min(.95,f.skillFx*2.4)})`;c.lineWidth=.12;c.beginPath();c.arc(f.pos.x,f.pos.y,(.42-f.skillFx)*3+.35,0,Math.PI*2);c.stroke();c.restore();}
+ if(smoothFx){if(f.weapon?.type==='GRILL')drawForkFlameFx(c,f);else drawFieldSkillWave(c,f);drawFieldHitEffects(c,f);}
+ if(!smoothFx&&f.weapon?.type==='GRILL')drawForkFlameFx(c,f);
+ if(!smoothFx&&f.skillFx>0&&f.weapon?.type!=='GRILL'){c.save();c.strokeStyle=`rgba(255,231,151,${Math.min(.95,f.skillFx*2.4)})`;c.lineWidth=.12;c.beginPath();c.arc(f.pos.x,f.pos.y,(.42-f.skillFx)*3+.35,0,Math.PI*2);c.stroke();c.restore();}
  for(const e of f.enemies||[]){if(e.hurtFx>0&&e.hp>0&&!e.hitResponse){c.save();c.translate(e.x,e.y);c.scale(1/sc,1/sc);if(smoothFx)drawFieldImpact(c,0,-5,e.hurtFx/.36,8);else pixelImpact(c,0,-5,8);c.restore()}}
  for(const fx of f.popFx||[]){if(smoothFx&&fx.text==='💥'){drawFieldBurst(c,fx);continue;}if(smoothFx&&String(fx.text).startsWith('+'))drawFieldCollection(c,fx);c.save();c.translate(fx.x,fx.y-(.76-fx.ttl)*.5);c.scale(1/sc,1/sc);text(c,fx.text,0,-17,fx.color||'#fff1b1',12);c.restore()}
  c.save();c.translate(f.pos.x,f.pos.y);c.scale(1/sc,1/sc);
@@ -316,81 +318,13 @@ export function drawField(canvas,s,clock){const size=setCanvas(canvas);if(!size|
  const isWok=f.weapon?.type==='WOK',isGrill=f.weapon?.type==='GRILL';
  const posture=isWok?fieldWokPose(f.facing,f.moving,clock,(f.guardTime||0)>0):null;
  const potPose=!isWok&&!isGrill?fieldPotPose(f.facing,f.moving,clock,!!(f.attackFx?.pot&&f.attackFx?.ttl>0)):null;
- if(isWok){
-  // BACK LAYER: pan handle runs from the rear hand to a compact wok.
-  // This replaces the oversized circular pan beside the face.
-  const a=posture.hand,rest=posture.weapon;
-  const swing=f.attackFx&&!f.attackFx.pot?Math.exp(-(1-f.attackFx.ttl/f.attackFx.duration)*6):0;
-  const p={x:rest.x*(1-swing)+(f.attackFx?.dx||0)*25*swing,
-   y:rest.y*(1-swing)+(8+(f.attackFx?.dy||0)*16)*swing,
-   angle:rest.angle+attackPose.angle*posture.shieldSign};
-  c.save();
-  c.lineCap='round';
-  line(c,a.x,a.y,p.x,p.y,'#473e37',4.8);
-  line(c,a.x,a.y,p.x,p.y,'#b99d6d',2.6);
-  c.translate(p.x,p.y);
-  c.rotate(p.angle+(f.attackFx?.pot?0:(f.attackFx?.ttl>0?-.3*posture.shieldSign:0)));
-  c.beginPath();c.ellipse(0,0,6.7,5.1,0,0,Math.PI*2);
-  c.fillStyle='#283840';c.fill();c.strokeStyle='#d9c29d';c.lineWidth=2;c.stroke();
-  c.beginPath();c.ellipse(0,0,4.2,3.0,0,0,Math.PI*2);c.fillStyle='#69828b';c.fill();
-  c.restore();
- }else if(potPose){
-  // POT BACK LAYER: a clear forearm grip connecting chef and cauldron.
-  const hand=potPose.hand,held=potPose.pot;
-  line(c,hand.x,hand.y,held.x-potPose.side*5,held.y-1,'#373b36',5);
-  line(c,hand.x,hand.y,held.x-potPose.side*5,held.y-1,'#d0aa76',2.6);
- }
+ if(isWok)drawPixelWok(c,posture,{layer:'back'});
+ else if(potPose)drawPixelPot(c,potPose,{layer:'back'});
+ else drawPixelFork(c,f,{layer:'back'});
  chef(c,0,Math.sin(clock*9)*(f.moving?1.5:.35),clock,{scale:1.55,walk:f.moving,attack:!!f.attackFx,face:chefFace,hurt:f.hurtFx});
- if(isGrill){
-  const reach=f.attackFx?.ttl>0?8:0,side=chefFace;
-  line(c,side*8,8,side*(20+reach),-15,'#e1bb7b',3.4);
-  line(c,side*(20+reach),-15,side*(26+reach),-22,'#d8dfe0',2.2);
-  line(c,side*(26+reach),-22,side*(27+reach),-29,'#d8dfe0',1.6);
-  line(c,side*(26+reach),-22,side*(31+reach),-26,'#d8dfe0',1.6);
- }
- if(isWok){
-  const sh=posture.shield,ready=f.shieldCharge!==false,parry=(f.guardTime||0)>0,flash=(f.shieldFlash||0)>0;
-  // FOREGROUND: lid is in front of the off-hand at waist/shoulder height,
-  // never across the chef's eyes. A small rounded rectangle reads as a shield,
-  // not as a magnifying glass.
-  c.save();c.translate(sh.x,sh.y);
-  if(flash){c.shadowColor='#f9ffbc';c.shadowBlur=11;}
-  c.beginPath();c.roundRect(-sh.radius,-sh.radius,sh.radius*2,sh.radius*2.15,3.6);
-  c.fillStyle=parry?'#e6c87d':ready?'#bad6d3':'#566b70';
-  c.fill();c.lineWidth=2;c.strokeStyle=flash?'#fffce2':'#283b43';c.stroke();
-  c.beginPath();c.roundRect(-4.4,-4.5,8.8,9,2.6);c.fillStyle=parry?'#b88945':ready?'#4e8993':'#314951';c.fill();
-  circle(c,0,0,2.4,parry?'#fff8ce':ready?'#cce7d6':'#82989b');
-  if(!ready){c.strokeStyle='#f6da94';c.lineWidth=1.4;c.beginPath();
-   c.arc(0,0,sh.radius+2,-Math.PI/2,-Math.PI/2+Math.PI*2*Math.max(0,1-(f.shieldCooldown||0)/8));c.stroke();}
-  if(flash){c.strokeStyle='#edffc9';c.lineWidth=2;c.beginPath();c.arc(0,0,sh.radius+5,0,Math.PI*2);c.stroke();}
-  c.restore();
- }else if(potPose){
-  // POT FOREGROUND: enamel stockpot with two handles, visible mouth and
-  // magical onion ammunition. Geometry stays below the face across directions.
-  const held=potPose.pot;
-  c.save();c.translate(held.x,held.y);c.scale(held.scale,held.scale);
-  if(potPose.casting){c.rotate(.12*potPose.side);c.shadowColor='#d8f9ad';c.shadowBlur=8;}
-  // Handles first; distinct from the earlier floating soup emoji.
-  c.beginPath();c.roundRect(-10,-4,5,7,2.2);c.fillStyle='#283c46';c.fill();
-  c.beginPath();c.roundRect(5,-4,5,7,2.2);c.fill();
-  c.beginPath();c.roundRect(-7,-4,14,12,3.8);c.fillStyle='#6ca4a8';c.fill();
-  c.lineWidth=2;c.strokeStyle='#263d49';c.stroke();
-  c.beginPath();c.roundRect(-5,-3,10,8,2.4);c.fillStyle='#477e87';c.fill();
-  c.beginPath();c.ellipse(0,-4,7.5,3,0,0,Math.PI*2);
-  c.fillStyle='#d9c8a2';c.fill();c.strokeStyle='#374b52';c.lineWidth=1.8;c.stroke();
-  c.beginPath();c.ellipse(0,-4,5.2,1.7,0,0,Math.PI*2);
-  c.fillStyle=potPose.casting?'#e7f3a2':'#83b3a6';c.fill();
-  // An onion-bomb peeks out of the pot, with a leaf-shaped fuse.
-  c.beginPath();c.ellipse(0,-4,2.7,2.3,0,0,Math.PI*2);
-  c.fillStyle='#e5ba75';c.fill();
-  line(c,0,-6,.9,-9,'#77ac65',1.5);
-  if(potPose.casting){
-   c.globalAlpha=.8;
-   c.beginPath();c.arc(0,-6,10,Math.PI*1.1,Math.PI*1.85);
-   c.strokeStyle='#e6f7ba';c.lineWidth=1.6;c.stroke();
-  }
-  c.restore();
- }
+ if(isGrill)drawPixelFork(c,f,{layer:'front'});
+ if(isWok)drawPixelWok(c,posture,{layer:'front',parry:(f.guardTime||0)>0});
+ else if(potPose)drawPixelPot(c,potPose,{layer:'front'});
  if((f.hitFlash||0)>0){
   const ratio=Math.min(1,f.hitFlash/.52);
   c.save();c.globalAlpha=ratio;

@@ -2,10 +2,11 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import {RECIPES,RECIPE_INDEX,recipeSignature} from '../src/data.js';
 import {evaluateGrillCook} from '../src/grill_cooking_v014b.js';
+import {evaluatePlacedGrill} from '../src/grill_cooking_v014c.js';
 import {newGame,ensureKitchen,buyGrill,GRILL_COST,grillAvailable,configureKitchenSlot,fieldWeaponChoices,
- selectFieldWeapon,enterField,beginLiveResearch,dropLiveIngredient,performLiveAction,stepLiveResearch,
+ selectFieldWeapon,enterField,beginLiveResearch,threadGrillIngredient,placeGrillSkewer,grillCookPreview,dropLiveIngredient,performLiveAction,stepLiveResearch,
  finishLiveResearch,recipeCraftSnapshot,chooseRecipeVariant,createService,setServicePaused,tick,resumeBreak,closeService,markManual} from '../src/engine.js';
-import {startActionField,useFieldSkill} from '../src/field_v04.js';
+import {startActionField,useFieldSkill,inForkFlameCone,stepActionField} from '../src/field_v04.js';
 import {DINER_FLOOR} from '../src/restaurant_scene_v075.js';
 function owned(seed=1203){const s=newGame(seed);s.phase='upgrade';s.chapterProgress.stars=2;s.kitchen.thirdUnlocked=true;s.kitchen.slots.push({type:'WOK',level:1});s.coins=500;assert.equal(buyGrill(s),true);return s;}
 function advanceResearch(s,seconds){for(let i=0;i<Math.round(seconds*10);i++)stepLiveResearch(s,.1)}
@@ -35,12 +36,15 @@ test('only three authored recipes exist; both faces need heat, and brushing impr
  const s=owned();s.phase='research';s.inventory.beef=3;s.inventory.garlic=3;
  const initial={beef:s.inventory.beef,garlic:s.inventory.garlic};
  assert.equal(beginLiveResearch(s,['beef','garlic'],'GRILL'),true);
- assert.equal(dropLiveIngredient(s,'beef'),true);assert.equal(performLiveAction(s,'turn'),false);
- assert.equal(dropLiveIngredient(s,'garlic'),true);assert.equal(performLiveAction(s,'brush'),false);
+ assert.equal(s.cook.mode,'v014c-grill');
+ assert.equal(threadGrillIngredient(s,'beef'),true);assert.equal(performLiveAction(s,'turn'),false);
+ advanceResearch(s,3);assert.equal(s.cook.elapsed,0,'threading never cooks');
+ assert.equal(threadGrillIngredient(s,'garlic'),true);assert.equal(performLiveAction(s,'brush'),false);
+ assert.equal(placeGrillSkewer(s,'middle'),true);
  advanceResearch(s,4.5);assert.equal(performLiveAction(s,'turn'),true);advanceResearch(s,1);assert.equal(performLiveAction(s,'brush'),true);
  advanceResearch(s,4);assert.equal(finishLiveResearch(s).sellable,true);
  assert.equal(s.inventory.beef,initial.beef-1);assert.equal(s.inventory.garlic,initial.garlic-1);
- assert.equal(s.lastCook.sellable,true);assert.equal(s.recipes.grill_beef,85);
+ assert.equal(s.lastCook.sellable,true);assert.equal(s.recipes.grill_beef,88);
  const glazed=recipeCraftSnapshot(s,'grill_beef');
  assert.ok(glazed.price>RECIPES.grill_beef.price);assert.equal(glazed.timeDelta,1);
  assert.equal(s.recipeVariants.grill_beef.length,1);
@@ -68,13 +72,15 @@ test('a real GRILL order uses centre staff, material and sale ledger; an empty s
  assert.equal(empty.s.service.events.some(e=>e.type==='started'&&e.order===empty.o.id),false);
  assert.equal(empty.s.ledger.some(e=>e.id==='service-cook-'+empty.o.id),false);
 });
-test('fork is a purchased expedition snapshot; piercing is narrow, hits at most two and respects cooldown and walls',()=>{
+test('fork flame is a directional cone with multiple targets and line-of-sight',()=>{
  const s=owned();s.phase='field';assert.equal(selectFieldWeapon(s,'GRILL'),true);assert.equal(enterField(s,'safe'),true);
  assert.equal(s.field.weapon.type,'GRILL');startActionField(s);
- const f=s.field;f.pos={x:4.5,y:6.5};f.obstacles=[];f.worldW=12;f.worldH=16;
- f.enemies=[{id:'a',x:5,y:6.5,hp:4},{id:'b',x:5.8,y:6.5,hp:4},{id:'c',x:6.5,y:6.5,hp:4},{id:'side',x:5.7,y:7.3,hp:4}];
- assert.equal(useFieldSkill(s),true);assert.deepEqual(f.enemies.map(e=>e.hp),[2,2,4,4]);assert.equal(useFieldSkill(s),false);
- f.skillCd=0;f.obstacles=[{x:4,y:6}];assert.equal(useFieldSkill(s),false,'wall blocks every target along ray');
+ const f=s.field;f.pos={x:4.5,y:6.5};f.facing={x:1,y:0};f.obstacles=[];f.worldW=12;f.worldH=16;
+ f.enemies=[{id:'a',x:5,y:6.5,hp:4},{id:'b',x:5.8,y:6.5,hp:4},{id:'c',x:6.5,y:6.5,hp:4},{id:'side',x:5.7,y:7.6,hp:4}];
+ assert.equal(inForkFlameCone(f.pos,f.facing,{x:6.5,y:6.5}),true);
+ assert.equal(useFieldSkill(s),true);assert.deepEqual(f.enemies.map(e=>e.hp),[2,2,2,4]);assert.equal(useFieldSkill(s),false);
+ f.skillCd=0;f.obstacles=[{x:5,y:6}];assert.equal(useFieldSkill(s),true,'skill still animates when blocked');
+ assert.ok(f.enemies.every(e=>e.hp>=0));
  const prior=newGame();prior.phase='field';enterField(prior,'safe');const weapon=structuredClone(prior.field.weapon);
  prior.kitchen.thirdUnlocked=true;prior.kitchen.slots.push({type:'WOK',level:1});prior.chapterProgress.stars=2;prior.phase='upgrade';prior.coins=500;buyGrill(prior);
  assert.deepEqual(prior.field.weapon,weapon,'in-flight weapon never changes after purchase');

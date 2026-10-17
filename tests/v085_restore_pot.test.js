@@ -90,8 +90,10 @@ test('four-direction POT stance and renderer keep a recognisable lower held pot'
  assert.ok(fieldPotPose({x:1,y:0},false,0,true).pot.y<fieldPotPose({x:1,y:0}).pot.y);
  const source=readFileSync(new URL('../src/scenes_v04.js',import.meta.url),'utf8');
  assert.match(source,/fieldPotPose/);
- assert.match(source,/POT FOREGROUND/);
- assert.match(source,/ellipse\(0,-4,7\.5,3/);
+ assert.match(source,/drawPixelPot\(c,potPose,\{layer:'front'\}\)/);
+ const cookware=readFileSync(new URL('../src/field_cookware_v014c.js',import.meta.url),'utf8');
+ assert.match(cookware,/export function drawPixelPot/);
+ assert.match(cookware,/px\(c,14,y-10,21,4,ink\)/);
  assert.doesNotMatch(source,/text\(c,'🍲',17,-10/);
  const app=readFileSync(new URL('../src/app.js',import.meta.url),'utf8');
  assert.match(app,/fieldWeaponChoices\(game\)/);

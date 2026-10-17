@@ -1,4 +1,4 @@
-<!doctype html><html lang="zh-CN"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1.0,maximum-scale=1.0,viewport-fit=cover,user-scalable=no"><meta name="apple-mobile-web-app-capable" content="yes"><meta name="theme-color" content="#1b3c2b"><title>怪味食堂 · v0.14.0-alpha.2 离线版</title><style>.ingredient-icon{display:inline-block;width:var(--ingredient-size,24px);height:var(--ingredient-size,24px);max-width:none;object-fit:contain;image-rendering:pixelated;vertical-align:-.24em;flex:none;pointer-events:none;user-select:none}
+<!doctype html><html lang="zh-CN"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1.0,maximum-scale=1.0,viewport-fit=cover,user-scalable=no"><meta name="apple-mobile-web-app-capable" content="yes"><meta name="theme-color" content="#1b3c2b"><title>怪味食堂 · v0.14.0-alpha.3 离线版</title><style>.ingredient-icon{display:inline-block;width:var(--ingredient-size,24px);height:var(--ingredient-size,24px);max-width:none;object-fit:contain;image-rendering:pixelated;vertical-align:-.24em;flex:none;pointer-events:none;user-select:none}
 .stock-line>span .ingredient-icon{margin-right:3px}.target-chip .ingredient-icon{vertical-align:middle}.book-icon .ingredient-icon{display:block}
 .v063-food-icon .ingredient-icon{width:1em;height:1em;vertical-align:top;filter:none}.v063-receipt-line .ingredient-icon{vertical-align:middle}
 .v063-food-picker button>span,.v063-drop>span{line-height:1}.v063-food-picker .ingredient-icon,.v063-drop .ingredient-icon{vertical-align:top}
@@ -1400,6 +1400,21 @@
 .v063-live-pan.grill .v063-bowl{background:#855332;border-color:#e0a260}
 .v014b-sides{display:block;margin-top:2px;color:#f7d294;font-size:10px;font-style:normal;white-space:nowrap}
 @media(max-width:350px){.v063-vessels .v063-vessel{font-size:12px}.v063-vessels .v063-vessel small{font-size:9px}.v014b-sides{font-size:9px}}
+
+.v014c-grill-scene{max-width:630px;margin:auto;padding:12px 14px 24px;color:#fff4dd}
+.v014c-grill-head{display:flex;align-items:center;justify-content:space-between;margin:2px 0 12px;gap:10px}
+.v014c-grill-head div{display:grid;gap:2px}.v014c-grill-head small{font-size:11px;color:#e6b885;letter-spacing:.12em}.v014c-grill-head strong{font-size:22px;line-height:1.2}.v014c-grill-head>b{font-variant-numeric:tabular-nums;background:#3e302a;border:1px solid #a27451;border-radius:10px;padding:6px 10px;white-space:nowrap}
+.v014c-hearth{height:175px;position:relative;overflow:hidden;border:5px solid #816a56;border-radius:22px;background:repeating-linear-gradient(90deg,#221d1a 0 9px,#38302a 9px 13px,#211b19 13px 22px);box-shadow:inset 0 0 0 4px #2d2421,inset 0 16px 30px #0e0c0b,0 9px 0 #453a33}
+.v014c-hearth:before,.v014c-hearth:after{content:'';position:absolute;inset:13px 0 auto;height:5px;background:#6d625c;box-shadow:0 126px #6d625c}.v014c-hearth:after{inset:22px 0 auto;height:2px;background:#a39582;box-shadow:0 109px #a39582}
+.v014c-coals{position:absolute;inset:25px 12px 21px;display:flex;align-items:center;justify-content:space-around;opacity:.24;transition:opacity .3s}.v014c-hearth.lit .v014c-coals{opacity:1}.v014c-coals i{display:block;width:16%;height:40%;transform:rotate(25deg);background:linear-gradient(110deg,#713e26,#c96331 58%,#f5af51 65%,#4e342c 72%);box-shadow:0 0 20px #ea753c;animation:v014c-ember 1.9s infinite alternate}.v014c-coals i:nth-child(even){animation-delay:-.7s}.v014c-hearth.edge .v014c-coals{opacity:.45}.v014c-hearth.flame .v014c-coals{filter:saturate(1.35) brightness(1.3)}
+.v014c-rail{position:absolute;inset:0;display:grid;place-items:center}.v014c-skewer{display:flex;align-items:center;justify-content:center;position:relative;min-width:82%;height:68px;transform:rotate(-5deg);transition:transform .4s}.v014c-skewer.cooking{animation:v014c-heat 2.5s ease-in-out infinite}.v014c-skewer.turned{transform:rotate(5deg)}.v014c-stick{height:6px;background:linear-gradient(#e4d7b2,#af8861,#52392b);position:absolute;width:95%;left:-3%;box-shadow:0 3px 2px #130d0c}.v014c-stick:before{content:'';position:absolute;left:-9px;top:-4px;border-top:7px solid transparent;border-bottom:7px solid transparent;border-right:11px solid #d3c69e}.v014c-handle{position:absolute;right:-13px;width:30px;height:13px;background:linear-gradient(#b48454,#553424);border:2px solid #3d291f;border-radius:4px 8px 8px 4px}.v014c-bead{z-index:1;width:46px;height:46px;border-radius:12px;background:radial-gradient(circle at 35% 25%,#f6c888,#ab613d 65%,#513028);border:3px solid #68412b;box-shadow:3px 5px 2px #100e0bb0;display:grid;place-items:center;transform:rotate(calc((var(--i) - 1)*9deg));animation:v014c-bead .22s both}.v014c-empty{z-index:1;font-size:12px;background:#211b18dc;padding:8px 12px;border-radius:9px}.v014c-brush{position:absolute;right:10%;top:-30px;opacity:0;transition:top .35s,opacity .25s}.v014c-brush.brushed{top:28px;opacity:1;animation:v014c-brush 1.2s ease-in-out}
+.v014c-gauges{display:grid;gap:5px;margin:15px 0 9px}.v014c-gauge{display:flex;align-items:center;gap:7px;padding:5px 8px;background:#26362f;border:1px solid #627d5e;border-radius:10px;min-height:39px}.v014c-gauge>div:nth-child(2){display:flex;flex:1;align-items:center;justify-content:space-between;min-width:0}.v014c-gauge b{font-size:12px}.v014c-gauge small{font-size:11px;color:#d6cbb1}.v014c-gauge[data-heat-tone=good]{border-color:#a4c66c}.v014c-gauge[data-heat-tone=bad]{border-color:#e36e4a}.v014c-faces{display:grid;gap:4px;width:62px;flex:none}.v014c-faces i{height:7px;border:1px solid #b79162;border-radius:6px;background:linear-gradient(90deg,#f3b75e var(--fill),#414043 var(--fill))}.v014c-faces i:last-child{background:linear-gradient(90deg,#db7950 var(--fill),#414043 var(--fill))}
+.v014c-status{text-align:center;font-size:12px;color:#f5d493;min-height:24px}.v014c-tray{display:flex;gap:6px;justify-content:center;margin-top:7px}.v014c-tray button{min-height:56px;min-width:68px;flex:1;max-width:130px;border-radius:12px;border:1px solid #9eaa7a;background:#354a3c;color:#fff4d8;display:grid;grid-template-columns:28px 1fr;text-align:left;align-items:center;padding:5px;gap:0 4px}.v014c-tray button span{grid-row:span 2}.v014c-tray button b{font-size:12px}.v014c-tray button small{font-size:10px;color:#c5d8ad}.v014c-tray button:disabled{opacity:.45}
+.v014c-dock{width:100%;max-width:630px;margin:auto}.v014c-lanes{display:flex;gap:7px}.v014c-lanes button{flex:1;min-height:54px;background:#7b4e32;color:#fff3d3;border:2px solid #d1a268;border-radius:13px;display:grid;place-content:center;gap:2px}.v014c-lanes button strong{font-size:14px}.v014c-lanes button small{font-size:10px}.v014c-lanes button:disabled{opacity:.4}.v014c-dock .action-row{margin-bottom:4px}
+@keyframes v014c-ember{to{opacity:.6;transform:rotate(22deg) scale(.92)}}@keyframes v014c-heat{50%{translate:0 -3px}}@keyframes v014c-bead{from{transform:translateY(-13px) rotate(20deg)}}@keyframes v014c-brush{50%{transform:rotate(-20deg) translateX(-18px)}}
+@media(max-width:390px){.v014c-grill-scene{padding:7px 9px 18px}.v014c-hearth{height:139px}.v014c-hearth:before{box-shadow:0 90px #6d625c}.v014c-hearth:after{box-shadow:0 75px #a39582}.v014c-skewer{min-width:90%}.v014c-bead{width:39px;height:39px}.v014c-gauges{margin:11px 0 5px}.v014c-grill-head strong{font-size:19px}}
+@media(max-height:600px){.v014c-hearth{height:115px}.v014c-gauges{margin:7px 0 4px}.v014c-gauge{min-height:31px;padding:2px 6px}.v014c-tray button{min-height:46px}.v014c-grill-head{margin-bottom:6px}}
+@media(prefers-reduced-motion:reduce){.v014c-hearth *, .v014c-hearth *:before{animation:none!important;transition:none!important}}
 </style></head><body><div id="app"></div><script>// v0.6.3-A: curated recipe × technique metadata. Curated benefits now resolved per recipe/technique in v0.6.3-B.
 // The engine applies these per-recipe overrides at order snapshot, never as universal style buffs.
 const RECIPE_PROFILES = {
@@ -2672,10 +2687,10 @@ for(const recipe of Object.values(RECIPES)){
 
 const MIN_FACE={beef:3.2,chicken:3.0,garlic:1.5,chili:1.5,mushroom:2.0,cabbage:1.8,onion:1.9};
 const MAX_FACE={beef:8.4,chicken:8.2,garlic:8.0,chili:8.0,mushroom:8.2,cabbage:8.0,onion:8.1};
-function grillHeat(id,elapsed,actions=[]){
+function grillHeat(id,elapsed,actions=[],rate=1.05){
  const turn=actions.find(x=>x.type==='turn');
- const faceA=Math.max(0,Math.min(elapsed,turn?.t??elapsed))*1.05;
- const faceB=turn?Math.max(0,elapsed-turn.t)*1.05:0;
+ const faceA=Math.max(0,Math.min(elapsed,turn?.t??elapsed))*rate;
+ const faceB=turn?Math.max(0,elapsed-turn.t)*rate:0;
  const low=MIN_FACE[id]??2.2,high=MAX_FACE[id]??8;
  const state=faceA>high||faceB>high?'焦糊':faceA<low||faceB<low?'偏生':'熟透';
  return {front:faceA,back:faceB,frontProgress:Math.min(100,Math.round(faceA/low*100)),backProgress:Math.min(100,Math.round(faceB/low*100)),state,tone:state==='焦糊'?'bad':state==='熟透'?'good':'warming'};
@@ -2705,6 +2720,33 @@ function evaluateGrillCook(ids,drops,actions,elapsed){
   doneness:[...states,...missing.map(id=>({id,label:'未下锅'}))],
   reason:sellable?tech.reason:status,
   facts:{frontBack:ids.map(id=>({id,...grillHeat(id,elapsed-(drops.find(d=>d.id===id)?.t||0),actions)})),turnedAt:turn?.t??null,brushedAt:brush?.t??null}};
+}
+
+const GRILL_LANES=Object.freeze({edge:{name:'边火',rate:.86},middle:{name:'均火',rate:1.05},flame:{name:'猛火',rate:1.22}});
+function grillPreview(c){
+ if(c?.mode!=='v014c-grill')return null;
+ const rate=GRILL_LANES[c.lane]?.rate||0;
+ return {elapsed:c.elapsed,lane:c.lane,items:c.skewer.map(id=>({id,...grillHeat(id,c.elapsed,c.actions,rate)}))};
+}
+function evaluatePlacedGrill(c){
+ const ids=c.ids,recipeId=RECIPE_INDEX[recipeSignature(ids,'GRILL')]||null,recipe=RECIPES[recipeId];
+ const rate=GRILL_LANES[c.lane]?.rate||0;
+ const states=c.skewer.map(id=>({id,label:grillHeat(id,c.elapsed,c.actions,rate).state}));
+ const turn=c.actions.find(a=>a.type==='turn'),brush=c.actions.find(a=>a.type==='brush');
+ const glazed=!!(turn&&brush&&brush.t>=turn.t&&brush.t-turn.t<=3.5);
+ const ordered=!!recipe&&c.skewer.every((id,i)=>id===recipe.ids[i]);
+ const style=glazed?'glazed':'even',tech=grillTechnique(recipeId,style);
+ const missing=ids.filter(id=>!c.skewer.includes(id));
+ const bad=states.find(x=>x.label!=='熟透');
+ const sellable=!!recipe&&!!c.lane&&!missing.length&&!bad;
+ const status=!recipe?'未知组合':missing.length?'漏穿串':bad?.label==='焦糊'?'焦糊失败':bad?'夹生失败':'成功';
+ const quality=Math.max(35,Math.min(90,76+(turn?4:0)+(ordered?3:0)+(glazed?5:0)+(c.lane==='flame'?2:0)));
+ return {recipeId,recipeName:recipe?.name||'未识别料理',ids:[...ids],vessel:'GRILL',quality,sellable,status,style,
+  styleLabel:glazed?'双面刷香':'双面原味',secondaryTrait:glazed?'香料焦边':'双面火候',affinity:tech?.affinity||'ordinary',
+  affinityLabel:tech?.affinityLabel||'普通',culinaryReason:tech?.reason||'食材组合不能上架',
+  events:c.skewer.map((id,index)=>({id,t:0,index})),actions:c.actions.map(a=>({...a,with:[...a.with]})),
+  duration:+c.elapsed.toFixed(2),doneness:[...states,...missing.map(id=>({id,label:'未穿串'}))],reason:sellable?tech.reason:status,
+  facts:{lane:c.lane,skewer:[...c.skewer],ordered,frontBack:c.skewer.map(id=>({id,...grillHeat(id,c.elapsed,c.actions,rate)})),turnedAt:turn?.t??null,brushedAt:brush?.t??null}};
 }
 // v0.6.3-A: real-time ingredient-event adjudicator.
 // No timed turns, no universal style buffs and no direct inventory writes.
@@ -2851,9 +2893,11 @@ function reviewLiveCook(result){
  if(!result)return {steps:[],maxQuality:0,atReachableMax:false};
  if(result.vessel==='GRILL'){
   const rows=(result.events||[]).map(d=>({type:'drop',time:d.t,grade:result.doneness?.find(x=>x.id===d.id)?.label==='熟透'?'good':'bad',label:`穿上 ${ING[d.id]?.name||d.id}`,detail:result.doneness?.find(x=>x.id===d.id)?.label||'待判定'}));
+  if(result.facts?.lane)rows.push({type:'action',time:0,grade:'good',label:'摆上'+({edge:'边火',middle:'均火',flame:'猛火'}[result.facts.lane]||'烤架'),detail:result.facts.ordered?'串序契合，品质 +3':'串序不影响可售'});
   for(const a of result.actions||[])rows.push({type:'action',time:a.t,grade:'good',label:a.type==='turn'?'翻面':'刷香料',detail:a.type==='turn'?'正反面分别受热':'翻面后形成香料焦边'});
   rows.push({type:'finish',time:result.duration,grade:result.sellable?'good':'bad',label:'起锅鉴定',detail:result.reason});
-  return {steps:rows.sort((a,b)=>a.time-b.time),maxQuality:85,atReachableMax:result.sellable&&result.quality>=85};
+  const maxQuality=result.facts?.lane?90:85;
+  return {steps:rows.sort((a,b)=>a.time-b.time),maxQuality,atReachableMax:result.sellable&&result.quality>=maxQuality};
  }
  const events=result.events||[],actions=result.actions||[],facts=result.facts||
   readCookFacts(result.ids||[],result.vessel,events,actions,result.duration||0);
@@ -4312,7 +4356,7 @@ function fieldWeaponSnapshot(s){
  const type=selectedFieldWeaponType(s);
  const choice=fieldWeaponChoices(s).find(x=>x.type===type);
  return {slotIndex:choice.slotIndex,type,level:choice.level,source:choice.source,
-  attackId:type==='GRILL'?'fork_thrust':type==='WOK'?'wok_sweep':'pot_onion',skillId:type==='GRILL'?'fork_skewer':type==='WOK'?'wok_guard':'pot_pressure'};
+  attackId:type==='GRILL'?'fork_thrust':type==='WOK'?'wok_sweep':'pot_onion',skillId:type==='GRILL'?'fork_flame':type==='WOK'?'wok_guard':'pot_pressure'};
 }
 function selectFieldWeapon(s,selection){
  if(s.phase!=='field'||s.field)return false;
@@ -5166,10 +5210,21 @@ function beginLiveResearch(s,ids,vessel='WOK'){
   ids.some(id=>!ING[id])||!canUse(s,ids))return false;
  ensureRecipeVariants(s);
  const txn='live-research-'+s.cycle+'-'+s.day+'-'+s.step++;
- s.cook={mode:'v063-live',context:'research',vessel,ids:[...ids],
-   dropped:[],actions:[],elapsed:0,live:false,txn};
+ s.cook={mode:vessel==='GRILL'?'v014c-grill':'v063-live',context:'research',vessel,ids:[...ids],
+   dropped:[],skewer:[],lane:null,actions:[],elapsed:0,live:false,txn};
  s.lastCook=null;s.researchReceipt=false;return true;
 }
+function threadGrillIngredient(s,id){
+ const c=s.cook;
+ if(c?.mode!=='v014c-grill'||c.lane||!c.ids.includes(id)||c.skewer.includes(id))return false;
+ c.skewer.push(id);return true;
+}
+function placeGrillSkewer(s,lane){
+ const c=s.cook;
+ if(c?.mode!=='v014c-grill'||c.lane||!GRILL_LANES[lane]||c.skewer.length!==c.ids.length)return false;
+ c.lane=lane;c.dropped=c.skewer.map((id,index)=>({id,t:0,index}));c.live=true;return true;
+}
+function grillCookPreview(s){return grillPreview(s.cook)}
 function dropLiveIngredient(s,id){
  const c=s.cook;
  if(c?.mode!=='v063-live'||!c.ids.includes(id)||c.dropped.some(x=>x.id===id)||
@@ -5179,6 +5234,11 @@ function dropLiveIngredient(s,id){
 }
 function performLiveAction(s,type){
  const c=s.cook;
+ if(c?.mode==='v014c-grill'){
+  if(!c.lane||c.elapsed>=19||!['turn','brush'].includes(type)||c.actions.some(a=>a.type===type)||
+    type==='brush'&&!c.actions.some(a=>a.type==='turn'))return false;
+  c.actions.push({type,t:+c.elapsed.toFixed(3),with:[...c.skewer]});return true;
+ }
  if(c?.mode!=='v063-live'||!c.dropped.length||c.elapsed>=19||
   !LIVE_ACTIONS[c.vessel].some(a=>a.id===type)||
   c.actions.some(a=>a.type===type))return false;
@@ -5197,8 +5257,8 @@ function liveCookPreview(s){
 }
 function finishLiveResearch(s){
  const c=s.cook;
- if(c?.mode!=='v063-live'||!c.live||c.elapsed<1.2)return false;
- const result=evaluateLiveCook(c.ids,c.vessel,c.dropped,c.actions,c.elapsed);
+ if(!['v063-live','v014c-grill'].includes(c?.mode)||!c.live||c.elapsed<1.2)return false;
+ const result=c.mode==='v014c-grill'?evaluatePlacedGrill(c):evaluateLiveCook(c.ids,c.vessel,c.dropped,c.actions,c.elapsed);
  // Every attempted cook uses real resources, including failed recipes.
  if(!consume(s,c.ids,c.txn))return false;
  s.cook=null;s.lastCook=result;s.researchReceipt=true;
@@ -5231,7 +5291,7 @@ function finishLiveResearch(s){
 }
 function stepLiveResearch(s,seconds=0){
  const c=s.cook;
- if(c?.mode!=='v063-live'||!c.live)return null;
+ if(!['v063-live','v014c-grill'].includes(c?.mode)||!c.live)return null;
  c.elapsed=Math.min(19,c.elapsed+Math.max(0,Math.min(.1,Number(seconds)||0)));
  if(c.elapsed>=19)return finishLiveResearch(s);
  return null;
@@ -5489,7 +5549,9 @@ const FIELD_HIT_PROFILES={
  wok:{distance:.22,duration:.14,hold:.035,color:'#fff0bc'},
  pot:{distance:.17,duration:.14,hold:.030,color:'#e3efc4'},
  wok_skill:{distance:.55,duration:.20,hold:.050,color:'#fff0bc'},
- pot_skill:{distance:.36,duration:.18,hold:.050,color:'#d3f3dc'}
+ pot_skill:{distance:.36,duration:.18,hold:.050,color:'#d3f3dc'},
+ fork_thrust:{distance:.24,duration:.16,hold:.040,color:'#ffe7b7'},
+ fork_flame:{distance:.35,duration:.19,hold:.045,color:'#ffb76c'}
 };
 function queueFieldImpact(f,fx){
  f.impactFx??=[];f.impactFx.push(fx);
@@ -5543,6 +5605,13 @@ function fieldAttackPose(f){
 // v0.4 real-time forest encounter. The underlying kitchen inventory remains
 // governed by engine.settleField; this file only mutates the expedition bag.
 const dist=(a,b)=>Math.hypot(a.x-b.x,a.y-b.y);
+const FORK_FLAME={range:2.7,halfAngle:35*Math.PI/180,damage:2};
+function inForkFlameCone(origin,facing,point){
+ const dx=point.x-origin.x,dy=point.y-origin.y,r=Math.hypot(dx,dy);
+ const length=Math.hypot(facing?.x||0,facing?.y||0)||1;
+ return r>.08&&r<=FORK_FLAME.range&&
+  (dx*(facing?.x??0)+dy*(facing?.y??-1))/(r*length)>=Math.cos(FORK_FLAME.halfAngle);
+}
 const pushMsg=(f,message)=>{f.actionMessage=message;f.actionMessageTTL=2.7;};
 function startActionField(s){
  const f=s.field;if(!f||f.action)return false;
@@ -5717,17 +5786,13 @@ function gather(f,n){
 function useFieldSkill(s){
  const f=s.field;if(s.phase!=='field'||!f?.action||f.skillCd>0||f.finished||f.segmentStatus==='choice'||f.activeEvent)return false;
  if(f.weapon?.type==='GRILL'){
-  const target=f.enemies.filter(e=>e.hp>0&&dist(f.pos,e)<=2.6&&clearLineOfFire(f,f.pos,e))
-   .sort((a,b)=>dist(f.pos,a)-dist(f.pos,b))[0];
-  if(!target){pushMsg(f,'烤叉突刺：前方没有可接近的目标。');return false;}
-  const d=dist(f.pos,target)||1;f.facing={x:(target.x-f.pos.x)/d,y:(target.y-f.pos.y)/d};
-  const hits=f.enemies.filter(e=>{const dx=e.x-f.pos.x,dy=e.y-f.pos.y,forward=dx*f.facing.x+dy*f.facing.y;
-   return e.hp>0&&forward>.1&&forward<=2.6&&Math.abs(dx*f.facing.y-dy*f.facing.x)<.38&&clearLineOfFire(f,f.pos,e);
-  }).sort((a,b)=>dist(f.pos,a)-dist(f.pos,b)).slice(0,2);
-  for(const e of hits)damageEnemy(s,e,2,'fork_skill');
-  f.skillCd=6.5;f.skillFx=.42;f.skillOrigin={...f.pos,type:'GRILL'};
-  f.attackFx={ttl:.30,duration:.30,dx:f.facing.x,dy:f.facing.y,fork:true};
-  pushMsg(f,'🍢 烤叉穿刺！击中 '+hits.length+' 个敌人。');return true;
+  const length=Math.hypot(f.facing?.x||0,f.facing?.y||0)||1;
+  const facing={x:(f.facing?.x||0)/length,y:(f.facing?.y??-1)/length};
+  const hits=f.enemies.filter(e=>e.hp>0&&inForkFlameCone(f.pos,facing,e)&&clearLineOfFire(f,f.pos,e));
+  for(const e of hits)damageEnemy(s,e,FORK_FLAME.damage,'fork_flame');
+  f.skillCd=6.5;f.skillFx=.85;f.skillOrigin={...f.pos,type:'GRILL',dx:facing.x,dy:facing.y};
+  f.attackFx={ttl:.38,duration:.38,dx:facing.x,dy:facing.y,forkFlame:true,x:f.pos.x,y:f.pos.y};
+  pushMsg(f,'🔥 烤叉喷焰！扇区命中 '+hits.length+' 个敌人。');return true;
  }
  if(f.weapon?.type==='POT'){
   const target=f.enemies.filter(e=>e.hp>0&&dist(f.pos,e)<=3.9&&clearLineOfFire(f,f.pos,e))
@@ -5859,7 +5924,8 @@ function stepActionField(s,axisX,axisY,dt){
    const distance=Math.max(.001,dist(f.pos,target));
    f.facing={x:(target.x-f.pos.x)/distance,y:(target.y-f.pos.y)/distance};
    if(isFork){
-    f.attackCd=.88;f.attackFx={ttl:.25,duration:.25,dx:f.facing.x,dy:f.facing.y,fork:true};
+    f.attackCd=.88;f.attackFx={ttl:.30,duration:.30,dx:f.facing.x,dy:f.facing.y,
+     x:f.pos.x,y:f.pos.y,hitX:target.x,hitY:target.y,forkThrust:true};
     damageEnemy(s,target,1,'fork_thrust');
    }else if(isPot){
     f.attackCd=f.weapon?.level>1?1.1:1.2;
@@ -7770,6 +7836,108 @@ function drawFieldNodeMarkers(c,n,time,screenScale=40){
  }
  c.restore();
 }
+// Pixel cookware is drawn in the same local pixel scale as pixelActor's chef.
+// These are held objects, while their attack effects remain smooth E.2 Canvas effects.
+const px=(c,x,y,w,h,color)=>{c.fillStyle=color;c.fillRect(Math.round(x),Math.round(y),w,h)};
+const ink='#27343b',iron='#657e87',shine='#d8e5d8',copper='#d6a76c',wood='#806044';
+function drawPixelWok(c,pose,{layer='front',parry=false}={}){
+ const side=layer==='back'?-pose.shieldSign:pose.shieldSign,bob=pose.weapon.y-5;
+ c.save();c.scale(side,1);
+ if(layer==='back'){
+  px(c,7,6+bob,17,4,ink);px(c,8,6+bob,15,2,wood);
+  px(c,21,1+bob,15,12,ink);px(c,22,2+bob,13,9,iron);
+  px(c,24,3+bob,9,2,shine);px(c,23,9+bob,11,2,'#465d66');
+ }else{
+  const x=pose.shield.x*pose.shieldSign-7,y=pose.shield.y-7;
+  px(c,x,y,15,15,ink);px(c,x+2,y+2,11,11,'#869aa1');
+  px(c,x+4,y+4,7,7,parry?'#fff2c1':'#516d75');
+  px(c,x+5,y+5,4,3,parry?'#ffe397':'#c3d5d1');
+  px(c,x+6,y-3,3,3,copper);
+ }
+ c.restore();
+}
+function drawPixelPot(c,pose,{layer='front'}={}){
+ const side=pose.side,y=pose.pot.y;
+ c.save();c.scale(side,1);
+ if(layer==='back'){
+  px(c,7,6,17,4,ink);px(c,8,7,14,2,wood);
+ }else{
+  px(c,13,y-7,22,17,ink);px(c,15,y-5,18,13,'#4e6e77');
+  px(c,16,y-4,15,3,shine);px(c,17,y+1,14,4,iron);
+  px(c,11,y-3,4,7,ink);px(c,35,y-3,4,7,ink);
+  px(c,14,y-10,21,4,ink);px(c,16,y-9,17,2,copper);
+  px(c,22,y-13,6,3,ink);px(c,23,y-12,4,2,shine);
+  px(c,19,y+6,10,2,'#334e56');
+ }
+ c.restore();
+}
+function forkExtension(attackFx){
+ if(!attackFx?.forkThrust||!attackFx.ttl)return 0;
+ const p=1-attackFx.ttl/attackFx.duration;
+ return p<.12?-3*p/.12:p<.56?-3+19*(p-.12)/.44:16*(1-(p-.56)/.44);
+}
+function drawPixelFork(c,f,{layer='front'}={}){
+ const facing=f.facing||{x:1,y:0},back=facing.y<-.35;
+ if((layer==='back')!==back)return;
+ const attack=f.attackFx,active=attack?.forkThrust||attack?.forkFlame;
+ const dx=active?attack.dx:facing.x,dy=active?attack.dy:facing.y;
+ const angle=Math.atan2(dy,dx),side=dx<-.1?-1:1;
+ c.save();c.translate(side*8,8);c.rotate(angle);
+ c.translate(forkExtension(attack),0);
+ // Hand grip, metal collar, straight neck and three separated pointed tines.
+ px(c,-2,-3,11,7,ink);px(c,-1,-2,9,5,wood);px(c,0,-1,6,2,copper);
+ px(c,8,-4,4,9,ink);px(c,9,-3,2,7,shine);
+ px(c,12,-3,18,7,ink);px(c,13,-2,17,5,iron);px(c,14,-1,13,2,shine);
+ px(c,29,-7,5,15,ink);px(c,30,-6,3,13,iron);
+ for(const y of [-7,-1,5]){px(c,33,y,9,3,ink);px(c,34,y,7,2,shine);px(c,41,y,3,1,'#fff2d4');}
+ c.restore();
+}
+function drawForkThrustFx(c,f){
+ const fx=f.attackFx;if(!fx?.forkThrust||fx.ttl<=0)return;
+ const p=1-fx.ttl/fx.duration;if(p<.10||p>.88)return;
+ const phase=p<.52?(p-.10)/.42:(.88-p)/.36;
+ const length=.45+1.7*Math.max(0,Math.min(1,phase));
+ c.save();c.translate(fx.x,fx.y);c.rotate(Math.atan2(fx.dy,fx.dx));
+ c.globalAlpha=Math.max(0,Math.min(1,phase))*.85;c.lineCap='round';
+ // Converging air cuts make the tip's depth legible without a solid beam.
+ for(const side of [-1,1]){
+  c.beginPath();c.moveTo(.23,side*.24);c.quadraticCurveTo(length*.65,side*(.30-.13*phase),length,side*.07);
+  c.strokeStyle=side<0?'#fff1d0':'#c98e62';c.lineWidth=.025+.015*phase;c.stroke();
+ }
+ c.beginPath();c.moveTo(length-.32,0);c.lineTo(length+.12,0);c.strokeStyle='#fff7dd';c.lineWidth=.055;c.stroke();
+ for(let i=0;i<3;i++){const x=length-.16+i*.12;
+  c.beginPath();c.moveTo(x,-.10-i*.035);c.lineTo(x+.11,.02);c.strokeStyle='#f8c78e';c.lineWidth=.022;c.stroke();}
+ c.restore();
+}
+function drawForkFlameFx(c,f){
+ if(!(f.skillFx>0)||f.skillOrigin?.type!=='GRILL')return;
+ const o=f.skillOrigin,p=1-Math.min(1,f.skillFx/.85),fade=Math.min(1,p*12)*Math.min(1,(1-p)*3);
+ const angle=Math.atan2(o.dy??-1,o.dx??0),half=FORK_FLAME.halfAngle;
+ c.save();c.translate(o.x,o.y);c.rotate(angle);c.globalAlpha=fade*.93;
+ const reach=FORK_FLAME.range*Math.min(1,.36+p*4.2);
+ const layers=[{r:reach,a:half,fill:'#df4d23'},{r:reach*.82,a:half*.79,fill:'#ff972f'},{r:reach*.64,a:half*.53,fill:'#ffe49a'}];
+ for(const layer of layers){
+  c.beginPath();c.moveTo(.16,0);c.arc(0,0,layer.r,-layer.a,layer.a);c.closePath();
+  c.fillStyle=layer.fill;c.fill();
+ }
+ for(let i=-5;i<=5;i++){
+  const a=i*half/5,r=reach*(.72+(i%3)*.06),x=Math.cos(a)*r,y=Math.sin(a)*r;
+  c.beginPath();c.moveTo(x-.15,y);c.quadraticCurveTo(x+.12,y-.08,x+.30,y-.04-.18*(1-p));
+  c.quadraticCurveTo(x+.08,y+.13,x-.15,y);c.fillStyle=i%2?'#ffb958':'#ffe1a2';c.fill();
+ }
+ for(let i=-4;i<=4;i++){
+  const a=(i+.45)*half/5,r=reach*(.87+(i%2)*.06);
+  c.beginPath();c.moveTo(Math.cos(a)*r,Math.sin(a)*r);
+  c.quadraticCurveTo(Math.cos(a)*reach*1.12,Math.sin(a)*reach*1.13-.16,
+   Math.cos(a)*reach*.92,Math.sin(a)*reach*.92-.23);
+  c.strokeStyle=i%2?'#ff8b34':'#f9c46e';c.lineWidth=.08;c.stroke();
+ }
+ for(let i=0;i<8;i++){
+  const a=-half+((i*5)%9)*half/4,r=reach*(.35+((i*3)%5)*.11);
+  c.fillStyle='#ffecc2';c.fillRect(Math.cos(a)*r,Math.sin(a)*r-.1-p*.3,.035,.035);
+ }
+ c.restore();
+}
 // Lightweight procedural game graphics: original Canvas shapes, no art pack.
 const color={ink:'#24382a',leaf:'#386b43',soil:'#806044',stone:'#a6b392',cream:'#f4dfb0',gold:'#dfb873'};
 function rect(c,x,y,w,h,fill){c.fillStyle=fill;c.fillRect(x,y,w,h)}
@@ -8047,8 +8215,8 @@ function drawField(canvas,s,clock){const size=setCanvas(canvas);if(!size||!s.fie
  if(smoothFx)for(const e of f.enemies||[])drawFieldDeath(c,e);
  // Attack swipe uses the *same* direction and trigger as combat hit detection.
  if(smoothFx&&f.weapon?.type!=='GRILL')drawFieldSwipe(c,f);
- if(f.weapon?.type==='GRILL'&&f.attackFx?.ttl>0){const a=f.attackFx;c.save();c.strokeStyle='#ffd58a';c.lineWidth=a.fork?.18:.11;c.lineCap='round';c.beginPath();c.moveTo(f.pos.x,f.pos.y);c.lineTo(f.pos.x+a.dx*(a.fork?2.4:1.9),f.pos.y+a.dy*(a.fork?2.4:1.9));c.stroke();c.restore();}
- if(!smoothFx&&f.attackFx?.ttl>0&&!f.attackFx.pot){
+ if(f.weapon?.type==='GRILL')drawForkThrustFx(c,f);
+ if(!smoothFx&&f.attackFx?.ttl>0&&!f.attackFx.pot&&f.weapon?.type!=='GRILL'){
   const fx=f.attackFx,progress=1-fx.ttl/fx.duration,angle=Math.atan2(fx.dy,fx.dx);
   c.save();c.translate(f.pos.x,f.pos.y);c.rotate(angle);c.globalAlpha=Math.min(1,fx.ttl*4);
   if(herbPixelArt){c.fillStyle='#ffe6a1';for(let i=0;i<6;i++)c.fillRect(.32+i*.12,-.38+i*.12,.16,.13);
@@ -8058,8 +8226,9 @@ function drawField(canvas,s,clock){const size=setCanvas(canvas);if(!size||!s.fie
    c.strokeStyle='#fff9e0';c.lineWidth=.07;c.beginPath();c.arc(0,0,1.05,-.65+progress*.65,.30+progress*.65);c.stroke();}
   c.restore();
  }
- if(smoothFx){drawFieldSkillWave(c,f);drawFieldHitEffects(c,f);}
- if(!smoothFx&&f.skillFx>0){c.save();c.strokeStyle=`rgba(255,231,151,${Math.min(.95,f.skillFx*2.4)})`;c.lineWidth=.12;c.beginPath();c.arc(f.pos.x,f.pos.y,(.42-f.skillFx)*3+.35,0,Math.PI*2);c.stroke();c.restore();}
+ if(smoothFx){if(f.weapon?.type==='GRILL')drawForkFlameFx(c,f);else drawFieldSkillWave(c,f);drawFieldHitEffects(c,f);}
+ if(!smoothFx&&f.weapon?.type==='GRILL')drawForkFlameFx(c,f);
+ if(!smoothFx&&f.skillFx>0&&f.weapon?.type!=='GRILL'){c.save();c.strokeStyle=`rgba(255,231,151,${Math.min(.95,f.skillFx*2.4)})`;c.lineWidth=.12;c.beginPath();c.arc(f.pos.x,f.pos.y,(.42-f.skillFx)*3+.35,0,Math.PI*2);c.stroke();c.restore();}
  for(const e of f.enemies||[]){if(e.hurtFx>0&&e.hp>0&&!e.hitResponse){c.save();c.translate(e.x,e.y);c.scale(1/sc,1/sc);if(smoothFx)drawFieldImpact(c,0,-5,e.hurtFx/.36,8);else pixelImpact(c,0,-5,8);c.restore()}}
  for(const fx of f.popFx||[]){if(smoothFx&&fx.text==='💥'){drawFieldBurst(c,fx);continue;}if(smoothFx&&String(fx.text).startsWith('+'))drawFieldCollection(c,fx);c.save();c.translate(fx.x,fx.y-(.76-fx.ttl)*.5);c.scale(1/sc,1/sc);text(c,fx.text,0,-17,fx.color||'#fff1b1',12);c.restore()}
  c.save();c.translate(f.pos.x,f.pos.y);c.scale(1/sc,1/sc);
@@ -8068,81 +8237,13 @@ function drawField(canvas,s,clock){const size=setCanvas(canvas);if(!size||!s.fie
  const isWok=f.weapon?.type==='WOK',isGrill=f.weapon?.type==='GRILL';
  const posture=isWok?fieldWokPose(f.facing,f.moving,clock,(f.guardTime||0)>0):null;
  const potPose=!isWok&&!isGrill?fieldPotPose(f.facing,f.moving,clock,!!(f.attackFx?.pot&&f.attackFx?.ttl>0)):null;
- if(isWok){
-  // BACK LAYER: pan handle runs from the rear hand to a compact wok.
-  // This replaces the oversized circular pan beside the face.
-  const a=posture.hand,rest=posture.weapon;
-  const swing=f.attackFx&&!f.attackFx.pot?Math.exp(-(1-f.attackFx.ttl/f.attackFx.duration)*6):0;
-  const p={x:rest.x*(1-swing)+(f.attackFx?.dx||0)*25*swing,
-   y:rest.y*(1-swing)+(8+(f.attackFx?.dy||0)*16)*swing,
-   angle:rest.angle+attackPose.angle*posture.shieldSign};
-  c.save();
-  c.lineCap='round';
-  line(c,a.x,a.y,p.x,p.y,'#473e37',4.8);
-  line(c,a.x,a.y,p.x,p.y,'#b99d6d',2.6);
-  c.translate(p.x,p.y);
-  c.rotate(p.angle+(f.attackFx?.pot?0:(f.attackFx?.ttl>0?-.3*posture.shieldSign:0)));
-  c.beginPath();c.ellipse(0,0,6.7,5.1,0,0,Math.PI*2);
-  c.fillStyle='#283840';c.fill();c.strokeStyle='#d9c29d';c.lineWidth=2;c.stroke();
-  c.beginPath();c.ellipse(0,0,4.2,3.0,0,0,Math.PI*2);c.fillStyle='#69828b';c.fill();
-  c.restore();
- }else if(potPose){
-  // POT BACK LAYER: a clear forearm grip connecting chef and cauldron.
-  const hand=potPose.hand,held=potPose.pot;
-  line(c,hand.x,hand.y,held.x-potPose.side*5,held.y-1,'#373b36',5);
-  line(c,hand.x,hand.y,held.x-potPose.side*5,held.y-1,'#d0aa76',2.6);
- }
+ if(isWok)drawPixelWok(c,posture,{layer:'back'});
+ else if(potPose)drawPixelPot(c,potPose,{layer:'back'});
+ else drawPixelFork(c,f,{layer:'back'});
  chef(c,0,Math.sin(clock*9)*(f.moving?1.5:.35),clock,{scale:1.55,walk:f.moving,attack:!!f.attackFx,face:chefFace,hurt:f.hurtFx});
- if(isGrill){
-  const reach=f.attackFx?.ttl>0?8:0,side=chefFace;
-  line(c,side*8,8,side*(20+reach),-15,'#e1bb7b',3.4);
-  line(c,side*(20+reach),-15,side*(26+reach),-22,'#d8dfe0',2.2);
-  line(c,side*(26+reach),-22,side*(27+reach),-29,'#d8dfe0',1.6);
-  line(c,side*(26+reach),-22,side*(31+reach),-26,'#d8dfe0',1.6);
- }
- if(isWok){
-  const sh=posture.shield,ready=f.shieldCharge!==false,parry=(f.guardTime||0)>0,flash=(f.shieldFlash||0)>0;
-  // FOREGROUND: lid is in front of the off-hand at waist/shoulder height,
-  // never across the chef's eyes. A small rounded rectangle reads as a shield,
-  // not as a magnifying glass.
-  c.save();c.translate(sh.x,sh.y);
-  if(flash){c.shadowColor='#f9ffbc';c.shadowBlur=11;}
-  c.beginPath();c.roundRect(-sh.radius,-sh.radius,sh.radius*2,sh.radius*2.15,3.6);
-  c.fillStyle=parry?'#e6c87d':ready?'#bad6d3':'#566b70';
-  c.fill();c.lineWidth=2;c.strokeStyle=flash?'#fffce2':'#283b43';c.stroke();
-  c.beginPath();c.roundRect(-4.4,-4.5,8.8,9,2.6);c.fillStyle=parry?'#b88945':ready?'#4e8993':'#314951';c.fill();
-  circle(c,0,0,2.4,parry?'#fff8ce':ready?'#cce7d6':'#82989b');
-  if(!ready){c.strokeStyle='#f6da94';c.lineWidth=1.4;c.beginPath();
-   c.arc(0,0,sh.radius+2,-Math.PI/2,-Math.PI/2+Math.PI*2*Math.max(0,1-(f.shieldCooldown||0)/8));c.stroke();}
-  if(flash){c.strokeStyle='#edffc9';c.lineWidth=2;c.beginPath();c.arc(0,0,sh.radius+5,0,Math.PI*2);c.stroke();}
-  c.restore();
- }else if(potPose){
-  // POT FOREGROUND: enamel stockpot with two handles, visible mouth and
-  // magical onion ammunition. Geometry stays below the face across directions.
-  const held=potPose.pot;
-  c.save();c.translate(held.x,held.y);c.scale(held.scale,held.scale);
-  if(potPose.casting){c.rotate(.12*potPose.side);c.shadowColor='#d8f9ad';c.shadowBlur=8;}
-  // Handles first; distinct from the earlier floating soup emoji.
-  c.beginPath();c.roundRect(-10,-4,5,7,2.2);c.fillStyle='#283c46';c.fill();
-  c.beginPath();c.roundRect(5,-4,5,7,2.2);c.fill();
-  c.beginPath();c.roundRect(-7,-4,14,12,3.8);c.fillStyle='#6ca4a8';c.fill();
-  c.lineWidth=2;c.strokeStyle='#263d49';c.stroke();
-  c.beginPath();c.roundRect(-5,-3,10,8,2.4);c.fillStyle='#477e87';c.fill();
-  c.beginPath();c.ellipse(0,-4,7.5,3,0,0,Math.PI*2);
-  c.fillStyle='#d9c8a2';c.fill();c.strokeStyle='#374b52';c.lineWidth=1.8;c.stroke();
-  c.beginPath();c.ellipse(0,-4,5.2,1.7,0,0,Math.PI*2);
-  c.fillStyle=potPose.casting?'#e7f3a2':'#83b3a6';c.fill();
-  // An onion-bomb peeks out of the pot, with a leaf-shaped fuse.
-  c.beginPath();c.ellipse(0,-4,2.7,2.3,0,0,Math.PI*2);
-  c.fillStyle='#e5ba75';c.fill();
-  line(c,0,-6,.9,-9,'#77ac65',1.5);
-  if(potPose.casting){
-   c.globalAlpha=.8;
-   c.beginPath();c.arc(0,-6,10,Math.PI*1.1,Math.PI*1.85);
-   c.strokeStyle='#e6f7ba';c.lineWidth=1.6;c.stroke();
-  }
-  c.restore();
- }
+ if(isGrill)drawPixelFork(c,f,{layer:'front'});
+ if(isWok)drawPixelWok(c,posture,{layer:'front',parry:(f.guardTime||0)>0});
+ else if(potPose)drawPixelPot(c,potPose,{layer:'front'});
  if((f.hitFlash||0)>0){
   const ratio=Math.min(1,f.hitFlash/.52);
   c.save();c.globalAlpha=ratio;
@@ -8955,7 +9056,7 @@ function overlayMarkup(){if(!overlay)return '';
    };
    body='<h2>👩‍🍳 食堂伙伴</h2><p class="sheet-lead">每位帮厨按本人实际完成的订单获得经验；增加厨位必须配备人手才能真正出餐。开门前直接选择左、中、右优先站位；已选位置不可重复安排。营业时，空闲帮厨仍会自动走到缺人的炉台支援。</p><div class="staff-roster">'+row('helper')+row('waiter')+(crew.helper2.hired?row('helper2'):'')+'</div>';
  }else if(overlay==='settings'){
-  body=`<h2>⚙ 游戏设置</h2><p class="sheet-lead">ODDPOT · v0.14.0-alpha.2 · 单机本地存档</p>${b('guide-replay','重看第一轮引导','secondary')}${b('reset','重置存档，从第 1 天重新开始','danger')}<p class="sheet-lead">切到后台时营业会自动暂停。更换设备不会同步存档。</p>`;
+  body=`<h2>⚙ 游戏设置</h2><p class="sheet-lead">ODDPOT · v0.14.0-alpha.3 · 单机本地存档</p>${b('guide-replay','重看第一轮引导','secondary')}${b('reset','重置存档，从第 1 天重新开始','danger')}<p class="sheet-lead">切到后台时营业会自动暂停。更换设备不会同步存档。</p>`;
  }else if(overlay==='details'){
   const r=game.report;body=r?`<h2>营业账本详情</h2><p class="sheet-lead">本日订单由真实食材库存、工位工作秒数和顾客等待事件计算。</p><div class="book-list">${Object.entries(r.byDish).map(([id,d])=>`<div class="detail-row">${RECIPES[id].emoji} ${RECIPES[id].name}：售出 ${d.count} 份 · 满意 ${Math.round(d.totalSat/d.count)}</div>`).join('')}<div class="detail-row">左厨位占用 ${r.congestion.WOK||0} 秒 / 右厨位 ${r.congestion.POT||0} 秒${r.congestion.CENTER!==undefined?' / 中厨位 '+r.congestion.CENTER+' 秒':''}</div><div class="detail-row">食材耗用估值 ${r.cost} · 宣传 ${r.finance?.marketingCost||0} · 工资 ${r.finance?.wage||0} · 招待支出 ${r.hospitalityCost||0} · 收入 ${r.revenue} · 经营利润 ${r.profit} · 现金净变动 ${r.finance?.cashChange??'旧版无记录'}</div></div>`:'';
  }
@@ -9041,7 +9142,7 @@ function field(){
    <div class="ux-field-label"><strong>探索区域</strong></div>
    <div class="region-tabs" role="group" aria-label="探索区域"><button data-region="forest" class="${selectedRegion==='forest'?'current':''}" aria-pressed="${selectedRegion==='forest'}">晨露森林</button><button data-region="spring" class="${selectedRegion==='spring'?'current':''}" aria-pressed="${selectedRegion==='spring'}">热泉峡谷</button></div>
    <div class="ux-field-label"><strong>带一件厨具</strong></div>
-   <div class="v08-weapon-picks">${fieldWeaponChoices(game).map(({type,level,slotIndex,fitted})=>`<button class="v08-weapon-pick ${selectedFieldWeaponType(game)===type?'chosen':''}" data-weapon="${type}" aria-pressed="${selectedFieldWeaponType(game)===type}">${type==='GRILL'?'🍢 烤叉穿刺':type==='WOK'?'🛡️ 炒锅剑盾':'🍲 炖锅投弹'} · Lv${level}<small>${fitted?`${slotIndex===0?'左':slotIndex===1?'右':'中'}厨位强化`:'备用基础款'} · ${type==='GRILL'?'中距窄角突刺':type==='WOK'?'自动正面格挡':'远程范围爆炸'}</small></button>`).join('')}</div>
+   <div class="v08-weapon-picks">${fieldWeaponChoices(game).map(({type,level,slotIndex,fitted})=>`<button class="v08-weapon-pick ${selectedFieldWeaponType(game)===type?'chosen':''}" data-weapon="${type}" aria-pressed="${selectedFieldWeaponType(game)===type}">${type==='GRILL'?'🍢 烤叉':type==='WOK'?'🛡️ 炒锅剑盾':'🍲 炖锅投弹'} · Lv${level}<small>${fitted?`${slotIndex===0?'左':slotIndex===1?'右':'中'}厨位强化`:'备用基础款'} · ${type==='GRILL'?'自动前刺 · 技能扇形火焰':type==='WOK'?'自动正面格挡':'远程范围爆炸'}</small></button>`).join('')}</div>
    <div class="ux-field-label"><strong>选择路线出发</strong></div>
    <div class="route-options">${activeRoutes.map(r=>`<button class="route-card ${/risk/.test(r.id)?'route-risk':'route-safe'}" data-route="${r.id}"><span class="route-emoji" aria-hidden="true">${r.emoji}</span><div><strong>${r.name}</strong><small>${r.subtitle}${/risk/.test(r.id)?` · 第三段挑战${bossHint(selectedRegion).boss}，为奖励留背包格`:''}</small></div><span class="route-risk-label">${/risk/.test(r.id)?'战斗':'采集'}</span><b aria-hidden="true">›</b></button>`).join('')}</div>
   </div></div>`,
@@ -9062,7 +9163,7 @@ function field(){
  const readyToFinish=f.nodes?.some(n=>n.key==='target'&&n.claimed)&&!(f.segmentIndex===3&&f.enemies?.some(e=>e.isBoss&&e.hp>0));
  const bag=Object.entries(f.bag).map(([id,n])=>`${ING[id].name}${n}`).join(' · ')||'空';
  const event=f.activeEvent&&f.nodes.find(n=>n.key===f.activeEvent);
- return [`<div class="forest-scene action-forest"><canvas id="forest-canvas" class="forest-canvas"></canvas><div class="floating-joystick" id="field-stick" aria-hidden="true"><div class="floating-joystick-knob" id="field-stick-knob"></div></div><div class="action-hud" aria-label="探索状态"><span class="field-hp" aria-label="体力">${'♥'.repeat(f.hp)}${'♡'.repeat(3-f.hp)}</span><button data-act="field-bag" class="field-bag-chip" aria-label="查看野外背包">背包 <b id="field-bag-count">${fieldBagSlotsUsed(f)}/${f.capacity||8}</b></button><span class="field-clock" id="field-clock">${f.segmentIndex||1}/3 · ${Math.floor(f.elapsed)}s</span></div><div class="field-action-notice" id="field-action-notice" hidden></div>${f.weapon?.type==='WOK'?`<div class="v082-shield-status" id="v082-shield-status" aria-label="锅盖被动防御状态">${f.shieldCharge!==false?'🛡 防御就绪':'🛡 蓄能 '+Math.ceil(f.shieldCooldown||0)+'s'}</div>`:''}${f.bento?`<div class="v063-field-bento">🍱 ${esc(RECIPES[f.bento.recipeId]?.name||"便当")} · <span id="v063-bento-effect">${f.bento.used?"已触发":"待触发"}</span></div>`:""}<button data-act="skill" class="field-skill" aria-label="${f.weapon?.type==='GRILL'?'烤叉穿刺':f.weapon?.type==='POT'?'高压洋葱炸弹':'锅盖反击'}"><span class="skill-glyph" aria-hidden="true">${f.weapon?.type==='GRILL'?'🍢':f.weapon?.type==='WOK'?'🛡':ingredientIconHtml('onion',25)}</span><span class="skill-caption">${f.weapon?.type==='GRILL'?'穿刺':f.weapon?.type==='POT'?'汤锅':'反击'}</span><span class="skill-cooldown" id="skill-cooldown" hidden></span></button>${event?(event.offer?specialEncounterHtml(game,event):`<div class="field-event"><strong>野外遭遇 · 流浪调味师</strong><p>你在野外遇见流浪调味师。本次机会只有一次，要交换还是继续赶路？</p><button data-event="trade">蘑菇 ×1 → 火椒 ×1（野外背包）</button><button data-event="forage">深入调查：损失生命，争取两份材料</button><button data-event="leave">绕开，保留现有收获</button></div>`):''}</div>`,
+ return [`<div class="forest-scene action-forest"><canvas id="forest-canvas" class="forest-canvas"></canvas><div class="floating-joystick" id="field-stick" aria-hidden="true"><div class="floating-joystick-knob" id="field-stick-knob"></div></div><div class="action-hud" aria-label="探索状态"><span class="field-hp" aria-label="体力">${'♥'.repeat(f.hp)}${'♡'.repeat(3-f.hp)}</span><button data-act="field-bag" class="field-bag-chip" aria-label="查看野外背包">背包 <b id="field-bag-count">${fieldBagSlotsUsed(f)}/${f.capacity||8}</b></button><span class="field-clock" id="field-clock">${f.segmentIndex||1}/3 · ${Math.floor(f.elapsed)}s</span></div><div class="field-action-notice" id="field-action-notice" hidden></div>${f.weapon?.type==='WOK'?`<div class="v082-shield-status" id="v082-shield-status" aria-label="锅盖被动防御状态">${f.shieldCharge!==false?'🛡 防御就绪':'🛡 蓄能 '+Math.ceil(f.shieldCooldown||0)+'s'}</div>`:''}${f.bento?`<div class="v063-field-bento">🍱 ${esc(RECIPES[f.bento.recipeId]?.name||"便当")} · <span id="v063-bento-effect">${f.bento.used?"已触发":"待触发"}</span></div>`:""}<button data-act="skill" class="field-skill" aria-label="${f.weapon?.type==='GRILL'?'扇形火焰':f.weapon?.type==='POT'?'高压洋葱炸弹':'锅盖反击'}"><span class="skill-glyph" aria-hidden="true">${f.weapon?.type==='GRILL'?'🍢':f.weapon?.type==='WOK'?'🛡':ingredientIconHtml('onion',25)}</span><span class="skill-caption">${f.weapon?.type==='GRILL'?'喷焰':f.weapon?.type==='POT'?'汤锅':'反击'}</span><span class="skill-cooldown" id="skill-cooldown" hidden></span></button>${event?(event.offer?specialEncounterHtml(game,event):`<div class="field-event"><strong>野外遭遇 · 流浪调味师</strong><p>你在野外遇见流浪调味师。本次机会只有一次，要交换还是继续赶路？</p><button data-event="trade">蘑菇 ×1 → 火椒 ×1（野外背包）</button><button data-event="forage">深入调查：损失生命，争取两份材料</button><button data-event="leave">绕开，保留现有收获</button></div>`):''}</div>`,
  `<div class="action-field-dock field-compact-dock"><span class="field-touch-tip">按住场景 · 拖动移动</span>${readyToFinish?b('finish-segment',f.segmentIndex===3?'探索结束 · 返回':'结束本区 · 选择下一站','primary'):''}${b('retreat','撤离回店','secondary')} </div>`]
 }
 
@@ -9103,8 +9204,27 @@ function researchReceipt(){
     <div class="action-row">${ok?b('book','查看工艺图鉴','secondary'):''}${b('receipt-menu','去经营上架 →','secondary')}</div></div>`]
 }
 
+function grillResearch(c){
+ const p=grillCookPreview(game),placed=!!c.lane,threaded=c.skewer.length===c.ids.length;
+ const state=p.items.some(x=>x.state==='焦糊')?'焦糊':p.items.length&&p.items.every(x=>x.state==='熟透')?'双面熟透':placed?'继续烤制':'等待入炉';
+ const reel=c.skewer.map((id,i)=>`<span class="v014c-bead" style="--i:${i}">${ingredientIconHtml(id,30)}</span>`).join('');
+ return [`<section class="v014c-grill-scene" aria-label="烤架研发">
+  <header class="v014c-grill-head"><div><small>手工烤串 · ${placed?'火候操作':threaded?'选择火位':'穿串中'}</small><strong>${placed?'🔥 '+({edge:'边火',middle:'均火',flame:'猛火'}[c.lane]):'🍢 亲手穿串'}</strong></div><b id="v014c-clock">${placed?c.elapsed.toFixed(1)+'s':'未入炉'}</b></header>
+  <div class="v014c-hearth ${placed?'lit '+c.lane:''}" aria-label="烤炉">
+   <div class="v014c-coals" aria-hidden="true"><i></i><i></i><i></i><i></i><i></i></div>
+   <div class="v014c-rail"><div class="v014c-skewer ${placed?'cooking':''} ${c.actions.some(a=>a.type==='turn')?'turned':''}"><i class="v014c-stick"></i>${reel||'<span class="v014c-empty">轻点食材，依次穿到烤叉上</span>'}<i class="v014c-handle"></i></div></div>
+   <div class="v014c-brush ${c.actions.some(a=>a.type==='brush')?'brushed':''}" aria-hidden="true">🖌️</div>
+  </div>
+  <div class="v014c-gauges" id="v014c-gauges">${p.items.map(x=>`<div class="v014c-gauge" data-grill-id="${x.id}" data-heat-tone="${x.tone}"><span>${ingredientIconHtml(x.id,22)}</span><div><b>${ING[x.id].name}</b><small data-grill-state="${x.id}">${placed?x.state:'待烤'}</small></div><div class="v014c-faces"><i data-grill-front="${x.id}" style="--fill:${placed?x.frontProgress:0}%"></i><i data-grill-back="${x.id}" style="--fill:${placed?x.backProgress:0}%"></i></div></div>`).join('')}</div>
+  <div class="v014c-status" id="v014c-status">${placed?state:threaded?'选一个火位，把烤串摆上炉台':`已穿 ${c.skewer.length}/${c.ids.length}`}</div>
+  ${!placed?`<div class="v014c-tray">${c.ids.map(id=>`<button type="button" data-grill-thread="${id}" ${c.skewer.includes(id)?'disabled':''}><span>${ingredientIconHtml(id,27)}</span><b>${ING[id].name}</b><small>${c.skewer.includes(id)?'已穿串':'轻点穿串'}</small></button>`).join('')}</div>`:''}
+ </section>`,!placed?`<div class="v014c-dock"><div class="v014c-lanes">${[['edge','边火','慢烤'],['middle','均火','平衡'],['flame','猛火','快烤']].map(([id,name,tag])=>`<button type="button" data-grill-lane="${id}" ${threaded?'':'disabled'}><strong>${name}</strong><small>${tag}</small></button>`).join('')}</div></div>`:
+ `<div class="v014c-dock"><div class="action-row">${b('live-action:turn','↻ 翻面',c.actions.some(a=>a.type==='turn')?'chosen':'secondary',c.actions.some(a=>a.type==='turn'))}${b('live-action:brush','🖌 刷料',c.actions.some(a=>a.type==='brush')?'chosen':'secondary',!c.actions.some(a=>a.type==='turn')||c.actions.some(a=>a.type==='brush'))}</div><div class="action-row">${b('live-finish','🍽 出炉鉴定','primary wide',c.elapsed<1.2)}</div></div>`];
+}
+
 function research(){const c=game.cook;
  if(!c&&game.researchReceipt&&game.lastCook?.events)return researchReceipt();
+ if(c?.mode==='v014c-grill')return grillResearch(c);
  if(!c||c.mode==='v063-live'){
   if(c){
    const p=liveCookPreview(game),heat=liveHeatSummary(p.indicators),acts=LIVE_ACTIONS[c.vessel],order=c.dropped.map(d=>d.id),icons=c.dropped.map(d=>`<span class="v063-food-icon" data-live-icon="${d.id}">${ingredientIconHtml(d.id,40)}</span>`).join('');
@@ -9308,8 +9428,8 @@ function action(act){
  if(act.startsWith('method:')){selectedMethod=act.slice(7);render();return}
  if(act==='receipt-retry'||act==='receipt-finish'){if(act==='receipt-retry'&&game.lastCook?.ids){selectedIngredients=[...game.lastCook.ids];selectedMethod=game.lastCook.vessel==='GRILL'?'grill':game.lastCook.vessel==='POT'?'stew':'stir';}game.researchReceipt=false;note(act==='receipt-retry'?'保留食材组合，再来一锅。':'研发成果已收好，可以继续研究。');return}
  if(act==='receipt-menu'){game.researchReceipt=false;nextPhase(game,'menu');note('将研发出的工艺用于今晚的餐馆经营。');return}
- if(act==='start-research'){note(beginLiveResearch(game,selectedIngredients,selectedMethod==='grill'?'GRILL':selectedMethod==='stir'?'WOK':'POT')?'开锅！轻点食材投入锅中，再按自己的时机掌勺。':'请选择 2–3 种有库存的食材。');return}
- if(act.startsWith('live-action:')){note(performLiveAction(game,act.slice(12))?'掌勺成功，锅内风味正在变化。':'这个动作本锅已用过，或尚未下料。');return}
+ if(act==='start-research'){note(beginLiveResearch(game,selectedIngredients,selectedMethod==='grill'?'GRILL':selectedMethod==='stir'?'WOK':'POT')?(selectedMethod==='grill'?'依次穿串，再选火位。':'开锅！轻点食材投入锅中，再按自己的时机掌勺。'):'请选择 2–3 种有库存的食材。');return}
+ if(act.startsWith('live-action:')){note(performLiveAction(game,act.slice(12))?(game.cook?.mode==='v014c-grill'?'烤串已经'+(act.endsWith('turn')?'翻面':'刷料')+'。':'掌勺成功，锅内风味正在变化。'):'这个动作尚不可用。');return}
  if(act==='live-finish'){const r=finishLiveResearch(game);note(r?.sellable?'🎉 '+r.recipeName+' · '+r.styleLabel+' · '+r.affinityLabel+' · 品质 '+r.quality+'！已加入工艺图鉴。':'🍲 '+(r?.reason||'锅还没热起来')+'。本次失败不能上架。');return}
  if(act.startsWith('flame:')){setFlame(game,Number(act.slice(6)));render();return}
  if(act==='toss'){note(tossWok(game)?'↻ 颠锅成功，食材沿锅边移动一格。':'本拍已经换过位置，不能再颠锅。');return}
@@ -9340,6 +9460,8 @@ function action(act){
  if(act==='next-day'){advanceDay(game);note('🌅 新的一天！客人偏好与探索路线在变化。');return}
 }
 app.addEventListener('click',e=>{
+ const thread=e.target.closest('[data-grill-thread]');if(thread){if(threadGrillIngredient(game,thread.dataset.grillThread))note('穿上 '+ING[thread.dataset.grillThread].name+'，继续摆串。');return}
+ const lane=e.target.closest('[data-grill-lane]');if(lane){if(placeGrillSkewer(game,lane.dataset.grillLane))note('烤串入炉！留意两面火候。');return}
  const drop=e.target.closest('[data-live-drop]');if(drop){if(dropLiveIngredient(game,drop.dataset.liveDrop))note('食材入锅！正在连续受热。');return}
  const variant=e.target.closest('[data-choose-variant]');if(variant){const value=variant.dataset.chooseVariant,cut=value.indexOf('::');if(cut>0){const id=value.slice(0,cut),variantId=value.slice(cut+2);if(chooseRecipeVariant(game,id,variantId))note('已设为默认工艺，它的真实售价、时间和顾客适配会在营业时生效。')}return}
  const tile=e.target.closest('[data-tile]');if(tile&&game.cook){const i=+tile.dataset.tile;if(tileSelected===null){if(game.cook.tiles[i]){tileSelected=i;note('再点一次目的格，交换或移动食材。');}}else{const from=tileSelected;tileSelected=null;note(moveTile(game,from,i)?'已翻动锅内食材。':'本拍换位机会已用完。')}return}
@@ -9437,9 +9559,21 @@ function frame(now){const delta=Math.min(.045,(now-(lastFrame||now))/1000);lastF
        skill.setAttribute('aria-label',info.kind==='burst'?'全力烹饪，消耗2点精力':'紧急安抚，消耗1点精力')}
    }
  }
- if(game.cook?.mode==='v063-live'&&!document.hidden&&!overlay){
+ if(['v063-live','v014c-grill'].includes(game.cook?.mode)&&!document.hidden&&!overlay){
   const auto=stepLiveResearch(game,delta);
   if(auto){message=auto.sellable?'自动出锅：'+auto.recipeName+' · '+auto.styleLabel:'自动出锅失败：'+auto.reason;render();}
+  else if(game.cook?.mode==='v014c-grill'){
+   const p=grillCookPreview(game),clock=app.querySelector('#v014c-clock');if(clock)clock.textContent=p.lane?p.elapsed.toFixed(1)+'s':'未入炉';
+   const finish=app.querySelector('[data-act="live-finish"]');if(finish)finish.disabled=p.elapsed<1.2;
+   for(const item of p.items){
+    const row=app.querySelector('[data-grill-id="'+item.id+'"]');if(row)row.dataset.heatTone=item.tone;
+    const state=app.querySelector('[data-grill-state="'+item.id+'"]');if(state&&p.lane)state.textContent=item.state;
+    for(const [face,value] of [['front',item.frontProgress],['back',item.backProgress]]){
+     const bar=app.querySelector('[data-grill-'+face+'="'+item.id+'"]');if(bar)bar.style.setProperty('--fill',value+'%');
+    }
+   }
+   const status=app.querySelector('#v014c-status');if(status&&p.lane)status.textContent=p.items.some(x=>x.state==='焦糊')?'焦糊！快出炉':p.items.every(x=>x.state==='熟透')?'双面熟透 · 可以出炉':'烤制中 · 留意正反面';
+  }
   else{
    const c=game.cook,clock=app.querySelector('#v063-clock');if(clock)clock.textContent=c.elapsed.toFixed(1)+'s / 19s';
    const finish=app.querySelector('[data-act="live-finish"]');if(finish)finish.disabled=c.elapsed<1.2||!c.dropped.length;
@@ -9481,7 +9615,7 @@ function frame(now){const delta=Math.min(.045,(now-(lastFrame||now))/1000);lastF
  const notice=app.querySelector('#ingame-notice');if(notice&&now>flashUntil)notice.hidden=true;
  const forest=app.querySelector('#forest-canvas');if(forest)drawField(forest,game,gameClock);
  const diner=app.querySelector('#diner-canvas');if(diner)drawDiner(diner,game,gameClock,restaurantSimTime(now));
- if(now-lastSave>1400&&(game.phase==='field'||game.cook?.mode==='v063-live'||game.phase==='service'&&game.service?.walkable)){save(game);lastSave=now}
+ if(now-lastSave>1400&&(game.phase==='field'||['v063-live','v014c-grill'].includes(game.cook?.mode)||game.phase==='service'&&game.service?.walkable)){save(game);lastSave=now}
  requestAnimationFrame(frame);
 }
 requestAnimationFrame(frame);

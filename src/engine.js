@@ -1,8 +1,9 @@
 import {fieldHarvestTargetSuffix} from './field_target_v012f.js?v=0.13.0-alpha.9';
 import {craftedPrice} from './recipe_value_v013j.js';
 import {makeSpecialEncounterPlan,previewSpecialEncounter,SPECIAL_ENCOUNTER_KINDS} from './field_encounters_v011c.js';
-import {ING,RECIPES,CUSTOMERS,FORECAST,DEFAULT_INVENTORY,SHOP_STAPLES,MARKET_ROTATION_STAPLES} from './data.js?v=0.14.0-alpha.2';
-import {LIVE_ACTIONS,evaluateLiveCook,liveIngredientState,liveIngredientHeatFeedback,legacyVariant,makeLiveVariant,resolveTechnique} from './cooking_v063.js?v=0.14.0-alpha.2';
+import {ING,RECIPES,CUSTOMERS,FORECAST,DEFAULT_INVENTORY,SHOP_STAPLES,MARKET_ROTATION_STAPLES} from './data.js?v=0.14.0-alpha.3';
+import {LIVE_ACTIONS,evaluateLiveCook,liveIngredientState,liveIngredientHeatFeedback,legacyVariant,makeLiveVariant,resolveTechnique} from './cooking_v063.js?v=0.14.0-alpha.3';
+import {GRILL_LANES,grillPreview,evaluatePlacedGrill} from './grill_cooking_v014c.js';
 import {RECIPE_PROFILES} from './recipe_profiles_v063.js?v=0.13.0-alpha.9';
 import {generateBiomeMap,getFieldBiome} from './field_biomes_v081.js?v=0.13.0-alpha.9';
 import {makeFieldEncounterPlan,insertPlannedFieldEncounter} from './field_encounter_plan_v011b.js?v=0.13.0-alpha.9';
@@ -485,7 +486,7 @@ export function fieldWeaponSnapshot(s){
  const type=selectedFieldWeaponType(s);
  const choice=fieldWeaponChoices(s).find(x=>x.type===type);
  return {slotIndex:choice.slotIndex,type,level:choice.level,source:choice.source,
-  attackId:type==='GRILL'?'fork_thrust':type==='WOK'?'wok_sweep':'pot_onion',skillId:type==='GRILL'?'fork_skewer':type==='WOK'?'wok_guard':'pot_pressure'};
+  attackId:type==='GRILL'?'fork_thrust':type==='WOK'?'wok_sweep':'pot_onion',skillId:type==='GRILL'?'fork_flame':type==='WOK'?'wok_guard':'pot_pressure'};
 }
 export function selectFieldWeapon(s,selection){
  if(s.phase!=='field'||s.field)return false;
@@ -1339,10 +1340,21 @@ export function beginLiveResearch(s,ids,vessel='WOK'){
   ids.some(id=>!ING[id])||!canUse(s,ids))return false;
  ensureRecipeVariants(s);
  const txn='live-research-'+s.cycle+'-'+s.day+'-'+s.step++;
- s.cook={mode:'v063-live',context:'research',vessel,ids:[...ids],
-   dropped:[],actions:[],elapsed:0,live:false,txn};
+ s.cook={mode:vessel==='GRILL'?'v014c-grill':'v063-live',context:'research',vessel,ids:[...ids],
+   dropped:[],skewer:[],lane:null,actions:[],elapsed:0,live:false,txn};
  s.lastCook=null;s.researchReceipt=false;return true;
 }
+export function threadGrillIngredient(s,id){
+ const c=s.cook;
+ if(c?.mode!=='v014c-grill'||c.lane||!c.ids.includes(id)||c.skewer.includes(id))return false;
+ c.skewer.push(id);return true;
+}
+export function placeGrillSkewer(s,lane){
+ const c=s.cook;
+ if(c?.mode!=='v014c-grill'||c.lane||!GRILL_LANES[lane]||c.skewer.length!==c.ids.length)return false;
+ c.lane=lane;c.dropped=c.skewer.map((id,index)=>({id,t:0,index}));c.live=true;return true;
+}
+export function grillCookPreview(s){return grillPreview(s.cook)}
 export function dropLiveIngredient(s,id){
  const c=s.cook;
  if(c?.mode!=='v063-live'||!c.ids.includes(id)||c.dropped.some(x=>x.id===id)||
@@ -1352,6 +1364,11 @@ export function dropLiveIngredient(s,id){
 }
 export function performLiveAction(s,type){
  const c=s.cook;
+ if(c?.mode==='v014c-grill'){
+  if(!c.lane||c.elapsed>=19||!['turn','brush'].includes(type)||c.actions.some(a=>a.type===type)||
+    type==='brush'&&!c.actions.some(a=>a.type==='turn'))return false;
+  c.actions.push({type,t:+c.elapsed.toFixed(3),with:[...c.skewer]});return true;
+ }
  if(c?.mode!=='v063-live'||!c.dropped.length||c.elapsed>=19||
   !LIVE_ACTIONS[c.vessel].some(a=>a.id===type)||
   c.actions.some(a=>a.type===type))return false;
@@ -1370,8 +1387,8 @@ export function liveCookPreview(s){
 }
 export function finishLiveResearch(s){
  const c=s.cook;
- if(c?.mode!=='v063-live'||!c.live||c.elapsed<1.2)return false;
- const result=evaluateLiveCook(c.ids,c.vessel,c.dropped,c.actions,c.elapsed);
+ if(!['v063-live','v014c-grill'].includes(c?.mode)||!c.live||c.elapsed<1.2)return false;
+ const result=c.mode==='v014c-grill'?evaluatePlacedGrill(c):evaluateLiveCook(c.ids,c.vessel,c.dropped,c.actions,c.elapsed);
  // Every attempted cook uses real resources, including failed recipes.
  if(!consume(s,c.ids,c.txn))return false;
  s.cook=null;s.lastCook=result;s.researchReceipt=true;
@@ -1404,7 +1421,7 @@ export function finishLiveResearch(s){
 }
 export function stepLiveResearch(s,seconds=0){
  const c=s.cook;
- if(c?.mode!=='v063-live'||!c.live)return null;
+ if(!['v063-live','v014c-grill'].includes(c?.mode)||!c.live)return null;
  c.elapsed=Math.min(19,c.elapsed+Math.max(0,Math.min(.1,Number(seconds)||0)));
  if(c.elapsed>=19)return finishLiveResearch(s);
  return null;
