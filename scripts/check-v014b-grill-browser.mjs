@@ -83,8 +83,8 @@ try{
  await offline.addInitScript(([k,v])=>localStorage.setItem(k,JSON.stringify(v)),[key,s]);
  await offline.goto(url+'standalone.html',{waitUntil:'networkidle'});
  assert.ok(await offline.locator('[data-act="method:grill"]').isVisible());await offline.close();
- const combat=base('field',390);combat.kitchen.grillOwned=true;combat.selectedWeaponType='GRILL';
- const {enterField}=await import('../src/engine.js');assert.equal(enterField(combat,'safe'),true);assert.equal(startActionField(combat),true);
+ const combat=base('field',390);combat.kitchen.grillOwned=true;combat.kitchen.mastery={WOK:1,POT:1,GRILL:2};combat.selectedWeaponType='GRILL';
+ const {enterField}=await import('../src/engine.js');assert.equal(enterField(combat,'safe'),true);assert.equal(combat.field.weapon.level,2);assert.equal(startActionField(combat),true);
  combat.field.pos={x:4.5,y:5};combat.field.x=4.5;combat.field.y=5;combat.field.facing={x:1,y:0};combat.field.enemies=[];combat.field.obstacles=[];
  const field=await browser.newPage({viewport:{width:390,height:844},isMobile:true,hasTouch:true,locale:'zh-CN'});
  await field.addInitScript(([k,v])=>localStorage.setItem(k,JSON.stringify(v)),[key,combat]);
