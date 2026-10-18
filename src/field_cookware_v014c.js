@@ -1,6 +1,6 @@
 // Pixel cookware is drawn in the same local pixel scale as pixelActor's chef.
 // These are held objects, while their attack effects remain smooth E.2 Canvas effects.
-import {FORK_FLAME} from './field_v04.js';
+import {FORK_FLAME} from './field_v04.js?v=0.14.0-alpha.4';
 const px=(c,x,y,w,h,color)=>{c.fillStyle=color;c.fillRect(Math.round(x),Math.round(y),w,h)};
 const ink='#27343b',iron='#657e87',shine='#d8e5d8',copper='#d6a76c',wood='#806044';
 export function drawPixelWok(c,pose,{layer='front',parry=false}={}){
@@ -74,30 +74,41 @@ export function drawForkThrustFx(c,f){
 }
 export function drawForkFlameFx(c,f){
  if(!(f.skillFx>0)||f.skillOrigin?.type!=='GRILL')return;
- const o=f.skillOrigin,p=1-Math.min(1,f.skillFx/.85),fade=Math.min(1,p*12)*Math.min(1,(1-p)*3);
+ const o=f.skillOrigin,p=1-Math.min(1,f.skillFx/.85),fade=Math.min(1,p*13)*Math.min(1,(1-p)*3.6);
  const angle=Math.atan2(o.dy??-1,o.dx??0),half=FORK_FLAME.halfAngle;
- c.save();c.translate(o.x,o.y);c.rotate(angle);c.globalAlpha=fade*.93;
- const reach=FORK_FLAME.range*Math.min(1,.36+p*4.2);
- const layers=[{r:reach,a:half,fill:'#df4d23'},{r:reach*.82,a:half*.79,fill:'#ff972f'},{r:reach*.64,a:half*.53,fill:'#ffe49a'}];
- for(const layer of layers){
-  c.beginPath();c.moveTo(.16,0);c.arc(0,0,layer.r,-layer.a,layer.a);c.closePath();
-  c.fillStyle=layer.fill;c.fill();
- }
- for(let i=-5;i<=5;i++){
-  const a=i*half/5,r=reach*(.72+(i%3)*.06),x=Math.cos(a)*r,y=Math.sin(a)*r;
-  c.beginPath();c.moveTo(x-.15,y);c.quadraticCurveTo(x+.12,y-.08,x+.30,y-.04-.18*(1-p));
-  c.quadraticCurveTo(x+.08,y+.13,x-.15,y);c.fillStyle=i%2?'#ffb958':'#ffe1a2';c.fill();
- }
+ c.save();c.translate(o.x,o.y);c.rotate(angle);
+ const reach=FORK_FLAME.range*Math.min(1,.18+p*5.1),wave=p*16;
+ // Moving transparent ribbons leave gaps between tongues. Their tips breathe
+ // independently; no opaque sector texture hides enemies or the terrain.
  for(let i=-4;i<=4;i++){
-  const a=(i+.45)*half/5,r=reach*(.87+(i%2)*.06);
-  c.beginPath();c.moveTo(Math.cos(a)*r,Math.sin(a)*r);
-  c.quadraticCurveTo(Math.cos(a)*reach*1.12,Math.sin(a)*reach*1.13-.16,
-   Math.cos(a)*reach*.92,Math.sin(a)*reach*.92-.23);
-  c.strokeStyle=i%2?'#ff8b34':'#f9c46e';c.lineWidth=.08;c.stroke();
+  const a=i*half/4+Math.sin(wave+i*1.7)*.036;
+  const length=reach*(.72+.20*Math.sin(wave*1.15+i*2.13));
+  const width=.19+.10*(1-Math.abs(i)/5),bend=Math.sin(wave+i*1.38)*.11;
+  c.save();c.rotate(a);c.globalAlpha=fade*(i%2?.55:.72);
+  c.beginPath();c.moveTo(.12,-.05);
+  c.bezierCurveTo(length*.21,-width*.86,length*.42,-width*1.42+bend,length*.64,-width*.64+bend);
+  c.bezierCurveTo(length*.82,-width*.21+bend,length*.78,-width*.62+bend,length,-.04+bend*.35);
+  c.bezierCurveTo(length*.85,width*.16+bend,length*.78,width*.08+bend,length*.65,width*.55+bend);
+  c.bezierCurveTo(length*.43,width*1.18+bend,length*.19,width*.66,.12,.05);c.closePath();
+  c.fillStyle=i%3===0?'#d4482a':'#ef6d2e';c.fill();
+  c.beginPath();c.moveTo(.19,-.025);
+  c.bezierCurveTo(length*.35,-width*.38,length*.57,-width*.34+bend*.3,length*.77,-.035+bend*.2);
+  c.bezierCurveTo(length*.58,width*.39+bend*.3,length*.36,width*.59,.19,.025);c.closePath();
+  c.fillStyle=i%2?'#ffbf67':'#ffdb89';c.fill();
+  c.restore();
  }
- for(let i=0;i<8;i++){
-  const a=-half+((i*5)%9)*half/4,r=reach*(.35+((i*3)%5)*.11);
-  c.fillStyle='#ffecc2';c.fillRect(Math.cos(a)*r,Math.sin(a)*r-.1-p*.3,.035,.035);
+ // White-hot ignition lives near the fork, then a second wave curls off
+ // the cone perimeter. Sparks travel outward and separate as it dissipates.
+ c.globalAlpha=fade*.88;
+ c.beginPath();c.ellipse(.28,0,.28+.12*Math.sin(wave)**2,.12,0,0,Math.PI*2);
+ c.fillStyle='#fff0b4';c.fill();
+ for(let i=-4;i<=4;i++){
+  const a=(i+.5)*half/5,travel=(.34+((p*1.7+i*13/17)%1)*.69)*reach;
+  const xx=Math.cos(a)*travel,yy=Math.sin(a)*travel+Math.sin(wave+i*2)*.08;
+  c.globalAlpha=fade*(.35+.35*(1-travel/Math.max(reach,.01)));
+  c.beginPath();c.moveTo(xx-.10,yy+.04);c.quadraticCurveTo(xx+.025,yy-.10,xx+.16,yy-.13);
+  c.strokeStyle=i%2?'#ffd778':'#f98945';c.lineWidth=.045;c.stroke();
+  c.fillStyle='#ffe9a5';c.fillRect(xx+.14,yy-.15,.035,.035);
  }
  c.restore();
 }

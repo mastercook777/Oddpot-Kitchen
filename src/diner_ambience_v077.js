@@ -1,7 +1,7 @@
 // v0.7.7 - transient, state-grounded dining dialogue for real orders.
 // Data only: never mutate gameplay, advance clocks or spend resources.
 // Max one speech per table, max two across the entire restaurant.
-import {RECIPES,ING} from './data.js?v=0.14.0-alpha.3';
+import {RECIPES,ING} from './data.js?v=0.14.0-alpha.4';
 
 const clampSpeech=x=>Math.max(0,Math.min(1,x));
 const speechWhen=(t,start,duration)=>Number.isFinite(start)&&t>=start&&t<start+duration;
@@ -242,6 +242,14 @@ export const DINER_VOICES={
   ]
  }
 };
+const GRILL_VOICES={
+ adventurer:{order:['炭火要够劲！','下矿前来串烤的！'],kitchen:['听见炭火噼啪响了！'],ready:['烤串趁热给我！']},
+ family:{order:['烤串别太辣，幼菇要分着吃。'],kitchen:['翻面轻一点，别烤焦啦。'],ready:['烤串来了，分着吃吧。']},
+ regular:{order:['咕噜，想尝脆脆的烤串！'],kitchen:['这烤香让我弹起来啦！'],ready:['串串来啦！咕噜！']},
+ gardener:{order:['请烤一串清爽的蔬菜。'],kitchen:['菜叶边缘烤脆就好。'],ready:['闻到烤蔬菜香啦！']},
+ stargazer:{order:['夜路上想带一串菌香。'],kitchen:['炭火像夜里的小星点。'],ready:['烤串的香味陪我赶路。']},
+ critic:{order:['让我品品这道炭火香。'],kitchen:['翻面时机决定余香。'],ready:['炭香到了，容我细品。']}
+};
 function speechHash(str){
  let h=2166136261;
  for(const ch of String(str)){h^=ch.codePointAt(0);h=Math.imul(h,16777619)}
@@ -270,6 +278,7 @@ export function diningSpeechCue(o,t){
   const phrase=speechVariant(o,key,words);
   return speechCue(o,t,phrase,kind,p,start,length);
  };
+ const grill=RECIPES[o.recipeId]?.station==='GRILL'?GRILL_VOICES[o.segment]||GRILL_VOICES.regular:null;
  if(o.status==='review'&&speechWhen(t,o.reviewAt,2.4))
   return speechCue(o,t,o.reviewText||'谢谢招待！','review',10,o.reviewAt,2.4);
  if(o.status==='served'&&speechWhen(t,o.reviewedAt,.9))
@@ -306,11 +315,11 @@ export function diningSpeechCue(o,t){
   if(o.status==='carried'&&speechWhen(t,o.carriedAt??o.pickupAt,1.65))
    return mk(v.delivery,'carried','arrival',6,o.carriedAt??o.pickupAt,1.65);
   if(o.status==='pickup'&&speechWhen(t,o.pickupAt,1.65))
-   return mk(v.ready,'ready','arrival',5,o.pickupAt,1.65);
+   return mk(grill?.ready||v.ready,'ready','arrival',5,o.pickupAt,1.65);
   if(o.status==='queued'&&speechWhen(t,o.orderedAt,2.1))
-   return speechCue(o,t,speechName(o)+'！'+speechVariant(o,'order',v.order),'order',6,o.orderedAt,2.1);
+   return speechCue(o,t,speechName(o)+'！'+speechVariant(o,'order',grill?.order||v.order),'order',6,o.orderedAt,2.1);
   if(o.status==='cooking'&&speechWhen(t,o.started+3,1.7))
-   return mk(v.kitchen,'kitchen','ambient',2,o.started+3,1.7);
+   return mk(grill?.kitchen||v.kitchen,'kitchen','ambient',2,o.started+3,1.7);
  }
  return null;
 }

@@ -1,9 +1,9 @@
 import {fieldHarvestTargetSuffix} from './field_target_v012f.js?v=0.13.0-alpha.9';
 import {craftedPrice} from './recipe_value_v013j.js';
 import {makeSpecialEncounterPlan,previewSpecialEncounter,SPECIAL_ENCOUNTER_KINDS} from './field_encounters_v011c.js';
-import {ING,RECIPES,CUSTOMERS,FORECAST,DEFAULT_INVENTORY,SHOP_STAPLES,MARKET_ROTATION_STAPLES} from './data.js?v=0.14.0-alpha.3';
-import {LIVE_ACTIONS,evaluateLiveCook,liveIngredientState,liveIngredientHeatFeedback,legacyVariant,makeLiveVariant,resolveTechnique} from './cooking_v063.js?v=0.14.0-alpha.3';
-import {GRILL_LANES,grillPreview,evaluatePlacedGrill} from './grill_cooking_v014c.js';
+import {ING,RECIPES,CUSTOMERS,FORECAST,DEFAULT_INVENTORY,SHOP_STAPLES,MARKET_ROTATION_STAPLES} from './data.js?v=0.14.0-alpha.4';
+import {LIVE_ACTIONS,evaluateLiveCook,liveIngredientState,liveIngredientHeatFeedback,legacyVariant,makeLiveVariant,resolveTechnique} from './cooking_v063.js?v=0.14.0-alpha.4';
+import {GRILL_LANES,grillPreview,evaluatePlacedGrill} from './grill_cooking_v014c.js?v=0.14.0-alpha.4';
 import {RECIPE_PROFILES} from './recipe_profiles_v063.js?v=0.13.0-alpha.9';
 import {generateBiomeMap,getFieldBiome} from './field_biomes_v081.js?v=0.13.0-alpha.9';
 import {makeFieldEncounterPlan,insertPlannedFieldEncounter} from './field_encounter_plan_v011b.js?v=0.13.0-alpha.9';
@@ -1303,7 +1303,7 @@ export function sootheGuest(s,orderId){
 }
 export function newRecipeLead(s){
  const customer=s.day===1?'family':s.day===2?'adventurer':'critic';
- const candidates=Object.entries(RECIPES).filter(([id,r])=>!s.recipes[id]&&!r.hidden);
+ const candidates=Object.entries(RECIPES).filter(([id,r])=>!s.recipes[id]&&!r.hidden&&(r.station!=='GRILL'||ensureKitchen(s).grillOwned));
  const match=candidates.find(([id,r])=>r.tags.some(t=>CUSTOMERS[customer].likes.includes(t)))||candidates[0];
  return match?{id:match[0],hint:match[1].hint,ingredients:match[1].ids}:null;
 }

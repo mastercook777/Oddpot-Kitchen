@@ -1,7 +1,7 @@
 import {ING,RECIPES,RECIPE_INDEX,recipeSignature} from './data.js';
 
-const MIN_FACE={beef:3.2,chicken:3.0,garlic:1.5,chili:1.5,mushroom:2.0,cabbage:1.8,onion:1.9};
-const MAX_FACE={beef:8.4,chicken:8.2,garlic:8.0,chili:8.0,mushroom:8.2,cabbage:8.0,onion:8.1};
+const MIN_FACE={beef:3.2,chicken:3.0,garlic:1.5,chili:1.5,mushroom:2.0,cabbage:1.8,onion:1.9,potato:3.1};
+const MAX_FACE={beef:8.4,chicken:8.2,garlic:8.0,chili:8.0,mushroom:8.2,cabbage:8.0,onion:8.1,potato:8.5};
 export function grillHeat(id,elapsed,actions=[],rate=1.05){
  const turn=actions.find(x=>x.type==='turn');
  const faceA=Math.max(0,Math.min(elapsed,turn?.t??elapsed))*rate;
@@ -12,8 +12,11 @@ export function grillHeat(id,elapsed,actions=[],rate=1.05){
 }
 export function grillTechnique(recipeId,style){
  if(!RECIPES[recipeId]||RECIPES[recipeId].station!=='GRILL')return null;
+ const recipe=RECIPES[recipeId];
+ const guestFitDelta=Object.fromEntries(Object.entries({adventurer:['肉','辣','饱腹'],critic:['辣','香'],family:['温和','菌香','甜香'],regular:['清爽','菌香','鲜'],stargazer:['清爽','甜香','菌香'],gardener:['蔬食','清爽','温和']})
+  .filter(([,likes])=>likes.some(tag=>recipe.tags.includes(tag))).map(([guest])=>[guest,5]));
  if(style==='glazed')return {affinity:'signature',affinityLabel:'招牌适配',priceDeltaCoins:1,timeDeltaSeconds:1,
-  guestFitDelta:recipeId==='grill_chicken'?{adventurer:5,critic:4}:recipeId==='grill_beef'?{adventurer:5,regular:2}:{family:5,stargazer:4},
+  guestFitDelta,
   reason:'及时翻面并刷香料，两面熟透后形成这道烤串的招牌风味。'};
  return {affinity:'ordinary',affinityLabel:'普通',priceDeltaCoins:0,timeDeltaSeconds:0,guestFitDelta:{},reason:'两面熟透，保留食材本味。'};
 }

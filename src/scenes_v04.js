@@ -5,7 +5,7 @@ import {drawPixelMiniBoss,drawMiniBossWarning,drawBossZones} from './field_bosse
 import {isHybridFieldArt,drawHybridFieldGround,drawHybridFieldObstacle,drawHybridFieldHazard,drawHybridFieldAtmosphere} from './field_hybrid_biomes_v011f.js?v=0.12.0-alpha.1';
 import {drawFieldImpact,drawFieldProjectile,drawFieldSwipe,drawFieldSkillWave,drawFieldBurst,drawFieldCollection,drawFieldDeath,drawFieldActorIndicators,drawFieldNodeMarkers} from './field_effects_v011e2.js?v=0.12.0-alpha.1';
 import {fieldWokPose,fieldPotPose} from './field_pose_v083.js?v=0.8.5';
-import {drawPixelWok,drawPixelPot,drawPixelFork,drawForkThrustFx,drawForkFlameFx} from './field_cookware_v014c.js';
+import {drawPixelWok,drawPixelPot,drawPixelFork,drawForkThrustFx,drawForkFlameFx} from './field_cookware_v014c.js?v=0.14.0-alpha.4';
 import {hazardPhase,fieldTilePath} from './field_rules_v011a.js';
 import {fieldCamera} from './field_camera_v011b1.js';
 import {drawExpandedLandscape,drawExpandedObstacle} from './field_world_render_v011b1.js';
@@ -15,10 +15,10 @@ import {meleeProfile,meleeWindupProgress} from './field_combat_feedback_v084.js?
 import {pixelActor,pixelEnemy,pixelImpact} from './pixels_v041.js?v=0.13.0-alpha.4';
 import {homeKitchenActors,homeKitchenChatter} from './home_kitchen_v013j.js';
 // Lightweight procedural game graphics: original Canvas shapes, no art pack.
-import {ING,RECIPES,CUSTOMERS} from './data.js?v=0.14.0-alpha.3';
+import {ING,RECIPES,CUSTOMERS} from './data.js?v=0.14.0-alpha.4';
 import {heroZone,waiterDeliveryPose,HERO_PASS} from './walkable_restaurant_v07.js?v=0.9.1';
 import {DINER_FLOOR,dinerFloor,dinerGuestRoute,dinerWeather,dinerQueueGuests} from './restaurant_scene_v075.js?v=0.9.2';
-import {selectDiningSpeech,selectStaffSpeech,diningBubbleLines,speechOpacity} from './diner_ambience_v077.js?v=0.13.0-alpha.4';
+import {selectDiningSpeech,selectStaffSpeech,diningBubbleLines,speechOpacity} from './diner_ambience_v077.js?v=0.14.0-alpha.4';
 import {selectOutdoorQueueSpeech} from './outdoor_queue_speech_v012f.js';
 const color={ink:'#24382a',leaf:'#386b43',soil:'#806044',stone:'#a6b392',cream:'#f4dfb0',gold:'#dfb873'};
 function rect(c,x,y,w,h,fill){c.fillStyle=fill;c.fillRect(x,y,w,h)}
@@ -368,7 +368,17 @@ function waitingRing(c,x,y,ratio){
  if(pct>0){c.strokeStyle=pct>.36?'#b4e27c':pct>.18?'#f6c563':'#f07f5b';c.lineWidth=3.5;c.lineCap='round';c.beginPath();c.arc(x,y,9,-Math.PI/2,-Math.PI/2+Math.PI*2*pct);c.stroke();}
  circle(c,x,y,2.2,'#f2e8cd');
 }
-function dish(c,x,y,kind){circle(c,x,y,12,'#f1e5c6');circle(c,x,y,9,'#9ba288');circle(c,x-3,y-1,4,kind==='POT'?'#ca9866':'#9a5438');circle(c,x+4,y-2,3,'#d3b76b');circle(c,x+1,y+4,3,'#719b55')}
+function dish(c,x,y,kind){
+ circle(c,x,y,12,'#f1e5c6');circle(c,x,y,9,'#9ba288');
+ if(kind==='GRILL'){
+  for(const dy of [-3,3]){
+   line(c,x-10,y+dy,x+10,y+dy,'#e4c187',1.8);
+   for(const dx of [-5,0,5])circle(c,x+dx,y+dy,2.2,dx===0?'#d29053':'#8b5d3d');
+  }
+  return;
+ }
+ circle(c,x-3,y-1,4,kind==='POT'?'#ca9866':'#9a5438');circle(c,x+4,y-2,3,'#d3b76b');circle(c,x+1,y+4,3,'#719b55');
+}
 // These pure timelines have no clock modulo. Each order animates exactly once.
 export function arrivalProgress(simTime,arrivedAt,duration=.85){return Math.max(0,Math.min(1,(simTime-arrivedAt)/duration))}
 export function servingProgress(simTime,servedAt,duration=1.25){const age=simTime-servedAt;return age<0||age>=duration?null:age/duration}
@@ -740,14 +750,35 @@ function drawRestaurantV075(c,s,t,w,h){
   const body=i===2?g.reservedStove:i?g.stoveRight:g.stoveLeft,pt=i===2?g.centre:i?g.right:g.left,slot=v?.kitchenSnapshot?.[i]||s.kitchen?.slots?.[i];
   const type=slot?.type||(i===1?'POT':'WOK'),busy=v?.stations?.[key];
   const X=x(body.x),Y=y(body.y),rw=Math.min(i===2?48:62,w*(i===2?.139:.177));
-  rr(X-rw/2,Y-24,rw,51,7,'#513c30','#b99765');
-  rr(X-rw*.43,Y-20,rw*.86,39,5,'#916d49','#d8ae74');
-  circle(c,X,Y-4,Math.min(21,w*.057),'#d7c19b');
-  circle(c,X,Y-4,Math.min(17,w*.047),type==='GRILL'?'#91572f':type==='WOK'?'#394b49':'#587580','#d5c9a7');
-  if(type==='GRILL'){for(let g=-2;g<=2;g++)line(c,X-13+g*6,Y-15,X-13+g*6,Y+7,'#e0ae6b',1.7)}
-  if(type==='POT'){circle(c,X,Y-4,Math.min(11,w*.034),'#ac7a51');rect(c,X-18,Y-7,36,4,'#dbc39a')}
-  else line(c,X+12,Y-8,X+24,Y-16,'#d5b47a',4);
-  if(busy){for(let j=0;j<2;j++)circle(c,X-7+j*14,Y-18+Math.sin(t*4+j)*2.5,2.5,'#f2e9bcaa')}
+  if(type==='GRILL'){
+   // A top-down charcoal rack, not a round pot: raised legs, ember bed,
+   // spaced grates, and two skewers laid crosswise over the coals.
+   const gw=rw*.94,gh=24,gy=Y-17;
+   rect(c,X-gw*.42,gy+gh,5,8,'#392f2c');rect(c,X+gw*.42-5,gy+gh,5,8,'#392f2c');
+   rr(X-gw/2-2,gy-3,gw+4,gh+7,3,'#343c3d','#bd9b70');
+   rr(X-gw*.43,gy,gw*.86,gh,2,'#622e29','#d69a69');
+   for(let ember=0;ember<6;ember++){
+    const ex=X-gw*.33+ember*gw*.13,ey=gy+6+(ember%2)*9;
+    circle(c,ex,ey,busy?2.9:1.8,busy?'#f49442':'#a95637');
+   }
+   for(let rail=0;rail<6;rail++)line(c,X-gw*.37+rail*gw*.15,gy+2,X-gw*.37+rail*gw*.15,gy+gh-2,'#81918b',2);
+   for(const [n,sy] of [gy+8,gy+17].entries()){
+    line(c,X-gw*.57,sy,X+gw*.56,sy,'#e0ba7b',2.1);
+    for(let part=0;part<3;part++){
+     const sx=X-gw*.27+part*gw*.26;
+     rr(sx-3,sy-3,6,6,2,busy?(n?'#d78653':'#bd6c41'):'#aa916f','#f0c986');
+    }
+   }
+   if(busy){for(let j=0;j<3;j++)circle(c,X-11+j*10,gy-5-Math.sin(t*5+j)*2,1.8,'#f7c57d88')}
+  }else{
+   rr(X-rw/2,Y-24,rw,51,7,'#513c30','#b99765');
+   rr(X-rw*.43,Y-20,rw*.86,39,5,'#916d49','#d8ae74');
+   circle(c,X,Y-4,Math.min(21,w*.057),'#d7c19b');
+   circle(c,X,Y-4,Math.min(17,w*.047),type==='WOK'?'#394b49':'#587580','#d5c9a7');
+   if(type==='POT'){circle(c,X,Y-4,Math.min(11,w*.034),'#ac7a51');rect(c,X-18,Y-7,36,4,'#dbc39a')}
+   else line(c,X+12,Y-8,X+24,Y-16,'#d5b47a',4);
+   if(busy){for(let j=0;j<2;j++)circle(c,X-7+j*14,Y-18+Math.sin(t*4+j)*2.5,2.5,'#f2e9bcaa')}
+  }
   // Equipment level is shown with one understated pip, never a large floating label.
   if(slot?.level>1)circle(c,X+rw*.37,Y-19,3.4,'#ffe3a2');
   const cookProgress=busy?Math.max(0,Math.min(1,1-(busy.left/Math.max(1,RECIPES[v.orders.find(o=>o.id===busy.orderId)?.recipeId]?.time||10)))):0;
@@ -870,12 +901,13 @@ function drawRestaurantV075(c,s,t,w,h){
   }
   if(crew?.waiter?.hired){
    const pos=waiterDeliveryPose(s,t);
-   actors.push({id:'waiter',x:pos.x,y:pos.y,kind:'waiter',level:crew.waiter.level||1,walk:pos.moving,plate:pos.plate});
+   const delivery=pos.plate?v.orders.find(o=>o.status==='delivering'&&Number.isFinite(o.deliveryAt)):null;
+   actors.push({id:'waiter',x:pos.x,y:pos.y,kind:'waiter',level:crew.waiter.level||1,walk:pos.moving,plate:pos.plate,plateRecipeId:delivery?.recipeId});
   }
   if(v.hero){
    const hero=v.hero,zone=heroZone(hero,s);
    const carried=v.orders.find(o=>o.id===hero.carryOrderId&&o.status==='carried');
-   actors.push({id:'hero',x:hero.x,y:hero.y,kind:'chef',walk:hero.moving,plate:!!carried,
+   actors.push({id:'hero',x:hero.x,y:hero.y,kind:'chef',walk:hero.moving,plate:!!carried,plateRecipeId:carried?.recipeId,
      working:!carried&&['WOK','POT','CENTER'].includes(zone)&&!!v.stations[zone],direction:hero.direction,
      stateIcon:carried?'🍽️':zone==='PASS'&&pending.length?'🍽️':
       zone?.startsWith('TABLE')&&v.orders.some(o=>o.tableId===Number(zone.slice(5))&&['queued','cooking','pickup','delivering'].includes(o.status))?'💛':null});
@@ -915,7 +947,7 @@ function drawRestaurantV075(c,s,t,w,h){
     rr(cx-10,y(pt.y)+10,20,7,3,'#a77c50','#c69c6d');
    }
   }
-  if(a.plate)dish(c,X+14,Y-12,'WOK');
+  if(a.plate)dish(c,X+14,Y-12,RECIPES[a.plateRecipeId]?.station||'WOK');
   if(['left','rejected'].includes(a.order?.status)&&t-(a.order.leftAt??t)<1.1){
    // Short angry-exit cue, anchored to the REAL walking guest.
    line(c,X-9,Y-28,X-4,Y-32,'#f4a48b',2);
