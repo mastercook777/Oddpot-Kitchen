@@ -17,7 +17,8 @@ test('second star and central expansion purchase the bundle once, never migrate 
  old.chapterProgress.stars=2;assert.equal(grillAvailable(old),true);
  const before=old.coins;assert.equal(buyGrill(old),true);assert.equal(buyGrill(old),false);
  assert.equal(old.coins,before-GRILL_COST);assert.equal(old.ledger.filter(x=>x.id==='grill-fork-bundle').length,1);
- old.phase='prep';assert.equal(configureKitchenSlot(old,0,'GRILL'),false);assert.equal(configureKitchenSlot(old,2,'GRILL'),true);
+ old.phase='prep';assert.equal(configureKitchenSlot(old,0,'GRILL'),true);assert.equal(configureKitchenSlot(old,2,'GRILL'),true);
+ assert.equal(ensureKitchen(old).slots[0].type,'GRILL');
  assert.equal(ensureKitchen(old).slots[2].type,'GRILL');assert.equal(fieldWeaponChoices(old).length,3);
 });
 test('ten authored grill recipes use unique signatures; both faces and brushing matter',()=>{

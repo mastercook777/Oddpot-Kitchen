@@ -1,9 +1,9 @@
 import {fieldHarvestTargetSuffix} from './field_target_v012f.js?v=0.13.0-alpha.9';
 import {craftedPrice} from './recipe_value_v013j.js';
 import {makeSpecialEncounterPlan,previewSpecialEncounter,SPECIAL_ENCOUNTER_KINDS} from './field_encounters_v011c.js';
-import {ING,RECIPES,CUSTOMERS,FORECAST,DEFAULT_INVENTORY,SHOP_STAPLES,MARKET_ROTATION_STAPLES} from './data.js?v=0.14.0-alpha.4';
-import {LIVE_ACTIONS,evaluateLiveCook,liveIngredientState,liveIngredientHeatFeedback,legacyVariant,makeLiveVariant,resolveTechnique} from './cooking_v063.js?v=0.14.0-alpha.4';
-import {GRILL_LANES,grillPreview,evaluatePlacedGrill} from './grill_cooking_v014c.js?v=0.14.0-alpha.4';
+import {ING,RECIPES,CUSTOMERS,FORECAST,DEFAULT_INVENTORY,SHOP_STAPLES,MARKET_ROTATION_STAPLES} from './data.js?v=0.14.0-alpha.5';
+import {LIVE_ACTIONS,evaluateLiveCook,liveIngredientState,liveIngredientHeatFeedback,legacyVariant,makeLiveVariant,resolveTechnique} from './cooking_v063.js?v=0.14.0-alpha.5';
+import {GRILL_LANES,grillPreview,evaluatePlacedGrill} from './grill_cooking_v014c.js?v=0.14.0-alpha.5';
 import {RECIPE_PROFILES} from './recipe_profiles_v063.js?v=0.13.0-alpha.9';
 import {generateBiomeMap,getFieldBiome} from './field_biomes_v081.js?v=0.13.0-alpha.9';
 import {makeFieldEncounterPlan,insertPlannedFieldEncounter} from './field_encounter_plan_v011b.js?v=0.13.0-alpha.9';
@@ -210,18 +210,19 @@ export function ensureKitchen(s){
  if(!s.kitchen.mastery){
  const old=s.kitchen.slots;
  s.kitchen.mastery={WOK:Math.max(1,s.upgrade?2:1,...old.filter(x=>x.type==='WOK').map(x=>x.level===2?2:1)),
-  POT:Math.max(1,...old.filter(x=>x.type==='POT').map(x=>x.level===2?2:1))};
+  POT:Math.max(1,...old.filter(x=>x.type==='POT').map(x=>x.level===2?2:1)),
+  GRILL:Math.max(1,...old.filter(x=>x.type==='GRILL').map(x=>x.level===2?2:1))};
  }
- for(const type of ['WOK','POT'])s.kitchen.mastery[type]=Math.max(s.kitchen.mastery[type]===2?2:1,...s.kitchen.slots.filter(slot=>slot.type===type).map(slot=>slot.level===2?2:1),1);
+ for(const type of ['WOK','POT','GRILL'])s.kitchen.mastery[type]=Math.max(s.kitchen.mastery[type]===2?2:1,...s.kitchen.slots.filter(slot=>slot.type===type).map(slot=>slot.level===2?2:1),1);
  s.kitchen.grillOwned??=false;
- s.kitchen.slots=(s.kitchen.thirdUnlocked?[0,1,2]:[0,1]).map(i=>{const v=s.kitchen.slots[i]||{};const type=i===2&&s.kitchen.grillOwned&&v.type==='GRILL'?'GRILL':v.type==='WOK'?'WOK':'POT';return {type,level:type==='GRILL'?1:s.kitchen.mastery[type]}});
+ s.kitchen.slots=(s.kitchen.thirdUnlocked?[0,1,2]:[0,1]).map(i=>{const v=s.kitchen.slots[i]||{};const type=s.kitchen.grillOwned&&v.type==='GRILL'?'GRILL':v.type==='WOK'?'WOK':'POT';return {type,level:s.kitchen.mastery[type]}});
  s.kitchen.extraRefits??=0;s.kitchen.freeRefitUsed??=false;
  return s.kitchen;
 }
 export function kitchenDayKey(s){return `${s.cycle}-${s.day}`}
 export function kitchenRefitCost(s){const k=ensureKitchen(s);return k.refitDay===kitchenDayKey(s)&&k.freeRefitUsed?12:0}
 export function configureKitchenSlot(s,index,type){
- if(s.phase!=='prep'||index<0||index>=ensureKitchen(s).slots.length||!['WOK','POT','GRILL'].includes(type)||type==='GRILL'&&(index!==2||!ensureKitchen(s).grillOwned))return false;
+ if(s.phase!=='prep'||index<0||index>=ensureKitchen(s).slots.length||!['WOK','POT','GRILL'].includes(type)||type==='GRILL'&&!ensureKitchen(s).grillOwned)return false;
  const k=ensureKitchen(s);if(k.slots[index].type===type)return false;
  const today=kitchenDayKey(s),normalFee=kitchenRefitCost(s);
  // Never soft-lock a player who experimented with a free refit. If the
@@ -233,7 +234,7 @@ export function configureKitchenSlot(s,index,type){
  const seq=k.extraRefits||0;
  if(fee&&!transact(s,`kitchen-refit-${today}-${seq}`,'kitchen_refit',{},-fee))return false;
  if(fee)k.extraRefits=seq+1;
- k.refitDay=today;k.freeRefitUsed=true;k.slots[index].type=type;k.slots[index].level=type==='GRILL'?1:k.mastery[type];return true;
+ k.refitDay=today;k.freeRefitUsed=true;k.slots[index].type=type;k.slots[index].level=k.mastery[type];return true;
 }
 export function kitchenHasMenuCoverage(s){
  const k=ensureKitchen(s),needed=new Set(s.menu.filter(id=>s.recipes[id]&&RECIPES[id]).map(id=>RECIPES[id].station));
@@ -254,9 +255,10 @@ export function buyGrill(s){
  if(!grillAvailable(s)||!transact(s,'grill-fork-bundle','upgrade',{},-GRILL_COST))return false;
  s.kitchen.grillOwned=true;return true;
 }
-export const COOKWARE_UPGRADE_COST={WOK:60,POT:75};
+export const COOKWARE_UPGRADE_COST={WOK:60,POT:75,GRILL:90};
 export function cookwareUpgradeCost(s,type){
- return ['WOK','POT'].includes(type)&&ensureKitchen(s).mastery[type]<2?COOKWARE_UPGRADE_COST[type]:null;
+ const k=ensureKitchen(s);
+ return ['WOK','POT','GRILL'].includes(type)&&(type!=='GRILL'||k.grillOwned)&&k.mastery[type]<2?COOKWARE_UPGRADE_COST[type]:null;
 }
 export function buyCookwareUpgrade(s,type){
  if(s.phase!=='upgrade')return false;
@@ -470,7 +472,7 @@ export function fieldWeaponChoices(s){
   const installed=slots.map((slot,index)=>({...slot,index}))
    .filter(slot=>slot.type===type)
    .sort((a,b)=>b.level-a.level||a.index-b.index)[0];
-  return {type,level:type==='GRILL'?1:ensureKitchen(s).mastery[type],slotIndex:installed?.index??null,
+  return {type,level:ensureKitchen(s).mastery[type],slotIndex:installed?.index??null,
     fitted:!!installed,source:installed?'kitchen':'reserve'};
  });
 }
@@ -702,7 +704,7 @@ export function prepDish(s,id){
  s.prepVariants??={};(s.prepVariants[id]??=[]).push(clone(craft));
  s.prepCost+=materialCost(craft.ingredientIds);return true;
 }
-function customerFit(r,customerId,syn,craft=null){const customer=CUSTOMERS[customerId];let fit=clamp(50+r.tags.filter(t=>customer.likes.includes(t)).length*20-Math.max(0,(craft?.price??r.price)-customer.budget)*4,0,100);if(syn==='辛香暖胃'&&customerId==='adventurer'&&r.tags.includes('辣'))fit+=10;if(syn==='菌香组合'&&(customerId==='family'||customerId==='critic')&&r.tags.includes('菌香'))fit+=10;return clamp(fit+(craft?.guestFitDelta?.[customerId]||0),0,100)}
+function customerFit(r,customerId,syn,craft=null){const customer=CUSTOMERS[customerId];let fit=clamp(50+r.tags.filter(t=>customer.likes.includes(t)).length*20-Math.max(0,(craft?.price??r.price)-customer.budget)*4,0,100);if(syn==='辛香暖胃'&&customerId==='adventurer'&&r.tags.includes('辣'))fit+=10;if(syn==='菌香组合'&&(customerId==='family'||customerId==='critic')&&r.tags.includes('菌香'))fit+=10;if(customerId==='adventurer'&&r.station==='GRILL'&&r.tags.includes('肉'))fit+=7;return clamp(fit+(craft?.guestFitDelta?.[customerId]||0),0,100)}
 export function selectArrivalDish(s,o){
  // Only select food when the customer reaches the door: changing a menu at
  // intermission affects future orders, never rewrites an already seated order.

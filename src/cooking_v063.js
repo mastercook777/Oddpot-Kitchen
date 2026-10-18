@@ -1,8 +1,8 @@
 // v0.6.3-A: real-time ingredient-event adjudicator.
 // No timed turns, no universal style buffs and no direct inventory writes.
-import {ING,RECIPES,RECIPE_INDEX,recipeSignature} from './data.js?v=0.14.0-alpha.4';
+import {ING,RECIPES,RECIPE_INDEX,recipeSignature} from './data.js?v=0.14.0-alpha.5';
 import {RECIPE_PROFILES} from './recipe_profiles_v063.js?v=0.12.0-alpha.1';
-import {evaluateGrillCook,grillHeat,grillTechnique} from './grill_cooking_v014b.js?v=0.14.0-alpha.4';
+import {evaluateGrillCook,grillHeat,grillTechnique} from './grill_cooking_v014b.js?v=0.14.0-alpha.5';
 
 export const LIVE_ACTIONS={
   WOK:[{id:'flip',name:'翻炒',emoji:'🍳'},{id:'toss',name:'颠勺',emoji:'↗'}],

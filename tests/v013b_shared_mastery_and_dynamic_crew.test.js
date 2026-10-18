@@ -38,7 +38,7 @@ test('v0.13-B old paid position levels turn into type mastery with no repeat fee
  const s=setup();s.kitchen.mastery=undefined;s.upgrade=false;
  s.kitchen.slots=[{type:'WOK',level:2},{type:'WOK',level:1},{type:'POT',level:2}];
  const money=s.coins;ensureKitchen(s);
- assert.deepEqual(s.kitchen.mastery,{WOK:2,POT:2});
+ assert.deepEqual(s.kitchen.mastery,{WOK:2,POT:2,GRILL:1});
  assert.equal(s.kitchen.slots[0].level,2);
  assert.equal(s.kitchen.slots[1].level,2);
  assert.equal(s.kitchen.slots[2].level,2);
@@ -90,10 +90,10 @@ test('v0.13-B busy helper never abandons an active order, and pre-opening prefer
  assert.equal(s.crew.helper.station,0);assert.equal(v.crew.helper.station,0);
  assert.equal(v.crew.helper2.station,2);
 });
-test('v0.13-B UI has exactly two type mastery upgrade controls and shows roaming choice',()=>{
+test('all owned cookware types share mastery, including GRILL, and crew can roam',()=>{
  const app=readFileSync(new URL('../src/app.js',import.meta.url),'utf8');
  const scene=readFileSync(new URL('../src/scenes_v04.js',import.meta.url),'utf8');
- assert.match(app,/\['WOK','POT'\]\.map\(type=>/);
+ assert.match(app,/\['WOK','POT',\.\.\.\(k\.grillOwned\?\['GRILL'\]:\[\]\)\]\.map\(type=>/);
  assert.match(app,/全店共享 Lv/);
  assert.doesNotMatch(app,/互换/);
  assert.match(app,/aria-pressed/);

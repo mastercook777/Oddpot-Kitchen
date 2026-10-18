@@ -13,7 +13,7 @@ test('new game has no fictional sightings or named-guest relationships',()=>{
 test('guest list reads real data and shows precise favorite tags from existing customers',()=>{
  const s=newGame(1023),entries=guestBookEntries(s);
  assert.deepEqual(entries.find(x=>x.segment==='regular').likes,['清爽','菌香','鲜']);
- assert.deepEqual(entries.find(x=>x.segment==='adventurer').likes,['辣','肉','饱腹']);
+ assert.deepEqual(entries.find(x=>x.segment==='adventurer').likes,['辣','肉','饱腹','炭香']);
 });
 test('planned but not admitted diners are not automatically counted as met',()=>{
  const s=newGame(4);s.phase='service';

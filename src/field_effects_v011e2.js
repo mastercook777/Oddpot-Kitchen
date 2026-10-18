@@ -22,6 +22,7 @@ export function drawFieldProjectile(c,p,type='enemy'){
    c.save();c.globalAlpha=.5+.35*t;fieldFxRing(c,p.targetX,p.targetY,p.radius*(.8+.2*t),'#d3f3dc',.035);
    fieldFxRing(c,p.x,p.y-arc,.24,'#e2f7c7',.055);c.restore();
   }
+  if(p.level>1){c.save();c.globalAlpha=.65*(1-t);fieldFxRing(c,p.x,p.y-arc,.18+t*.14,'#f4cb75',.035);c.restore();}
   fieldFxEllipse(c,p.x,p.y,.14,.065,'#304d3c33');
   const d=Math.hypot(p.targetX-p.fromX,p.targetY-p.fromY)||1;
   c.strokeStyle=p.empowered?'#d8f4caaa':'#e3c99c77';c.lineWidth=p.empowered?.12:.08;c.beginPath();
@@ -49,6 +50,7 @@ export function drawFieldSwipe(c,f){
  for(const [r,w,color] of [[.80,.16,'#cb996c'],[1.03,.11,'#f8dc9e'],[1.17,.035,'#fff8dc']]){
   c.beginPath();c.arc(0,0,r,-.78+p*.7,.78+p*.7);c.strokeStyle=color;c.lineWidth=w*(1-p*.6);c.stroke();
  }
+ if(f.weapon?.level>1){c.beginPath();c.arc(0,0,1.27,-.78+p*.7,.78+p*.7);c.strokeStyle='#ffd474';c.lineWidth=.055*(1-p);c.stroke();}
  c.restore();
 }
 export function drawFieldSkillWave(c,f){
