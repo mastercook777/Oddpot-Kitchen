@@ -7936,17 +7936,21 @@ function drawForkFlameFx(c,f){
  const reach=FORK_FLAME.range*Math.min(1,.18+p*5.1),wave=p*16;
  // Moving transparent ribbons leave gaps between tongues. Their tips breathe
  // independently; no opaque sector texture hides enemies or the terrain.
- for(let i=-5;i<=5;i++){
-  const a=i*half/5+Math.sin(wave+i*1.7)*.027;
-  const length=reach*(.78+.17*Math.sin(wave*1.15+i*2.13));
-  const width=.10+.05*(1-Math.abs(i)/6);
+ for(let i=-4;i<=4;i++){
+  const a=i*half/4+Math.sin(wave+i*1.7)*.036;
+  const length=reach*(.72+.20*Math.sin(wave*1.15+i*2.13));
+  const width=.19+.10*(1-Math.abs(i)/5),bend=Math.sin(wave+i*1.38)*.11;
   c.save();c.rotate(a);c.globalAlpha=fade*(i%2?.55:.72);
-  c.beginPath();c.moveTo(.12,-.045);c.bezierCurveTo(length*.34,-width*.8,length*.73,-width*.35+Math.sin(wave+i)*.07,length,-.05);
-  c.bezierCurveTo(length*.80,width*.5,length*.43,width*1.25,.12,.045);c.closePath();
-  c.fillStyle=i%3===0?'#dd4930':'#f67932';c.fill();
-  c.beginPath();c.moveTo(.19,-.022);c.bezierCurveTo(length*.44,-width*.32,length*.70,.015,length*.84,.012);
-  c.bezierCurveTo(length*.65,width*.30,length*.34,width*.60,.19,.022);c.closePath();
-  c.fillStyle=i%2?'#ffbc62':'#ffd285';c.fill();
+  c.beginPath();c.moveTo(.12,-.05);
+  c.bezierCurveTo(length*.21,-width*.86,length*.42,-width*1.42+bend,length*.64,-width*.64+bend);
+  c.bezierCurveTo(length*.82,-width*.21+bend,length*.78,-width*.62+bend,length,-.04+bend*.35);
+  c.bezierCurveTo(length*.85,width*.16+bend,length*.78,width*.08+bend,length*.65,width*.55+bend);
+  c.bezierCurveTo(length*.43,width*1.18+bend,length*.19,width*.66,.12,.05);c.closePath();
+  c.fillStyle=i%3===0?'#d4482a':'#ef6d2e';c.fill();
+  c.beginPath();c.moveTo(.19,-.025);
+  c.bezierCurveTo(length*.35,-width*.38,length*.57,-width*.34+bend*.3,length*.77,-.035+bend*.2);
+  c.bezierCurveTo(length*.58,width*.39+bend*.3,length*.36,width*.59,.19,.025);c.closePath();
+  c.fillStyle=i%2?'#ffbf67':'#ffdb89';c.fill();
   c.restore();
  }
  // White-hot ignition lives near the fork, then a second wave curls off

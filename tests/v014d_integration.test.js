@@ -42,7 +42,7 @@ test('fork skill paints multiple changing flame ribbons, not an opaque sector',(
  };
  const early=record(.72),middle=record(.42),late=record(.12);
  for(const frame of [early,middle,late]){
-  assert.equal(frame.filter(x=>x[0]==='bezierCurveTo').length,44);
+  assert.equal(frame.filter(x=>x[0]==='bezierCurveTo').length,54);
   assert.equal(frame.some(x=>x[0]==='arc'),false);
  }
  assert.notDeepEqual(early.filter(x=>x[0]==='bezierCurveTo'),middle.filter(x=>x[0]==='bezierCurveTo'));
