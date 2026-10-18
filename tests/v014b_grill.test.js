@@ -20,10 +20,13 @@ test('second star and central expansion purchase the bundle once, never migrate 
  old.phase='prep';assert.equal(configureKitchenSlot(old,0,'GRILL'),false);assert.equal(configureKitchenSlot(old,2,'GRILL'),true);
  assert.equal(ensureKitchen(old).slots[2].type,'GRILL');assert.equal(fieldWeaponChoices(old).length,3);
 });
-test('only three authored recipes exist; both faces need heat, and brushing improves quality, price, and time',()=>{
- for(const id of ['grill_beef','grill_chicken','grill_vegetable'])assert.equal(RECIPE_INDEX[recipeSignature(RECIPES[id].ids,'GRILL')],id);
- assert.equal(RECIPE_INDEX[recipeSignature(['beef','chili'],'GRILL')],undefined);
- for(const id of ['grill_beef','grill_chicken','grill_vegetable']){
+test('ten authored grill recipes use unique signatures; both faces and brushing matter',()=>{
+ const grillIds=Object.keys(RECIPES).filter(id=>RECIPES[id].station==='GRILL');
+ assert.equal(grillIds.length,10);
+ assert.equal(new Set(grillIds.map(id=>recipeSignature(RECIPES[id].ids,'GRILL'))).size,10);
+ for(const id of grillIds)assert.equal(RECIPE_INDEX[recipeSignature(RECIPES[id].ids,'GRILL')],id);
+ assert.equal(RECIPE_INDEX[recipeSignature(['beef','onion'],'GRILL')],undefined);
+ for(const id of grillIds){
   const ids=RECIPES[id].ids;
   assert.equal(outcome(ids,1,5).sellable,false,'early finish is raw on both sides');
   assert.equal(outcome(ids,null,9.5).sellable,false,'one face cannot pass');
@@ -49,14 +52,14 @@ test('only three authored recipes exist; both faces need heat, and brushing impr
  assert.ok(glazed.price>RECIPES.grill_beef.price);assert.equal(glazed.timeDelta,1);
  assert.equal(s.recipeVariants.grill_beef.length,1);
 });
-function service(seed,staffed){const s=owned(seed);s.phase='prep';assert.equal(configureKitchenSlot(s,2,'GRILL'),true);
- s.menu=['grill_beef','chicken_stew','mushroom_stir'];s.recipes.grill_beef=85;
+function service(seed,staffed,recipeId='grill_beef'){const s=owned(seed);s.phase='prep';assert.equal(configureKitchenSlot(s,2,'GRILL'),true);
+ s.menu=[recipeId,'chicken_stew','mushroom_stir'];s.recipes[recipeId]=85;
  s.crew.helper2={hired:true,onDuty:staffed,station:2,level:1,xp:0};
  for(const id of Object.keys(s.inventory))s.inventory[id]=100;
  s.phase='service';assert.equal(createService(s,{walkable:true}),true);
  Object.assign(s.service.hero,DINER_FLOOR.right);
- const o=s.service.orders[0];o.recipeId='grill_beef';o.status='queued';o.arrival=0;o.patience=1000;
- o.craft=recipeCraftSnapshot(s,'grill_beef');s.service.queued.push(o.id);
+ const o=s.service.orders[0];o.recipeId=recipeId;o.status='queued';o.arrival=0;o.patience=1000;
+ o.craft=recipeCraftSnapshot(s,recipeId);s.service.queued.push(o.id);
  assert.equal(markManual(s,o.id),false);
  assert.equal(setServicePaused(s,false),true);
  for(let i=0;i<110&&!s.service.done;i++){if(s.service.breakAt)resumeBreak(s);tick(s,1);}
@@ -71,6 +74,10 @@ test('a real GRILL order uses centre staff, material and sale ledger; an empty s
  const empty=service(1301,false);
  assert.equal(empty.s.service.events.some(e=>e.type==='started'&&e.order===empty.o.id),false);
  assert.equal(empty.s.ledger.some(e=>e.id==='service-cook-'+empty.o.id),false);
+ const newDish=service(1301,true,'grill_garlic_mushroom');
+ assert.equal(newDish.o.status,'served');
+ assert.deepEqual(newDish.s.ledger.find(e=>e.id==='service-cook-'+newDish.o.id)?.items,{mushroom:-1,garlic:-1});
+ assert.equal(newDish.s.ledger.filter(e=>e.id==='sale-'+newDish.o.id).length,1);
 });
 test('fork flame is a directional cone with multiple targets and line-of-sight',()=>{
  const s=owned();s.phase='field';assert.equal(selectFieldWeapon(s,'GRILL'),true);assert.equal(enterField(s,'safe'),true);

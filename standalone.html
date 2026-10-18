@@ -1,4 +1,4 @@
-<!doctype html><html lang="zh-CN"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1.0,maximum-scale=1.0,viewport-fit=cover,user-scalable=no"><meta name="apple-mobile-web-app-capable" content="yes"><meta name="theme-color" content="#1b3c2b"><title>怪味食堂 · v0.14.0-alpha.3 离线版</title><style>.ingredient-icon{display:inline-block;width:var(--ingredient-size,24px);height:var(--ingredient-size,24px);max-width:none;object-fit:contain;image-rendering:pixelated;vertical-align:-.24em;flex:none;pointer-events:none;user-select:none}
+<!doctype html><html lang="zh-CN"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1.0,maximum-scale=1.0,viewport-fit=cover,user-scalable=no"><meta name="apple-mobile-web-app-capable" content="yes"><meta name="theme-color" content="#1b3c2b"><title>怪味食堂 · v0.14.0-alpha.4 离线版</title><style>.ingredient-icon{display:inline-block;width:var(--ingredient-size,24px);height:var(--ingredient-size,24px);max-width:none;object-fit:contain;image-rendering:pixelated;vertical-align:-.24em;flex:none;pointer-events:none;user-select:none}
 .stock-line>span .ingredient-icon{margin-right:3px}.target-chip .ingredient-icon{vertical-align:middle}.book-icon .ingredient-icon{display:block}
 .v063-food-icon .ingredient-icon{width:1em;height:1em;vertical-align:top;filter:none}.v063-receipt-line .ingredient-icon{vertical-align:middle}
 .v063-food-picker button>span,.v063-drop>span{line-height:1}.v063-food-picker .ingredient-icon,.v063-drop .ingredient-icon{vertical-align:top}
@@ -2645,11 +2645,18 @@ const RARE_FEATURED_RECIPES={
 };
 for(const [id,r] of Object.entries(RARE_FEATURED_RECIPES)){RECIPES[id]=r;registerRecipe(id,r)}
 
-// Three authored grill recipes; do not extend the combinatorial WOK/POT generator.
+// Ten authored grill recipes: distinctive demand without a combinatorial menu flood.
 const GRILL_RECIPES={
  grill_beef:{name:'野牛蒜香串',emoji:'🍢',ids:['beef','garlic'],method:'grill',station:'GRILL',time:12,price:35,tags:['肉','香','鲜'],cost:10,hint:'牛肉与蒜瓣穿串，两面都要烤熟'},
  grill_chicken:{name:'火椒烤鸡串',emoji:'🍢',ids:['chicken','chili'],method:'grill',station:'GRILL',time:11,price:31,tags:['肉','辣','香'],cost:10,hint:'鸡肉与火椒穿串，翻面后刷出椒香'},
- grill_vegetable:{name:'林野菌蔬串',emoji:'🍢',ids:['mushroom','cabbage','onion'],method:'grill',station:'GRILL',time:10,price:27,tags:['菌香','清爽','甜香'],cost:8,hint:'菌菇、卷卷魔菜与洋葱两面翻烤'}
+ grill_vegetable:{name:'林野菌蔬串',emoji:'🍢',ids:['mushroom','cabbage','onion'],method:'grill',station:'GRILL',time:10,price:27,tags:['菌香','清爽','甜香'],cost:8,hint:'菌菇、卷卷魔菜与洋葱两面翻烤'},
+ grill_fire_beef:{name:'炭火椒牛串',emoji:'🍢',ids:['beef','chili'],method:'grill',station:'GRILL',time:13,price:38,tags:['肉','辣','香'],cost:12,hint:'野牛肉和火椒穿串，猛火两面翻烤'},
+ grill_sweet_chicken:{name:'琥珀烤鸡串',emoji:'🍢',ids:['chicken','onion'],method:'grill',station:'GRILL',time:11,price:29,tags:['肉','温和','甜香'],cost:9,hint:'鸡肉和洋葱穿串，翻面刷出甜香'},
+ grill_garlic_mushroom:{name:'蒜香菌菇串',emoji:'🍢',ids:['mushroom','garlic'],method:'grill',station:'GRILL',time:10,price:25,tags:['菌香','鲜','香'],cost:5,hint:'蘑菇与蒜瓣穿串，烤出鲜香'},
+ grill_fire_potato:{name:'火椒烤薯串',emoji:'🍢',ids:['potato','chili'],method:'grill',station:'GRILL',time:12,price:28,tags:['辣','饱腹','温和'],cost:8,hint:'土豆与火椒穿串，厚切薯块两面烤透'},
+ grill_garlic_cabbage:{name:'蒜香卷卷串',emoji:'🍢',ids:['cabbage','garlic'],method:'grill',station:'GRILL',time:9,price:23,tags:['蔬食','清爽','香'],cost:4,hint:'卷卷魔菜与蒜瓣穿串，烤出清爽脆边'},
+ grill_forest_beef:{name:'幽光牛菌串',emoji:'🍢',ids:['beef','mushroom'],method:'grill',station:'GRILL',time:13,price:39,tags:['肉','菌香','鲜'],cost:11,hint:'牛肉与幽光蘑菇交错穿串，两面烤匀'},
+ grill_hearty_chicken:{name:'咕咕烤薯串',emoji:'🍢',ids:['chicken','potato'],method:'grill',station:'GRILL',time:13,price:34,tags:['肉','饱腹','温和'],cost:10,hint:'鸡肉与地精土豆穿串，耐心翻烤'}
 };
 for(const [id,r] of Object.entries(GRILL_RECIPES)){RECIPES[id]=r;registerRecipe(id,r)}
 
@@ -2685,8 +2692,8 @@ for(const recipe of Object.values(RECIPES)){
   if(!recipe.tags.includes('蔬食'))recipe.tags.push('蔬食');
 }
 
-const MIN_FACE={beef:3.2,chicken:3.0,garlic:1.5,chili:1.5,mushroom:2.0,cabbage:1.8,onion:1.9};
-const MAX_FACE={beef:8.4,chicken:8.2,garlic:8.0,chili:8.0,mushroom:8.2,cabbage:8.0,onion:8.1};
+const MIN_FACE={beef:3.2,chicken:3.0,garlic:1.5,chili:1.5,mushroom:2.0,cabbage:1.8,onion:1.9,potato:3.1};
+const MAX_FACE={beef:8.4,chicken:8.2,garlic:8.0,chili:8.0,mushroom:8.2,cabbage:8.0,onion:8.1,potato:8.5};
 function grillHeat(id,elapsed,actions=[],rate=1.05){
  const turn=actions.find(x=>x.type==='turn');
  const faceA=Math.max(0,Math.min(elapsed,turn?.t??elapsed))*rate;
@@ -2697,8 +2704,11 @@ function grillHeat(id,elapsed,actions=[],rate=1.05){
 }
 function grillTechnique(recipeId,style){
  if(!RECIPES[recipeId]||RECIPES[recipeId].station!=='GRILL')return null;
+ const recipe=RECIPES[recipeId];
+ const guestFitDelta=Object.fromEntries(Object.entries({adventurer:['肉','辣','饱腹'],critic:['辣','香'],family:['温和','菌香','甜香'],regular:['清爽','菌香','鲜'],stargazer:['清爽','甜香','菌香'],gardener:['蔬食','清爽','温和']})
+  .filter(([,likes])=>likes.some(tag=>recipe.tags.includes(tag))).map(([guest])=>[guest,5]));
  if(style==='glazed')return {affinity:'signature',affinityLabel:'招牌适配',priceDeltaCoins:1,timeDeltaSeconds:1,
-  guestFitDelta:recipeId==='grill_chicken'?{adventurer:5,critic:4}:recipeId==='grill_beef'?{adventurer:5,regular:2}:{family:5,stargazer:4},
+  guestFitDelta,
   reason:'及时翻面并刷香料，两面熟透后形成这道烤串的招牌风味。'};
  return {affinity:'ordinary',affinityLabel:'普通',priceDeltaCoins:0,timeDeltaSeconds:0,guestFitDelta:{},reason:'两面熟透，保留食材本味。'};
 }
@@ -5173,7 +5183,7 @@ function sootheGuest(s,orderId){
 }
 function newRecipeLead(s){
  const customer=s.day===1?'family':s.day===2?'adventurer':'critic';
- const candidates=Object.entries(RECIPES).filter(([id,r])=>!s.recipes[id]&&!r.hidden);
+ const candidates=Object.entries(RECIPES).filter(([id,r])=>!s.recipes[id]&&!r.hidden&&(r.station!=='GRILL'||ensureKitchen(s).grillOwned));
  const match=candidates.find(([id,r])=>r.tags.some(t=>CUSTOMERS[customer].likes.includes(t)))||candidates[0];
  return match?{id:match[0],hint:match[1].hint,ingredients:match[1].ids}:null;
 }
@@ -6451,6 +6461,14 @@ const DINER_VOICES={
   ]
  }
 };
+const GRILL_VOICES={
+ adventurer:{order:['炭火要够劲！','下矿前来串烤的！'],kitchen:['听见炭火噼啪响了！'],ready:['烤串趁热给我！']},
+ family:{order:['烤串别太辣，幼菇要分着吃。'],kitchen:['翻面轻一点，别烤焦啦。'],ready:['烤串来了，分着吃吧。']},
+ regular:{order:['咕噜，想尝脆脆的烤串！'],kitchen:['这烤香让我弹起来啦！'],ready:['串串来啦！咕噜！']},
+ gardener:{order:['请烤一串清爽的蔬菜。'],kitchen:['菜叶边缘烤脆就好。'],ready:['闻到烤蔬菜香啦！']},
+ stargazer:{order:['夜路上想带一串菌香。'],kitchen:['炭火像夜里的小星点。'],ready:['烤串的香味陪我赶路。']},
+ critic:{order:['让我品品这道炭火香。'],kitchen:['翻面时机决定余香。'],ready:['炭香到了，容我细品。']}
+};
 function speechHash(str){
  let h=2166136261;
  for(const ch of String(str)){h^=ch.codePointAt(0);h=Math.imul(h,16777619)}
@@ -6479,6 +6497,7 @@ function diningSpeechCue(o,t){
   const phrase=speechVariant(o,key,words);
   return speechCue(o,t,phrase,kind,p,start,length);
  };
+ const grill=RECIPES[o.recipeId]?.station==='GRILL'?GRILL_VOICES[o.segment]||GRILL_VOICES.regular:null;
  if(o.status==='review'&&speechWhen(t,o.reviewAt,2.4))
   return speechCue(o,t,o.reviewText||'谢谢招待！','review',10,o.reviewAt,2.4);
  if(o.status==='served'&&speechWhen(t,o.reviewedAt,.9))
@@ -6515,11 +6534,11 @@ function diningSpeechCue(o,t){
   if(o.status==='carried'&&speechWhen(t,o.carriedAt??o.pickupAt,1.65))
    return mk(v.delivery,'carried','arrival',6,o.carriedAt??o.pickupAt,1.65);
   if(o.status==='pickup'&&speechWhen(t,o.pickupAt,1.65))
-   return mk(v.ready,'ready','arrival',5,o.pickupAt,1.65);
+   return mk(grill?.ready||v.ready,'ready','arrival',5,o.pickupAt,1.65);
   if(o.status==='queued'&&speechWhen(t,o.orderedAt,2.1))
-   return speechCue(o,t,speechName(o)+'！'+speechVariant(o,'order',v.order),'order',6,o.orderedAt,2.1);
+   return speechCue(o,t,speechName(o)+'！'+speechVariant(o,'order',grill?.order||v.order),'order',6,o.orderedAt,2.1);
   if(o.status==='cooking'&&speechWhen(t,o.started+3,1.7))
-   return mk(v.kitchen,'kitchen','ambient',2,o.started+3,1.7);
+   return mk(grill?.kitchen||v.kitchen,'kitchen','ambient',2,o.started+3,1.7);
  }
  return null;
 }
@@ -7911,30 +7930,37 @@ function drawForkThrustFx(c,f){
 }
 function drawForkFlameFx(c,f){
  if(!(f.skillFx>0)||f.skillOrigin?.type!=='GRILL')return;
- const o=f.skillOrigin,p=1-Math.min(1,f.skillFx/.85),fade=Math.min(1,p*12)*Math.min(1,(1-p)*3);
+ const o=f.skillOrigin,p=1-Math.min(1,f.skillFx/.85),fade=Math.min(1,p*13)*Math.min(1,(1-p)*3.6);
  const angle=Math.atan2(o.dy??-1,o.dx??0),half=FORK_FLAME.halfAngle;
- c.save();c.translate(o.x,o.y);c.rotate(angle);c.globalAlpha=fade*.93;
- const reach=FORK_FLAME.range*Math.min(1,.36+p*4.2);
- const layers=[{r:reach,a:half,fill:'#df4d23'},{r:reach*.82,a:half*.79,fill:'#ff972f'},{r:reach*.64,a:half*.53,fill:'#ffe49a'}];
- for(const layer of layers){
-  c.beginPath();c.moveTo(.16,0);c.arc(0,0,layer.r,-layer.a,layer.a);c.closePath();
-  c.fillStyle=layer.fill;c.fill();
- }
+ c.save();c.translate(o.x,o.y);c.rotate(angle);
+ const reach=FORK_FLAME.range*Math.min(1,.18+p*5.1),wave=p*16;
+ // Moving transparent ribbons leave gaps between tongues. Their tips breathe
+ // independently; no opaque sector texture hides enemies or the terrain.
  for(let i=-5;i<=5;i++){
-  const a=i*half/5,r=reach*(.72+(i%3)*.06),x=Math.cos(a)*r,y=Math.sin(a)*r;
-  c.beginPath();c.moveTo(x-.15,y);c.quadraticCurveTo(x+.12,y-.08,x+.30,y-.04-.18*(1-p));
-  c.quadraticCurveTo(x+.08,y+.13,x-.15,y);c.fillStyle=i%2?'#ffb958':'#ffe1a2';c.fill();
+  const a=i*half/5+Math.sin(wave+i*1.7)*.027;
+  const length=reach*(.78+.17*Math.sin(wave*1.15+i*2.13));
+  const width=.10+.05*(1-Math.abs(i)/6);
+  c.save();c.rotate(a);c.globalAlpha=fade*(i%2?.55:.72);
+  c.beginPath();c.moveTo(.12,-.045);c.bezierCurveTo(length*.34,-width*.8,length*.73,-width*.35+Math.sin(wave+i)*.07,length,-.05);
+  c.bezierCurveTo(length*.80,width*.5,length*.43,width*1.25,.12,.045);c.closePath();
+  c.fillStyle=i%3===0?'#dd4930':'#f67932';c.fill();
+  c.beginPath();c.moveTo(.19,-.022);c.bezierCurveTo(length*.44,-width*.32,length*.70,.015,length*.84,.012);
+  c.bezierCurveTo(length*.65,width*.30,length*.34,width*.60,.19,.022);c.closePath();
+  c.fillStyle=i%2?'#ffbc62':'#ffd285';c.fill();
+  c.restore();
  }
+ // White-hot ignition lives near the fork, then a second wave curls off
+ // the cone perimeter. Sparks travel outward and separate as it dissipates.
+ c.globalAlpha=fade*.88;
+ c.beginPath();c.ellipse(.28,0,.28+.12*Math.sin(wave)**2,.12,0,0,Math.PI*2);
+ c.fillStyle='#fff0b4';c.fill();
  for(let i=-4;i<=4;i++){
-  const a=(i+.45)*half/5,r=reach*(.87+(i%2)*.06);
-  c.beginPath();c.moveTo(Math.cos(a)*r,Math.sin(a)*r);
-  c.quadraticCurveTo(Math.cos(a)*reach*1.12,Math.sin(a)*reach*1.13-.16,
-   Math.cos(a)*reach*.92,Math.sin(a)*reach*.92-.23);
-  c.strokeStyle=i%2?'#ff8b34':'#f9c46e';c.lineWidth=.08;c.stroke();
- }
- for(let i=0;i<8;i++){
-  const a=-half+((i*5)%9)*half/4,r=reach*(.35+((i*3)%5)*.11);
-  c.fillStyle='#ffecc2';c.fillRect(Math.cos(a)*r,Math.sin(a)*r-.1-p*.3,.035,.035);
+  const a=(i+.5)*half/5,travel=(.34+((p*1.7+i*13/17)%1)*.69)*reach;
+  const xx=Math.cos(a)*travel,yy=Math.sin(a)*travel+Math.sin(wave+i*2)*.08;
+  c.globalAlpha=fade*(.35+.35*(1-travel/Math.max(reach,.01)));
+  c.beginPath();c.moveTo(xx-.10,yy+.04);c.quadraticCurveTo(xx+.025,yy-.10,xx+.16,yy-.13);
+  c.strokeStyle=i%2?'#ffd778':'#f98945';c.lineWidth=.045;c.stroke();
+  c.fillStyle='#ffe9a5';c.fillRect(xx+.14,yy-.15,.035,.035);
  }
  c.restore();
 }
@@ -8287,7 +8313,17 @@ function waitingRing(c,x,y,ratio){
  if(pct>0){c.strokeStyle=pct>.36?'#b4e27c':pct>.18?'#f6c563':'#f07f5b';c.lineWidth=3.5;c.lineCap='round';c.beginPath();c.arc(x,y,9,-Math.PI/2,-Math.PI/2+Math.PI*2*pct);c.stroke();}
  circle(c,x,y,2.2,'#f2e8cd');
 }
-function dish(c,x,y,kind){circle(c,x,y,12,'#f1e5c6');circle(c,x,y,9,'#9ba288');circle(c,x-3,y-1,4,kind==='POT'?'#ca9866':'#9a5438');circle(c,x+4,y-2,3,'#d3b76b');circle(c,x+1,y+4,3,'#719b55')}
+function dish(c,x,y,kind){
+ circle(c,x,y,12,'#f1e5c6');circle(c,x,y,9,'#9ba288');
+ if(kind==='GRILL'){
+  for(const dy of [-3,3]){
+   line(c,x-10,y+dy,x+10,y+dy,'#e4c187',1.8);
+   for(const dx of [-5,0,5])circle(c,x+dx,y+dy,2.2,dx===0?'#d29053':'#8b5d3d');
+  }
+  return;
+ }
+ circle(c,x-3,y-1,4,kind==='POT'?'#ca9866':'#9a5438');circle(c,x+4,y-2,3,'#d3b76b');circle(c,x+1,y+4,3,'#719b55');
+}
 // These pure timelines have no clock modulo. Each order animates exactly once.
 function arrivalProgress(simTime,arrivedAt,duration=.85){return Math.max(0,Math.min(1,(simTime-arrivedAt)/duration))}
 function servingProgress(simTime,servedAt,duration=1.25){const age=simTime-servedAt;return age<0||age>=duration?null:age/duration}
@@ -8659,14 +8695,35 @@ function drawRestaurantV075(c,s,t,w,h){
   const body=i===2?g.reservedStove:i?g.stoveRight:g.stoveLeft,pt=i===2?g.centre:i?g.right:g.left,slot=v?.kitchenSnapshot?.[i]||s.kitchen?.slots?.[i];
   const type=slot?.type||(i===1?'POT':'WOK'),busy=v?.stations?.[key];
   const X=x(body.x),Y=y(body.y),rw=Math.min(i===2?48:62,w*(i===2?.139:.177));
-  rr(X-rw/2,Y-24,rw,51,7,'#513c30','#b99765');
-  rr(X-rw*.43,Y-20,rw*.86,39,5,'#916d49','#d8ae74');
-  circle(c,X,Y-4,Math.min(21,w*.057),'#d7c19b');
-  circle(c,X,Y-4,Math.min(17,w*.047),type==='GRILL'?'#91572f':type==='WOK'?'#394b49':'#587580','#d5c9a7');
-  if(type==='GRILL'){for(let g=-2;g<=2;g++)line(c,X-13+g*6,Y-15,X-13+g*6,Y+7,'#e0ae6b',1.7)}
-  if(type==='POT'){circle(c,X,Y-4,Math.min(11,w*.034),'#ac7a51');rect(c,X-18,Y-7,36,4,'#dbc39a')}
-  else line(c,X+12,Y-8,X+24,Y-16,'#d5b47a',4);
-  if(busy){for(let j=0;j<2;j++)circle(c,X-7+j*14,Y-18+Math.sin(t*4+j)*2.5,2.5,'#f2e9bcaa')}
+  if(type==='GRILL'){
+   // A top-down charcoal rack, not a round pot: raised legs, ember bed,
+   // spaced grates, and two skewers laid crosswise over the coals.
+   const gw=rw*.94,gh=24,gy=Y-17;
+   rect(c,X-gw*.42,gy+gh,5,8,'#392f2c');rect(c,X+gw*.42-5,gy+gh,5,8,'#392f2c');
+   rr(X-gw/2-2,gy-3,gw+4,gh+7,3,'#343c3d','#bd9b70');
+   rr(X-gw*.43,gy,gw*.86,gh,2,'#622e29','#d69a69');
+   for(let ember=0;ember<6;ember++){
+    const ex=X-gw*.33+ember*gw*.13,ey=gy+6+(ember%2)*9;
+    circle(c,ex,ey,busy?2.9:1.8,busy?'#f49442':'#a95637');
+   }
+   for(let rail=0;rail<6;rail++)line(c,X-gw*.37+rail*gw*.15,gy+2,X-gw*.37+rail*gw*.15,gy+gh-2,'#81918b',2);
+   for(const [n,sy] of [gy+8,gy+17].entries()){
+    line(c,X-gw*.57,sy,X+gw*.56,sy,'#e0ba7b',2.1);
+    for(let part=0;part<3;part++){
+     const sx=X-gw*.27+part*gw*.26;
+     rr(sx-3,sy-3,6,6,2,busy?(n?'#d78653':'#bd6c41'):'#aa916f','#f0c986');
+    }
+   }
+   if(busy){for(let j=0;j<3;j++)circle(c,X-11+j*10,gy-5-Math.sin(t*5+j)*2,1.8,'#f7c57d88')}
+  }else{
+   rr(X-rw/2,Y-24,rw,51,7,'#513c30','#b99765');
+   rr(X-rw*.43,Y-20,rw*.86,39,5,'#916d49','#d8ae74');
+   circle(c,X,Y-4,Math.min(21,w*.057),'#d7c19b');
+   circle(c,X,Y-4,Math.min(17,w*.047),type==='WOK'?'#394b49':'#587580','#d5c9a7');
+   if(type==='POT'){circle(c,X,Y-4,Math.min(11,w*.034),'#ac7a51');rect(c,X-18,Y-7,36,4,'#dbc39a')}
+   else line(c,X+12,Y-8,X+24,Y-16,'#d5b47a',4);
+   if(busy){for(let j=0;j<2;j++)circle(c,X-7+j*14,Y-18+Math.sin(t*4+j)*2.5,2.5,'#f2e9bcaa')}
+  }
   // Equipment level is shown with one understated pip, never a large floating label.
   if(slot?.level>1)circle(c,X+rw*.37,Y-19,3.4,'#ffe3a2');
   const cookProgress=busy?Math.max(0,Math.min(1,1-(busy.left/Math.max(1,RECIPES[v.orders.find(o=>o.id===busy.orderId)?.recipeId]?.time||10)))):0;
@@ -8789,12 +8846,13 @@ function drawRestaurantV075(c,s,t,w,h){
   }
   if(crew?.waiter?.hired){
    const pos=waiterDeliveryPose(s,t);
-   actors.push({id:'waiter',x:pos.x,y:pos.y,kind:'waiter',level:crew.waiter.level||1,walk:pos.moving,plate:pos.plate});
+   const delivery=pos.plate?v.orders.find(o=>o.status==='delivering'&&Number.isFinite(o.deliveryAt)):null;
+   actors.push({id:'waiter',x:pos.x,y:pos.y,kind:'waiter',level:crew.waiter.level||1,walk:pos.moving,plate:pos.plate,plateRecipeId:delivery?.recipeId});
   }
   if(v.hero){
    const hero=v.hero,zone=heroZone(hero,s);
    const carried=v.orders.find(o=>o.id===hero.carryOrderId&&o.status==='carried');
-   actors.push({id:'hero',x:hero.x,y:hero.y,kind:'chef',walk:hero.moving,plate:!!carried,
+   actors.push({id:'hero',x:hero.x,y:hero.y,kind:'chef',walk:hero.moving,plate:!!carried,plateRecipeId:carried?.recipeId,
      working:!carried&&['WOK','POT','CENTER'].includes(zone)&&!!v.stations[zone],direction:hero.direction,
      stateIcon:carried?'🍽️':zone==='PASS'&&pending.length?'🍽️':
       zone?.startsWith('TABLE')&&v.orders.some(o=>o.tableId===Number(zone.slice(5))&&['queued','cooking','pickup','delivering'].includes(o.status))?'💛':null});
@@ -8834,7 +8892,7 @@ function drawRestaurantV075(c,s,t,w,h){
     rr(cx-10,y(pt.y)+10,20,7,3,'#a77c50','#c69c6d');
    }
   }
-  if(a.plate)dish(c,X+14,Y-12,'WOK');
+  if(a.plate)dish(c,X+14,Y-12,RECIPES[a.plateRecipeId]?.station||'WOK');
   if(['left','rejected'].includes(a.order?.status)&&t-(a.order.leftAt??t)<1.1){
    // Short angry-exit cue, anchored to the REAL walking guest.
    line(c,X-9,Y-28,X-4,Y-32,'#f4a48b',2);
@@ -8974,6 +9032,7 @@ function earnedPromotions(){
  return Object.keys(CREW_ROLES).map(role=>({role,name:CREW_ROLES[role].name,promotion:crewPromotion(game,role)}))
   .filter(x=>x.promotion?.ready);
 }
+const stationName=type=>type==='GRILL'?'烤架':type==='WOK'?'炒锅':'炖锅';
 function reportPromotionBanner(){
  const ready=earnedPromotions();
  if(!ready.length)return '';
@@ -8997,9 +9056,9 @@ function overlayMarkup(){if(!overlay)return '';
      </div></article>`).join('')}</div>`;
   }else{
   ensureRecipeVariants(game);
-  const shown=Object.entries(RECIPES).filter(([id])=>game.recipes[id]||RECIPE_PROFILES[id]);
+  const shown=Object.entries(RECIPES).filter(([id,r])=>game.recipes[id]||RECIPE_PROFILES[id]||r.station==='GRILL'&&ensureKitchen(game).grillOwned);
   body=`<h2>📖 料理工艺图鉴</h2><p class="sheet-lead">已解锁 ${itemCount()} 道料理 · 每道菜可收藏不同做法。<b>当前默认工艺已经影响实际营业；点击版本可以更换。</b></p><div class="book-list v063-book-list">${shown.map(([id,r])=>{const learned=!!game.recipes[id],variants=game.recipeVariants?.[id]||[],active=game.activeVariantIds?.[id];
-    return `<div class="v063-book-entry"><button class="book-item" data-book="${id}"><span class="book-icon">${learned?r.emoji:'❔'}</span><div><strong>${learned?esc(r.name):'未发现的料理'}</strong><small>${learned?`${r.ids.map(onlyName).join(' + ')} · ${r.station==='WOK'?'炒锅':'深锅'} · 已知 ${variants.length} 种工艺`:esc(r.hint)}</small></div><span>›</span></button>${learned?`<div class="v063-variant-list">${variants.map(v=>`<button data-choose-variant="${id}::${v.variantId}" class="v063-variant-chip ${active===v.variantId?'active':''}">${active===v.variantId?'✓ ':''}${esc(v.styleLabel||LIVE_STYLES[v.style]||'标准工艺')} · 品质 ${v.quality} · ${recipeCraftSnapshot(game,id,v)?.price}币 / ${r.time+(recipeCraftSnapshot(game,id,v)?.timeDelta||0)}秒${v.secondaryTrait?' · '+esc(v.secondaryTrait):''}</button>`).join('')}</div>`:''}</div>`}).join('')}</div>`;
+    return `<div class="v063-book-entry"><button class="book-item" data-book="${id}"><span class="book-icon">${learned?r.emoji:'❔'}</span><div><strong>${learned?esc(r.name):'未发现的料理'}</strong><small>${learned?`${r.ids.map(onlyName).join(' + ')} · ${stationName(r.station)} · 已知 ${variants.length} 种工艺`:(r.station==='GRILL'?'烤架 · ':'')+esc(r.hint)}</small></div><span>›</span></button>${learned?`<div class="v063-variant-list">${variants.map(v=>`<button data-choose-variant="${id}::${v.variantId}" class="v063-variant-chip ${active===v.variantId?'active':''}">${active===v.variantId?'✓ ':''}${esc(v.styleLabel||LIVE_STYLES[v.style]||'标准工艺')} · 品质 ${v.quality} · ${recipeCraftSnapshot(game,id,v)?.price}币 / ${r.time+(recipeCraftSnapshot(game,id,v)?.timeDelta||0)}秒${v.secondaryTrait?' · '+esc(v.secondaryTrait):''}</button>`).join('')}</div>`:''}</div>`}).join('')}</div>`;
   }
   body=`<div class="v102-book-tabs" role="tablist" aria-label="图鉴分类"><button type="button" role="tab" data-book-tab="recipes" aria-selected="${bookTab==='recipes'}" class="${bookTab==='recipes'?'active':''}">📖 菜谱</button><button type="button" role="tab" data-book-tab="guests" aria-selected="${bookTab==='guests'}" class="${bookTab==='guests'?'active':''}">👥 客人</button></div>`+body;
  }else if(overlay==='field-bag'){
@@ -9025,11 +9084,11 @@ function overlayMarkup(){if(!overlay)return '';
   body=`<h2>✨ 隐藏菜单</h2><p class="sheet-lead">每日仅选一款稀有菜，最多两份。只有鉴味师和关系深厚的熟客会获知，且不保证一定购买。食材将被保留，正式制作时才扣除。</p>
    ${active?`<div class="v010-premium-selected"><strong>今晚：${esc(RECIPES[active.recipeId]?.name||'隐藏菜')}</strong><small>供应 ${active.limit} 份 · ${Math.round(recipeCraftSnapshot(game,active.recipeId).price*1.7)} 金币/份</small><button data-premium-clear>撤下</button></div>`:''}
    <div class="v010-premium-options">${options.length?options.map(x=>`<div class="v010-premium-option">
-    <div class="v010-premium-meta"><span>${x.recipe.emoji}</span><div><strong>${esc(x.name)}</strong><small>${x.recipe.station==='WOK'?'炒锅':'炖锅'} · 品质 ${x.quality} · ${x.price} 金币/份 · 可做 ${x.stock} 份</small></div></div>
+    <div class="v010-premium-meta"><span>${x.recipe.emoji}</span><div><strong>${esc(x.name)}</strong><small>${stationName(x.recipe.station)} · 品质 ${x.quality} · ${x.price} 金币/份 · 可做 ${x.stock} 份</small></div></div>
     <div class="v010-premium-actions"><button data-premium-set="${x.id}:1" ${x.stock<1?'disabled':''}>限量 1 份</button><button data-premium-set="${x.id}:2" ${x.stock<2?'disabled':''}>限量 2 份</button></div>
    </div>`).join(''):'<p class="sheet-lead">暂时没有已研发的稀有料理。尝试击败食材首领，研发特别菜谱。</p>'}</div>`;
  }else if(overlay.startsWith('menu:')){
-  const slot=Number(overlay.split(':')[1]);body=`<h2>更换第 ${slot+1} 道上架菜</h2><p class="sheet-lead">“可做份数”按当前工艺与可用库存计算，已扣除隐藏菜预留。不同料理共用的材料不能重复计算。</p><div class="book-list">${Object.keys(game.recipes).map(id=>{const r=RECIPES[id],craft=recipeCraftSnapshot(game,id),isPremium=game.premiumMenu?.recipeId===id&&premiumMenuActive(game),count=recipeAvailableServings(game,id,{ignorePremium:!!isPremium});return `<button data-menu-pick="${slot}:${id}" class="book-item v101-menu-option"><span class="book-icon">${r.emoji}</span><div><strong>${esc(r.name)} · ${r.station==='WOK'?'炒锅':'炖锅'}</strong><small>${r.time+(craft?.timeDelta||0)}秒 · ${craft?.price}金币 · ${craft?.ingredientIds.map(onlyName).join(' + ')}</small><span class="v101-serving-tag ${count===0?'shortage':''}">${count===0?'缺料 · ':''}可做 ${count} 份${isPremium?' · 选为日常将撤下隐藏菜':''}</span></div><span>›</span></button>`}).join('')}</div>`;
+  const slot=Number(overlay.split(':')[1]);body=`<h2>更换第 ${slot+1} 道上架菜</h2><p class="sheet-lead">“可做份数”按当前工艺与可用库存计算，已扣除隐藏菜预留。不同料理共用的材料不能重复计算。</p><div class="book-list">${Object.keys(game.recipes).filter(id=>RECIPES[id]).map(id=>{const r=RECIPES[id],craft=recipeCraftSnapshot(game,id),isPremium=game.premiumMenu?.recipeId===id&&premiumMenuActive(game),count=recipeAvailableServings(game,id,{ignorePremium:!!isPremium});return `<button data-menu-pick="${slot}:${id}" class="book-item v101-menu-option"><span class="book-icon">${r.emoji}</span><div><strong>${esc(r.name)} · ${stationName(r.station)}</strong><small>${r.time+(craft?.timeDelta||0)}秒 · ${craft?.price}金币 · ${craft?.ingredientIds.map(onlyName).join(' + ')}</small><span class="v101-serving-tag ${count===0?'shortage':''}">${count===0?'缺料 · ':''}可做 ${count} 份${isPremium?' · 选为日常将撤下隐藏菜':''}</span></div><span>›</span></button>`}).join('')}</div>`;
  }else if(overlay==='bento'){
   const prepared=game.bento?.day===game.cycle+'-'+game.day;
   const possibilities=availableBento(game);
@@ -9056,7 +9115,7 @@ function overlayMarkup(){if(!overlay)return '';
    };
    body='<h2>👩‍🍳 食堂伙伴</h2><p class="sheet-lead">每位帮厨按本人实际完成的订单获得经验；增加厨位必须配备人手才能真正出餐。开门前直接选择左、中、右优先站位；已选位置不可重复安排。营业时，空闲帮厨仍会自动走到缺人的炉台支援。</p><div class="staff-roster">'+row('helper')+row('waiter')+(crew.helper2.hired?row('helper2'):'')+'</div>';
  }else if(overlay==='settings'){
-  body=`<h2>⚙ 游戏设置</h2><p class="sheet-lead">ODDPOT · v0.14.0-alpha.3 · 单机本地存档</p>${b('guide-replay','重看第一轮引导','secondary')}${b('reset','重置存档，从第 1 天重新开始','danger')}<p class="sheet-lead">切到后台时营业会自动暂停。更换设备不会同步存档。</p>`;
+  body=`<h2>⚙ 游戏设置</h2><p class="sheet-lead">ODDPOT · v0.14.0-alpha.4 · 单机本地存档</p>${b('guide-replay','重看第一轮引导','secondary')}${b('reset','重置存档，从第 1 天重新开始','danger')}<p class="sheet-lead">切到后台时营业会自动暂停。更换设备不会同步存档。</p>`;
  }else if(overlay==='details'){
   const r=game.report;body=r?`<h2>营业账本详情</h2><p class="sheet-lead">本日订单由真实食材库存、工位工作秒数和顾客等待事件计算。</p><div class="book-list">${Object.entries(r.byDish).map(([id,d])=>`<div class="detail-row">${RECIPES[id].emoji} ${RECIPES[id].name}：售出 ${d.count} 份 · 满意 ${Math.round(d.totalSat/d.count)}</div>`).join('')}<div class="detail-row">左厨位占用 ${r.congestion.WOK||0} 秒 / 右厨位 ${r.congestion.POT||0} 秒${r.congestion.CENTER!==undefined?' / 中厨位 '+r.congestion.CENTER+' 秒':''}</div><div class="detail-row">食材耗用估值 ${r.cost} · 宣传 ${r.finance?.marketingCost||0} · 工资 ${r.finance?.wage||0} · 招待支出 ${r.hospitalityCost||0} · 收入 ${r.revenue} · 经营利润 ${r.profit} · 现金净变动 ${r.finance?.cashChange??'旧版无记录'}</div></div>`:'';
  }
@@ -9250,7 +9309,7 @@ function research(){const c=game.cook;
     <div class="v063-vessels"><button class="v063-vessel ${selectedMethod==='stir'?'chosen':''}" data-act="method:stir">🍳 炒锅<br><small>翻炒 · 颠勺</small></button><button class="v063-vessel ${selectedMethod==='stew'?'chosen':''}" data-act="method:stew">🍲 深锅<br><small>轻搅 · 收汁</small></button>${ensureKitchen(game).grillOwned?`<button class="v063-vessel ${selectedMethod==='grill'?'chosen':''}" data-act="method:grill">🍢 烤架<br><small>翻面 · 刷香料</small></button>`:''}</div>
     <div class="v063-label">选 2–3 种食材 <small>${selectedIngredients.length}/3</small></div>
     <div class="v063-food-picker">${Object.entries(ING).map(([id,ing])=>`<button data-ingredient="${id}" class="${selectedIngredients.includes(id)?'picked':''}" ${!game.inventory[id]&&!selectedIngredients.includes(id)?'disabled':''}><span>${ingredientIconHtml(id,24)}</span><b>${ing.name}</b><small>×${game.inventory[id]||0}</small></button>`).join('')}</div>
-    <div class="v063-recipe-clue">${r?`这锅可能是 <strong>${esc(r.name)}</strong> · ${r.station==='GRILL'?'烤架':r.station==='WOK'?'炒锅':'深锅'}${game.recipes[featured]?`<small>已有版本 ${recipeCraftSnapshot(game,featured).price} 金币 · ${r.time+(recipeCraftSnapshot(game,featured).timeDelta||0)} 秒；起锅后看新工艺差异</small>`:'<small>第一次做成后才能上架</small>'}`:selectedMethod==='grill'?'烤架只有三道手工搭配；选对食材，翻面让正反两面熟透。':'换个食材组合，看看会做出什么菜。'}</div>
+    <div class="v063-recipe-clue">${r?`这道可能是 <strong>${esc(r.name)}</strong> · ${r.station==='GRILL'?'烤架':r.station==='WOK'?'炒锅':'深锅'}${game.recipes[featured]?`<small>已有版本 ${recipeCraftSnapshot(game,featured).price} 金币 · ${r.time+(recipeCraftSnapshot(game,featured).timeDelta||0)} 秒；起锅后看新工艺差异</small>`:'<small>第一次做成后才能上架</small>'}`:selectedMethod==='grill'?'烤架有十道精选搭配；选对食材，翻面让正反两面熟透。':'换个食材组合，看看会做出什么菜。'}</div>
     ${last?`<div class="v063-last-result ${last.sellable?'ok':'fail'}"><b>${last.sellable?'✅ 研发成功':'❌ 研发失败'}：${esc(last.recipeName||'料理')}</b><small>${last.sellable?`${esc(last.styleLabel)} · ${esc(last.affinityLabel)} · 品质 ${last.quality}`:esc(last.reason)}${last.sellable?' · 已记入工艺图鉴':' · 原料已消耗，未收录'}</small></div>`:''}
   </div>`,`<div class="action-row">${b('start-research','🔥 亲手下料，开始研发','primary wide',selectedIngredients.length<2||!canUse(game,selectedIngredients))}${b('book','📖 工艺图鉴','secondary')}${b('to-menu','去上架 →','secondary')}</div>`];
  }
@@ -9363,7 +9422,7 @@ function roomUpgradePanel(){
 }
 function upgrade(){
  const k=ensureKitchen(game);
- return [`<div class="scene-bg diner-bg">${restaurantView(false)}<div class="upgrade-card kitchen-upgrade-card"><h2>🏠 食堂又能长大一点</h2>${roomUpgradePanel()}<div class="v13a-bundle-panel" aria-label="第三厨位与第二帮厨组合扩建"><strong>${k.thirdUnlocked?'✓ 中央厨位与小炭已到岗':'🔥 后厨扩编 · 中央厨位＋小炭'}</strong><small>${k.thirdUnlocked?'中央炉可独立接单；下一次备餐配置锅具、员工餐及两名帮厨的岗位。':'同时增加真实第三炉与帮厨小炭；首星和第四桌后解锁。'}</small>${k.thirdUnlocked?'<span>已完成扩建</span>':b('third-kitchen-bundle','扩建＋雇佣 · '+THIRD_KITCHEN_BUNDLE_COST+' 金币','primary wide',!thirdKitchenBundleAvailable(game))}</div>${(game.chapterProgress?.stars||0)>=2?`<div class="v014b-grill-unlock"><strong>🍢 双面烤架与烤叉</strong><small>${k.grillOwned?'已拥有 · 备餐时给中央厨位装配烤架，探索可选烤叉':'三道手工烤菜 · 中央工位真实接单 · 探索新增穿刺武器'}</small>${k.grillOwned?'<span>已购入</span>':b('buy-grill','购入组合 · '+GRILL_COST+' 金币','secondary',!grillAvailable(game))}</div>`:''}<div class="upgrade-feature">📊 累计收入 ${(game.history||[]).reduce((n,x)=>n+x.revenue,0)} · 招待 ${(game.history||[]).reduce((n,x)=>n+x.served,0)} 位</div><h3 class="v014-upgrade-label">升级厨具</h3>${['WOK','POT'].map(type=>{const level=k.mastery[type],cost=cookwareUpgradeCost(game,type),name=type==='WOK'?'炒锅':'炖锅';return `<div class="kitchen-upgrade-row"><div><strong>${name} · 全店共享 Lv.${level}</strong><small>${level>=2?'✓ 所有同类炉台和探索厨具生效':'每单 -2 秒，探索武器同享'}</small></div>${b(`upgrade-kitchen:${type}`,cost===null?'已满级':`${cost} 金币升级`, 'secondary',cost===null||game.coins<cost)}</div>`}).join('')}<div class="upgrade-feature">🎒 背包 ${game.bagSlots||8}/12 格 · ${bagUpgradePrice(game)===null?'已满级':`扩容 ${bagUpgradePrice(game)} 金币`}</div>${b('upgrade-bag','增加背包 2 格','secondary',bagUpgradePrice(game)===null||game.coins<bagUpgradePrice(game))}<details class="v014-upgrade-notes"><summary>升级规则</summary><p>厨位决定产能，厨具等级全店共享。换装同类厨具不会重复收费。${game.tech?'猛火掌控已解锁':'赢得厨王赛后解锁猛火掌控'}。</p></details></div></div>`,
+ return [`<div class="scene-bg diner-bg">${restaurantView(false)}<div class="upgrade-card kitchen-upgrade-card"><h2>🏠 食堂又能长大一点</h2>${roomUpgradePanel()}<div class="v13a-bundle-panel" aria-label="第三厨位与第二帮厨组合扩建"><strong>${k.thirdUnlocked?'✓ 中央厨位与小炭已到岗':'🔥 后厨扩编 · 中央厨位＋小炭'}</strong><small>${k.thirdUnlocked?'中央炉可独立接单；下一次备餐配置锅具、员工餐及两名帮厨的岗位。':'同时增加真实第三炉与帮厨小炭；首星和第四桌后解锁。'}</small>${k.thirdUnlocked?'<span>已完成扩建</span>':b('third-kitchen-bundle','扩建＋雇佣 · '+THIRD_KITCHEN_BUNDLE_COST+' 金币','primary wide',!thirdKitchenBundleAvailable(game))}</div>${(game.chapterProgress?.stars||0)>=2?`<div class="v014b-grill-unlock"><strong>🍢 双面烤架与烤叉</strong><small>${k.grillOwned?'已拥有 · 备餐时给中央厨位装配烤架，探索可选烤叉':'十道精选烤菜 · 中央工位真实接单 · 探索新增穿刺武器'}</small>${k.grillOwned?'<span>已购入</span>':b('buy-grill','购入组合 · '+GRILL_COST+' 金币','secondary',!grillAvailable(game))}</div>`:''}<div class="upgrade-feature">📊 累计收入 ${(game.history||[]).reduce((n,x)=>n+x.revenue,0)} · 招待 ${(game.history||[]).reduce((n,x)=>n+x.served,0)} 位</div><h3 class="v014-upgrade-label">升级厨具</h3>${['WOK','POT'].map(type=>{const level=k.mastery[type],cost=cookwareUpgradeCost(game,type),name=type==='WOK'?'炒锅':'炖锅';return `<div class="kitchen-upgrade-row"><div><strong>${name} · 全店共享 Lv.${level}</strong><small>${level>=2?'✓ 所有同类炉台和探索厨具生效':'每单 -2 秒，探索武器同享'}</small></div>${b(`upgrade-kitchen:${type}`,cost===null?'已满级':`${cost} 金币升级`, 'secondary',cost===null||game.coins<cost)}</div>`}).join('')}<div class="upgrade-feature">🎒 背包 ${game.bagSlots||8}/12 格 · ${bagUpgradePrice(game)===null?'已满级':`扩容 ${bagUpgradePrice(game)} 金币`}</div>${b('upgrade-bag','增加背包 2 格','secondary',bagUpgradePrice(game)===null||game.coins<bagUpgradePrice(game))}<details class="v014-upgrade-notes"><summary>升级规则</summary><p>厨位决定产能，厨具等级全店共享。换装同类厨具不会重复收费。${game.tech?'猛火掌控已解锁':'赢得厨王赛后解锁猛火掌控'}。</p></details></div></div>`,
  `<div class="action-row">${b('next-day','开始营业第 '+(totalBusinessDay(game)+1)+' 天','primary wide')}</div>`]
 }
 function render(){

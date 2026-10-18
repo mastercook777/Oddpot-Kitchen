@@ -78,11 +78,18 @@ const RARE_FEATURED_RECIPES={
 };
 for(const [id,r] of Object.entries(RARE_FEATURED_RECIPES)){RECIPES[id]=r;registerRecipe(id,r)}
 
-// Three authored grill recipes; do not extend the combinatorial WOK/POT generator.
+// Ten authored grill recipes: distinctive demand without a combinatorial menu flood.
 const GRILL_RECIPES={
  grill_beef:{name:'野牛蒜香串',emoji:'🍢',ids:['beef','garlic'],method:'grill',station:'GRILL',time:12,price:35,tags:['肉','香','鲜'],cost:10,hint:'牛肉与蒜瓣穿串，两面都要烤熟'},
  grill_chicken:{name:'火椒烤鸡串',emoji:'🍢',ids:['chicken','chili'],method:'grill',station:'GRILL',time:11,price:31,tags:['肉','辣','香'],cost:10,hint:'鸡肉与火椒穿串，翻面后刷出椒香'},
- grill_vegetable:{name:'林野菌蔬串',emoji:'🍢',ids:['mushroom','cabbage','onion'],method:'grill',station:'GRILL',time:10,price:27,tags:['菌香','清爽','甜香'],cost:8,hint:'菌菇、卷卷魔菜与洋葱两面翻烤'}
+ grill_vegetable:{name:'林野菌蔬串',emoji:'🍢',ids:['mushroom','cabbage','onion'],method:'grill',station:'GRILL',time:10,price:27,tags:['菌香','清爽','甜香'],cost:8,hint:'菌菇、卷卷魔菜与洋葱两面翻烤'},
+ grill_fire_beef:{name:'炭火椒牛串',emoji:'🍢',ids:['beef','chili'],method:'grill',station:'GRILL',time:13,price:38,tags:['肉','辣','香'],cost:12,hint:'野牛肉和火椒穿串，猛火两面翻烤'},
+ grill_sweet_chicken:{name:'琥珀烤鸡串',emoji:'🍢',ids:['chicken','onion'],method:'grill',station:'GRILL',time:11,price:29,tags:['肉','温和','甜香'],cost:9,hint:'鸡肉和洋葱穿串，翻面刷出甜香'},
+ grill_garlic_mushroom:{name:'蒜香菌菇串',emoji:'🍢',ids:['mushroom','garlic'],method:'grill',station:'GRILL',time:10,price:25,tags:['菌香','鲜','香'],cost:5,hint:'蘑菇与蒜瓣穿串，烤出鲜香'},
+ grill_fire_potato:{name:'火椒烤薯串',emoji:'🍢',ids:['potato','chili'],method:'grill',station:'GRILL',time:12,price:28,tags:['辣','饱腹','温和'],cost:8,hint:'土豆与火椒穿串，厚切薯块两面烤透'},
+ grill_garlic_cabbage:{name:'蒜香卷卷串',emoji:'🍢',ids:['cabbage','garlic'],method:'grill',station:'GRILL',time:9,price:23,tags:['蔬食','清爽','香'],cost:4,hint:'卷卷魔菜与蒜瓣穿串，烤出清爽脆边'},
+ grill_forest_beef:{name:'幽光牛菌串',emoji:'🍢',ids:['beef','mushroom'],method:'grill',station:'GRILL',time:13,price:39,tags:['肉','菌香','鲜'],cost:11,hint:'牛肉与幽光蘑菇交错穿串，两面烤匀'},
+ grill_hearty_chicken:{name:'咕咕烤薯串',emoji:'🍢',ids:['chicken','potato'],method:'grill',station:'GRILL',time:13,price:34,tags:['肉','饱腹','温和'],cost:10,hint:'鸡肉与地精土豆穿串，耐心翻烤'}
 };
 for(const [id,r] of Object.entries(GRILL_RECIPES)){RECIPES[id]=r;registerRecipe(id,r)}
 

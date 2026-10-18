@@ -18,8 +18,8 @@ const clearStage=s=>{
 };
 test('catalog retains normal recipes and all four Boss dishes alongside the encounter additions',()=>{
  assert.equal(Object.keys(ING).length,12);
- assert.equal(Object.keys(RECIPE_INDEX).length,179);
- assert.equal(Object.keys(RECIPES).length,178);
+ assert.equal(Object.keys(RECIPE_INDEX).length,186);
+ assert.equal(Object.keys(RECIPES).length,185);
  for(const recipe of ['mushroom_heart_wok','mushroom_heart_pot','ember_pepper_wok','ember_pepper_pot'])
   assert.equal(RECIPES[recipe].rare,true);
  assert.equal(liveRecipeId(['mushroom_heart','garlic'],'WOK'),'mushroom_heart_wok');
