@@ -53,9 +53,9 @@ test('chef cookware uses procedural layers; no new raster art or persistent weap
  const scene=source('scenes_v04.js');
  const cookware=source('field_cookware_v014c.js');
  assert.match(scene,/const posture=isWok\?fieldWokPose/);
- assert.match(scene,/drawPixelWok\(c,posture,\{layer:'back'\}\)/);
+ assert.match(scene,/drawPixelWok\(c,posture,\{layer:'back',level:f\.weapon\?\.level\}\)/);
  assert.match(scene,/drawPixelWok\(c,posture,\{layer:'front'/);
- assert.match(scene,/drawPixelPot\(c,potPose,\{layer:'front'\}\)/);
+ assert.match(scene,/drawPixelPot\(c,potPose,\{layer:'front',level:f\.weapon\?\.level\}\)/);
  assert.match(scene,/drawPixelFork\(c,f,\{layer:'front'\}\)/);
  assert.match(scene,/chef\(c,0/);
  assert.match(cookware,/fillRect/);

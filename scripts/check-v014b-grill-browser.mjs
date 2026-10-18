@@ -4,7 +4,7 @@ import {spawn} from 'node:child_process';
 import {mkdir} from 'node:fs/promises';
 import {newGame} from '../src/engine.js';
 import {startActionField} from '../src/field_v04.js';
-const url='http://127.0.0.1:5173/',key='oddpot-prototype-v04',out='docs/screenshots/v014d-grill';
+const url='http://127.0.0.1:5173/',key='oddpot-prototype-v04',out='docs/screenshots/v014e-grill';
 await mkdir(out,{recursive:true});
 const server=spawn(process.execPath,['node_modules/vite/bin/vite.js','--host','127.0.0.1','--port','5173','--strictPort'],{stdio:'ignore'});
 let browser;
@@ -27,9 +27,12 @@ try{
   await openState(base('upgrade',width));
   await page.locator('[data-act="buy-grill"]').click();
   assert.ok(await page.locator('.v014b-grill-unlock').innerText().then(x=>x.includes('已购入')));
+  assert.ok(await page.locator('[data-act="upgrade-kitchen:GRILL"]').isVisible());
+  await page.locator('[data-act="upgrade-kitchen:GRILL"]').click();
+  assert.ok((await page.locator('.kitchen-upgrade-card').innerText()).includes('烤架 · 全店共享 Lv.2'));
   await page.screenshot({path:`${out}/upgrade-${width}.png`});
   const purchased=await page.evaluate(k=>JSON.parse(localStorage.getItem(k)),key);
-  assert.equal(purchased.kitchen.grillOwned,true);
+  assert.equal(purchased.kitchen.grillOwned,true);assert.equal(purchased.kitchen.mastery.GRILL,2);
   purchased.phase='research';
   await openState(purchased);
   await page.locator('[data-act="book"]').click();
@@ -60,10 +63,15 @@ try{
   crafted.phase='prep';crafted.menu=['grill_garlic_mushroom','chicken_stew','mushroom_stir'];
   await openState(crafted);
   assert.ok((await page.locator('.kitchen-config-head').innerText()).includes('烤架'));
-  await page.locator('[data-act="kitchen:2:GRILL"]').click();
+  const grillSlot=width===320?0:width===375?1:2;
+  for(const i of [0,1,2])assert.ok(await page.locator(`[data-act="kitchen:${i}:GRILL"]`).isVisible());
+  if(grillSlot===1)await page.locator('[data-act="kitchen:2:POT"]').click();
+  await page.locator(`[data-act="kitchen:${grillSlot}:GRILL"]`).click();
   assert.equal(await page.locator('[data-act="open"]').isDisabled(),false);
   await page.screenshot({path:`${out}/prep-${width}.png`});
   await page.locator('[data-act="open"]').click();assert.ok(await page.locator('#diner-canvas').isVisible());
+  const slotted=await page.evaluate(k=>JSON.parse(localStorage.getItem(k)).service.kitchenSnapshot,key);
+  assert.equal(slotted[grillSlot].type,'GRILL');assert.equal(slotted[grillSlot].level,2);
   await page.screenshot({path:`${out}/kitchen-${width}.png`});
   const layout=await page.evaluate(()=>({bottom:document.querySelector('.game-shell').getBoundingClientRect().bottom,scroll:document.documentElement.scrollWidth}));
   assert.ok(layout.bottom<=height+1&&layout.scroll<=width+1,JSON.stringify(layout));
@@ -75,8 +83,8 @@ try{
  await offline.addInitScript(([k,v])=>localStorage.setItem(k,JSON.stringify(v)),[key,s]);
  await offline.goto(url+'standalone.html',{waitUntil:'networkidle'});
  assert.ok(await offline.locator('[data-act="method:grill"]').isVisible());await offline.close();
- const combat=base('field',390);combat.kitchen.grillOwned=true;combat.selectedWeaponType='GRILL';
- const {enterField}=await import('../src/engine.js');assert.equal(enterField(combat,'safe'),true);assert.equal(startActionField(combat),true);
+ const combat=base('field',390);combat.kitchen.grillOwned=true;combat.kitchen.mastery={WOK:1,POT:1,GRILL:2};combat.selectedWeaponType='GRILL';
+ const {enterField}=await import('../src/engine.js');assert.equal(enterField(combat,'safe'),true);assert.equal(combat.field.weapon.level,2);assert.equal(startActionField(combat),true);
  combat.field.pos={x:4.5,y:5};combat.field.x=4.5;combat.field.y=5;combat.field.facing={x:1,y:0};combat.field.enemies=[];combat.field.obstacles=[];
  const field=await browser.newPage({viewport:{width:390,height:844},isMobile:true,hasTouch:true,locale:'zh-CN'});
  await field.addInitScript(([k,v])=>localStorage.setItem(k,JSON.stringify(v)),[key,combat]);
@@ -84,5 +92,5 @@ try{
  await field.locator('[data-act="skill"]').click();await field.waitForTimeout(70);await field.screenshot({path:`${out}/fork-flame-early-390.png`});
  await field.waitForTimeout(190);await field.screenshot({path:`${out}/fork-flame-mid-390.png`});
  await field.waitForTimeout(260);await field.screenshot({path:`${out}/fork-flame-late-390.png`});await field.close();
- console.log('v0.14-D Chrome 320/375/390: new recipe threading, book, heat, value, rectangular grill, service, three flame frames and offline passed');
+ console.log('v0.14-E Chrome 320/375/390: grill upgrade, left/right/centre kitchen, recipe threading, service, flame and offline passed');
 }finally{await browser?.close();server.kill('SIGTERM');}

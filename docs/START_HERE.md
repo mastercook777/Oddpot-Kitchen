@@ -1,5 +1,7 @@
 # 《怪味食堂》新对话 / 新开发任务从这里开始
 
+**v0.14.0-alpha.5 · [PR #75](https://github.com/mastercook777/Oddpot-Kitchen/pull/75)（2026-10-18）**：根据最新反馈，探索旧抬手/通用工具已从新武器动画移除；烤架共享 Lv2 升级、三厨位均可装配且外框同宽；烤肉与爱肉顾客的真实点单权重已按预算修正。先行设计稿已提交至 GitHub：[v0.14-E 规格与验收](V0.14E_EQUIPMENT_AND_ORDERING_SPEC.md)。499 项 Node、构建和首次 15/15 Actions 成功，三尺寸截图人工复核；最终提交/Pages 与真机体验另核。
+
 **v0.14.0-alpha.4 · 烤架内容闭环（2026-10-18，[PR #74](https://github.com/mastercook777/Oddpot-Kitchen/pull/74)）**：按[先行规格](V0.14D_GRILL_CONTENT_INTEGRATION_SPEC.md)将中央炉改绘为矩形炭火烤架，精选烤菜从 3 扩到 10、补土豆双面火候；购入后图鉴显示未发现的烤菜线索，研发后进入真实版本/菜单/工单/收入；六客群的真实烤串订单有菜品短对白。烤叉火焰由固定同心扇形改为动态火舌/热芯/余烬，伤害规则未变。另修研发灵感给未拥有烤架者误推荐的断点。[逐环节审查](V0.14D_INTEGRATION_AUDIT.md)列已接通及仍待解决项。494 项 Node 与 15/15 PR Actions 通过，三尺寸截图人工复核；Pages 发布和真机主观体验另验收。强引导暂缓。
 
 **v0.14.0-alpha.3 · 烤架与探索厨具返工（2026-10-17，[PR #73](https://github.com/mastercook777/Oddpot-Kitchen/pull/73)）**：玩家拒收 alpha.2 的厨具绘制、烤叉特效和锅式烤架研发。按[返工规格](V0.14C_GRILL_AND_COOKWARE_REWORK_SPEC.md)重绘炒锅、汤锅、烤叉像素持握；烤叉普攻为前刺，技能恢复面向前方的 70° 火焰扇区 AOE；新烤串逐个穿串、三火位摆放、翻面刷料，旧在途 `v063-live` 烤架继续旧逻辑直至完成。首轮强引导继续暂缓。490 项 Node、本地 Vite 构建与 16/16 PR Actions 通过；Chrome 320/375/390 三尺寸实走穿串、烤制、出炉、中央炉开业及离线入口，截图人工检查按钮与扇区。CI 中文字形为方框，iPhone/Android 真机中文字形和手感待玩家验收；Pages 以部署实际结果为准。

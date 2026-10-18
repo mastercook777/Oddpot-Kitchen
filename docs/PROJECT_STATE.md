@@ -1,5 +1,7 @@
 # 《怪味食堂》当前已实现状态 / 技术交接
 
+**v0.14.0-alpha.5 · [PR #75](https://github.com/mastercook777/Oddpot-Kitchen/pull/75)（2026-10-18）**：详见已先提交的 [v0.14-E 规格与验收](V0.14E_EQUIPMENT_AND_ORDERING_SPEC.md)。当前代码移除探索角色旧抬手小工具叠画，三武器 Lv2 视觉和数值可感知；GRILL 90 金币类型升级每单 -2 秒、烤叉更快更远，三真实炉位任意装配烤架且占位同宽；十道烤菜的炭香标签与现有爱肉/鉴味客群在原点单评分中接通，仍受价格/预算约束。499 项 Node、本地构建、首次 15/15 PR Actions 和截图复核通过；最终提交/合并/Pages 另核，真机主观验收待玩家。新手强引导仍暂缓。
+
 **v0.14.0-alpha.4（2026-10-18，[PR #74](https://github.com/mastercook777/Oddpot-Kitchen/pull/74)）**：在[先行规格](V0.14D_GRILL_CONTENT_INTEGRATION_SPEC.md)下，中央 GRILL 已改矩形炭火/烤串绘制；10 道精选烤菜、购入后的未知菜线索与研发后的图鉴/菜单标签、六客群真实烤单对白、探索动态火舌进入代码。80 种子已排定顾客＋混合菜单的真实选菜抽查有四类客群主动点烤菜，新菜经中央工单与唯一销售账本测试；[完整审查和未接环节](V0.14D_INTEGRATION_AUDIT.md)。旧存档不补菜谱，强制引导暂缓。494 项 Node、15/15 PR Actions 与三尺寸截图人工复核通过；Pages/真机结果另验收。
 
 **v0.14.0-alpha.2 · [PR #72](https://github.com/mastercook777/Oddpot-Kitchen/pull/72)（2026-10-17）**：按玩家最新要求暂停强引导，实装[烤架与烤叉切片](V0.14B_GRILL_AND_FORK_SLICE.md)。烤架只可在已购中央炉装配，三道菜沿真实研发/库存/菜单/营业订单/日报，烤叉沿现有探索快照；同种子80组营业对照不保证利润提高。485 项 Node、15 组 PR Actions 已通过，含 320/375/390 手机 Chrome 与离线单文件；Pages 和真人手机体验分别按实际部署/试玩验收。

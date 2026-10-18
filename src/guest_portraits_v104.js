@@ -1,7 +1,7 @@
 // v0.10.4 - Guest encyclopedia portraits use the EXACT actor renderer
 // already used by live restaurant guests; never duplicate pixel art.
 import {pixelActor} from './pixels_v041.js?v=0.9.0';
-import {CUSTOMERS} from './data.js?v=0.14.0-alpha.4';
+import {CUSTOMERS} from './data.js?v=0.14.0-alpha.5';
 
 // One source for old customers and the star-unlocked stargazer/gardener.
 const GUEST_KINDS=new Set(Object.keys(CUSTOMERS));

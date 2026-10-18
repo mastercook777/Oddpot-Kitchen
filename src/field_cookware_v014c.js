@@ -1,9 +1,9 @@
 // Pixel cookware is drawn in the same local pixel scale as pixelActor's chef.
 // These are held objects, while their attack effects remain smooth E.2 Canvas effects.
-import {FORK_FLAME} from './field_v04.js?v=0.14.0-alpha.4';
+import {FORK_FLAME} from './field_v04.js?v=0.14.0-alpha.5';
 const px=(c,x,y,w,h,color)=>{c.fillStyle=color;c.fillRect(Math.round(x),Math.round(y),w,h)};
 const ink='#27343b',iron='#657e87',shine='#d8e5d8',copper='#d6a76c',wood='#806044';
-export function drawPixelWok(c,pose,{layer='front',parry=false}={}){
+export function drawPixelWok(c,pose,{layer='front',parry=false,level=1}={}){
  const side=layer==='back'?-pose.shieldSign:pose.shieldSign,bob=pose.weapon.y-5;
  c.save();c.scale(side,1);
  if(layer==='back'){
@@ -16,10 +16,11 @@ export function drawPixelWok(c,pose,{layer='front',parry=false}={}){
   px(c,x+4,y+4,7,7,parry?'#fff2c1':'#516d75');
   px(c,x+5,y+5,4,3,parry?'#ffe397':'#c3d5d1');
   px(c,x+6,y-3,3,3,copper);
+  if(level>1){px(c,x+1,y+1,13,2,'#efca7b');px(c,x+2,y+10,11,2,'#f9dc98');px(c,x+6,y+3,3,2,'#fff2c5');}
  }
  c.restore();
 }
-export function drawPixelPot(c,pose,{layer='front'}={}){
+export function drawPixelPot(c,pose,{layer='front',level=1}={}){
  const side=pose.side,y=pose.pot.y;
  c.save();c.scale(side,1);
  if(layer==='back'){
@@ -31,6 +32,7 @@ export function drawPixelPot(c,pose,{layer='front'}={}){
   px(c,14,y-10,21,4,ink);px(c,16,y-9,17,2,copper);
   px(c,22,y-13,6,3,ink);px(c,23,y-12,4,2,shine);
   px(c,19,y+6,10,2,'#334e56');
+  if(level>1){px(c,16,y-4,17,2,'#f4cb80');px(c,19,y+2,11,2,'#efbb72');px(c,24,y-12,3,2,'#fff1ba');}
  }
  c.restore();
 }
@@ -52,6 +54,7 @@ export function drawPixelFork(c,f,{layer='front'}={}){
  px(c,8,-4,4,9,ink);px(c,9,-3,2,7,shine);
  px(c,12,-3,18,7,ink);px(c,13,-2,17,5,iron);px(c,14,-1,13,2,shine);
  px(c,29,-7,5,15,ink);px(c,30,-6,3,13,iron);
+ if(f.weapon?.level>1){px(c,14,-3,3,7,'#ffd18a');px(c,22,-2,5,5,'#ffd18a');px(c,30,-6,3,13,'#e6ba6e');}
  for(const y of [-7,-1,5]){px(c,33,y,9,3,ink);px(c,34,y,7,2,shine);px(c,41,y,3,1,'#fff2d4');}
  c.restore();
 }
@@ -70,6 +73,7 @@ export function drawForkThrustFx(c,f){
  c.beginPath();c.moveTo(length-.32,0);c.lineTo(length+.12,0);c.strokeStyle='#fff7dd';c.lineWidth=.055;c.stroke();
  for(let i=0;i<3;i++){const x=length-.16+i*.12;
   c.beginPath();c.moveTo(x,-.10-i*.035);c.lineTo(x+.11,.02);c.strokeStyle='#f8c78e';c.lineWidth=.022;c.stroke();}
+ if(f.weapon?.level>1){c.beginPath();c.moveTo(.35,0);c.lineTo(length+.23,0);c.strokeStyle='#ffd887';c.lineWidth=.034;c.stroke();}
  c.restore();
 }
 export function drawForkFlameFx(c,f){
@@ -77,7 +81,7 @@ export function drawForkFlameFx(c,f){
  const o=f.skillOrigin,p=1-Math.min(1,f.skillFx/.85),fade=Math.min(1,p*13)*Math.min(1,(1-p)*3.6);
  const angle=Math.atan2(o.dy??-1,o.dx??0),half=FORK_FLAME.halfAngle;
  c.save();c.translate(o.x,o.y);c.rotate(angle);
- const reach=FORK_FLAME.range*Math.min(1,.18+p*5.1),wave=p*16;
+ const reach=(FORK_FLAME.range+(o.level>1?.3:0))*Math.min(1,.18+p*5.1),wave=p*16;
  // Moving transparent ribbons leave gaps between tongues. Their tips breathe
  // independently; no opaque sector texture hides enemies or the terrain.
  for(let i=-4;i<=4;i++){

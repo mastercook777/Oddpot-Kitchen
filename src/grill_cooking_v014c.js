@@ -1,5 +1,5 @@
 import {ING,RECIPES,RECIPE_INDEX,recipeSignature} from './data.js';
-import {grillHeat,grillTechnique} from './grill_cooking_v014b.js?v=0.14.0-alpha.4';
+import {grillHeat,grillTechnique} from './grill_cooking_v014b.js?v=0.14.0-alpha.5';
 
 export const GRILL_LANES=Object.freeze({edge:{name:'边火',rate:.86},middle:{name:'均火',rate:1.05},flame:{name:'猛火',rate:1.22}});
 export function grillPreview(c){

@@ -5,7 +5,7 @@ import {drawPixelMiniBoss,drawMiniBossWarning,drawBossZones} from './field_bosse
 import {isHybridFieldArt,drawHybridFieldGround,drawHybridFieldObstacle,drawHybridFieldHazard,drawHybridFieldAtmosphere} from './field_hybrid_biomes_v011f.js?v=0.12.0-alpha.1';
 import {drawFieldImpact,drawFieldProjectile,drawFieldSwipe,drawFieldSkillWave,drawFieldBurst,drawFieldCollection,drawFieldDeath,drawFieldActorIndicators,drawFieldNodeMarkers} from './field_effects_v011e2.js?v=0.12.0-alpha.1';
 import {fieldWokPose,fieldPotPose} from './field_pose_v083.js?v=0.8.5';
-import {drawPixelWok,drawPixelPot,drawPixelFork,drawForkThrustFx,drawForkFlameFx} from './field_cookware_v014c.js?v=0.14.0-alpha.4';
+import {drawPixelWok,drawPixelPot,drawPixelFork,drawForkThrustFx,drawForkFlameFx} from './field_cookware_v014c.js?v=0.14.0-alpha.5';
 import {hazardPhase,fieldTilePath} from './field_rules_v011a.js';
 import {fieldCamera} from './field_camera_v011b1.js';
 import {drawExpandedLandscape,drawExpandedObstacle} from './field_world_render_v011b1.js';
@@ -15,10 +15,10 @@ import {meleeProfile,meleeWindupProgress} from './field_combat_feedback_v084.js?
 import {pixelActor,pixelEnemy,pixelImpact} from './pixels_v041.js?v=0.13.0-alpha.4';
 import {homeKitchenActors,homeKitchenChatter} from './home_kitchen_v013j.js';
 // Lightweight procedural game graphics: original Canvas shapes, no art pack.
-import {ING,RECIPES,CUSTOMERS} from './data.js?v=0.14.0-alpha.4';
+import {ING,RECIPES,CUSTOMERS} from './data.js?v=0.14.0-alpha.5';
 import {heroZone,waiterDeliveryPose,HERO_PASS} from './walkable_restaurant_v07.js?v=0.9.1';
 import {DINER_FLOOR,dinerFloor,dinerGuestRoute,dinerWeather,dinerQueueGuests} from './restaurant_scene_v075.js?v=0.9.2';
-import {selectDiningSpeech,selectStaffSpeech,diningBubbleLines,speechOpacity} from './diner_ambience_v077.js?v=0.14.0-alpha.4';
+import {selectDiningSpeech,selectStaffSpeech,diningBubbleLines,speechOpacity} from './diner_ambience_v077.js?v=0.14.0-alpha.5';
 import {selectOutdoorQueueSpeech} from './outdoor_queue_speech_v012f.js';
 const color={ink:'#24382a',leaf:'#386b43',soil:'#806044',stone:'#a6b392',cream:'#f4dfb0',gold:'#dfb873'};
 function rect(c,x,y,w,h,fill){c.fillStyle=fill;c.fillRect(x,y,w,h)}
@@ -318,13 +318,15 @@ export function drawField(canvas,s,clock){const size=setCanvas(canvas);if(!size|
  const isWok=f.weapon?.type==='WOK',isGrill=f.weapon?.type==='GRILL';
  const posture=isWok?fieldWokPose(f.facing,f.moving,clock,(f.guardTime||0)>0):null;
  const potPose=!isWok&&!isGrill?fieldPotPose(f.facing,f.moving,clock,!!(f.attackFx?.pot&&f.attackFx?.ttl>0)):null;
- if(isWok)drawPixelWok(c,posture,{layer:'back'});
- else if(potPose)drawPixelPot(c,potPose,{layer:'back'});
+ if(isWok)drawPixelWok(c,posture,{layer:'back',level:f.weapon?.level});
+ else if(potPose)drawPixelPot(c,potPose,{layer:'back',level:f.weapon?.level});
  else drawPixelFork(c,f,{layer:'back'});
- chef(c,0,Math.sin(clock*9)*(f.moving?1.5:.35),clock,{scale:1.55,walk:f.moving,attack:!!f.attackFx,face:chefFace,hurt:f.hurtFx});
+ // Exploration draws the equipped cookware separately; the generic actor attack
+ // used to raise its hand and paint an obsolete utensil over all three weapons.
+ chef(c,0,Math.sin(clock*9)*(f.moving?1.5:.35),clock,{scale:1.55,walk:f.moving,face:chefFace,hurt:f.hurtFx});
  if(isGrill)drawPixelFork(c,f,{layer:'front'});
- if(isWok)drawPixelWok(c,posture,{layer:'front',parry:(f.guardTime||0)>0});
- else if(potPose)drawPixelPot(c,potPose,{layer:'front'});
+ if(isWok)drawPixelWok(c,posture,{layer:'front',parry:(f.guardTime||0)>0,level:f.weapon?.level});
+ else if(potPose)drawPixelPot(c,potPose,{layer:'front',level:f.weapon?.level});
  if((f.hitFlash||0)>0){
   const ratio=Math.min(1,f.hitFlash/.52);
   c.save();c.globalAlpha=ratio;
@@ -749,11 +751,12 @@ function drawRestaurantV075(c,s,t,w,h){
  for(const [i,key] of (v?.kitchenSnapshot?.length>=3||!v&&s.kitchen?.thirdUnlocked?['WOK','POT','CENTER']:['WOK','POT']).entries()){
   const body=i===2?g.reservedStove:i?g.stoveRight:g.stoveLeft,pt=i===2?g.centre:i?g.right:g.left,slot=v?.kitchenSnapshot?.[i]||s.kitchen?.slots?.[i];
   const type=slot?.type||(i===1?'POT':'WOK'),busy=v?.stations?.[key];
-  const X=x(body.x),Y=y(body.y),rw=Math.min(i===2?48:62,w*(i===2?.139:.177));
+  const X=x(body.x),Y=y(body.y),rw=Math.min(58,w*.168);
   if(type==='GRILL'){
    // A top-down charcoal rack, not a round pot: raised legs, ember bed,
    // spaced grates, and two skewers laid crosswise over the coals.
    const gw=rw*.94,gh=24,gy=Y-17;
+   rr(X-rw/2,Y-24,rw,51,7,'#513c30','#b99765');
    rect(c,X-gw*.42,gy+gh,5,8,'#392f2c');rect(c,X+gw*.42-5,gy+gh,5,8,'#392f2c');
    rr(X-gw/2-2,gy-3,gw+4,gh+7,3,'#343c3d','#bd9b70');
    rr(X-gw*.43,gy,gw*.86,gh,2,'#622e29','#d69a69');
