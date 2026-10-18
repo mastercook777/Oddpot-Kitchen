@@ -1,6 +1,6 @@
 # 🔒 最新项目工作约定（优先级高于本文件下方历史版本记录）
 
-**v0.14.0-alpha.4 烤架内容闭环（2026-10-18，开发分支待 PR 验证）**：新内容先行规格 `docs/V0.14D_GRILL_CONTENT_INTEGRATION_SPEC.md` 已提交；中央炉矩形炭架、十道手工烤菜、购入后图鉴线索、真实客群点单/短对白、动态烤叉火焰以及集成断点审查见 `docs/V0.14D_INTEGRATION_AUDIT.md`。本轮强制引导继续暂缓，Chrome/Pages/手机主观验收分开记录；以下旧“当前”仅历史。
+**v0.14.0-alpha.4 烤架内容闭环（2026-10-18，[PR #74](https://github.com/mastercook777/Oddpot-Kitchen/pull/74)）**：新内容先行规格 `docs/V0.14D_GRILL_CONTENT_INTEGRATION_SPEC.md` 已提交；中央炉矩形炭架、十道手工烤菜、购入后图鉴线索、真实客群点单/短对白、动态烤叉火焰以及集成断点审查见 `docs/V0.14D_INTEGRATION_AUDIT.md`。494 项 Node 与 15/15 PR Actions 通过，三尺寸截图人工复核；Pages/手机主观验收另核。本轮强制引导继续暂缓；以下旧“当前”仅历史。
 
 **v0.14.0-alpha.1 全游戏 UI 第一轮（2026-10-16，[PR #71](https://github.com/mastercook777/Oddpot-Kitchen/pull/71)）**：首页至成长和常用抽屉已统一信息层级与游戏内视觉，481项 Node、14组 Actions、三手机宽度及离线通过。真实经济、订单与旧档保留；偏强制操作引导及经济多日复盘为后续切片。CI 截图缺中文字库，iPhone/Android 主观视觉待验收。以 [v0.14 规格](docs/V0.14_FULL_GAME_UI_SYSTEM_SPEC.md)、[状态](docs/PROJECT_STATE.md)、[路线图](docs/ROADMAP.md)接续；下方旧“当前”均为历史。
 
