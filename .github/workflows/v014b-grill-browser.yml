@@ -1,4 +1,4 @@
-name: v0.14-C grill mobile journey
+name: v0.14-D grill mobile journey
 on:
   pull_request:
     paths: ['src/**','scripts/**','index.html','standalone.html','.github/workflows/v014b-grill-browser.yml']
@@ -25,5 +25,5 @@ jobs:
       - uses: actions/upload-artifact@v4
         if: always()
         with:
-          name: oddpot-v014c-grill
-          path: docs/screenshots/v014c-grill/*.png
+          name: oddpot-v014d-grill
+          path: docs/screenshots/v014d-grill/*.png
