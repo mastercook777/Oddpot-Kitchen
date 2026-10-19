@@ -9262,6 +9262,9 @@ const journey=['forecast','field','research','menu','prep','service','report','u
 const meal=r=>`${r.emoji} ${r.name}`;
 const onlyName=id=>ING[id]?.name||id;
 const itemCount=()=>Object.keys(game.recipes).length;
+const ingredientChoices=()=>Object.entries(ING).filter(([id])=>activeWorld(game)==='cloud'?
+ ['cloud_rice','sky_moss','storm_egg','sour_bell','gale_core','chicken','onion'].includes(id)||(game.inventory[id]||0)>0:
+ !['cloud_rice','sky_moss','storm_egg','sour_bell','gale_core'].includes(id)||(game.inventory[id]||0)>0);
 
 function hud(){
  const home=game.phase==='forecast';
@@ -9569,7 +9572,7 @@ function research(){const c=game.cook;
     <div class="v063-setup-title"><strong>🔥 做一道自己的菜</strong><small>挑锅具和 2–3 种食材，亲手决定火候</small></div>
     <div class="v063-vessels"><button class="v063-vessel ${selectedMethod==='stir'?'chosen':''}" data-act="method:stir">🍳 炒锅<br><small>翻炒 · 颠勺</small></button><button class="v063-vessel ${selectedMethod==='stew'?'chosen':''}" data-act="method:stew">🍲 深锅<br><small>轻搅 · 收汁</small></button>${ensureKitchen(game).steamerOwned?`<button class="v063-vessel ${selectedMethod==='steam'?'chosen':''}" data-act="method:steam">♨️ 云汽蒸笼<br><small>封笼 · 排汽</small></button>`:''}${ensureKitchen(game).grillOwned?`<button class="v063-vessel ${selectedMethod==='grill'?'chosen':''}" data-act="method:grill">🍢 烤架<br><small>翻面 · 刷香料</small></button>`:''}</div>
     <div class="v063-label">选 2–3 种食材 <small>${selectedIngredients.length}/3</small></div>
-    <div class="v063-food-picker">${Object.entries(ING).map(([id,ing])=>`<button data-ingredient="${id}" class="${selectedIngredients.includes(id)?'picked':''}" ${!game.inventory[id]&&!selectedIngredients.includes(id)?'disabled':''}><span>${ingredientIconHtml(id,24)}</span><b>${ing.name}</b><small>×${game.inventory[id]||0}</small></button>`).join('')}</div>
+    <div class="v063-food-picker">${ingredientChoices().map(([id,ing])=>`<button data-ingredient="${id}" class="${selectedIngredients.includes(id)?'picked':''}" ${!game.inventory[id]&&!selectedIngredients.includes(id)?'disabled':''}><span>${ingredientIconHtml(id,24)}</span><b>${ing.name}</b><small>×${game.inventory[id]||0}</small></button>`).join('')}</div>
     <div class="v063-recipe-clue">${r?`这道可能是 <strong>${esc(r.name)}</strong> · ${r.method==='steam'?'蒸笼':r.station==='GRILL'?'烤架':r.station==='WOK'?'炒锅':'深锅'}${game.recipes[featured]?`<small>已有版本 ${recipeCraftSnapshot(game,featured).price} 金币 · ${r.time+(recipeCraftSnapshot(game,featured).timeDelta||0)} 秒；起锅后看新工艺差异</small>`:'<small>第一次做成后才能上架</small>'}`:selectedMethod==='grill'?'烤架有十道精选搭配；选对食材，翻面让正反两面熟透。':'换个食材组合，看看会做出什么菜。'}</div>
     ${last?`<div class="v063-last-result ${last.sellable?'ok':'fail'}"><b>${last.sellable?'✅ 研发成功':'❌ 研发失败'}：${esc(last.recipeName||'料理')}</b><small>${last.sellable?`${esc(last.styleLabel)} · ${esc(last.affinityLabel)} · 品质 ${last.quality}`:esc(last.reason)}${last.sellable?' · 已记入工艺图鉴':' · 原料已消耗，未收录'}</small></div>`:''}
   </div>`,`<div class="action-row">${b('start-research','🔥 亲手下料，开始研发','primary wide',selectedIngredients.length<2||!canUse(game,selectedIngredients))}${b('book','📖 工艺图鉴','secondary')}${b('to-menu','去上架 →','secondary')}</div>`];
