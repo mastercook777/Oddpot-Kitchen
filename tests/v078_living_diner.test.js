@@ -128,7 +128,7 @@ test('version, offline bundle and complete JavaScript stay parseable',()=>{
  const html=source('../index.html'),app=source('../src/app.js'),build=source('../scripts/build-standalone.py');
  assert.equal(JSON.parse(source('../package.json')).version,'0.15.0-alpha.1');
  assert.match(html,/Oddpot Kitchen v0\.15\.0-alpha\.1/);
- assert.match(html,/app\.js\?v=0\.15\.0-alpha\.1/);
+ assert.match(html,/app\.js\?v=0\.15\.0-alpha\.2/);
  assert.match(app,/ODDPOT · v0\.15\.0-alpha\.1/);
  assert.match(build,/diner_polish_v078\.css/);
  assert.match(build,/v0\.15\.0-alpha\.1 离线版/);
