@@ -19,7 +19,7 @@ let game=load()||newGame();
 let flashUntil=0;
 let message='今天会有怎样的客人上门呢？';
 let overlay='',bookTab='recipes',tileSelected=null,selectedOrderId=null;let servicePanel='';
-let selectedIngredients=['chicken','chili'],selectedMethod='stir';
+let selectedIngredients=activeWorld(game)==='cloud'?['cloud_rice','chicken']:['chicken','chili'],selectedMethod='stir';
 let walking=null,drag=null,selectedRegion=activeWorld(game)==='cloud'?'cloud':'forest';let livePanPointer=null;
 const stick={x:0,y:0,pointer:null,originX:0,originY:0};const keys=new Set();let lastFrame=0,lastSave=0;let gameClock=0;let serviceTickAt=0;const touched=new Map();
 const app=document.getElementById('app');
