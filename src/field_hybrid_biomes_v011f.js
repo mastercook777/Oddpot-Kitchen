@@ -2,7 +2,7 @@
 // ground plans/textures are cached; ecology motion reads the simulation clock.
 import {fieldArtGroundPlan} from './field_pixel_herb_v011c.js?v=0.13.0-alpha.9';
 import {buildHybridFieldDetailPlan,drawHybridFieldTrail,drawHybridMeadowGround,drawHybridMeadowObstacle} from './field_hybrid_meadow_v011e.js?v=0.12.0-alpha.1';
-export const HYBRID_FIELD_STYLES=Object.freeze(['meadow','glow','roots','garden','spring','oasis','steam','ember']);
+export const HYBRID_FIELD_STYLES=Object.freeze(['meadow','glow','roots','garden','spring','oasis','steam','ember','cloud','cloud_roost']);
 export const HYBRID_FIELD_PALETTES=Object.freeze({
  glow:{base:'#5d817d',light:'#85a39a',shade:'#365c62',soil:'#829987',rim:'#617d70',water:'#557e88',spark:'#b4d6bc',dark:'#355c5d',object:'#80a695',high:'#c6d5b3'},
  roots:{base:'#767568',light:'#95927b',shade:'#4d5e55',soil:'#a48b73',rim:'#746e5c',water:'#606f6c',spark:'#b7baa1',dark:'#484c43',object:'#786b55',high:'#b1a17d'},
@@ -10,7 +10,9 @@ export const HYBRID_FIELD_PALETTES=Object.freeze({
  spring:{base:'#a9aa8b',light:'#c7c9a8',shade:'#899c8a',soil:'#d1c29b',rim:'#a9ae89',water:'#83aaa7',spark:'#dfecce',dark:'#748b7c',object:'#9cac94',high:'#dad8b7'},
  oasis:{base:'#99ac9a',light:'#bdc8ad',shade:'#74948a',soil:'#c6c8a5',rim:'#91a894',water:'#73a7a5',spark:'#c9e8d4',dark:'#61827c',object:'#96bfaf',high:'#d3e4ce'},
  steam:{base:'#84948b',light:'#b0b9a3',shade:'#647f79',soil:'#b5b39a',rim:'#829b8e',water:'#88b4ae',spark:'#dbdfc8',dark:'#526d69',object:'#84988d',high:'#c4c8b1'},
- ember:{base:'#958573',light:'#b4a286',shade:'#716f65',soil:'#bdac8c',rim:'#8d8c75',water:'#bd916b',spark:'#e6c39a',dark:'#635c57',object:'#867966',high:'#b7a689'}
+ ember:{base:'#958573',light:'#b4a286',shade:'#716f65',soil:'#bdac8c',rim:'#8d8c75',water:'#bd916b',spark:'#e6c39a',dark:'#635c57',object:'#867966',high:'#b7a689'},
+ cloud:{base:'#a1bfcb',light:'#d7e9df',shade:'#6d9cad',soil:'#ddd8b1',rim:'#91b2bd',water:'#d0e9eb',spark:'#fff4d4',dark:'#658897',object:'#8ea8a5',high:'#f5f3df'},
+ cloud_roost:{base:'#829cba',light:'#c1d3db',shade:'#506e93',soil:'#c4b5a2',rim:'#738db0',water:'#cbd8e8',spark:'#ffebba',dark:'#435d81',object:'#9ca8b8',high:'#fff2d6'}
 });
 const fieldHybridGroundCache=new WeakMap(),fieldHybridPlans=new WeakMap();
 const hfHash=n=>(Math.imul(1664525,n>>>0)+1013904223)>>>0;
@@ -93,6 +95,15 @@ function hfGroundInto(c,f,plan){
   for(const n of [...f.nodes,...f.obstacles.map(o=>({x:o.x+.5,y:o.y+.5})),...f.hazards.map(o=>({x:o.x+.5,y:o.y+.5}))]){
    const dry=c.createRadialGradient(n.x,n.y,.27,n.x,n.y,.95);dry.addColorStop(0,p.base+'ee');dry.addColorStop(1,p.base+'00');c.fillStyle=dry;c.fillRect(n.x-.95,n.y-.95,1.9,1.9);
   }
+ }else if(plan.style==='cloud'||plan.style==='cloud_roost'){
+  // Sky breaks and layered floating shelves are painted only; collision and
+  // actual gather targets remain sourced from the same authored biome map.
+  for(const [x,y,w] of [[2.2,3.3,1.5],[8.4,6.1,1.7],[3.4,12.4,2.0]]){
+   c.save();c.globalAlpha=.20;c.fillStyle=p.high;
+   c.beginPath();c.ellipse(x,y,w,.48,-.18,0,Math.PI*2);c.fill();
+   c.beginPath();c.ellipse(x+.45,y-.24,w*.72,.42,-.18,0,Math.PI*2);c.fill();c.restore();
+  }
+  for(const hz of f.hazards){c.save();c.globalAlpha=.45;hfEllipse(c,hz.x+.5,hz.y+.5,.55,.18,p.spark);c.restore();}
  }else if(plan.style==='garden'){
   for(const [i,g] of plan.details.groups.filter(g=>g.category==='free').slice(0,3).entries()){
    c.save();c.translate(g.x,g.y);c.rotate(i%2?.07:-.04);c.globalAlpha=.20;

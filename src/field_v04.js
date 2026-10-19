@@ -3,10 +3,10 @@ import {createEcologyEnemies,ecologyEngagedEnemies,stepEcologyEnemy} from './fie
 import {stepMiniBoss,stepBossZones} from './field_bosses_v011g.js';
 // v0.4 real-time forest encounter. The underlying kitchen inventory remains
 // governed by engine.settleField; this file only mutates the expedition bag.
-import {ING} from './data.js?v=0.14.0-alpha.5';
+import {ING} from './data.js?v=0.15.0-alpha.1';
 import {fieldHarvestTargetSuffix} from './field_target_v012f.js?v=0.13.0-alpha.9';
 import {meleeProfile,meleeAttackWouldHit} from './field_combat_feedback_v084.js?v=0.8.4';
-import {clamp, rand, settleField,addFieldBag,resolveSpecialFieldEvent} from './engine.js?v=0.14.0-alpha.5';
+import {clamp, rand, settleField,addFieldBag,resolveSpecialFieldEvent} from './engine.js?v=0.15.0-alpha.1';
 import {hazardPhase} from './field_rules_v011a.js';
 import {fieldEnemySpawnCandidates} from './field_world_v011b1.js';
 const dist=(a,b)=>Math.hypot(a.x-b.x,a.y-b.y);
@@ -59,8 +59,8 @@ export function startActionField(s){
    cooldown:1.55+((random(i+81)>>>8)%10)*.12,phase:i});
  }
  if(f.segmentIndex===3&&f.dangerCommitment&&!f.legacyField){
-  const hot=f.region==='spring',p=f.bossSpawn||{x:4.5,y:1.8};
-  f.enemies.push({id:hot?'ember_king':'spore_king',kind:hot?'boss_ember':'boss_spore',
+  const hot=f.region==='spring',cloud=f.region==='cloud',p=f.bossSpawn||{x:4.5,y:1.8};
+  f.enemies.push({id:cloud?'gust_king':hot?'ember_king':'spore_king',kind:cloud?'boss_gust':hot?'boss_ember':'boss_spore',
    isBoss:true,x:p.x,y:p.y,hp:10,maxHp:10,cooldown:2.5,
    warning:0,phase:0,slowTime:0,lootDropped:false});
  }
@@ -82,13 +82,13 @@ function damageEnemy(s,e,amount=1,kind='wok',origin=s.field.pos){
  if(e.isBoss){
   e.rush=null;e.bossAttack=null;e.warning=0;
   f.bossZones=(f.bossZones||[]).filter(z=>z.ownerId!==e.id);
-  const ingredient=e.kind==='boss_ember'?'ember_pepper':'mushroom_heart';
+  const ingredient=e.kind==='boss_gust'?'gale_core':e.kind==='boss_ember'?'ember_pepper':'mushroom_heart';
   const first=!s.bossCleared?.[e.id];f.bossDefeated=e.id;
   f.nodes.push({key:'boss-reward-'+f.segmentIndex,id:ingredient,n:first?2:1,
    type:'gather',x:e.x,y:e.y,claimed:false});
   pushMsg(f,'Mini Boss 被击败！珍贵食材已掉落，靠近拾取再返回饭店。');
  }else{
-  const ingredient=e.kind==='pepper'?'chili':e.kind==='sporeling'?'mushroom':e.kind==='boar'?'beef':e.kind==='steam_crab'?'potato':'chicken';
+  const ingredient=e.kind==='gust_moth'?'sky_moss':e.kind==='pepper'?'chili':e.kind==='sporeling'?'mushroom':e.kind==='boar'?'beef':e.kind==='steam_crab'?'potato':'chicken';
   f.nodes.push({key:e.id+'-drop-'+f.segmentIndex,id:ingredient,n:1,
    type:'gather',x:e.x,y:e.y,claimed:false});
   pushMsg(f,'打败食材怪！附近可以采集新食材。');

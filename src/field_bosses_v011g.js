@@ -2,7 +2,8 @@
 // by field_v04. Callbacks use its real collision and damage protections.
 export const MINI_BOSS_PATTERNS=Object.freeze({
  boss_spore:[{kind:'fan',windup:.85},{kind:'burst',windup:1.0},{kind:'ring',windup:1.05}],
- boss_ember:[{kind:'fan',windup:.85},{kind:'charge',windup:.95},{kind:'burst',windup:1.0}]
+ boss_ember:[{kind:'fan',windup:.85},{kind:'charge',windup:.95},{kind:'burst',windup:1.0}],
+ boss_gust:[{kind:'fan',windup:.9},{kind:'charge',windup:1.05},{kind:'ring',windup:1.15}]
 });
 export function bossChargeEnd(f,origin,aim,blocked){
  const dx=aim.x-origin.x,dy=aim.y-origin.y,d=Math.hypot(dx,dy)||1,max=Math.min(2.4,d+.35);let end={...origin};
@@ -24,12 +25,12 @@ export function stepMiniBoss(f,e,dt,{blocked,hurt}){
   // Old saves already inside a legacy warning finish the old fan once.
   e.bossAttack??={kind:'fan',windup:e.windupTotal||.85,origin:{x:e.x,y:e.y},aim:{...(e.aim||f.pos)}};
   e.warning=Math.max(0,e.warning-dt);if(e.warning>0)return;
-  const a=e.bossAttack,angle=Math.atan2(a.aim.y-a.origin.y,a.aim.x-a.origin.x),spore=e.kind==='boss_spore';
-  const fire=(theta,speed)=>f.projectiles.push({x:e.x,y:e.y,vx:Math.cos(theta)*speed,vy:Math.sin(theta)*speed,ownerX:e.x,ownerY:e.y,ownerId:e.id,life:3,source:spore?'spore':'pepper'});
-  if(a.kind==='fan')for(const offset of spore?[-.55,0,.55]:[-.27,0,.27])fire(angle+offset,spore?1.9:3.1);
+  const a=e.bossAttack,angle=Math.atan2(a.aim.y-a.origin.y,a.aim.x-a.origin.x),spore=e.kind==='boss_spore',gust=e.kind==='boss_gust';
+  const fire=(theta,speed)=>f.projectiles.push({x:e.x,y:e.y,vx:Math.cos(theta)*speed,vy:Math.sin(theta)*speed,ownerX:e.x,ownerY:e.y,ownerId:e.id,life:3,source:gust?'gust':spore?'spore':'pepper'});
+  if(a.kind==='fan')for(const offset of spore?[-.55,0,.55]:gust?[-.42,0,.42]:[-.27,0,.27])fire(angle+offset,spore?1.9:gust?2.5:3.1);
   else if(a.kind==='ring')for(let i=1;i<8;i++)fire(angle+i*Math.PI/4,1.7);
   else if(a.kind==='burst'){
-   f.bossZones??=[];f.bossZones.push({ownerId:e.id,x:a.aim.x,y:a.aim.y,radius:.8,life:.25,source:spore?'spore':'pepper'});
+   f.bossZones??=[];f.bossZones.push({ownerId:e.id,x:a.aim.x,y:a.aim.y,radius:.8,life:.25,source:gust?'gust':spore?'spore':'pepper'});
   }else if(a.kind==='charge')e.rush={end:{...a.end},origin:{...a.origin}};
   e.cooldown=2.2;e.bossAttack=e.rush?a:null;return;
  }
@@ -57,7 +58,23 @@ export function drawPixelMiniBoss(c,e,time,sc){
  else if(e.hurtFx>0&&Math.floor(e.hurtFx*20)%2===0)c.globalAlpha=.6;
  c.scale(1.8,1.8);c.translate(-18,-22);
  const r=(x,y,w,h,col)=>bossRect(c,x,y,w,h,col),step=Math.round(Math.sin(time*4)*1),dark='#293b39';
- if(e.kind==='boss_spore'){
+ if(e.kind==='boss_gust'){
+  // A winged storm creature, clearly distinct from the mushroom and basalt bosses.
+  r(7,31+step,8,5,dark);r(23,31-step,8,5,dark);
+  r(8,32+step,7,3,'#91bfd3');r(24,32-step,6,3,'#91bfd3');
+  r(2,14,34,18,dark);r(4,15,13,13,'#6995b9');r(21,15,13,13,'#6995b9');
+  r(5,17,10,4,'#c6dfde');r(23,17,10,4,'#c6dfde');r(8,22,6,3,'#e4d29d');r(24,22,6,3,'#e4d29d');
+  r(13,12,13,21,dark);r(15,14,9,16,'#789fc0');r(17,18,5,8,'#f4de9d');
+  r(10,4,19,14,dark);r(12,5,15,11,'#b9d2da');r(15,8,3,2,dark);r(22,8,3,2,dark);
+  r(18,13,3,4,'#e6c472');r(10,2,7,5,'#d7e8e6');r(23,2,6,5,'#d7e8e6');
+  r(17,-2,4,7,'#f4d788');r(19,-5,2,5,'#fff0ba');
+  r(4,18,2,3,'#eef3e8');r(33,18,2,3,'#eef3e8');
+  r(14,25,2,3,'#c8dddf');r(23,25,2,3,'#c8dddf');
+  r(3,12,5,3,'#accdda');r(30,12,5,3,'#accdda');
+  r(5,27,4,2,'#f4e3b3');r(29,27,4,2,'#f4e3b3');
+  r(11,7,2,2,'#fff3ca');r(26,7,2,2,'#fff3ca');
+  r(9,12,3,2,'#e4eff0');r(27,12,3,2,'#e4eff0');
+ }else if(e.kind==='boss_spore'){
   // Heavy rooting feet, bark-plated shoulders and a luminous inner sporeheart.
   r(5,31+step,10,5,dark);r(22,31-step,10,5,dark);r(4,34+step,7,3,'#8a7962');r(27,34-step,7,3,'#8a7962');
   r(6,19,26,15,dark);r(9,21,19,12,'#756785');r(10,22,6,9,'#9686a3');r(21,22,6,9,'#514e62');
@@ -85,8 +102,8 @@ export function drawPixelMiniBoss(c,e,time,sc){
 }
 export function drawMiniBossWarning(c,e){
  if(e.hp<=0||!e.bossAttack)return;const a=e.bossAttack;
- c.save();c.lineCap='round';const col=e.kind==='boss_spore'?'#cbd3b2':'#eed09d',q=Math.max(0,Math.min(1,1-(e.warning||0)/a.windup));
- c.strokeStyle=col;c.lineWidth=.065;c.fillStyle=e.kind==='boss_spore'?'#bcb3d42d':'#e89b6a2d';
+ c.save();c.lineCap='round';const col=e.kind==='boss_gust'?'#d2eaf4':e.kind==='boss_spore'?'#cbd3b2':'#eed09d',q=Math.max(0,Math.min(1,1-(e.warning||0)/a.windup));
+ c.strokeStyle=col;c.lineWidth=.065;c.fillStyle=e.kind==='boss_gust'?'#a8d5ee2d':e.kind==='boss_spore'?'#bcb3d42d':'#e89b6a2d';
  if(a.kind==='burst'){
   c.beginPath();c.arc(a.aim.x,a.aim.y,.8,0,Math.PI*2);c.fill();c.stroke();
   c.beginPath();c.arc(a.aim.x,a.aim.y,.8,-Math.PI/2,-Math.PI/2+q*Math.PI*2);c.lineWidth=.10;c.stroke();
@@ -95,11 +112,11 @@ export function drawMiniBossWarning(c,e){
   c.beginPath();c.moveTo(a.origin.x,a.origin.y);c.lineTo(a.end.x,a.end.y);c.lineWidth=.09;c.strokeStyle=col;c.stroke();
   c.beginPath();c.arc(a.end.x,a.end.y,.60,0,Math.PI*2);c.lineWidth=.045;c.stroke();
  }else{
-  const angle=Math.atan2(a.aim.y-a.origin.y,a.aim.x-a.origin.x),spreads=a.kind==='ring'?Array.from({length:7},(_,i)=>(i+1)*Math.PI/4):e.kind==='boss_spore'?[-.55,0,.55]:[-.27,0,.27];
+  const angle=Math.atan2(a.aim.y-a.origin.y,a.aim.x-a.origin.x),spreads=a.kind==='ring'?Array.from({length:7},(_,i)=>(i+1)*Math.PI/4):e.kind==='boss_spore'?[-.55,0,.55]:e.kind==='boss_gust'?[-.42,0,.42]:[-.27,0,.27];
   for(const spread of spreads){c.beginPath();c.moveTo(a.origin.x+Math.cos(angle+spread)*.38,a.origin.y+Math.sin(angle+spread)*.38);c.lineTo(a.origin.x+Math.cos(angle+spread)*1.5,a.origin.y+Math.sin(angle+spread)*1.5);c.lineWidth=.04;c.stroke();}
  }
  c.restore();
 }
 export function drawBossZones(c,f){
- for(const z of f.bossZones||[]){if(z.life<=0)continue;c.save();c.globalAlpha=Math.min(.8,z.life/.25);c.beginPath();c.arc(z.x,z.y,z.radius,0,Math.PI*2);c.strokeStyle=z.source==='spore'?'#d4c0dd':'#f1c08e';c.lineWidth=.10;c.stroke();c.restore();}
+ for(const z of f.bossZones||[]){if(z.life<=0)continue;c.save();c.globalAlpha=Math.min(.8,z.life/.25);c.beginPath();c.arc(z.x,z.y,z.radius,0,Math.PI*2);c.strokeStyle=z.source==='gust'?'#d2eaf4':z.source==='spore'?'#d4c0dd':'#f1c08e';c.lineWidth=.10;c.stroke();c.restore();}
 }
