@@ -2,7 +2,6 @@ import {specialEncounterHtml} from './field_encounter_ui_v011c.js';
 import {ingredientIconHtml} from './ingredient_icons_v011g.js';
 import {joystickVector} from './controls_v041.js?v=0.5.5';
 import {ING,RECIPES,FORECAST,ROUTES,CUSTOMERS} from './data.js?v=0.15.0-alpha.1';
-import './portal_v015.css';
 import {LIVE_ACTIONS,LIVE_STYLES,LIVE_AFFINITY,liveRecipeId,reviewLiveCook,liveHeatSummary} from './cooking_v063.js?v=0.15.0-alpha.1';
 import {RECIPE_PROFILES} from './recipe_profiles_v063.js?v=0.15.0-alpha.1';
 import {livePanMotion} from './cook_motion_v063.js?v=0.6.3';

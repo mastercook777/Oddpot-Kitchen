@@ -7,6 +7,8 @@ import {newGame,travelPortal} from '../src/engine.js';
 const url='http://127.0.0.1:5173/',key='oddpot-prototype-v04',out='docs/screenshots/v015-cloud';
 await mkdir(out,{recursive:true});
 const server=spawn(process.execPath,['node_modules/vite/bin/vite.js','--host','127.0.0.1','--port','5173','--strictPort'],{stdio:'ignore'});
+const staticUrl='http://127.0.0.1:5174/';
+const staticServer=spawn('python3',['-m','http.server','5174','--bind','127.0.0.1'],{stdio:'ignore'});
 const wait=ms=>new Promise(resolve=>setTimeout(resolve,ms));
 let browser;
 const hearth=seed=>{const s=newGame(seed);s.onboarding.enabled=false;s.chapterProgress.stars=3;s.phase='forecast';s.coins=450;s.crew.helper.hired=true;s.crew.helper.level=2;s.crew.helper.xp=28;s.kitchen.mastery={WOK:2,POT:1,GRILL:1};s.kitchen.slots[0].level=2;return s};
@@ -16,6 +18,15 @@ try{
  let ready=false;for(let i=0;i<60;i++){try{if((await fetch(url+'index.html')).ok){ready=true;break}}catch{}await wait(250)}
  assert.ok(ready,'Vite starts');
  browser=await chromium.launch({headless:true,executablePath:process.env.CHROME_PATH||'/usr/bin/google-chrome',args:['--no-sandbox','--disable-dev-shm-usage']});
+ let staticReady=false;for(let i=0;i<60;i++){try{if((await fetch(staticUrl+'index.html')).ok){staticReady=true;break}}catch{}await wait(250)}
+ assert.ok(staticReady,'direct static host starts');
+ const staticPage=await browser.newPage({viewport:{width:390,height:844},isMobile:true,hasTouch:true,locale:'zh-CN'});
+ const staticErrors=[];staticPage.on('pageerror',e=>staticErrors.push(e.message));
+ await staticPage.addInitScript(([k,v])=>localStorage.setItem(k,JSON.stringify(v)),[key,hearth(914)]);
+ await staticPage.goto(staticUrl+'index.html',{waitUntil:'networkidle'});
+ assert.ok(await staticPage.locator('[data-act="portal-travel"]').isVisible(),'Pages-style static index renders the portal');
+ assert.deepEqual(staticErrors,[],'Pages-style static index has no startup errors');
+ await staticPage.screenshot({path:`${out}/static-390.png`});await staticPage.close();
  for(const [width,height] of [[320,568],[375,667],[390,844]]){
   const errors=[];let page;
   const open=async(state,path='index.html')=>{
@@ -67,4 +78,4 @@ try{
  assert.ok((await offline.locator('.v12-star-invite').first().innerText()).includes('云港'));
  await offline.screenshot({path:`${out}/offline-390.png`});await offline.close();
  console.log('v0.15 Chrome 320/375/390: third-star invitation, cloud portal, route, steamer research and offline entry passed');
-}finally{await browser?.close();server.kill('SIGTERM')}
+}finally{await browser?.close();server.kill('SIGTERM');staticServer.kill('SIGTERM')}
