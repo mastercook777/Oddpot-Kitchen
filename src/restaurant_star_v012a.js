@@ -9,7 +9,7 @@ export const restaurantDayKey=s=>s.cycle+'-'+s.day;
 export function ensureChapterProgress(s){
  const p=s.chapterProgress??={chapterId:FIRST_STAR_CHAPTER,stars:0,requestDay:null,lastAttemptDay:null,lastScore:null};
  p.chapterId=FIRST_STAR_CHAPTER;
- p.stars=Math.max(0,Math.min(2,Number(p.stars)||0));
+ p.stars=Math.max(0,Math.min(3,Number(p.stars)||0));
  p.requestDay??=null;p.lastAttemptDay??=null;p.lastScore??=null;
  s.chapterProgress=p;
  return p;

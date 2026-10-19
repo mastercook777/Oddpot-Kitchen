@@ -32,7 +32,7 @@ export function selectedCampaign(s){
 export function chooseCampaign(s,id){
  const campaign=CAMPAIGNS[id];
  if(s.phase!=='prep'||s.service||!campaign)return false;
- if(campaign.stars&&(s.chapterProgress?.stars||0)<campaign.stars)return false;
+ if(campaign.stars&&(s.activeWorld==='cloud'?s.cloudProgress?.stars||0:s.chapterProgress?.stars||0)<campaign.stars)return false;
  ensureManagement(s).campaignId=id;return true;
 }
 export function crewWage(role,level=1){

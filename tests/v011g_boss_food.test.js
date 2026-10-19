@@ -60,7 +60,7 @@ test('boss bodies are detailed pixel primitives; warnings stay smooth and read-o
 });
 test('twelve ingredient icons share field raster cache; invalid IDs never emit markup',()=>{
  const old=globalThis.document;let number=0;globalThis.document={createElement(){const id=++number;return {width:0,height:0,getContext:context,toDataURL:()=>`data:image/png;test,${id}`};}};
- try{const urls=[];for(const id of Object.keys(ING)){assert.strictEqual(ingredientSpriteCanvas(id),ingredientSpriteCanvas(id));const url=ingredientIconUrl(id);urls.push(url);assert.equal(url,ingredientSpriteCanvas(id).toDataURL());assert.equal(url,ingredientIconUrl(id));assert.match(ingredientIconHtml(id),new RegExp(`data-ingredient-icon="${id}"`));}assert.equal(new Set(urls).size,12);assert.equal(ingredientIconHtml('invalid'), '');}finally{globalThis.document=old;}
+ try{const urls=[];for(const id of Object.keys(ING)){assert.strictEqual(ingredientSpriteCanvas(id),ingredientSpriteCanvas(id));const url=ingredientIconUrl(id);urls.push(url);assert.equal(url,ingredientSpriteCanvas(id).toDataURL());assert.equal(url,ingredientIconUrl(id));assert.match(ingredientIconHtml(id),new RegExp(`data-ingredient-icon="${id}"`));}assert.equal(new Set(urls).size,17);assert.equal(ingredientIconHtml('invalid'), '');}finally{globalThis.document=old;}
 });
 test('merchant body keeps screen size at both zooms and smooth exclamation has no star glyph',()=>{
  const old=globalThis.document;globalThis.document={createElement:()=>({getContext:context})};

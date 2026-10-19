@@ -69,7 +69,7 @@ function paintCrewRank(c,kind,level,arm){
  }
 }
 function person(c,kind,walk,attack,level=1){
- const p={chef:['#477a91','#e7d4a7','#7e4f37'],helper:['#d27a46','#f2d69a','#654730'],helper2:['#517d85','#ead2ae','#36595b'],waiter:['#708d62','#dfc18e','#466251'],adventurer:['#4d8a66','#c59d55','#5d4630'],family:['#d67872','#f0cf79','#8a5747'],regular:['#729aba','#9bc1ce','#6c5440'],critic:['#795777','#bb9abd','#362e48'],stargazer:['#41576e','#c3b67e','#7f5c91'],gardener:['#688947','#b6d27b','#465d37']}[kind]||['#729aba','#9bc1ce','#6c5440'];
+ const p={chef:['#477a91','#e7d4a7','#7e4f37'],helper:['#d27a46','#f2d69a','#654730'],helper2:['#517d85','#ead2ae','#36595b'],waiter:['#708d62','#dfc18e','#466251'],adventurer:['#4d8a66','#c59d55','#5d4630'],family:['#d67872','#f0cf79','#8a5747'],regular:['#729aba','#9bc1ce','#6c5440'],critic:['#795777','#bb9abd','#362e48'],stargazer:['#41576e','#c3b67e','#7f5c91'],gardener:['#688947','#b6d27b','#465d37'],cloud_docker:['#66728b','#e1c27e','#46546c'],cloud_weaver:['#8c9cbb','#d7dbea','#5c728e']}[kind]||['#729aba','#9bc1ce','#6c5440'];
  const step=walk?Math.round(Math.sin(walk*13)*2):0,arm=attack? -7:Math.round(Math.sin(walk*13+2)*1);
  // Shoes, alternating leg pixels, outlined torso/arms, expressive large face.
  r(c,3,18+step,5,5,P.outline);r(c,10,18-step,5,5,P.outline);
@@ -108,6 +108,14 @@ function person(c,kind,walk,attack,level=1){
   r(c,2,1,4,9,'#566c87');r(c,14,1,4,9,'#566c87');
   r(c,14,11,5,7,'#8b658f');r(c,15,12,2,2,'#f8df90');
   r(c,8,-3,3,3,'#f7d97b');r(c,9,-5,1,7,'#f7d97b');r(c,7,-3,5,1,'#f7d97b');
+ }else if(kind==='cloud_docker'){
+  r(c,2,-2,15,5,P.outline);r(c,4,-3,11,4,'#66728b');
+  r(c,15,7,4,10,'#caa765');r(c,1,12,4,6,'#caa765');
+  r(c,7,12,7,4,'#f0d58d');
+ }else if(kind==='cloud_weaver'){
+  r(c,3,-5,13,8,P.outline);r(c,5,-7,9,8,'#d7dbea');
+  r(c,1,12,17,8,'#a7b9d0');r(c,5,18,9,4,'#e5e7ee');
+  r(c,8,-4,3,3,'#f5dda0');
  }else{
   // Slime villager: translucent turquoise head and bobbing droplets.
   r(c,3,0,13,4,'#52ae9d');r(c,4,3,5,2,'#70debc');r(c,1,1,2,2,'#8be9d3');r(c,15,1,2,2,'#8be9d3');
@@ -131,7 +139,13 @@ export function pixelEnemy(c,kind,x,y,scale=2.4,options={}){
  c.save();c.translate(Math.round(x),Math.round(y));c.scale((options.face||1)<0?-scale:scale,scale);c.translate(-9,-10);
  const bounce=Math.sin((options.walk||0)*12)*1.5;
  if(options.hurt&&Math.floor(options.hurt*22)%2===0)c.globalAlpha=.36;
- if(kind==='sporeling'){
+ if(kind==='gust_moth'){
+  r(c,1,4+bounce,8,10,P.outline);r(c,11,4-bounce,8,10,P.outline);
+  r(c,2,5+bounce,6,8,'#97c5d6');r(c,12,5-bounce,6,8,'#97c5d6');
+  r(c,6,4,8,13,P.outline);r(c,7,5,6,11,'#f2dc9d');
+  r(c,6,0,2,7,'#bed8e1');r(c,12,0,2,7,'#bed8e1');
+  r(c,8,9,2,2,P.outline);r(c,12,9,2,2,P.outline);
+ }else if(kind==='sporeling'){
   // Animated purple fungus with luminous spores, distinct from pepper.
   r(c,6,14+bounce,4,5,P.outline);r(c,11,14-bounce,4,5,P.outline);
   r(c,4,7,12,11,P.outline);r(c,5,7,10,10,'#a88bc4');

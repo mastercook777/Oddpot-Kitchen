@@ -1,0 +1,15 @@
+.world-cloud .hud,.world-cloud .v076-home-hud{background:linear-gradient(180deg,#416b83,#284964);border-bottom-color:#c5dce6}
+.world-cloud .day-strip,.world-cloud .v076-home-day{background:#466f8d;border-bottom-color:#98bcd3}
+.world-cloud .v076-home{background:linear-gradient(180deg,#507e9a 0%,#315c79 56%,#203e60)}
+.world-cloud .v076-home-primary{background:linear-gradient(180deg,#edf6e7,#a9d7d8);color:#24455d}
+.world-cloud .v076-mission,.world-cloud .v12-star-invite{border-color:#b3d5df}
+.world-cloud .v12-star-invite{background:linear-gradient(145deg,#355c75,#4a7385)}
+.world-cloud .v12-star-invite strong{color:#f8ecbd}
+.portal-picks{display:grid;gap:6px;padding:7px;border:1px solid #9ac0c8;border-radius:9px;background:#132f3d55}
+.portal-picks small{display:flex!important;grid-column:auto!important;flex-wrap:wrap;align-items:center;gap:5px;line-height:1.5}
+.portal-picks button{min-height:32px!important;padding:4px 8px!important;grid-column:auto!important;grid-row:auto!important;border:1px solid #a6d5dd!important;border-radius:8px!important;background:#345d71!important;color:#f9eee0!important;font-size:11px}
+.portal-picks button[aria-pressed="true"]{background:#e3d49f!important;color:#234d61!important;border-color:#ffefbd!important}
+.v076-home .v12-star-invite:has(.portal-picks){display:grid;grid-template-columns:1fr;gap:5px}
+.v076-home .v12-star-invite:has(.portal-picks)>button{grid-column:1;grid-row:auto;min-height:40px}
+.v063-vessels:has([data-act="method:steam"]){grid-template-columns:repeat(2,minmax(0,1fr))}
+@media(max-width:390px){.portal-picks{padding:5px;gap:3px}.portal-picks button{font-size:10px;min-height:28px!important}.v076-home .v12-star-invite:has(.portal-picks){padding:5px 8px}}

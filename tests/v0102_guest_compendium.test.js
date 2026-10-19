@@ -5,7 +5,8 @@ import {newGame,guestBookEntries,ensureGuestDex,createService,REGULAR_GUESTS,tic
 
 test('new game has no fictional sightings or named-guest relationships',()=>{
  const s=newGame(87),entries=guestBookEntries(s);
- assert.equal(entries.length,6);
+ assert.equal(entries.length,8);
+ assert.equal(entries.filter(x=>x.segment.startsWith('cloud_')).length,2);
  assert.equal(entries.filter(x=>x.seen).length,0);
  assert.equal(entries.find(x=>x.segment==='critic').premiumEligible,true);
  assert.equal(Object.keys(s.guestRelationships).length,0);

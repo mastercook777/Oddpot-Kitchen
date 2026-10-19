@@ -25,6 +25,8 @@ export const RECIPES = {
   harvest_stir:{name:'丰收三拼',emoji:'🥘',ids:['cabbage','onion','potato'],method:'stir',station:'WOK',time:10,price:29,tags:['清爽','温和','饱腹'],cost:9,hint:'卷心菜、洋葱和土豆，考验三种不同耐热'}
 };
 export const CUSTOMERS={gardener:{name:'芽角鹿客',emoji:'🌱',likes:['蔬食','清爽','温和'],budget:32,patience:30},adventurer:{name:'铁甲矮人',emoji:'⛏️',likes:['辣','肉','饱腹','炭香'],budget:40,patience:24},family:{name:'菌帽一家',emoji:'🍄',likes:['温和','菌香','甜香'],budget:28,patience:32},regular:{name:'史莱姆街坊',emoji:'🟢',likes:['清爽','菌香','鲜'],budget:26,patience:27},critic:{name:'幽灵鉴味师',emoji:'👻',likes:['辣','香','爆香','炭香'],budget:50,patience:26},stargazer:{name:'星砂旅人',emoji:'✦',likes:['清爽','甜香','菌香'],budget:44,patience:29}};
+CUSTOMERS.cloud_docker={name:'云港搬运客',emoji:'🪁',likes:['饱腹','肉','酸'],budget:38,patience:23};
+CUSTOMERS.cloud_weaver={name:'云织旅人',emoji:'☁️',likes:['轻盈','清爽','温和'],budget:38,patience:31};
 export const FORECAST=[
   {name:'菌帽家族的晚餐',hint:'菌帽一家偏爱暖汤与菌香，温和料理更受欢迎',segments:['family','regular','family','adventurer','regular','family','critic']},
   {name:'矮人探险团集会',hint:'矿井收工的矮人偏爱辛辣肉食，饱腹料理热卖',segments:['adventurer','family','adventurer','adventurer','regular','adventurer','critic']},
@@ -39,9 +41,19 @@ ING.ember_pepper={name:'熔心椒晶',emoji:'🌋',tags:['辣','香','爆香'],l
   acquisitionPolicy:'BOSS_ONLY',bossId:'ember_king'};
 ING.tide_sour_pulp={name:'逆潮酸浆',emoji:'🫐',tags:['酸','清爽','开胃'],lo:2,hi:6,cost:18,acquisitionPolicy:'MERCHANT_ONLY'};
 ING.starlit_nectar={name:'星露花蜜',emoji:'🍯',tags:['花香','甜香','温和'],lo:2,hi:5,cost:12,acquisitionPolicy:'ENCOUNTER_ONLY'};
+// Cloud Harbor supplies are authored separately from the eight-ingredient
+// combinatorial recipe pool below. Cross-world recipes are curated by hand.
+Object.assign(ING,{
+ cloud_rice:{name:'云谷米',emoji:'🌾',tags:['饱腹','轻盈'],lo:3,hi:6,cost:4,acquisitionPolicy:'FIELD_ONLY'},
+ sky_moss:{name:'浮苔叶',emoji:'🌿',tags:['清爽','轻盈'],lo:2,hi:5,cost:3,acquisitionPolicy:'FIELD_ONLY'},
+ storm_egg:{name:'雷羽蛋',emoji:'🥚',tags:['鲜','浓郁'],lo:4,hi:7,cost:7,acquisitionPolicy:'FIELD_ONLY'},
+ sour_bell:{name:'酸铃果',emoji:'🫐',tags:['酸','开胃'],lo:2,hi:5,cost:5,acquisitionPolicy:'FIELD_ONLY'}
+});
+ING.gale_core={name:'风暴晶核',emoji:'💠',tags:['轻盈','鲜','浓郁'],lo:3,hi:6,cost:17,acquisitionPolicy:'BOSS_ONLY',bossId:'gust_king'};
 // Daily market rotates among ALL eight ordinary ingredients. FIELD_ONLY items remain
 // important in exploration and receive tighter shop quantities and higher prices.
 export const MARKET_ROTATION_STAPLES=['beef','chicken','chili','garlic','mushroom','cabbage','onion','potato'];
+export const CLOUD_MARKET_STAPLES=['cloud_rice','sky_moss','storm_egg','sour_bell','chicken','onion'];
 export const SHOP_STAPLES=Object.keys(ING).filter(id=>ING[id].acquisitionPolicy==='SHOP_STAPLE');
 export const FIELD_INGREDIENTS=Object.keys(ING).filter(id=>ING[id].acquisitionPolicy!=='SHOP_STAPLE');
 export const DEFAULT_INVENTORY={beef:3,chicken:10,chili:2,garlic:9,mushroom:12,cabbage:8,onion:5,potato:5};
@@ -93,9 +105,25 @@ const GRILL_RECIPES={
 };
 for(const [id,r] of Object.entries(GRILL_RECIPES)){r.tags.push('炭香');RECIPES[id]=r;registerRecipe(id,r)}
 
+const CLOUD_RECIPES={
+ steam_cloud_rice:{name:'云汽鸡香饭',emoji:'🍚',ids:['cloud_rice','chicken'],method:'steam',station:'POT',time:10,price:33,tags:['轻盈','饱腹','肉','温和'],cost:10,hint:'云汽蒸笼把云谷米与鸡肉蒸透'},
+ steam_moss_egg:{name:'雷羽浮苔蒸羹',emoji:'🥣',ids:['sky_moss','storm_egg'],method:'steam',station:'POT',time:9,price:38,tags:['轻盈','清爽','鲜'],cost:10,hint:'雷羽蛋与浮苔叶加盖蒸熟后放汽'},
+ cloud_rice_chicken:{name:'云谷鸡香饭',emoji:'🍚',ids:['cloud_rice','chicken'],method:'stew',station:'POT',time:11,price:27,tags:['饱腹','温和','轻盈','肉'],cost:10,hint:'云谷米和鸡肉慢煮出香气'},
+ moss_egg:{name:'浮苔雷蛋羹',emoji:'🥣',ids:['sky_moss','storm_egg'],method:'stew',station:'POT',time:10,price:32,tags:['清爽','鲜','轻盈'],cost:10,hint:'雷羽蛋与浮苔叶低火成羹'},
+ sour_rice:{name:'酸铃炒云米',emoji:'🍳',ids:['cloud_rice','sour_bell'],method:'stir',station:'WOK',time:8,price:26,tags:['酸','饱腹','开胃'],cost:9,hint:'酸铃果为云米提味'},
+ sky_egg_chicken:{name:'雷羽金鸡',emoji:'🍳',ids:['storm_egg','chicken','onion'],method:'stir',station:'WOK',time:10,price:37,tags:['肉','鲜','甜香'],cost:16,hint:'雷羽蛋包裹鸡肉与洋葱'},
+ moss_soup:{name:'云苔清汤',emoji:'🥣',ids:['sky_moss','onion'],method:'stew',station:'POT',time:9,price:22,tags:['清爽','温和','轻盈'],cost:6,hint:'浮苔叶与洋葱慢煮'},
+ gale_core_steam:{name:'风核云汽珍羹',emoji:'💠',ids:['gale_core','sky_moss','storm_egg'],method:'steam',station:'POT',time:12,price:57,tags:['轻盈','清爽','鲜','浓郁'],cost:27,hint:'风暴晶核与雷羽蛋、浮苔叶加盖蒸透',rare:true}
+};
+for(const [id,r] of Object.entries(CLOUD_RECIPES)){
+ RECIPES[id]=r;
+ if(r.method==='steam')RECIPE_INDEX[recipeSignature(r.ids,'STEAM')]=id;
+ else registerRecipe(id,r);
+}
+
 const NAMED_EXTRA = {"WOK:beef,chili":"辣椒炒肉","WOK:chicken,chili":"辣椒炒肉","WOK:garlic,mushroom":"菌香小炒","POT:chicken,mushroom":"蘑菇焖鸡","WOK:cabbage,mushroom":"清炒双蔬","WOK:beef,chili,garlic":"爆炎牛肉","WOK:beef,garlic":"焦香蒜牛","WOK:chili,mushroom":"火山菌菇","POT:chicken,onion":"洋葱烩鸡","POT:onion,potato":"地精土豆煲","WOK:chili,potato":"爆辣脆薯","POT:mushroom,potato":"森林浓汤","WOK:cabbage,onion,potato":"丰收三拼","WOK:beef,onion":"葱爆牛肉","POT:beef,onion":"洋葱炖牛肉","WOK:chicken,onion":"洋葱炒鸡","POT:beef,potato":"牛肉土豆煲","WOK:beef,potato":"牛肉煎薯","WOK:beef,mushroom":"菌香牛肉","POT:beef,mushroom":"菌香炖牛肉","POT:beef,chili":"火椒炖牛","POT:beef,garlic":"蒜香炖牛","WOK:cabbage,garlic":"蒜香包菜","POT:cabbage,garlic":"蒜香菜汤","WOK:cabbage,onion":"洋葱包菜","POT:cabbage,onion":"甜洋葱菜煲","WOK:cabbage,potato":"锅煎双蔬","POT:cabbage,potato":"田园双蔬汤","WOK:chicken,garlic":"蒜香炒鸡","POT:chicken,garlic":"蒜香焖鸡","WOK:chicken,mushroom":"山菌炒鸡","POT:chicken,potato":"鸡肉土豆煲","WOK:chicken,potato":"鸡肉脆薯","POT:chili,potato":"火椒土豆煲","WOK:garlic,potato":"蒜香脆薯","POT:garlic,potato":"蒜香土豆浓汤","WOK:mushroom,onion":"甜香菌菇","POT:mushroom,onion":"洋葱菌菇汤","WOK:mushroom,potato":"煎菌菇土豆","WOK:chili,garlic":"爆香辣蒜","POT:chili,garlic":"火椒蒜香汁","WOK:chili,onion":"辣炒洋葱","POT:chili,onion":"香辣洋葱汤","WOK:garlic,onion":"双香煸锅","POT:garlic,onion":"双香浓汤","WOK:beef,cabbage":"牛肉炒包菜","POT:beef,cabbage":"牛肉菜煲","WOK:cabbage,chili":"火椒炝包菜","POT:cabbage,chili":"火椒蔬菜汤","WOK:beef,chicken":"双肉锅气炒","POT:beef,chicken":"双肉滋补锅","WOK:beef,chili,onion":"火椒葱爆牛肉","POT:beef,chili,onion":"香辣洋葱牛肉煲","WOK:beef,garlic,onion":"双香爆牛","POT:beef,garlic,onion":"双香焖牛","WOK:chicken,garlic,mushroom":"蒜香菌菇炒鸡","POT:chicken,garlic,mushroom":"菌菇蒜香鸡汤","WOK:chicken,chili,onion":"辛香炒鸡","POT:chicken,chili,onion":"香辣洋葱焖鸡","WOK:cabbage,garlic,mushroom":"菌香蒜炒双蔬","POT:cabbage,garlic,mushroom":"蒜香菌菇蔬菜汤","WOK:beef,mushroom,onion":"菌菇葱爆牛肉","POT:beef,mushroom,onion":"菌香洋葱炖牛肉","WOK:beef,onion,potato":"牛肉薯片葱爆","POT:beef,onion,potato":"洋葱土豆炖牛肉","WOK:chili,mushroom,potato":"火椒菌菇煎薯","POT:chili,mushroom,potato":"火山菌薯汤","WOK:cabbage,chili,garlic":"蒜香火椒包菜","POT:cabbage,chili,garlic":"辣蒜蔬菜汤"};
 const NAMED_LOOKUP=Object.fromEntries(Object.entries(NAMED_EXTRA).map(([key,value])=>{const [vessel,parts]=key.split(':');return [vessel+':'+parts.split(',').sort().join(','),value]}));
-const idsForRecipes=Object.keys(ING).filter(id=>['SHOP_STAPLE','FIELD_ONLY'].includes(ING[id].acquisitionPolicy));
+const idsForRecipes=MARKET_ROTATION_STAPLES;
 for(const station of ["WOK","POT"]){
   for(let a=0;a<idsForRecipes.length;a++)for(let b=a+1;b<idsForRecipes.length;b++){
     for(const items of [[idsForRecipes[a],idsForRecipes[b]],

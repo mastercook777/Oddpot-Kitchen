@@ -30,10 +30,10 @@ test('regenerated standalone JS is syntactically valid and includes all v0.6.3-A
  assert.match(html,/v063-live-pan|v063-food-layer/);
 });
 test('full catalog has 84 pairs/triples for each vessel, and retains legacy 12 plus six curated recipes',()=>{
- assert.equal(Object.keys(ING).length,12);
- assert.equal(Object.keys(RECIPE_INDEX).length,186);
- assert.equal(Object.keys(RECIPES).length,185); // one original chili-meat recipe has beef/chicken substitution
- const ids=Object.keys(ING).filter(id=>['SHOP_STAPLE','FIELD_ONLY'].includes(ING[id].acquisitionPolicy));
+ assert.equal(Object.keys(ING).length,17);
+ assert.equal(Object.keys(RECIPE_INDEX).length,194);
+ assert.equal(Object.keys(RECIPES).length,193); // original combinations plus eight authored Cloud Harbor dishes
+ const ids=['beef','chicken','chili','garlic','mushroom','cabbage','onion','potato'];
  for(let i=0;i<ids.length;i++)for(let j=i+1;j<ids.length;j++){
   const choices=[[ids[i],ids[j]]];
   for(let k=j+1;k<ids.length;k++)choices.push([ids[i],ids[j],ids[k]]);

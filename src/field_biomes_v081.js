@@ -1,4 +1,4 @@
-import {ING} from './data.js?v=0.14.0-alpha.5';
+import {ING} from './data.js?v=0.15.0-alpha.1';
 import {fieldTilePath} from './field_rules_v011a.js';
 // v0.8.1 base biomes; v0.11-A adds safe, seed-varying actual obstacle layouts.
 // The physical layout, resource concentration and color identity live together.
@@ -38,18 +38,27 @@ const STYLE={
  oasis:{label:'矿泉晶池',region:'spring',floor:'#8e9681',grain:'#b2b79c',accent:'#b9f6ed',
   count:5,primary:'potato',resources:[['potato',6],['onion',4],['chili',3],['garlic',3]],
   spots:[[1,7],[2,7],[3,7],[1,6],[2,6],[3,6],[6,3],[7,3],[6,4],[7,4]],
-  obstacles:[[5,7],[4,4]],hazards:[[5,3]],enemyMix:['steam_crab','chicken'],enemyCount:1}
+  obstacles:[[5,7],[4,4]],hazards:[[5,3]],enemyMix:['steam_crab','chicken'],enemyCount:1},
+ cloud:{label:'云港风道',region:'cloud',floor:'#6c93a6',grain:'#8bb8ba',accent:'#f4e8bd',
+  count:5,primary:'cloud_rice',resources:[['cloud_rice',7],['sky_moss',5],['onion',2],['sour_bell',2]],
+  spots:[[2,7],[3,7],[2,6],[6,4],[7,4],[6,3],[1,3],[2,3],[7,7]],
+  obstacles:[[4,5],[5,5],[4,2]],hazards:[[5,3]],enemyMix:['gust_moth','chicken'],enemyCount:2},
+ cloud_roost:{label:'雷羽巢缘',region:'cloud',floor:'#526e91',grain:'#829eb2',accent:'#f7d47c',
+  count:4,primary:'storm_egg',resources:[['storm_egg',6],['sky_moss',4],['sour_bell',3]],
+  spots:[[2,7],[2,6],[3,6],[7,4],[6,4],[6,2],[1,3],[2,3]],
+  obstacles:[[4,6],[5,4],[3,3]],hazards:[[5,2],[6,6]],enemyMix:['gust_moth','chicken'],enemyCount:3}
 };
 const ZONES={
  herb_path:'meadow',glow_mushroom:'glow',old_tree_edge:'roots',forest_garden:'garden',
  forest_secret:'glow',spore_gate:'roots',spore_roots:'roots',
  hot_spring_shallows:'spring',steam_crack:'steam',ember_edge:'ember',
- steam_lake:'oasis',spring_market:'spring',ember_gate:'ember',ember_side:'ember'
+ steam_lake:'oasis',spring_market:'spring',ember_gate:'ember',ember_side:'ember',
+ cloud_dock:'cloud',cloud_pass:'cloud',cloud_garden:'cloud',cloud_roost:'cloud_roost',cloud_gust:'cloud_roost'
 };
 const SEED=(n)=>(Math.imul(1664525,n>>>0)+1013904223)>>>0;
 const hash=(name)=>[...String(name)].reduce((n,c)=>SEED(n+c.charCodeAt(0)),2166136261);
 export function getFieldBiome(zoneId,route='safe'){
- const style=ZONES[zoneId]||(route.startsWith('spring')?'spring':'meadow');
+ const style=ZONES[zoneId]||(route.startsWith('cloud')?'cloud':route.startsWith('spring')?'spring':'meadow');
  const base=STYLE[style];
  // The two entrances to the same mini-boss must have meaningful food ecology,
  // not just a flipped copy of the same rocks and enemy roster.

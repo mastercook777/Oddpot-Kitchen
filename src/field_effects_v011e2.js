@@ -33,11 +33,11 @@ export function drawFieldProjectile(c,p,type='enemy'){
   fieldFxEllipse(c,p.x-.05,p.y-arc-.065,.032,.06,'#fff0c4');
   c.strokeStyle='#88a877';c.lineWidth=.045;c.beginPath();c.moveTo(p.x,p.y-arc-.14);c.quadraticCurveTo(p.x+.02,p.y-arc-.23,p.x+.10,p.y-arc-.20);c.stroke();
  }else{
-  const spore=p.source==='spore',a=Math.atan2(p.vy||0,p.vx||1);
+  const spore=p.source==='spore',gust=p.source==='gust',a=Math.atan2(p.vy||0,p.vx||1);
   c.translate(p.x,p.y);c.rotate(a);
-  c.strokeStyle=spore?'#8abbc577':'#e9976877';c.lineWidth=.09;c.beginPath();c.moveTo(-.27,0);c.quadraticCurveTo(-.16,-.03,0,0);c.stroke();
-  fieldFxEllipse(c,0,0,.14,spore?.14:.10,spore?'#90c7c3':'#efad70');
-  fieldFxEllipse(c,.025,-.018,.065,.055,spore?'#daf2da':'#fff0b9');
+  c.strokeStyle=gust?'#b6e3ef99':spore?'#8abbc577':'#e9976877';c.lineWidth=.09;c.beginPath();c.moveTo(-.27,0);c.quadraticCurveTo(-.16,-.03,0,0);c.stroke();
+  fieldFxEllipse(c,0,0,.14,spore?.14:.10,gust?'#84b5db':spore?'#90c7c3':'#efad70');
+  fieldFxEllipse(c,.025,-.018,.065,.055,gust?'#f9e7a7':spore?'#daf2da':'#fff0b9');
  }
  c.restore();
 }

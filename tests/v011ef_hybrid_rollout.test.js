@@ -27,7 +27,8 @@ function withPaint(fn){const d=globalThis.document,w=globalThis.window;let creat
 test('all 14 zones select an authored biome; 8 × 64 seeds retain geometry, plans and interactions',()=>{
  const styles=new Set();
  for(const zone of zones){const f=fixture(zone).field;styles.add(f.biome.style);assert.ok(isHybridFieldArt(f));assert.equal(hybridFieldLandscapePlan(f).style,f.biome.style);}
- assert.deepEqual([...styles].sort(),[...HYBRID_FIELD_STYLES].sort());
+ assert.deepEqual([...styles].sort(),[...HYBRID_FIELD_STYLES].filter(style=>!style.startsWith('cloud')).sort());
+ assert.deepEqual(HYBRID_FIELD_STYLES.filter(style=>style.startsWith('cloud')).sort(),['cloud','cloud_roost']);
  for(const zone of ['herb_path','glow_mushroom','old_tree_edge','forest_garden','hot_spring_shallows','steam_crack','ember_edge','steam_lake'])for(let i=0;i<64;i++){
   const f=fixture(zone,71001+i*103).field,before=JSON.stringify(f),plan=hybridFieldLandscapePlan(f);
   assert.ok(plan.details.groups.length<=22);assert.strictEqual(plan,hybridFieldLandscapePlan(f));
