@@ -1,6 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import {newGame,travelPortal,crewRoleName,chapterRecipeAvailable,selectMenuRecipe,canMenu,kitchenHasMenuCoverage,configureKitchenSlot,createService,setServicePaused,tick,resumeBreak,closeService,redeemFerrySupply,advanceDay,load,save} from '../src/engine.js';
+import {newGame,travelPortal,crewRoleName,chapterRecipeAvailable,selectMenuRecipe,canMenu,kitchenHasMenuCoverage,configureKitchenSlot,feedCrew,availableBento,prepareBento,setPremiumMenu,createService,setServicePaused,tick,resumeBreak,closeService,redeemFerrySupply,advanceDay,load,save} from '../src/engine.js';
 
 function cloud(){
  const s=newGame(1551);s.chapterProgress.stars=3;s.crew.helper={hired:true,onDuty:true,station:0,level:2,xp:32};s.crew.waiter={hired:true,onDuty:true,level:2,xp:26};
@@ -36,6 +36,20 @@ test('old recipes are reference only; two physical slots cannot promise three co
  assert.equal(kitchenHasMenuCoverage(s),true);
  s.phase='service';assert.equal(createService(s),true);
  assert.ok(s.service.kitchenSnapshot.some(x=>x.type==='STEAM'));
+});
+
+test('old recipe cannot be smuggled into Cloud staff meals, travel food or hidden sales',()=>{
+ const s=cloud();s.inventory.chicken=10;s.inventory.onion=10;
+ assert.equal(availableBento(s).some(x=>x.recipeId==='chicken_stew'),false);
+ assert.equal(prepareBento(s,'chicken_stew'),false);
+ s.phase='prep';assert.equal(feedCrew(s,'helper','chicken_stew'),false);
+ localMenu(s);s.phase='menu';s.recipes.gale_core_steam=86;
+ s.inventory.gale_core=2;s.inventory.sky_moss=10;s.inventory.storm_egg=10;
+ s.kitchen.steamerOwned=true;
+ assert.equal(setPremiumMenu(s,'gale_core_steam'),false,'hidden dish cannot add a third cookware type');
+ s.menu=['sour_rice','sour_rice','sour_rice'];
+ assert.equal(setPremiumMenu(s,'gale_core_steam'),true);
+ s.phase='prep';assert.equal(kitchenHasMenuCoverage(s),false,'hidden dish also needs an installed steamer');
 });
 
 test('one actual Hearth sale yields one ferry commission, redeemable once per Cloud day',()=>{

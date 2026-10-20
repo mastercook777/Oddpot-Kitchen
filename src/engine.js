@@ -134,10 +134,10 @@ export const currentPremiumDay=s=>`${s.cycle}-${s.day}`;
 export function premiumMenuActive(s){
  const p=s.premiumMenu;
  return !!(p&&p.dayKey===currentPremiumDay(s)&&p.recipeId&&p.limit>0&&
-  s.recipes?.[p.recipeId]&&chapterRecipeAvailable(s,p.recipeId)&&RECIPES[p.recipeId]?.rare&&!s.menu.includes(p.recipeId));
+  s.recipes?.[p.recipeId]&&chapterRecipeAvailable(s,p.recipeId)&&RECIPES[p.recipeId]?.rare&&cookwareOwned(s,RECIPES[p.recipeId])&&!s.menu.includes(p.recipeId));
 }
 export function premiumMenuOptions(s){
- return Object.entries(RECIPES).filter(([id,r])=>r.rare&&chapterRecipeAvailable(s,id)&&s.recipes?.[id]&&!s.menu.includes(id))
+ return Object.entries(RECIPES).filter(([id,r])=>r.rare&&chapterRecipeAvailable(s,id)&&cookwareOwned(s,r)&&s.recipes?.[id]&&!s.menu.includes(id))
   .map(([id,r])=>{const craft=recipeCraftSnapshot(s,id);
    const stock=recipeAvailableServings(s,id,{ignorePremium:true});
    return {id,name:r.name,stock,price:Math.round(craft.price*PREMIUM_PRICE_FACTOR),quality:craft.quality,recipe:r};});
@@ -148,6 +148,7 @@ export function setPremiumMenu(s,id,limit=1){
  if(!Number.isInteger(limit)||limit<1||limit>PREMIUM_MAX_SERVINGS)return false;
  const option=premiumMenuOptions(s).find(x=>x.id===id);
  if(!option||option.stock<limit)return false;
+ if(new Set([...s.menu.filter(x=>s.recipes?.[x]&&chapterRecipeAvailable(s,x)),id].map(x=>recipeCookware(RECIPES[x]))).size>ensureKitchen(s).slots.length)return false;
  s.premiumMenu={dayKey:currentPremiumDay(s),recipeId:id,limit};
  return true;
 }
@@ -308,6 +309,7 @@ export function configureKitchenSlot(s,index,type){
 }
 export function kitchenHasMenuCoverage(s){
  const k=ensureKitchen(s),ids=s.menu.filter(id=>s.recipes[id]&&chapterRecipeAvailable(s,id));
+ if(premiumMenuActive(s))ids.push(s.premiumMenu.recipeId);
  const needed=new Set(ids.map(id=>recipeCookware(RECIPES[id])));
  return (activeWorld(s)!=='cloud'||canMenu(s))&&[...needed].every(type=>k.slots.some(slot=>slot.type===type))&&(!needed.has('STEAM')||k.steamerOwned);
 }
@@ -426,7 +428,7 @@ export function crewEffects(s){
  return {helper:{hired:helperActive,station:helper.station,seconds:Math.min(4,helperBase+helperMeal),fed:helperActive&&!!f,recipeId:f?.recipeId||null,meals:helper.meals,level:helper.level,salary:helperActive?crewWage('helper',helper.level):0},helper2:{hired:helper2Active,station:helper2.station,seconds:Math.min(4,helper2Base+helper2Meal),fed:helper2Active&&!!f2,recipeId:f2?.recipeId||null,meals:helper2.meals,level:helper2.level,salary:helper2Active?crewWage('helper2',helper2.level):0},waiter:{hired:waiterActive,patience:Math.min(12,waiterBase+waiterMeal),fed:waiterActive&&!!w,recipeId:w?.recipeId||null,meals:waiter.meals,level:waiter.level,salary:waiterActive?crewWage('waiter',waiter.level):0}};
 }
 export function feedCrew(s,role,recipeId){
- if(s.phase!=='prep'||!CREW_ROLES[role]||!s.recipes[recipeId]||!RECIPES[recipeId])return false;
+ if(s.phase!=='prep'||!CREW_ROLES[role]||!s.recipes[recipeId]||!chapterRecipeAvailable(s,recipeId))return false;
  const c=ensureCrew(s)[role],r=RECIPES[recipeId],craft=recipeCraftSnapshot(s,recipeId);
  if(!craft||!c.hired||!c.onDuty||activeCrewMeal(s,role)||!canUse(s,craft.ingredientIds))return false;
  const txn=`crew-meal-${kitchenDayKey(s)}-${role}`;
@@ -467,7 +469,7 @@ export function consume(s,ids,txn,forPremium=false){if(!canUse(s,ids,forPremium)
 export function nextPhase(s,phase){s.phase=phase;s.step++;return s}
 export function availableBento(s){
  ensureRecipeVariants(s);
- return Object.keys(s.recipes||{}).filter(id=>RECIPE_PROFILES[id]?.bentoSpecific).map(id=>{
+ return Object.keys(s.recipes||{}).filter(id=>RECIPE_PROFILES[id]?.bentoSpecific&&chapterRecipeAvailable(s,id)).map(id=>{
   const craft=recipeCraftSnapshot(s,id),profile=RECIPE_PROFILES[id].bentoSpecific;
   return {recipeId:id,name:RECIPES[id].name,craft,
    description:profile.base,
@@ -480,7 +482,7 @@ export function availableBento(s){
 export function prepareBento(s,recipeId){
  if(!['forecast','field'].includes(s.phase)||s.field||s.bento?.day===kitchenDayKey(s))return false;
  const p=RECIPE_PROFILES[recipeId]?.bentoSpecific;
- if(!s.recipes?.[recipeId]||!p)return false;
+ if(!s.recipes?.[recipeId]||!p||!chapterRecipeAvailable(s,recipeId))return false;
  const craft=recipeCraftSnapshot(s,recipeId);
  if(!craft||!canUse(s,craft.ingredientIds))return false;
  const txn='bento-'+kitchenDayKey(s);
