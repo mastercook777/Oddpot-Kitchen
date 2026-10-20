@@ -1,6 +1,6 @@
 # 《怪味食堂》ROADMAP · 当前经营与章节开发路线
 
-> **更新：2026-10-20｜已发布代码基线：`main` / `0.15.0-alpha.3`**  
+> **更新：2026-10-20｜已合并代码基线：`main` / `0.15.0-alpha.4`**  
 > 这是**未来开发与待验收**的唯一活动路线图；实际已实现机制请查 [PROJECT_STATE](PROJECT_STATE.md)，新任务从 [START_HERE](START_HERE.md) 进入。历史版本的“待开发/当前版本”只适用于当时，不覆盖本页。  
 > **状态口径**：已实现（代码进入 main）／自动验证通过／待玩家真机验收／候选设计／已确认待实现／开发中／已验收，彼此不得混用。
 
@@ -14,11 +14,11 @@
 | 自动验证与发布 | [PR #84](https://github.com/mastercook777/Oddpot-Kitchen/pull/84) 已合并，[发布记录 #85](https://github.com/mastercook777/Oddpot-Kitchen/pull/85)；最后记录 515 项 Node、16/16 PR CI、Chrome 320/375/390 与离线入口通过，Pages 关键文件 HTTP 200 | **iPhone／Android 真机的浮岛辨识度、中文显示、帧率、触摸与经营感仍待玩家验收**；不能将 CI 绿灯写成用户验收 |
 | 经营经济分析 | [v0.14-F](V0.14F_P1_ECONOMY_RESULTS.md) 已在旧世界 alpha.5 做 9,408 个多日真实营业夜审计 | 审计没有证明真实探索战斗净收获，更**不等于**已量化 v0.15 云港两章供需、委托收益和实际通关时长 |
 
-当前 `package.json` 为 `0.15.0-alpha.3`。线上试玩：https://mastercook777.github.io/Oddpot-Kitchen/ 。历史计划 [2026-10-18 经营→三星→传送门](NEXT_DEVELOPMENT_PLAN_2026-10-18.md) 的 P3/P4 已由 v0.15 完成首个可玩版本，不能继续当作活跃待办。
+当前 `package.json` 为 `0.15.0-alpha.4`（本次补丁 Pages 发布须另核）。线上试玩：https://mastercook777.github.io/Oddpot-Kitchen/ 。历史计划 [2026-10-18 经营→三星→传送门](NEXT_DEVELOPMENT_PLAN_2026-10-18.md) 的 P3/P4 已由 v0.15 完成首个可玩版本，不能继续当作活跃待办。
 
 ## 二、现在的开发队列（从上往下推进）
 
-**即时 P0 Bug 修复（分支待 CI/合并）**：玩家 iPhone 反馈云港「雷羽浮苔蒸羹」实际 `steam_even` 品质 80，研发复盘仍把 `seal/vent` 误报为黄色且未翻译。已在独立修复分支改复盘判定与蒸笼理论上限，补截图同款时序／过早排汽／旧锅具／离线入口回归，详见 [v0.15-C.1](V0.15C1_STEAM_TECHNIQUE_RECAP_FIX.md)。**分支 alpha.4 不等于当前正式 main 的 alpha.3；CI、发布和玩家实机复测尚待确认**。处理完该阻断后继续既有 P0/P1 云港验收与经济审计，不能凭本修复称整体云港已验收。
+**即时 P0 Bug 修复已进入 main（v0.15.0-alpha.4）**：iPhone 云港蒸笼复盘把 `seal/vent` 误报为黄色且输出英文，实际 `steam_even` 品质 80 已正确生效。现已修复中文与有效/无效工艺反馈、蒸笼可达品质上限，并同步线上入口缓存键及离线包；[v0.15-C.1 交付](V0.15C1_STEAM_TECHNIQUE_RECAP_FIX.md)、[PR #87](https://github.com/mastercook777/Oddpot-Kitchen/pull/87) 已合并，**520/520 Node 与 16/16 PR CI 成功**。**本次 Pages 线上发布状态尚未独立核对、玩家 iPhone 复测待验收**；主线 P0 云港真机验收/P1 跨章回归与经济审计仍为活跃任务。
 
 
 | 优先级 / 工作包 | 当前状态 | 玩家体验目标 | 实施与验收门槛 |
