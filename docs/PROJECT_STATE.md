@@ -1,7 +1,6 @@
 # 《怪味食堂》当前已实现状态 / 技术交接
 
-**v0.15.0-alpha.4 蒸笼研发复盘修复（2026-10-20，修复分支待 CI/PR 合并）**：玩家 iPhone 复盘「雷羽浮苔蒸羹」正确生成 `steam_even` 品质 80，却把 `seal/vent` 标黄且输出英文和“未产生对应工艺加成”。根因在 `src/cooking_v063.js` `reviewLiveCook` 漏处理封笼/排汽，真实熟化和 `evaluateLiveCook` 工艺加分原本正确。修复复盘动作翻译、封笼熟化提示、排汽 ≥2s +8／过早 -7 的绿色/黄色反馈，并纠正蒸笼可及品质上限 80（有底香时 84）；不更改熟化、品质实际结算、旧档、经济或订单。同步 Pages 缓存键和 `standalone.html` 离线包；新回归 `tests/v015c1_steam_recap.test.js`。当前只是分支提交，自动化结果、合并、线上发布与玩家真机复测**尚未确认**。详见 [问题、范围、回归与交付记录](V0.15C1_STEAM_TECHNIQUE_RECAP_FIX.md)。
-
+**v0.15.0-alpha.4 云汽蒸笼研发复盘修复（2026-10-20，[PR #87](https://github.com/mastercook777/Oddpot-Kitchen/pull/87) 已合并 main，合并提交 [9545e516](https://github.com/mastercook777/Oddpot-Kitchen/commit/9545e516f0a2f9e788a4930a297d6a07b507c957)）**：玩家 iPhone 的「雷羽浮苔蒸羹」真实获得 `steam_even` 品质 80，但复盘旧分支漏识别 `seal/vent`，错标黄色「未产生对应工艺加成」。本次补齐「封笼」熟化与「排汽」>=2 秒时工艺 +8／过早 -7 的中文和真实绿色/黄色，纠正 STEAM 可达满分 80／可能底香 84；**不改变实际出锅品质、配方、交易、跨章经济或存档**。同步版本设置与入口缓存键、`standalone.html`，新增五项专项测试；[PR 记录与交付](V0.15C1_STEAM_TECHNIQUE_RECAP_FIX.md)。**GitHub PR CI 16/16 成功，Core gameplay 520/520 Node 全通过，含浏览器移动回归；本次 Pages 线上实际发布状态未单独验证，玩家在 iPhone 复测尚待验收。**
 
 **v0.15.0-alpha.3 云港返工（2026-10-20，[PR #84](https://github.com/mastercook777/Oddpot-Kitchen/pull/84) 已合并并部署）**：遵循先合入的[返工规格](V0.15C_CLOUD_HARBOR_REWORK_SPEC.md)。浮岛餐厅/悬空野外、阵风蛾和新风暴首领招式、本地三员工、独立蒸笼真实工位、章节菜谱上架边界及按锅具图鉴、旧食堂实售航运委托与云港每日兑换均已进源码和离线包。原店员工等级不再同步。v0.15 旧云港菜单和复制的未雇员工在加载时迁移；515 项 Node、本地 Vite 构建、16/16 PR CI 及 Chrome 320/375/390／离线入口通过；Pages 首页和关键文件 HTTP 200。真机主观观感由玩家验收。下方 alpha.1 同行规则仅是旧版记录。
 
