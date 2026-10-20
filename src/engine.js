@@ -1,9 +1,9 @@
 import {fieldHarvestTargetSuffix} from './field_target_v012f.js?v=0.13.0-alpha.9';
 import {craftedPrice} from './recipe_value_v013j.js';
 import {makeSpecialEncounterPlan,previewSpecialEncounter,SPECIAL_ENCOUNTER_KINDS} from './field_encounters_v011c.js';
-import {ING,RECIPES,CUSTOMERS,FORECAST,DEFAULT_INVENTORY,SHOP_STAPLES,MARKET_ROTATION_STAPLES,CLOUD_MARKET_STAPLES} from './data.js?v=0.15.0-alpha.3';
-import {LIVE_ACTIONS,evaluateLiveCook,liveIngredientState,liveIngredientHeatFeedback,legacyVariant,makeLiveVariant,resolveTechnique} from './cooking_v063.js?v=0.15.0-alpha.3';
-import {GRILL_LANES,grillPreview,evaluatePlacedGrill} from './grill_cooking_v014c.js?v=0.15.0-alpha.3';
+import {ING,RECIPES,CUSTOMERS,FORECAST,DEFAULT_INVENTORY,SHOP_STAPLES,MARKET_ROTATION_STAPLES,CLOUD_MARKET_STAPLES} from './data.js?v=0.15.0-alpha.4';
+import {LIVE_ACTIONS,evaluateLiveCook,liveIngredientState,liveIngredientHeatFeedback,legacyVariant,makeLiveVariant,resolveTechnique} from './cooking_v063.js?v=0.15.0-alpha.4';
+import {GRILL_LANES,grillPreview,evaluatePlacedGrill} from './grill_cooking_v014c.js?v=0.15.0-alpha.4';
 import {RECIPE_PROFILES} from './recipe_profiles_v063.js?v=0.13.0-alpha.9';
 import {generateBiomeMap,getFieldBiome} from './field_biomes_v081.js?v=0.13.0-alpha.9';
 import {makeFieldEncounterPlan,insertPlannedFieldEncounter} from './field_encounter_plan_v011b.js?v=0.13.0-alpha.9';
@@ -32,7 +32,12 @@ export function newGame(seed=20261009){return {version:4,seed,cycle:1,day:1,onbo
 const LOCAL_CHAPTER_FIELDS=['cycle','day','dining','market','phase','coins','reputation','inventory','crew','staffFoodCost','management','kitchen','bagSlots','selectedWeaponSlot','bento','route','field','cook','menu','prep','prepVariants','prepCost','manualCost','service','report','lastCook','researchReceipt','ledger','logs','result','step','history','premiumMenu','bossCleared','encounterProgress','cloudProgress'];
 export function activeWorld(s){return s.activeWorld==='cloud'?'cloud':'hearth'}
 const CLOUD_LOCAL_INGREDIENTS=new Set(['cloud_rice','sky_moss','storm_egg','sour_bell','gale_core']);
-const CLOUD_PANTRY=new Set([...CLOUD_LOCAL_INGREDIENTS,'chicken','onion']);
+const CLOUD_PANTRY=new Set([...CLOUD_LOCAL_INGREDIENTS,'chicken','onion','mushroom','garlic','potato','chili']);
+export const FERRY_SUPPLY_PACKS=Object.freeze({
+  homestead:{name:'旧店家常',items:{chicken:3,onion:2}},
+  woodland:{name:'森林菌香',items:{mushroom:3,garlic:2}},
+  hearthfire:{name:'热泉辛香',items:{potato:2,chili:2}}
+});
 export function recipeCookware(recipe){return recipe?.method==='steam'?'STEAM':recipe?.station}
 export function cookwareOwned(s,recipe){const type=recipeCookware(recipe),k=ensureKitchen(s);return type==='STEAM'?k.steamerOwned:type==='GRILL'?k.grillOwned:!!type}
 export function chapterRecipeAvailable(s,id){
@@ -40,9 +45,10 @@ export function chapterRecipeAvailable(s,id){
  return activeWorld(s)==='cloud'?r.ids.some(x=>CLOUD_LOCAL_INGREDIENTS.has(x))&&r.ids.every(x=>CLOUD_PANTRY.has(x)):!r.ids.some(x=>CLOUD_LOCAL_INGREDIENTS.has(x));
 }
 export function crewRoleName(s,role){return activeWorld(s)==='cloud'?({helper:'阿岚',waiter:'小羽',helper2:'小栖'}[role]||CREW_ROLES[role]?.name):CREW_ROLES[role]?.name}
-export function redeemFerrySupply(s){
+export function redeemFerrySupply(s,packId='homestead'){
+ const pack=FERRY_SUPPLY_PACKS[packId];
  if(activeWorld(s)!=='cloud'||!['forecast','field','research','menu','prep'].includes(s.phase)||s.field&&!s.field.settled||(s.ferryCredits||0)<1||s.ledger?.some(x=>x.id===`ferry-supply-${s.cycle}-${s.day}`))return false;
- if(!transact(s,`ferry-supply-${s.cycle}-${s.day}`,'ferry_supply',{cloud_rice:2,sky_moss:1},0))return false;
+ if(!pack||!transact(s,`ferry-supply-${s.cycle}-${s.day}`,'ferry_supply',{...pack.items},0))return false;
  s.ferryCredits--;return true;
 }
 function settleCloudRoster(s){
@@ -71,7 +77,7 @@ export function travelPortal(s,destination,selection={}){
  s.worlds[source]=Object.fromEntries(LOCAL_CHAPTER_FIELDS.map(key=>[key,clone(s[key])]));
  if(!s.worlds.cloud&&destination==='cloud'){
   const fresh=newGame((s.seed^0x51ad)>>>0);
-  fresh.inventory={chicken:6,onion:4,cloud_rice:4,sky_moss:4,storm_egg:1};
+  fresh.inventory={chicken:2,onion:1,cloud_rice:4,sky_moss:4,storm_egg:1};
   fresh.coins=120;fresh.dining={tableCount:2};
   fresh.cloudProgress={explored:false,servedLocal:0,localCrew:true};
   const tool=['WOK','POT','GRILL'].includes(selection.tool)?selection.tool:['WOK','POT','GRILL'].find(type=>(s.kitchen?.mastery?.[type]||1)>1)||'WOK';
@@ -203,7 +209,9 @@ export function ensureDailyMarket(s){
  const current=s.market?.dayKey===key?s.market:null;
  // The old schema2 could have 3 offers. Preserve their actual stock/price
  // (including previously sold-out goods) and fill missing slots once only.
- if(current?.schema===5&&Object.keys(current.goods||{}).length===4)return current;
+ // A previously announced Cloud market keeps its old chicken/onion offer for
+ // this one day. Fresh days use only four local staples (schema 6).
+ if((current?.schema===5||current?.schema===6)&&Object.keys(current.goods||{}).length===4)return current;
  const roll=rand((s.seed^(s.cycle*7919)^(s.day*65521))>>>0);
  const picks=marketPool.map((id,i)=>({
   id,roll:rand((roll ^ Math.imul(i+1,0x9e3779b9) ^ Math.imul(s.cycle*3+s.day,0x85ebca6b))>>>0)
@@ -235,7 +243,7 @@ export function ensureDailyMarket(s){
   if(Object.keys(goods).length>=4)break;
   if(!goods[item.id])goods[item.id]=fresh(item);
  }
- s.market={dayKey:key,goods,schema:5};
+ s.market={dayKey:key,goods,schema:activeWorld(s)==='cloud'?6:5};
  return s.market;
 }
 export const KITCHEN_POSITIONS=['WOK','POT','CENTER'];
@@ -334,10 +342,12 @@ export function buyGrill(s){
  if(!grillAvailable(s)||!transact(s,'grill-fork-bundle','upgrade',{},-GRILL_COST))return false;
  s.kitchen.grillOwned=true;return true;
 }
-export const COOKWARE_UPGRADE_COST={WOK:60,POT:75,GRILL:90};
+export const COOKWARE_UPGRADE_COST={WOK:60,POT:75,GRILL:90,STEAM:80};
 export function cookwareUpgradeCost(s,type){
  const k=ensureKitchen(s);
- return ['WOK','POT','GRILL'].includes(type)&&(type!=='GRILL'||k.grillOwned)&&k.mastery[type]<2?COOKWARE_UPGRADE_COST[type]:null;
+ if(!Object.hasOwn(COOKWARE_UPGRADE_COST,type)||type==='GRILL'&&!k.grillOwned||type==='STEAM'&&(!k.steamerOwned||activeWorld(s)!=='cloud')||k.mastery[type]>=2)return null;
+ const inherited=s.worlds?.hearth?.kitchen?.mastery?.[type]===2;
+ return activeWorld(s)==='cloud'&&inherited&&type==='WOK'?45:activeWorld(s)==='cloud'&&inherited&&type==='POT'?55:COOKWARE_UPGRADE_COST[type];
 }
 export function buyCookwareUpgrade(s,type){
  if(s.phase!=='upgrade')return false;
@@ -638,7 +648,9 @@ export function enterField(s,route){
  const startZone=route.startsWith('cloud')?(risk?'cloud_roost':'cloud_dock'):route==='risk'?'old_tree_edge':route==='spring_risk'?'ember_edge':
   route==='spring_safe'?'hot_spring_shallows':'herb_path';
  const target=getFieldBiome(startZone,route).primary;
- const sequence=risk?[{type:'gather',id:target,n:2,label:'定向采集'},{type:'danger',id:'beef',n:2,label:'野牛领地'},{type:'event',id:'mushroom',n:2,label:'菌菇奇遇'}]:
+ const sequence=route.startsWith('cloud')?
+  [{type:'gather',id:target,n:2,label:'当地采集'},{type:'gather',id:risk?'storm_egg':'sky_moss',n:2,label:'云港补给'},{type:'event',id:'sour_bell',n:2,label:'风道发现'}]:
+  risk?[{type:'gather',id:target,n:2,label:'定向采集'},{type:'danger',id:'beef',n:2,label:'野牛领地'},{type:'event',id:'mushroom',n:2,label:'菌菇奇遇'}]:
   [{type:'gather',id:target,n:2,label:'目标采集'},{type:'gather',id:s.day===2?'chili':'mushroom',n:3,label:'林间采集'},{type:'event',id:'chicken',n:2,label:'流浪农夫'}];
  s.route=route;
  const encounterPlan=makeSpecialEncounterPlan(s,route),map=insertPlannedFieldEncounter(
@@ -709,8 +721,10 @@ export function settleField(s,reason='retreat'){const f=s.field;if(!f||f.settled
  nextPhase(s,'research');return true}
 export function skipField(s){if(s.phase!=='field'||s.field)return false;nextPhase(s,'research');return true}
 export function purchase(s,id,n=1){
- if(!['forecast','field','research','menu','prep'].includes(s.phase)||(s.field&&!s.field.settled)||!ING[id]||!(activeWorld(s)==='cloud'?CLOUD_MARKET_STAPLES:MARKET_ROTATION_STAPLES).includes(id)||!Number.isInteger(n)||n<1||n>5)return false;
- const item=ensureDailyMarket(s).goods[id];
+ if(!['forecast','field','research','menu','prep'].includes(s.phase)||(s.field&&!s.field.settled)||!ING[id]||!Number.isInteger(n)||n<1||n>5)return false;
+ const market=ensureDailyMarket(s),legacyCloud=activeWorld(s)==='cloud'&&market.schema===5&&['chicken','onion'].includes(id)&&!!market.goods[id];
+ if(!(activeWorld(s)==='cloud'?CLOUD_MARKET_STAPLES:MARKET_ROTATION_STAPLES).includes(id)&&!legacyCloud)return false;
+ const item=market.goods[id];
  if(!item||item.stock<n||s.coins<item.price*n)return false;
  if(!transact(s,`buy-${s.cycle}-${s.day}-${s.step++}`,'purchase',{[id]:n},-item.price*n))return false;
  item.stock-=n;return true;
@@ -785,8 +799,7 @@ export function prepStockForecast(s){
  }).sort((a,b)=>b.short-a.short||b.needed-a.needed||a.id.localeCompare(b.id));
  const shortages=ingredients.filter(x=>x.short>0);
  const market=ensureDailyMarket(s);
- const purchasableShortages=shortages.filter(x=>
-  (activeWorld(s)==='cloud'?CLOUD_MARKET_STAPLES:MARKET_ROTATION_STAPLES).includes(x.id)&&(market.goods[x.id]?.stock||0)>0);
+ const purchasableShortages=shortages.filter(x=>(market.goods[x.id]?.stock||0)>0);
  return {guestCount,portionsToCook:afterPrep,coveredByPrep,ingredients,shortages,
   shortageCount:shortages.length,purchasableShortages,purchasableCount:purchasableShortages.length,
   estimated:true};
@@ -842,7 +855,7 @@ export function serviceDayPlan(s){
  const rule=crowdRules[pressure];
  const baselineCount=Math.min(s.cycle===1?11:14,rule.min+((key>>>5)%rule.spread)+(firstChallenge(s)?1:0)+(s.cycle>1?2:0)+(s.reputation>=10?1:0));
  // The star earns local word-of-mouth; tables DO NOT generate customers.
- const starred=activeWorld(s)==='cloud'?false:ensureChapterProgress(s).stars>=1;
+ const starred=localStars(s)>=1;
  const count=naturalStarAttendance(baselineCount,starred?1:0,pressure,s.reputation);
  const favorite=rule.favorite;
  const baseline=today(s).segments;

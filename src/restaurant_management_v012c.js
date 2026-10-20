@@ -5,7 +5,9 @@ export const CAMPAIGNS={
  flyer:{id:'flyer',name:'街头传单',cost:18,guests:['family','regular'],desc:'新增2位家庭/街坊食客 · 菌香和清爽'},
  guild:{id:'guild',name:'冒险公会告示',cost:35,guests:['adventurer','adventurer','adventurer'],desc:'高峰新增3位冒险者 · 辛辣与肉类'},
  tasting:{id:'tasting',name:'品鉴邀请',cost:45,guests:['critic'],stars:1,desc:'首星后邀请1位鉴味师 · 香与爆香'},
- garden:{id:'garden',name:'田园品鉴',cost:24,guests:['gardener','gardener'],stars:2,desc:'二星后定向邀请2位芽角鹿客 · 蔬食与清爽'}
+ garden:{id:'garden',name:'田园品鉴',cost:24,guests:['gardener','gardener'],stars:2,desc:'二星后定向邀请2位芽角鹿客 · 蔬食与清爽'},
+ cloud_dock:{id:'cloud_dock',name:'码头告示',chapter:'cloud',cost:18,guests:['cloud_docker','cloud_docker'],desc:'新增2位搬运客 · 饱腹、肉与酸'},
+ cloud_weaver:{id:'cloud_weaver',name:'云舟邀约',chapter:'cloud',cost:20,guests:['cloud_weaver','cloud_weaver'],desc:'新增2位云织旅人 · 轻盈与清爽'}
 };
 export const CREW_GROWTH={
  helper:{wages:[10,14,19],promotionCosts:[0,28,64]},
@@ -27,11 +29,13 @@ export function ensureManagement(s){
  return s.management;
 }
 export function selectedCampaign(s){
- return CAMPAIGNS[ensureManagement(s).campaignId]||CAMPAIGNS.none;
+ const campaign=CAMPAIGNS[ensureManagement(s).campaignId];
+ return campaign&&(!campaign.chapter||campaign.chapter===s.activeWorld)&&!(s.activeWorld==='cloud'&&!campaign.chapter&&campaign.id!=='none')?campaign:CAMPAIGNS.none;
 }
 export function chooseCampaign(s,id){
  const campaign=CAMPAIGNS[id];
  if(s.phase!=='prep'||s.service||!campaign)return false;
+ if(s.activeWorld==='cloud'?campaign.id!=='none'&&campaign.chapter!=='cloud':campaign.chapter==='cloud')return false;
  if(campaign.stars&&(s.activeWorld==='cloud'?s.cloudProgress?.stars||0:s.chapterProgress?.stars||0)<campaign.stars)return false;
  ensureManagement(s).campaignId=id;return true;
 }

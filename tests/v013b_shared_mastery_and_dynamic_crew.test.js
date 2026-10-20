@@ -46,7 +46,7 @@ test('v0.13-B old paid position levels turn into type mastery with no repeat fee
  assert.equal(cookwareUpgradeCost(s,'POT'),null);
  assert.equal(s.coins,money);
 });
-test('v0.13.0-alpha.3 direct left / middle / right priority spots never move another helper',()=>{
+test('v0.13.0-alpha.4 direct left / middle / right priority spots never move another helper',()=>{
  const s=setup();s.phase='prep';
  assert.equal(s.crew.helper.station,0);assert.equal(s.crew.helper2.station,2);
  assert.equal(assignCrew(s,2,'helper'),false,'occupied middle cannot silently swap staff');
@@ -93,7 +93,7 @@ test('v0.13-B busy helper never abandons an active order, and pre-opening prefer
 test('all owned cookware types share mastery, including GRILL, and crew can roam',()=>{
  const app=readFileSync(new URL('../src/app.js',import.meta.url),'utf8');
  const scene=readFileSync(new URL('../src/scenes_v04.js',import.meta.url),'utf8');
- assert.match(app,/\['WOK','POT',\.\.\.\(k\.grillOwned\?\['GRILL'\]:\[\]\)\]\.map\(type=>/);
+ assert.match(app,/\['WOK','POT',\.\.\.\(k\.steamerOwned\?\['STEAM'\]:\[\]\),\.\.\.\(k\.grillOwned\?\['GRILL'\]:\[\]\)\]\.map\(type=>/);
  assert.match(app,/全店共享 Lv/);
  assert.doesNotMatch(app,/互换/);
  assert.match(app,/aria-pressed/);

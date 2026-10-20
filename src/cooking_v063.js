@@ -1,8 +1,8 @@
 // v0.6.3-A: real-time ingredient-event adjudicator.
 // No timed turns, no universal style buffs and no direct inventory writes.
-import {ING,RECIPES,RECIPE_INDEX,recipeSignature} from './data.js?v=0.15.0-alpha.3';
+import {ING,RECIPES,RECIPE_INDEX,recipeSignature} from './data.js?v=0.15.0-alpha.4';
 import {RECIPE_PROFILES} from './recipe_profiles_v063.js?v=0.12.0-alpha.1';
-import {evaluateGrillCook,grillHeat,grillTechnique} from './grill_cooking_v014b.js?v=0.15.0-alpha.3';
+import {evaluateGrillCook,grillHeat,grillTechnique} from './grill_cooking_v014b.js?v=0.15.0-alpha.4';
 
 export const LIVE_ACTIONS={
   WOK:[{id:'flip',name:'翻炒',emoji:'🍳'},{id:'toss',name:'颠勺',emoji:'↗'}],
@@ -12,7 +12,7 @@ export const LIVE_ACTIONS={
 };
 export const LIVE_STYLES={
   home:'家常',home_even:'均匀翻炒',burst:'爆炒',aroma:'香味十足',
-  pot_home:'家常炖煮',gentle:'清润慢炖',reduced:'浓香收汁',steam_home:'自然蒸制',steam_even:'云汽匀蒸',steam_dry:'排汽过早',even:'双面原味',glazed:'双面刷香',legacy:'标准工艺'
+  pot_home:'家常炖煮',gentle:'清润慢炖',reduced:'浓香收汁',steam_home:'自然蒸制',steam_sealed:'密笼蒸制',steam_even:'云汽匀蒸',steam_dry:'排汽过早',even:'双面原味',glazed:'双面刷香',legacy:'标准工艺'
 };
 export const LIVE_AFFINITY={signature:'招牌适配',viable:'适合',ordinary:'普通',off:'不契合'};
 const REQUIRE={beef:5.4,chicken:6.1,chili:1.3,garlic:1.3,mushroom:2.9,cabbage:2.5,onion:2.8,potato:6.2,mushroom_heart:3.9,ember_pepper:1.9,tide_sour_pulp:1.8,starlit_nectar:1.2,cloud_rice:5.4,sky_moss:2.7,storm_egg:5.0,sour_bell:1.9,gale_core:4.8};
@@ -22,10 +22,15 @@ const PRIMARY_AROMATIC={garlic:true,onion:true,chili:true,mushroom:true,ember_pe
 export const liveRecipeId=(ids,station)=>RECIPE_INDEX[recipeSignature(ids,station)]||null;
 
 export function liveCookAmount(drop,t,actions,vessel){
- const rate=vessel==='POT'?.92:vessel==='STEAM'?(actions?.some(a=>a.type==='seal')?1.02:.63):1.10;
- let count=Math.max(0,t-drop.t)*rate;
+ let count;
+ if(vessel==='STEAM'){
+  const seal=(actions||[]).find(a=>a.type==='seal'&&a.with?.includes(drop.id)&&a.t<=t);
+  const vent=(actions||[]).find(a=>a.type==='vent'&&a.with?.includes(drop.id)&&a.t<=t);
+  const sealAt=seal?Math.max(drop.t,seal.t):t,ventAt=vent?Math.max(sealAt,vent.t):t;
+  count=Math.max(0,sealAt-drop.t)*.63+Math.max(0,ventAt-sealAt)*1.02+Math.max(0,t-ventAt)*.82;
+ }else count=Math.max(0,t-drop.t)*(vessel==='POT'?.92:1.10);
  for(const a of actions||[]){
-  if(!a.with?.includes(drop.id))continue;
+  if(!a.with?.includes(drop.id)||a.t>t)continue;
   count+=({flip:.9,toss:.45,gentle:.75,reduce:.35,seal:.85,vent:.2}[a.type]||0);
  }
  return count;
@@ -84,16 +89,20 @@ export function readCookFacts(ids,vessel,drops,actions,t){
  const reduceGood=!!(reduce&&reduce.t>=4&&reduce.with.length>=2);
  // Garlic+mushroom has mushroom as main and garlic as aroma;
  // mushroom+chicken has chicken as main and mushroom as aroma.
- const steamEven=!!(seal&&vent&&vent.t>=seal.t+2&&vent.with.length===ids.length);
- const style=vessel==='STEAM'?(steamEven?'steam_even':vent?'steam_dry':'steam_home'):vessel==='WOK'?
+ const latestDrop=Math.max(...ds.map(d=>d.t),0);
+ const sealGood=!!(seal&&seal.with.length===ids.length&&seal.t>=latestDrop&&seal.t-latestDrop<=1.5);
+ const ventGood=!!(sealGood&&vent&&vent.with.length===ids.length&&vent.t>=seal.t+2&&vent.t<=seal.t+6);
+ const steamDry=!!(vent&&seal&&vent.t<seal.t+2);
+ const steamEven=sealGood&&ventGood;
+ const style=vessel==='STEAM'?(steamEven?'steam_even':steamDry?'steam_dry':sealGood&&!vent?'steam_sealed':'steam_home'):vessel==='WOK'?
      (burst?'burst':aromaLead&&(flip||toss)?'aroma':flip?'home_even':'home'):
      (reduceGood?'reduced':gentle?'gentle':'pot_home');
- return {style,aromaLead,burst,evenHeat:!!flip,softStir:!!gentle,reduceGood,steamEven,
+ return {style,aromaLead,burst,evenHeat:!!flip,softStir:!!gentle,reduceGood,steamEven,sealGood,ventGood,steamDry,
    primaryIngredient:main?.id||null,ingredientOrder:ds.map(d=>d.id)};
 }
 export function resolveTechnique(recipeId,style){
  const grill=grillTechnique(recipeId,style);if(grill)return grill;
- if(style.startsWith('steam_'))return {affinity:style==='steam_even'?'viable':'ordinary',affinityLabel:LIVE_AFFINITY[style==='steam_even'?'viable':'ordinary'],reason:style==='steam_even'?'封笼后缓慢排汽，米粒松软且保留水分。':style==='steam_dry'?'排汽过早，云汽未能均匀包裹食材。':'食材蒸熟了，适时封笼排汽能改善口感。',guestFitDelta:style==='steam_even'?{cloud_weaver:3}: {},timeDeltaSeconds:0,priceDeltaCoins:0,curated:true};
+ if(style.startsWith('steam_'))return {affinity:style==='steam_even'?'viable':'ordinary',affinityLabel:LIVE_AFFINITY[style==='steam_even'?'viable':'ordinary'],reason:style==='steam_even'?'及时封笼、适时排汽，食材松软且保留水分。':style==='steam_dry'?'排汽过早，云汽未能均匀包裹食材。':style==='steam_sealed'?'及时封笼保留了云汽，仍可掌握排汽时机。':'食材蒸熟了，及时封笼与适时排汽能改善口感。',guestFitDelta:style==='steam_even'?{cloud_weaver:3}: {},timeDeltaSeconds:0,priceDeltaCoins:0,curated:true};
  const profile=RECIPE_PROFILES[recipeId];
  const match=profile?.styles?.find(s=>s.code===style);
  // A generic dish may use a family template for neutral flavor narration;
@@ -130,12 +139,13 @@ export function evaluateLiveCook(ids,vessel,drops,actions,elapsed){
  if(facts.evenHeat||facts.softStir)quality+=5;
  if(facts.burst)quality+=6;
  if(facts.reduceGood)quality+=5;
- if(facts.steamEven)quality+=8;
- if(facts.style==='steam_dry')quality-=7;
+ if(facts.sealGood)quality+=5;
+ if(facts.ventGood)quality+=7;
+ if(facts.steamDry)quality-=7;
  if(!actions.length)quality+=2;
  // Suitability is not an auto-win or auto-90. All styles can succeed.
  quality=Math.min(90,Math.max(35,quality));
- const extra=facts.steamEven?'云汽匀蒸':facts.burst?'锅气':facts.aromaLead?'香气底味':facts.evenHeat?'均匀受热':facts.softStir?'柔和融合':facts.reduceGood?'浓厚酱汁':'自然烹制';
+ const extra=facts.steamEven?'云汽匀蒸':facts.sealGood?'密笼留香':facts.burst?'锅气':facts.aromaLead?'香气底味':facts.evenHeat?'均匀受热':facts.softStir?'柔和融合':facts.reduceGood?'浓厚酱汁':'自然烹制';
  return {recipeId:id,recipeName:recipe?.name||'未识别料理',
   ids:[...ids],vessel,quality,sellable,status:finishState,style:facts.style,
   styleLabel:LIVE_STYLES[facts.style],secondaryTrait:extra,
@@ -189,8 +199,14 @@ export function reviewLiveCook(result){
    const hit=!!(a.t>=4&&(a.with||[]).length>=2);
    grade=hit?'good':'warning';
    detail=hit?'4 秒后两料同锅收汁，浓香加分 +5':'本次收汁未触发加分：需 4 秒后且两料同锅';
+  }else if(a.type==='seal'){
+   grade=facts.sealGood?'good':'warning';
+   detail=facts.sealGood?'两料入笼后 1.5 秒内封笼，品质 +5':'封笼未加分：需两料入笼后 1.5 秒内操作';
+  }else if(a.type==='vent'){
+   grade=facts.ventGood?'good':'warning';
+   detail=facts.ventGood?'封笼后 2–6 秒排汽，品质 +7':facts.steamDry?'排汽过早，品质 -7':'排汽未加分：先及时封笼，再于 2–6 秒排汽';
   }else{grade='warning';detail='未产生对应工艺加成'}
-  const actionName={flip:'翻炒',toss:'颠勺',gentle:'轻搅',reduce:'收汁'}[a.type]||a.type;
+  const actionName={flip:'翻炒',toss:'颠勺',gentle:'轻搅',reduce:'收汁',seal:'封笼',vent:'排汽'}[a.type]||a.type;
   steps.push({type:'action',time:a.t,grade,label:actionName,detail});
  }
  const missing=(result.doneness||[]).filter(d=>d.label==='未下锅');
@@ -203,7 +219,7 @@ export function reviewLiveCook(result){
   detail:grade==='good'?'所有已下食材成熟':grade==='warning'?'至少一种食材略欠火，品质受到实际扣分':'存在真实夹生、焦糊或漏料问题'});
  steps.sort((a,b)=>a.time-b.time||({drop:0,action:1,missing:2,finish:3}[a.type]-{drop:0,action:1,missing:2,finish:3}[b.type]));
  // The global cap is 90, but the reachable theoretical maximum is lower.
- const maxQuality=result.vessel==='WOK'?87:86;
+ const maxQuality=result.vessel==='WOK'?87:result.vessel==='STEAM'?84:86;
  return {steps,maxQuality,atReachableMax:!!(result.sellable&&result.quality>=maxQuality)};
 }
 export function legacyVariant(recipeId,quality){
