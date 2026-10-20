@@ -5,6 +5,9 @@ function r(c,x,y,w,h,col){c.fillStyle=col;c.fillRect(x|0,y|0,w|0,h|0)}
 // v0.12-D staff apparel is layered onto the ORIGINAL working pixel actor.
 // The descriptor and the painted silhouette share one authoritative level contract.
 export const CREW_APPEARANCES={
+ cloud_helper:[{label:'云港见习帮厨',uniform:'风帆白厨帽 · 天青围裙',accent:'#84b6cc'},{label:'风帆厨师',uniform:'双层披肩 · 云纹胸针',accent:'#d7c88d'},{label:'航路掌勺',uniform:'高帆厨帽 · 金色风向徽',accent:'#f1d884'}],
+ cloud_waiter:[{label:'云港跑堂',uniform:'轻羽帽 · 浅蓝背心',accent:'#80b3d2'},{label:'航船侍者',uniform:'羽纹肩带 · 银蓝围领',accent:'#a9d5dc'},{label:'港口引路人',uniform:'银羽高帽 · 灯塔胸针',accent:'#f2d883'}],
+ cloud_helper2:[{label:'云港后厨',uniform:'浮云短衫 · 帆布袖口',accent:'#739cbc'},{label:'风炉匠人',uniform:'云纹披肩 · 铜色围裙',accent:'#d7b778'},{label:'星帆主厨',uniform:'羽帆高帽 · 天青纹章',accent:'#f0d587'}],
  helper2:[
   {label:'见习后厨',uniform:'炭蓝短衫 · 杏色厨帽',accent:'#527d85'},
   {label:'资深后厨',uniform:'铜蓝厨衣 · 绒白围裙',accent:'#639a9c'},
@@ -69,7 +72,7 @@ function paintCrewRank(c,kind,level,arm){
  }
 }
 function person(c,kind,walk,attack,level=1){
- const p={chef:['#477a91','#e7d4a7','#7e4f37'],helper:['#d27a46','#f2d69a','#654730'],helper2:['#517d85','#ead2ae','#36595b'],waiter:['#708d62','#dfc18e','#466251'],adventurer:['#4d8a66','#c59d55','#5d4630'],family:['#d67872','#f0cf79','#8a5747'],regular:['#729aba','#9bc1ce','#6c5440'],critic:['#795777','#bb9abd','#362e48'],stargazer:['#41576e','#c3b67e','#7f5c91'],gardener:['#688947','#b6d27b','#465d37'],cloud_docker:['#66728b','#e1c27e','#46546c'],cloud_weaver:['#8c9cbb','#d7dbea','#5c728e']}[kind]||['#729aba','#9bc1ce','#6c5440'];
+ const p={chef:['#477a91','#e7d4a7','#7e4f37'],helper:['#d27a46','#f2d69a','#654730'],helper2:['#517d85','#ead2ae','#36595b'],waiter:['#708d62','#dfc18e','#466251'],cloud_helper:['#629fbc','#eff0d6','#4b6d85'],cloud_waiter:['#91b9d2','#f2e2b9','#557a99'],cloud_helper2:['#778fb6','#e7dfbd','#455d80'],adventurer:['#4d8a66','#c59d55','#5d4630'],family:['#d67872','#f0cf79','#8a5747'],regular:['#729aba','#9bc1ce','#6c5440'],critic:['#795777','#bb9abd','#362e48'],stargazer:['#41576e','#c3b67e','#7f5c91'],gardener:['#688947','#b6d27b','#465d37'],cloud_docker:['#66728b','#e1c27e','#46546c'],cloud_weaver:['#8c9cbb','#d7dbea','#5c728e']}[kind]||['#729aba','#9bc1ce','#6c5440'];
  const step=walk?Math.round(Math.sin(walk*13)*2):0,arm=attack? -7:Math.round(Math.sin(walk*13+2)*1);
  // Shoes, alternating leg pixels, outlined torso/arms, expressive large face.
  r(c,3,18+step,5,5,P.outline);r(c,10,18-step,5,5,P.outline);
@@ -80,9 +83,9 @@ function person(c,kind,walk,attack,level=1){
  r(c,5,11,8,8,p[1]);r(c,8,11,2,6,kind==='chef'?'#d26f52':p[0]);
  r(c,3,2,13,11,P.outline);r(c,4,3,11,9,P.skin);r(c,5,4,9,6,P.skinLight);
  r(c,5,6,2,2,P.outline);r(c,12,6,2,2,P.outline);r(c,9,9,3,1,'#9d644f');
- if(kind==='chef'||kind==='helper'||kind==='helper2'){
+ if(kind==='chef'||kind==='helper'||kind==='helper2'||kind==='cloud_helper'||kind==='cloud_helper2'){
   r(c,2,1,15,4,P.outline);r(c,3,1,13,3,P.white);r(c,5,-4,9,6,P.outline);r(c,6,-4,7,5,P.white);r(c,8,-6,4,3,P.white);
- }else if(kind==='waiter'){
+ }else if(kind==='waiter'||kind==='cloud_waiter'){
   r(c,2,0,14,3,'#466251');r(c,6,-2,7,3,'#ddc391');r(c,6,13,8,3,'#e9daa7');
  }else if(kind==='adventurer'){
   // Ironhorn dwarf: horned helmet, copper beard and heavy travel pack.
@@ -121,7 +124,16 @@ function person(c,kind,walk,attack,level=1){
   r(c,3,0,13,4,'#52ae9d');r(c,4,3,5,2,'#70debc');r(c,1,1,2,2,'#8be9d3');r(c,15,1,2,2,'#8be9d3');
  }
  // The newest kitchen worker is recognisable at Lv1 without enlarging the silhouette.
- if(kind==='helper2'){r(c,4,11,11,5,'#547f87');r(c,5,15,9,5,'#e9d4a5');r(c,7,1,5,2,'#7ca3a1');if(level>=2)paintCrewRank(c,kind,level,arm);}
+ if(kind.startsWith('cloud_')&&CREW_APPEARANCES[kind]){
+  // Local port workers wear winged collars and a sail-shaped cap. This is
+  // painted on the actual service actor and the same portrait renderer.
+  r(c,2,11,4,8,'#d8e9e5');r(c,13,11+arm,4,8,'#d8e9e5');
+  r(c,5,12,9,7,level>=3?'#f0d48d':'#e7efe5');
+  r(c,4,0,11,2,'#e3cf9d');r(c,7,-8,5,7,P.outline);r(c,8,-8,3,7,level>=2?'#f4d584':'#b6dfe3');
+  r(c,12,-5,4,3,'#f8efe0');r(c,14,-4,3,2,'#91c1d1');
+  if(level>=2){r(c,6,11,7,2,'#e6c377');r(c,8,14,3,3,'#fff0c4');}
+  if(level>=3){r(c,7,-10,5,3,'#f5dd98');r(c,2,10,3,4,'#f0d589');}
+ }else if(kind==='helper2'){r(c,4,11,11,5,'#547f87');r(c,5,15,9,5,'#e9d4a5');r(c,7,1,5,2,'#7ca3a1');if(level>=2)paintCrewRank(c,kind,level,arm);}
  else paintCrewRank(c,kind,level,arm);
  if(attack){
   // A readable, off-center utensil silhouette synchronized to the attack state.

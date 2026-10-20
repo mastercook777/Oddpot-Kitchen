@@ -1,6 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import {newGame,requestThirdStar,thirdStarAvailable,createService,setServicePaused,tick,resumeBreak,closeService,advanceDay,portalAvailable,travelPortal,activeWorld,localStars,roomExpansionAvailable,chooseCampaign,enterField,completeFieldSegment,chooseFieldBranch,settleField,ensureDailyMarket,purchase,buySteamer,steamerAvailable,beginLiveResearch,dropLiveIngredient,performLiveAction,stepLiveResearch,finishLiveResearch,kitchenHasMenuCoverage,ensureKitchen,load,save} from '../src/engine.js';
+import {newGame,requestThirdStar,thirdStarAvailable,createService,setServicePaused,tick,resumeBreak,closeService,advanceDay,portalAvailable,travelPortal,activeWorld,localStars,roomExpansionAvailable,chooseCampaign,enterField,completeFieldSegment,chooseFieldBranch,settleField,ensureDailyMarket,purchase,buySteamer,steamerAvailable,beginLiveResearch,dropLiveIngredient,performLiveAction,stepLiveResearch,finishLiveResearch,kitchenHasMenuCoverage,configureKitchenSlot,ensureKitchen,load,save} from '../src/engine.js';
 import {ING,RECIPES,CLOUD_MARKET_STAPLES} from '../src/data.js';
 import {evaluateLiveCook,liveRecipeId} from '../src/cooking_v063.js';
 import {scoreThirdStar} from '../src/restaurant_third_star_v015.js';
@@ -43,13 +43,13 @@ test('judge verdict ignores fake values unless the frozen order was truly served
  const score=scoreThirdStar(orders,['a','b','c'],999);
  assert.equal(score.recognized,1);assert.equal(score.passed,false);
 });
-test('portal carries exactly one hired employee and a tool type while keeping local economies',()=>{
+test('portal opens with local staff and a carried tool mastery while keeping local economies',()=>{
  const s=feast();s.chapterProgress.stars=3;s.phase='forecast';
  s.crew.helper.xp=24;s.crew.helper.level=2;s.kitchen.mastery.WOK=2;
  const hearthCoins=s.coins,hearthStock=structuredClone(s.inventory),hearthLedger=structuredClone(s.ledger);
  assert.equal(travelPortal(s,'cloud',{tool:'WOK',crew:'helper'}),true);
  assert.equal(activeWorld(s),'cloud');assert.equal(s.coins,120);
- assert.equal(s.crew.helper.hired,true);assert.equal(s.crew.helper.level,2);
+ assert.equal(s.crew.helper.hired,true);assert.equal(s.crew.helper.level,1);
  assert.equal(s.crew.waiter.hired,false);assert.equal(s.kitchen.mastery.WOK,2);
  assert.equal(s.kitchen.mastery.POT,1);assert.equal(s.inventory.cloud_rice,4);
  assert.equal(s.cloudProgress.stars||0,0);
@@ -63,8 +63,9 @@ test('portal carries exactly one hired employee and a tool type while keeping lo
  const cloudCoins=s.coins,cloudStock=structuredClone(s.inventory);
  s.crew.helper.xp=36;s.phase='upgrade';assert.equal(travelPortal(s,'hearth'),true);
  assert.equal(s.coins,hearthCoins);assert.deepEqual(s.inventory,hearthStock);assert.deepEqual(s.ledger,hearthLedger);
- assert.equal(s.crew.helper.xp,36,'the chosen employee keeps earned experience');
+ assert.equal(s.crew.helper.xp,24,'Hearth staff experience remains local');
  assert.equal(travelPortal(s,'cloud'),true);assert.equal(s.coins,cloudCoins);assert.deepEqual(s.inventory,cloudStock);
+ assert.equal(s.crew.helper.xp,36,'Cloud staff experience remains local');
  assert.equal(s.ledger.filter(x=>x.type==='purchase').length,1);
 });
 test('cloud exploration unlocks a purchased steamer, and a genuinely cooked steam dish can enter the menu',()=>{
@@ -81,7 +82,10 @@ test('cloud exploration unlocks a purchased steamer, and a genuinely cooked stea
  assert.equal(performLiveAction(s,'vent'),true);cookFor(s,5);
  const cooked=finishLiveResearch(s);assert.equal(cooked.recipeId,'steam_cloud_rice');assert.equal(cooked.sellable,true);
  assert.equal(cooked.style,'steam_even');assert.equal(s.recipes.steam_cloud_rice,cooked.quality);
- s.menu=['steam_cloud_rice'];assert.equal(kitchenHasMenuCoverage(s),true);
+ s.menu=['steam_cloud_rice','steam_cloud_rice','steam_cloud_rice'];s.phase='prep';
+ assert.equal(kitchenHasMenuCoverage(s),false,'owning the steamer does not install it');
+ assert.equal(configureKitchenSlot(s,1,'STEAM'),true);
+ assert.equal(kitchenHasMenuCoverage(s),true);
  ensureKitchen(s).steamerOwned=false;assert.equal(kitchenHasMenuCoverage(s),false);
  assert.equal(liveRecipeId(['cloud_rice','chicken'],'POT'),'cloud_rice_chicken');
  assert.equal(liveRecipeId(['cloud_rice','chicken'],'STEAM'),'steam_cloud_rice');
@@ -102,7 +106,8 @@ test('saved active world restores portal, cloud purchases and steamer without mu
 test('local steam orders sell through the real restaurant and earn only the Cloud Harbor objective',()=>{
  const s=feast(9);s.chapterProgress.stars=3;s.phase='forecast';travelPortal(s,'cloud',{tool:'POT'});
  s.cloudProgress.explored=true;s.phase='upgrade';buySteamer(s);
- s.phase='prep';s.menu=['steam_cloud_rice'];s.recipes.steam_cloud_rice=84;
+ s.phase='prep';s.menu=['steam_cloud_rice','steam_cloud_rice','steam_cloud_rice'];s.recipes.steam_cloud_rice=84;
+ assert.equal(configureKitchenSlot(s,1,'STEAM'),true);
  s.inventory.cloud_rice=60;s.inventory.chicken=60;
  const before=s.coins,report=shift(s);
  assert.ok(report.byDish.steam_cloud_rice?.count>=1);
@@ -134,7 +139,7 @@ test('high-risk third segment has a distinct storm boss, whose rare core is neve
  assert.equal(s.field.segmentIndex,3);
  assert.equal(startActionField(s),true);
  const boss=s.field.enemies.find(e=>e.kind==='boss_gust');assert.ok(boss);
- assert.deepEqual(MINI_BOSS_PATTERNS.boss_gust.map(x=>x.kind),['fan','charge','ring']);
+ assert.deepEqual(MINI_BOSS_PATTERNS.boss_gust.map(x=>x.kind),['wall','vortex','lightning']);
  assert.equal(ING.gale_core.bossId,'gust_king');assert.equal(purchase(s,'gale_core'),false);
  assert.equal(liveRecipeId(['gale_core','sky_moss','storm_egg'],'STEAM'),'gale_core_steam');
  s.field.bag={gale_core:2};s.field.bossDefeated='gust_king';

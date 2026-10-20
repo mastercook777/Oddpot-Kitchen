@@ -36,6 +36,7 @@ try{
   purchased.phase='research';
   await openState(purchased);
   await page.locator('[data-act="book"]').click();
+  await page.locator('[data-recipe-type="GRILL"]').click();
   assert.equal(await page.locator('.v063-book-entry').filter({hasText:'烤架 ·'}).count(),10);
   await page.locator('.sheet-close').click();
   await page.locator('[data-act="method:grill"]').click();

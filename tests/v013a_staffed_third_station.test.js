@@ -111,6 +111,6 @@ test('v0.13-A static UI/scene and offline source all include new staffed expansi
  const scene=readFileSync(new URL('../src/scenes_v04.js',import.meta.url),'utf8');
  const build=readFileSync(new URL('../scripts/build-standalone.py',import.meta.url),'utf8');
  assert.match(app,/third-kitchen-bundle/);assert.match(app,/row\('helper2'\)/);assert.match(app,/中厨位/);
- assert.match(scene,/\['WOK','POT','CENTER'\]/);assert.match(scene,/kind:role/);
+ assert.match(scene,/\['WOK','POT','CENTER'\]/);assert.match(scene,/kind:s.activeWorld==='cloud'/);
  assert.match(build,/third_kitchen_v013a\.css/);
 });

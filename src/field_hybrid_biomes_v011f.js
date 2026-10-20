@@ -80,6 +80,19 @@ function hfGroundInto(c,f,plan){
  const p=HYBRID_FIELD_PALETTES[plan.style],w=f.worldW,h=f.worldH;
  c.save();c.beginPath();c.rect(0,0,w,h);c.clip();
  const base=c.createLinearGradient(0,0,w,h);base.addColorStop(0,p.light);base.addColorStop(.45,p.base);base.addColorStop(1,p.shade);c.fillStyle=base;c.fillRect(0,0,w,h);
+ if(plan.style==='cloud'||plan.style==='cloud_roost'){
+  const sky=c.createLinearGradient(0,0,w,h);sky.addColorStop(0,'#8ac1d9');sky.addColorStop(.62,'#d9ebeb');sky.addColorStop(1,'#7da8c5');c.fillStyle=sky;c.fillRect(0,0,w,h);
+  // The actual walkable map is a suspended slab. Its narrow sky border lies
+  // outside all tile centres; blocked cells become visible crevices below.
+  hfPoly(c,[[.16,.45],[w*.58,.20],[w-.16,.48],[w-.1,h-.42],[w*.46,h-.1],[.12,h-.45]],'#567f9a');
+  hfPoly(c,[[.16,.24],[w*.60,.12],[w-.16,.25],[w-.17,h-.53],[w*.46,h-.25],[.18,h-.52]],p.base);
+  hfLine(c,[[.2,.34],[w*.60,.2],[w-.2,.36]],p.high,.10);
+  hfLine(c,[[.2,h-.55],[w*.46,h-.28],[w-.2,h-.55]],p.dark,.10);
+  for(const [i,px,py] of [[0,w*.16,h*.10],[1,w*.81,h*.13],[2,w*.90,h*.85]]){
+   c.save();c.globalAlpha=.44;hfEllipse(c,px,py,.8+i*.2,.13,'#6c99b2');
+   hfPoly(c,[[px-.48,py],[px,py+.44],[px+.45,py]],'#719bb0');c.restore();
+  }
+ }
  for(let i=0;i<9;i++){
   const o=f.obstacles[i%f.obstacles.length],n=hfHash(plan.seed+i*1291),x=o?o.x+.7:(n%100)/10,y=o?o.y+.85:((n>>>8)%140)/10,r=1.6+(n%7)*.12;
   const glaze=c.createRadialGradient(x,y,.05,x,y,r);glaze.addColorStop(0,p.dark+'24');glaze.addColorStop(1,p.dark+'00');c.fillStyle=glaze;c.fillRect(x-r,y-r,r*2,r*2);
@@ -161,6 +174,11 @@ export function drawHybridFieldObstacle(c,o,style,index=0){
   hfEllipse(c,0,.14,.42,.14,p.dark);hfLeaf(c,-.22,-.16,.38,.30,p.dark);hfLeaf(c,.22,-.30,.40,.32,p.object);
   hfLeaf(c,-.13,-.42,.34,.24,p.object);hfLeaf(c,.11,-.52,.23,.15,p.high);
   hfLine(c,[[-.10,-.24],[.05,-.35],[.16,-.31]],p.high,.034);
+ }else if(style==='cloud'||style==='cloud_roost'){
+  hfEllipse(c,0,.14,.51,.42,'#507d9a');hfEllipse(c,0,.02,.40,.28,'#c1e0e5');
+  hfPoly(c,[[-.43,-.17],[-.28,-.39],[.18,-.42],[.45,-.16],[.19,.06],[-.32,.04]],p.rim);
+  hfLine(c,[[-.40,-.19],[-.21,-.42],[.22,-.42],[.42,-.19]],p.high,.06);
+  hfLine(c,[[0,-.37],[0,-.62],[.16,-.71]],'#e8d29b',.05);
  }else if(style==='oasis'){
   hfPoly(c,[[-.38,.20],[-.26,-.43],[-.02,-.81],[.16,-.70],[.37,.16]],p.dark);
   hfPoly(c,[[-.25,-.40],[-.02,-.78],[.08,.13],[-.24,.15]],p.object);

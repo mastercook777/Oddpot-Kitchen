@@ -105,5 +105,5 @@ test('kitchen POT station rendering and refit controls are preserved independent
  assert.equal(s.kitchen.slots[1].type,'POT');
  const app=readFileSync(new URL('../src/app.js',import.meta.url),'utf8');
  assert.match(app,/data-act="kitchen:\$\{i\}:POT"/);
- assert.match(app,/slot\.type==='WOK'\?'炒锅':'炖锅'/);
+ assert.match(app,/cookName\(slot\.type\)/);
 });
