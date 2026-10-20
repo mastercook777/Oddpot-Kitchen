@@ -1,7 +1,7 @@
 # 《怪味食堂》START_HERE · 新对话 / Codex / 开发接续入口
 
-> **最新核对：2026-10-20｜`main` 版本 `0.15.0-alpha.3`**  
-> **代码状态：已合并并部署；玩家 iPhone/Android 云港返工体验尚待验收。**  
+> **最新核对：2026-10-20｜`main` 版本 `0.15.0-alpha.4`**  
+> **代码状态：v0.15.0-alpha.4 已合并 main、16/16 PR CI 通过；本次 Pages 发布未独立核验，玩家 iPhone/Android 云港返工体验仍待验收。**  
 > 仓库：https://github.com/mastercook777/Oddpot-Kitchen · [线上试玩](https://mastercook777.github.io/Oddpot-Kitchen/)  
 > 本文是**入口而非版本流水账**；具体已实装读 [PROJECT_STATE](PROJECT_STATE.md)，下一步优先级读 [ROADMAP](ROADMAP.md)。旧版设计与更新历史可从文档索引、Git 记录回溯。
 
@@ -15,7 +15,7 @@
 
 ## 当前阅读顺序（新代理不要从 v0.12 开始）
 
-**即时修复提示（待 PR/CI/部署）**：玩家 iPhone 在云汽蒸笼研发成功时仍看到「seal / vent 未产生对应工艺加成」。根因是复盘漏识别两项新增操作，非实际出锅品质错误。详见 [v0.15-C.1 修复规格与回归](V0.15C1_STEAM_TECHNIQUE_RECAP_FIX.md)：分支拟升 `0.15.0-alpha.4`，处理中文操作名、封笼/排汽绿色/黄色对应真实 +8/-7、蒸笼可及满分与 Pages/离线版本；**尚不可宣称已合并或已部署**，当前正式核对基线仍是 alpha.3。处理阻断后继续 P0 真机验收和 P1 审计。
+**最新补丁（已合并 main，待 Pages/玩家验收）**：[v0.15-C.1 蒸笼研发复盘反馈修复](V0.15C1_STEAM_TECHNIQUE_RECAP_FIX.md)，[PR #87](https://github.com/mastercook777/Oddpot-Kitchen/pull/87)。截图中 `seal / vent` 被误标黄是复盘漏识别动作，**实际出锅的云汽匀蒸品质 80 一直正确**。现在封笼/排汽中文显示、实际 +8/过早 -7 提示、蒸笼可达满分一致，`0.15.0-alpha.4` 已合并，520/520 Node 与 16/16 PR CI 通过、离线包同步；**Pages 线上实际发布与玩家 iPhone 复测另行确认**。下一任务仍是 P0 云港真机验收与 P1 双章经济审计。
 
 
 1. [ROADMAP.md](ROADMAP.md) —— **当前任务队列**：P0 云港真机验收／P1 双章回归与经济实证／P2 云港差异化经营候选／P3 云港二星／P4 云港三星与第二门。
