@@ -1,6 +1,6 @@
 # 《怪味食堂》当前已实现状态 / 技术交接
 
-**v0.15.0-alpha.4 开发中（2026-10-20，本地 `feat/cloud-harbor-balance-v015d`，尚未合并/部署）**：按 [V0.15-D 规格](V0.15D_CLOUD_HARBOR_INTEGRATION_SPEC.md)实施两动作蒸笼品质、十道云港菜、旧店普通食材委托三选一、纯当地新市场/探索、旧锅经验折价及蒸笼 Lv2、本地 NPC 与揽客、首星后自然客流。详见[实施记录及验证边界](V0.15D_IMPLEMENTATION.md)。旧已开市场当日报价与进行中探索保留；首次入港的小量过渡鸡葱保留。以下 alpha.3 是正式线上基线。
+**v0.15.0-alpha.4 [PR #86](https://github.com/mastercook777/Oddpot-Kitchen/pull/86) 草稿（2026-10-20，16/16 组 CI 通过，尚未合并/部署）**：按 [V0.15-D 规格](V0.15D_CLOUD_HARBOR_INTEGRATION_SPEC.md)实施两动作蒸笼品质、十道云港菜、旧店普通食材委托三选一、纯当地新市场/探索、旧锅经验折价及蒸笼 Lv2、本地 NPC 与揽客、首星后自然客流。详见[实施记录及验证边界](V0.15D_IMPLEMENTATION.md)。旧已开市场当日报价与进行中探索保留；首次入港的小量过渡鸡葱保留。以下 alpha.3 是正式线上基线。
 
 **v0.15.0-alpha.3 云港返工（2026-10-20，[PR #84](https://github.com/mastercook777/Oddpot-Kitchen/pull/84) 已合并并部署）**：遵循先合入的[返工规格](V0.15C_CLOUD_HARBOR_REWORK_SPEC.md)。浮岛餐厅/悬空野外、阵风蛾和新风暴首领招式、本地三员工、独立蒸笼真实工位、章节菜谱上架边界及按锅具图鉴、旧食堂实售航运委托与云港每日兑换均已进源码和离线包。原店员工等级不再同步。v0.15 旧云港菜单和复制的未雇员工在加载时迁移；515 项 Node、本地 Vite 构建、16/16 PR CI 及 Chrome 320/375/390／离线入口通过；Pages 首页和关键文件 HTTP 200。真机主观观感由玩家验收。下方 alpha.1 同行规则仅是旧版记录。
 
