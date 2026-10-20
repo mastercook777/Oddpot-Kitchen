@@ -16,5 +16,6 @@
 .v015-cook-tabs button{flex:0 0 auto;min-width:70px;min-height:38px}
 .v015-ferry{display:grid;gap:5px;padding:10px;margin:8px 0;border:1px solid #9dcad7;border-radius:10px;background:#365e75;color:#f1f6e9}
 .v015-ferry small{line-height:1.45;color:#e0f0ed}.v015-ferry button{min-height:42px;border:1px solid #d9e5c4;border-radius:7px;background:#d9e5c4;color:#26465d;font-weight:700}.v015-ferry button:disabled{opacity:.45}
+.v015-ferry .v093-buy-actions{display:grid;grid-template-columns:minmax(0,1fr);gap:6px}.v015-ferry .v093-buy-actions button{white-space:normal;text-align:left;line-height:1.35;padding:7px 10px;overflow-wrap:anywhere}
 .world-cloud .kitchen-choice{display:flex;flex-wrap:wrap;gap:4px}.world-cloud .kitchen-choice button{flex:1 1 42%;min-height:34px}
 @media(max-width:390px){.portal-picks{padding:5px;gap:3px}.portal-picks button{font-size:10px;min-height:28px!important}.v076-home .v12-star-invite:has(.portal-picks){padding:5px 8px}}

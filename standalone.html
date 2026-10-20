@@ -1,4 +1,4 @@
-<!doctype html><html lang="zh-CN"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1.0,maximum-scale=1.0,viewport-fit=cover,user-scalable=no"><meta name="apple-mobile-web-app-capable" content="yes"><meta name="theme-color" content="#1b3c2b"><title>怪味食堂 · v0.15.0-alpha.3 离线版</title><style>.ingredient-icon{display:inline-block;width:var(--ingredient-size,24px);height:var(--ingredient-size,24px);max-width:none;object-fit:contain;image-rendering:pixelated;vertical-align:-.24em;flex:none;pointer-events:none;user-select:none}
+<!doctype html><html lang="zh-CN"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1.0,maximum-scale=1.0,viewport-fit=cover,user-scalable=no"><meta name="apple-mobile-web-app-capable" content="yes"><meta name="theme-color" content="#1b3c2b"><title>怪味食堂 · v0.15.0-alpha.4 离线版</title><style>.ingredient-icon{display:inline-block;width:var(--ingredient-size,24px);height:var(--ingredient-size,24px);max-width:none;object-fit:contain;image-rendering:pixelated;vertical-align:-.24em;flex:none;pointer-events:none;user-select:none}
 .stock-line>span .ingredient-icon{margin-right:3px}.target-chip .ingredient-icon{vertical-align:middle}.book-icon .ingredient-icon{display:block}
 .v063-food-icon .ingredient-icon{width:1em;height:1em;vertical-align:top;filter:none}.v063-receipt-line .ingredient-icon{vertical-align:middle}
 .v063-food-picker button>span,.v063-drop>span{line-height:1}.v063-food-picker .ingredient-icon,.v063-drop .ingredient-icon{vertical-align:top}
@@ -1186,6 +1186,7 @@
 .v015-cook-tabs button{flex:0 0 auto;min-width:70px;min-height:38px}
 .v015-ferry{display:grid;gap:5px;padding:10px;margin:8px 0;border:1px solid #9dcad7;border-radius:10px;background:#365e75;color:#f1f6e9}
 .v015-ferry small{line-height:1.45;color:#e0f0ed}.v015-ferry button{min-height:42px;border:1px solid #d9e5c4;border-radius:7px;background:#d9e5c4;color:#26465d;font-weight:700}.v015-ferry button:disabled{opacity:.45}
+.v015-ferry .v093-buy-actions{display:grid;grid-template-columns:minmax(0,1fr);gap:6px}.v015-ferry .v093-buy-actions button{white-space:normal;text-align:left;line-height:1.35;padding:7px 10px;overflow-wrap:anywhere}
 .world-cloud .kitchen-choice{display:flex;flex-wrap:wrap;gap:4px}.world-cloud .kitchen-choice button{flex:1 1 42%;min-height:34px}
 @media(max-width:390px){.portal-picks{padding:5px;gap:3px}.portal-picks button{font-size:10px;min-height:28px!important}.v076-home .v12-star-invite:has(.portal-picks){padding:5px 8px}}
 
@@ -2641,7 +2642,9 @@ ING.gale_core={name:'风暴晶核',emoji:'💠',tags:['轻盈','鲜','浓郁'],l
 // Daily market rotates among ALL eight ordinary ingredients. FIELD_ONLY items remain
 // important in exploration and receive tighter shop quantities and higher prices.
 const MARKET_ROTATION_STAPLES=['beef','chicken','chili','garlic','mushroom','cabbage','onion','potato'];
-const CLOUD_MARKET_STAPLES=['cloud_rice','sky_moss','storm_egg','sour_bell','chicken','onion'];
+// The port market sells local harvests. Old-world staples arrive through the
+// Hearth ferry commission, not as random Cloud Harbor forage or market stock.
+const CLOUD_MARKET_STAPLES=['cloud_rice','sky_moss','storm_egg','sour_bell'];
 const SHOP_STAPLES=Object.keys(ING).filter(id=>ING[id].acquisitionPolicy==='SHOP_STAPLE');
 const FIELD_INGREDIENTS=Object.keys(ING).filter(id=>ING[id].acquisitionPolicy!=='SHOP_STAPLE');
 const DEFAULT_INVENTORY={beef:3,chicken:10,chili:2,garlic:9,mushroom:12,cabbage:8,onion:5,potato:5};
@@ -2701,6 +2704,16 @@ const CLOUD_RECIPES={
  sour_rice:{name:'酸铃炒云米',emoji:'🍳',ids:['cloud_rice','sour_bell'],method:'stir',station:'WOK',time:8,price:26,tags:['酸','饱腹','开胃'],cost:9,hint:'酸铃果为云米提味'},
  sky_egg_chicken:{name:'雷羽金鸡',emoji:'🍳',ids:['storm_egg','chicken','onion'],method:'stir',station:'WOK',time:10,price:37,tags:['肉','鲜','甜香'],cost:16,hint:'雷羽蛋包裹鸡肉与洋葱'},
  moss_soup:{name:'云苔清汤',emoji:'🥣',ids:['sky_moss','onion'],method:'stew',station:'POT',time:9,price:22,tags:['清爽','温和','轻盈'],cost:6,hint:'浮苔叶与洋葱慢煮'},
+  rice_moss_stir:{name:'浮苔云谷小炒',emoji:'🍳',ids:['cloud_rice','sky_moss'],method:'stir',station:'WOK',time:7,price:24,tags:['清爽','轻盈','鲜'],cost:7,hint:'云谷米与浮苔叶轻快翻炒'},
+  rice_egg_pot:{name:'雷羽云米粥',emoji:'🥣',ids:['cloud_rice','storm_egg'],method:'stew',station:'POT',time:10,price:31,tags:['饱腹','温和','鲜'],cost:11,hint:'云谷米与雷羽蛋煮成浓粥'},
+  moss_egg_stir:{name:'浮苔雷蛋小炒',emoji:'🍳',ids:['sky_moss','storm_egg'],method:'stir',station:'WOK',time:8,price:32,tags:['轻盈','鲜','香'],cost:10,hint:'雷羽蛋包住浮苔叶，快火翻炒'},
+  sour_moss_stir:{name:'酸铃浮苔脆炒',emoji:'🥬',ids:['sky_moss','sour_bell'],method:'stir',station:'WOK',time:7,price:25,tags:['酸','清爽','开胃'],cost:8,hint:'酸铃果与浮苔叶同锅，保住酸香'},
+  sour_egg_pot:{name:'酸铃雷蛋羹',emoji:'🥣',ids:['storm_egg','sour_bell'],method:'stew',station:'POT',time:9,price:34,tags:['酸','鲜','温和'],cost:12,hint:'雷羽蛋和酸铃果慢煮成羹'},
+  rice_moss_bell:{name:'三风云谷饭',emoji:'🍚',ids:['cloud_rice','sky_moss','sour_bell'],method:'stew',station:'POT',time:11,price:34,tags:['轻盈','清爽','饱腹'],cost:12,hint:'米香、叶香与酸铃分层入锅'},
+  mushroom_cloud_stir:{name:'菌香云米炒',emoji:'🍄',ids:['cloud_rice','mushroom'],method:'stir',station:'WOK',time:8,price:29,tags:['菌香','饱腹','鲜'],cost:9,hint:'旧店的蘑菇与云谷米翻出菌香'},
+  garlic_moss_pot:{name:'蒜香浮苔汤',emoji:'🥣',ids:['sky_moss','garlic'],method:'stew',station:'POT',time:9,price:27,tags:['香','清爽','温和'],cost:8,hint:'旧店蒜瓣给浮苔清汤添香'},
+  potato_egg_stir:{name:'雷蛋煎薯',emoji:'🍳',ids:['storm_egg','potato'],method:'stir',station:'WOK',time:9,price:36,tags:['饱腹','鲜','香'],cost:13,hint:'旧店土豆与雷羽蛋一同煎熟'},
+  chili_bell_pot:{name:'酸铃火椒汤',emoji:'🥣',ids:['sour_bell','chili'],method:'stew',station:'POT',time:9,price:28,tags:['酸','辣','开胃'],cost:8,hint:'旧店火椒与酸铃果煮出酸辣'},
  gale_core_steam:{name:'风核云汽珍羹',emoji:'💠',ids:['gale_core','sky_moss','storm_egg'],method:'steam',station:'POT',time:12,price:57,tags:['轻盈','清爽','鲜','浓郁'],cost:27,hint:'风暴晶核与雷羽蛋、浮苔叶加盖蒸透',rare:true}
 };
 for(const [id,r] of Object.entries(CLOUD_RECIPES)){
@@ -2818,7 +2831,7 @@ const LIVE_ACTIONS={
 };
 const LIVE_STYLES={
   home:'家常',home_even:'均匀翻炒',burst:'爆炒',aroma:'香味十足',
-  pot_home:'家常炖煮',gentle:'清润慢炖',reduced:'浓香收汁',steam_home:'自然蒸制',steam_even:'云汽匀蒸',steam_dry:'排汽过早',even:'双面原味',glazed:'双面刷香',legacy:'标准工艺'
+  pot_home:'家常炖煮',gentle:'清润慢炖',reduced:'浓香收汁',steam_home:'自然蒸制',steam_sealed:'密笼蒸制',steam_even:'云汽匀蒸',steam_dry:'排汽过早',even:'双面原味',glazed:'双面刷香',legacy:'标准工艺'
 };
 const LIVE_AFFINITY={signature:'招牌适配',viable:'适合',ordinary:'普通',off:'不契合'};
 const REQUIRE={beef:5.4,chicken:6.1,chili:1.3,garlic:1.3,mushroom:2.9,cabbage:2.5,onion:2.8,potato:6.2,mushroom_heart:3.9,ember_pepper:1.9,tide_sour_pulp:1.8,starlit_nectar:1.2,cloud_rice:5.4,sky_moss:2.7,storm_egg:5.0,sour_bell:1.9,gale_core:4.8};
@@ -2828,10 +2841,15 @@ const PRIMARY_AROMATIC={garlic:true,onion:true,chili:true,mushroom:true,ember_pe
 const liveRecipeId=(ids,station)=>RECIPE_INDEX[recipeSignature(ids,station)]||null;
 
 function liveCookAmount(drop,t,actions,vessel){
- const rate=vessel==='POT'?.92:vessel==='STEAM'?(actions?.some(a=>a.type==='seal')?1.02:.63):1.10;
- let count=Math.max(0,t-drop.t)*rate;
+ let count;
+ if(vessel==='STEAM'){
+  const seal=(actions||[]).find(a=>a.type==='seal'&&a.with?.includes(drop.id)&&a.t<=t);
+  const vent=(actions||[]).find(a=>a.type==='vent'&&a.with?.includes(drop.id)&&a.t<=t);
+  const sealAt=seal?Math.max(drop.t,seal.t):t,ventAt=vent?Math.max(sealAt,vent.t):t;
+  count=Math.max(0,sealAt-drop.t)*.63+Math.max(0,ventAt-sealAt)*1.02+Math.max(0,t-ventAt)*.82;
+ }else count=Math.max(0,t-drop.t)*(vessel==='POT'?.92:1.10);
  for(const a of actions||[]){
-  if(!a.with?.includes(drop.id))continue;
+  if(!a.with?.includes(drop.id)||a.t>t)continue;
   count+=({flip:.9,toss:.45,gentle:.75,reduce:.35,seal:.85,vent:.2}[a.type]||0);
  }
  return count;
@@ -2890,16 +2908,20 @@ function readCookFacts(ids,vessel,drops,actions,t){
  const reduceGood=!!(reduce&&reduce.t>=4&&reduce.with.length>=2);
  // Garlic+mushroom has mushroom as main and garlic as aroma;
  // mushroom+chicken has chicken as main and mushroom as aroma.
- const steamEven=!!(seal&&vent&&vent.t>=seal.t+2&&vent.with.length===ids.length);
- const style=vessel==='STEAM'?(steamEven?'steam_even':vent?'steam_dry':'steam_home'):vessel==='WOK'?
+ const latestDrop=Math.max(...ds.map(d=>d.t),0);
+ const sealGood=!!(seal&&seal.with.length===ids.length&&seal.t>=latestDrop&&seal.t-latestDrop<=1.5);
+ const ventGood=!!(sealGood&&vent&&vent.with.length===ids.length&&vent.t>=seal.t+2&&vent.t<=seal.t+6);
+ const steamDry=!!(vent&&seal&&vent.t<seal.t+2);
+ const steamEven=sealGood&&ventGood;
+ const style=vessel==='STEAM'?(steamEven?'steam_even':steamDry?'steam_dry':sealGood&&!vent?'steam_sealed':'steam_home'):vessel==='WOK'?
      (burst?'burst':aromaLead&&(flip||toss)?'aroma':flip?'home_even':'home'):
      (reduceGood?'reduced':gentle?'gentle':'pot_home');
- return {style,aromaLead,burst,evenHeat:!!flip,softStir:!!gentle,reduceGood,steamEven,
+ return {style,aromaLead,burst,evenHeat:!!flip,softStir:!!gentle,reduceGood,steamEven,sealGood,ventGood,steamDry,
    primaryIngredient:main?.id||null,ingredientOrder:ds.map(d=>d.id)};
 }
 function resolveTechnique(recipeId,style){
  const grill=grillTechnique(recipeId,style);if(grill)return grill;
- if(style.startsWith('steam_'))return {affinity:style==='steam_even'?'viable':'ordinary',affinityLabel:LIVE_AFFINITY[style==='steam_even'?'viable':'ordinary'],reason:style==='steam_even'?'封笼后缓慢排汽，米粒松软且保留水分。':style==='steam_dry'?'排汽过早，云汽未能均匀包裹食材。':'食材蒸熟了，适时封笼排汽能改善口感。',guestFitDelta:style==='steam_even'?{cloud_weaver:3}: {},timeDeltaSeconds:0,priceDeltaCoins:0,curated:true};
+ if(style.startsWith('steam_'))return {affinity:style==='steam_even'?'viable':'ordinary',affinityLabel:LIVE_AFFINITY[style==='steam_even'?'viable':'ordinary'],reason:style==='steam_even'?'及时封笼、适时排汽，食材松软且保留水分。':style==='steam_dry'?'排汽过早，云汽未能均匀包裹食材。':style==='steam_sealed'?'及时封笼保留了云汽，仍可掌握排汽时机。':'食材蒸熟了，及时封笼与适时排汽能改善口感。',guestFitDelta:style==='steam_even'?{cloud_weaver:3}: {},timeDeltaSeconds:0,priceDeltaCoins:0,curated:true};
  const profile=RECIPE_PROFILES[recipeId];
  const match=profile?.styles?.find(s=>s.code===style);
  // A generic dish may use a family template for neutral flavor narration;
@@ -2936,12 +2958,13 @@ function evaluateLiveCook(ids,vessel,drops,actions,elapsed){
  if(facts.evenHeat||facts.softStir)quality+=5;
  if(facts.burst)quality+=6;
  if(facts.reduceGood)quality+=5;
- if(facts.steamEven)quality+=8;
- if(facts.style==='steam_dry')quality-=7;
+ if(facts.sealGood)quality+=5;
+ if(facts.ventGood)quality+=7;
+ if(facts.steamDry)quality-=7;
  if(!actions.length)quality+=2;
  // Suitability is not an auto-win or auto-90. All styles can succeed.
  quality=Math.min(90,Math.max(35,quality));
- const extra=facts.steamEven?'云汽匀蒸':facts.burst?'锅气':facts.aromaLead?'香气底味':facts.evenHeat?'均匀受热':facts.softStir?'柔和融合':facts.reduceGood?'浓厚酱汁':'自然烹制';
+ const extra=facts.steamEven?'云汽匀蒸':facts.sealGood?'密笼留香':facts.burst?'锅气':facts.aromaLead?'香气底味':facts.evenHeat?'均匀受热':facts.softStir?'柔和融合':facts.reduceGood?'浓厚酱汁':'自然烹制';
  return {recipeId:id,recipeName:recipe?.name||'未识别料理',
   ids:[...ids],vessel,quality,sellable,status:finishState,style:facts.style,
   styleLabel:LIVE_STYLES[facts.style],secondaryTrait:extra,
@@ -2995,8 +3018,14 @@ function reviewLiveCook(result){
    const hit=!!(a.t>=4&&(a.with||[]).length>=2);
    grade=hit?'good':'warning';
    detail=hit?'4 秒后两料同锅收汁，浓香加分 +5':'本次收汁未触发加分：需 4 秒后且两料同锅';
+  }else if(a.type==='seal'){
+   grade=facts.sealGood?'good':'warning';
+   detail=facts.sealGood?'两料入笼后 1.5 秒内封笼，品质 +5':'封笼未加分：需两料入笼后 1.5 秒内操作';
+  }else if(a.type==='vent'){
+   grade=facts.ventGood?'good':'warning';
+   detail=facts.ventGood?'封笼后 2–6 秒排汽，品质 +7':facts.steamDry?'排汽过早，品质 -7':'排汽未加分：先及时封笼，再于 2–6 秒排汽';
   }else{grade='warning';detail='未产生对应工艺加成'}
-  const actionName={flip:'翻炒',toss:'颠勺',gentle:'轻搅',reduce:'收汁'}[a.type]||a.type;
+  const actionName={flip:'翻炒',toss:'颠勺',gentle:'轻搅',reduce:'收汁',seal:'封笼',vent:'排汽'}[a.type]||a.type;
   steps.push({type:'action',time:a.t,grade,label:actionName,detail});
  }
  const missing=(result.doneness||[]).filter(d=>d.label==='未下锅');
@@ -3009,7 +3038,7 @@ function reviewLiveCook(result){
   detail:grade==='good'?'所有已下食材成熟':grade==='warning'?'至少一种食材略欠火，品质受到实际扣分':'存在真实夹生、焦糊或漏料问题'});
  steps.sort((a,b)=>a.time-b.time||({drop:0,action:1,missing:2,finish:3}[a.type]-{drop:0,action:1,missing:2,finish:3}[b.type]));
  // The global cap is 90, but the reachable theoretical maximum is lower.
- const maxQuality=result.vessel==='WOK'?87:86;
+ const maxQuality=result.vessel==='WOK'?87:result.vessel==='STEAM'?84:86;
  return {steps,maxQuality,atReachableMax:!!(result.sellable&&result.quality>=maxQuality)};
 }
 function legacyVariant(recipeId,quality){
@@ -3380,13 +3409,13 @@ const STYLE={
   spots:[[1,7],[2,7],[3,7],[1,6],[2,6],[3,6],[6,3],[7,3],[6,4],[7,4]],
   obstacles:[[5,7],[4,4]],hazards:[[5,3]],enemyMix:['steam_crab','chicken'],enemyCount:1},
  cloud:{label:'云港风道',region:'cloud',floor:'#6c93a6',grain:'#8bb8ba',accent:'#f4e8bd',
-  count:5,primary:'cloud_rice',resources:[['cloud_rice',7],['sky_moss',5],['onion',2],['sour_bell',2]],
+  count:5,primary:'cloud_rice',resources:[['cloud_rice',7],['sky_moss',5],['sour_bell',3],['storm_egg',1]],
   spots:[[2,7],[3,7],[2,6],[6,4],[7,4],[6,3],[1,3],[2,3],[7,7]],
-  obstacles:[[4,5],[5,5],[4,2]],hazards:[[5,3]],enemyMix:['gust_moth','chicken'],enemyCount:2},
+  obstacles:[[4,5],[5,5],[4,2]],hazards:[[5,3]],enemyMix:['gust_moth'],enemyCount:2},
  cloud_roost:{label:'雷羽巢缘',region:'cloud',floor:'#526e91',grain:'#829eb2',accent:'#f7d47c',
   count:4,primary:'storm_egg',resources:[['storm_egg',6],['sky_moss',4],['sour_bell',3]],
   spots:[[2,7],[2,6],[3,6],[7,4],[6,4],[6,2],[1,3],[2,3]],
-  obstacles:[[4,6],[5,4],[3,3]],hazards:[[5,2],[6,6]],enemyMix:['gust_moth','chicken'],enemyCount:3}
+  obstacles:[[4,6],[5,4],[3,3]],hazards:[[5,2],[6,6]],enemyMix:['gust_moth'],enemyCount:3}
 };
 const ZONES={
  herb_path:'meadow',glow_mushroom:'glow',old_tree_edge:'roots',forest_garden:'garden',
@@ -3524,7 +3553,7 @@ function insertPlannedFieldEncounter(map,plan,segment){
  const where=candidates[0];
  map.nodes.push({key:plan.eventId,eventId:plan.eventId,kind:plan.kind,region:plan.region,
   ...(plan.offer?{offer:structuredClone(plan.offer),status:'available'}:{}),
-  id:plan.region==='spring'?'potato':'mushroom',type:'event',
+  id:plan.region==='cloud'?'sky_moss':plan.region==='spring'?'potato':'mushroom',type:'event',
   x:where.x,y:where.y,n:1,claimed:false});
  return map;
 }
@@ -3676,14 +3705,19 @@ function meleeWindupProgress(enemy){
 const encounterHash=n=>{let h=n>>>0;h=Math.imul(h^(h>>>16),0x45d9f3b);h=Math.imul(h^(h>>>16),0x45d9f3b);return (h^(h>>>16))>>>0;};
 const SPECIAL_ENCOUNTER_KINDS=['merchant','traveler','ecology'];
 function specialEncounterOffer(kind,region='forest'){
+ if(region==='cloud'){
+  if(kind==='merchant')return {coins:24,cost:{},gain:{storm_egg:2}};
+  if(kind==='traveler')return {coins:0,cost:{cloud_rice:2},gain:{sour_bell:2}};
+  if(kind==='ecology')return {coins:0,cost:{},gain:{sky_moss:1}};
+ }
  if(kind==='merchant')return {coins:36,cost:{},gain:{tide_sour_pulp:2}};
  if(kind==='traveler')return {coins:0,cost:{[region==='spring'?'potato':'mushroom']:2},gain:{starlit_nectar:2}};
  if(kind==='ecology')return {coins:0,cost:{},gain:{[region==='spring'?'potato':'mushroom']:1}};
  return null;
 }
 function makeSpecialEncounterPlan(s,route){
- const region=String(route).startsWith('spring')?'spring':'forest',risk=/risk/.test(route);
- const seed=encounterHash((s.seed||20261009)+(s.cycle||1)*1009+(s.day||1)*139+(region==='spring'?104729:0));
+ const region=String(route).startsWith('cloud')?'cloud':String(route).startsWith('spring')?'spring':'forest',risk=/risk/.test(route);
+ const seed=encounterHash((s.seed||20261009)+(s.cycle||1)*1009+(s.day||1)*139+(region==='spring'?104729:region==='cloud'?209759:0));
  const misses=Math.min(2,Math.max(0,Number(s.encounterProgress?.misses)||0)),npc=misses>=2||seed%100<(risk?50:40);
  const encounters=[],segment=2+encounterHash(seed+5)%2,key=`${s.cycle}-${s.day}-${region}`;
  if(npc){const kind=encounterHash(seed+17)%100<(risk?70:30)?'merchant':'traveler';
@@ -3695,6 +3729,11 @@ function makeSpecialEncounterPlan(s,route){
  return {version:'0.11-C',region,npcScheduled:npc,encounters};
 }
 function specialEncounterDetails(n){
+ if(n?.region==='cloud'){
+  if(n.kind==='merchant')return {title:'港口雷羽摊主',line:'「雷羽蛋刚从巢缘收来，两枚装一筐。想省一次狩猎，就拿金币来换。」',hint:'只售当地常材；风暴晶核仍须亲自挑战首领。'};
+  if(n.kind==='traveler')return {title:'换货的云舟客',line:'「我的酸铃果有余，能拿两份云谷米换吗？」',hint:'交易只使用这趟野外背包里的云谷米。'};
+  return {title:'浮苔风窝',line:'浮苔顺着云流在此聚成一团。',hint:'可采集少量浮苔叶，不会直接解锁菜谱。'};
+ }
  if(n?.kind==='merchant')return {title:'神秘商人',line:'「酸得会拐弯，一包两份。先试一锅，再留一份招待识货的客人。」',hint:'酸浆适合鸡肉与蒜瓣爆炒，也能与土豆、洋葱慢炖。'};
  if(n?.kind==='traveler')return {title:'采蜜旅人',line:'「蜜蜂不收金币，我也不收。拿你这趟找到的食材换吧。」',hint:'花蜜可以翻炒魔菜，或与鸡肉、洋葱轻搅慢炖。'};
  return {title:n?.region==='spring'?'温泉晶簇':'月露花丛',line:'一处尚未被取走的自然馈赠。可以安全采一点，或付出体力深入调查。',hint:'这里得到普通食材；不会直接解锁菜谱。'};
@@ -3854,7 +3893,9 @@ const CAMPAIGNS={
  flyer:{id:'flyer',name:'街头传单',cost:18,guests:['family','regular'],desc:'新增2位家庭/街坊食客 · 菌香和清爽'},
  guild:{id:'guild',name:'冒险公会告示',cost:35,guests:['adventurer','adventurer','adventurer'],desc:'高峰新增3位冒险者 · 辛辣与肉类'},
  tasting:{id:'tasting',name:'品鉴邀请',cost:45,guests:['critic'],stars:1,desc:'首星后邀请1位鉴味师 · 香与爆香'},
- garden:{id:'garden',name:'田园品鉴',cost:24,guests:['gardener','gardener'],stars:2,desc:'二星后定向邀请2位芽角鹿客 · 蔬食与清爽'}
+ garden:{id:'garden',name:'田园品鉴',cost:24,guests:['gardener','gardener'],stars:2,desc:'二星后定向邀请2位芽角鹿客 · 蔬食与清爽'},
+ cloud_dock:{id:'cloud_dock',name:'码头告示',chapter:'cloud',cost:18,guests:['cloud_docker','cloud_docker'],desc:'新增2位搬运客 · 饱腹、肉与酸'},
+ cloud_weaver:{id:'cloud_weaver',name:'云舟邀约',chapter:'cloud',cost:20,guests:['cloud_weaver','cloud_weaver'],desc:'新增2位云织旅人 · 轻盈与清爽'}
 };
 const CREW_GROWTH={
  helper:{wages:[10,14,19],promotionCosts:[0,28,64]},
@@ -3876,11 +3917,13 @@ function ensureManagement(s){
  return s.management;
 }
 function selectedCampaign(s){
- return CAMPAIGNS[ensureManagement(s).campaignId]||CAMPAIGNS.none;
+ const campaign=CAMPAIGNS[ensureManagement(s).campaignId];
+ return campaign&&(!campaign.chapter||campaign.chapter===s.activeWorld)&&!(s.activeWorld==='cloud'&&!campaign.chapter&&campaign.id!=='none')?campaign:CAMPAIGNS.none;
 }
 function chooseCampaign(s,id){
  const campaign=CAMPAIGNS[id];
  if(s.phase!=='prep'||s.service||!campaign)return false;
+ if(s.activeWorld==='cloud'?campaign.id!=='none'&&campaign.chapter!=='cloud':campaign.chapter==='cloud')return false;
  if(campaign.stars&&(s.activeWorld==='cloud'?s.cloudProgress?.stars||0:s.chapterProgress?.stars||0)<campaign.stars)return false;
  ensureManagement(s).campaignId=id;return true;
 }
@@ -4012,7 +4055,12 @@ function newGame(seed=20261009){return {version:4,seed,cycle:1,day:1,onboarding:
 const LOCAL_CHAPTER_FIELDS=['cycle','day','dining','market','phase','coins','reputation','inventory','crew','staffFoodCost','management','kitchen','bagSlots','selectedWeaponSlot','bento','route','field','cook','menu','prep','prepVariants','prepCost','manualCost','service','report','lastCook','researchReceipt','ledger','logs','result','step','history','premiumMenu','bossCleared','encounterProgress','cloudProgress'];
 function activeWorld(s){return s.activeWorld==='cloud'?'cloud':'hearth'}
 const CLOUD_LOCAL_INGREDIENTS=new Set(['cloud_rice','sky_moss','storm_egg','sour_bell','gale_core']);
-const CLOUD_PANTRY=new Set([...CLOUD_LOCAL_INGREDIENTS,'chicken','onion']);
+const CLOUD_PANTRY=new Set([...CLOUD_LOCAL_INGREDIENTS,'chicken','onion','mushroom','garlic','potato','chili']);
+const FERRY_SUPPLY_PACKS=Object.freeze({
+  homestead:{name:'旧店家常',items:{chicken:3,onion:2}},
+  woodland:{name:'森林菌香',items:{mushroom:3,garlic:2}},
+  hearthfire:{name:'热泉辛香',items:{potato:2,chili:2}}
+});
 function recipeCookware(recipe){return recipe?.method==='steam'?'STEAM':recipe?.station}
 function cookwareOwned(s,recipe){const type=recipeCookware(recipe),k=ensureKitchen(s);return type==='STEAM'?k.steamerOwned:type==='GRILL'?k.grillOwned:!!type}
 function chapterRecipeAvailable(s,id){
@@ -4020,9 +4068,10 @@ function chapterRecipeAvailable(s,id){
  return activeWorld(s)==='cloud'?r.ids.some(x=>CLOUD_LOCAL_INGREDIENTS.has(x))&&r.ids.every(x=>CLOUD_PANTRY.has(x)):!r.ids.some(x=>CLOUD_LOCAL_INGREDIENTS.has(x));
 }
 function crewRoleName(s,role){return activeWorld(s)==='cloud'?({helper:'阿岚',waiter:'小羽',helper2:'小栖'}[role]||CREW_ROLES[role]?.name):CREW_ROLES[role]?.name}
-function redeemFerrySupply(s){
+function redeemFerrySupply(s,packId='homestead'){
+ const pack=FERRY_SUPPLY_PACKS[packId];
  if(activeWorld(s)!=='cloud'||!['forecast','field','research','menu','prep'].includes(s.phase)||s.field&&!s.field.settled||(s.ferryCredits||0)<1||s.ledger?.some(x=>x.id===`ferry-supply-${s.cycle}-${s.day}`))return false;
- if(!transact(s,`ferry-supply-${s.cycle}-${s.day}`,'ferry_supply',{cloud_rice:2,sky_moss:1},0))return false;
+ if(!pack||!transact(s,`ferry-supply-${s.cycle}-${s.day}`,'ferry_supply',{...pack.items},0))return false;
  s.ferryCredits--;return true;
 }
 function settleCloudRoster(s){
@@ -4051,7 +4100,7 @@ function travelPortal(s,destination,selection={}){
  s.worlds[source]=Object.fromEntries(LOCAL_CHAPTER_FIELDS.map(key=>[key,clone(s[key])]));
  if(!s.worlds.cloud&&destination==='cloud'){
   const fresh=newGame((s.seed^0x51ad)>>>0);
-  fresh.inventory={chicken:6,onion:4,cloud_rice:4,sky_moss:4,storm_egg:1};
+  fresh.inventory={chicken:2,onion:1,cloud_rice:4,sky_moss:4,storm_egg:1};
   fresh.coins=120;fresh.dining={tableCount:2};
   fresh.cloudProgress={explored:false,servedLocal:0,localCrew:true};
   const tool=['WOK','POT','GRILL'].includes(selection.tool)?selection.tool:['WOK','POT','GRILL'].find(type=>(s.kitchen?.mastery?.[type]||1)>1)||'WOK';
@@ -4183,7 +4232,9 @@ function ensureDailyMarket(s){
  const current=s.market?.dayKey===key?s.market:null;
  // The old schema2 could have 3 offers. Preserve their actual stock/price
  // (including previously sold-out goods) and fill missing slots once only.
- if(current?.schema===5&&Object.keys(current.goods||{}).length===4)return current;
+ // A previously announced Cloud market keeps its old chicken/onion offer for
+ // this one day. Fresh days use only four local staples (schema 6).
+ if((current?.schema===5||current?.schema===6)&&Object.keys(current.goods||{}).length===4)return current;
  const roll=rand((s.seed^(s.cycle*7919)^(s.day*65521))>>>0);
  const picks=marketPool.map((id,i)=>({
   id,roll:rand((roll ^ Math.imul(i+1,0x9e3779b9) ^ Math.imul(s.cycle*3+s.day,0x85ebca6b))>>>0)
@@ -4215,7 +4266,7 @@ function ensureDailyMarket(s){
   if(Object.keys(goods).length>=4)break;
   if(!goods[item.id])goods[item.id]=fresh(item);
  }
- s.market={dayKey:key,goods,schema:5};
+ s.market={dayKey:key,goods,schema:activeWorld(s)==='cloud'?6:5};
  return s.market;
 }
 const KITCHEN_POSITIONS=['WOK','POT','CENTER'];
@@ -4314,10 +4365,12 @@ function buyGrill(s){
  if(!grillAvailable(s)||!transact(s,'grill-fork-bundle','upgrade',{},-GRILL_COST))return false;
  s.kitchen.grillOwned=true;return true;
 }
-const COOKWARE_UPGRADE_COST={WOK:60,POT:75,GRILL:90};
+const COOKWARE_UPGRADE_COST={WOK:60,POT:75,GRILL:90,STEAM:80};
 function cookwareUpgradeCost(s,type){
  const k=ensureKitchen(s);
- return ['WOK','POT','GRILL'].includes(type)&&(type!=='GRILL'||k.grillOwned)&&k.mastery[type]<2?COOKWARE_UPGRADE_COST[type]:null;
+ if(!Object.hasOwn(COOKWARE_UPGRADE_COST,type)||type==='GRILL'&&!k.grillOwned||type==='STEAM'&&(!k.steamerOwned||activeWorld(s)!=='cloud')||k.mastery[type]>=2)return null;
+ const inherited=s.worlds?.hearth?.kitchen?.mastery?.[type]===2;
+ return activeWorld(s)==='cloud'&&inherited&&type==='WOK'?45:activeWorld(s)==='cloud'&&inherited&&type==='POT'?55:COOKWARE_UPGRADE_COST[type];
 }
 function buyCookwareUpgrade(s,type){
  if(s.phase!=='upgrade')return false;
@@ -4618,7 +4671,9 @@ function enterField(s,route){
  const startZone=route.startsWith('cloud')?(risk?'cloud_roost':'cloud_dock'):route==='risk'?'old_tree_edge':route==='spring_risk'?'ember_edge':
   route==='spring_safe'?'hot_spring_shallows':'herb_path';
  const target=getFieldBiome(startZone,route).primary;
- const sequence=risk?[{type:'gather',id:target,n:2,label:'定向采集'},{type:'danger',id:'beef',n:2,label:'野牛领地'},{type:'event',id:'mushroom',n:2,label:'菌菇奇遇'}]:
+ const sequence=route.startsWith('cloud')?
+  [{type:'gather',id:target,n:2,label:'当地采集'},{type:'gather',id:risk?'storm_egg':'sky_moss',n:2,label:'云港补给'},{type:'event',id:'sour_bell',n:2,label:'风道发现'}]:
+  risk?[{type:'gather',id:target,n:2,label:'定向采集'},{type:'danger',id:'beef',n:2,label:'野牛领地'},{type:'event',id:'mushroom',n:2,label:'菌菇奇遇'}]:
   [{type:'gather',id:target,n:2,label:'目标采集'},{type:'gather',id:s.day===2?'chili':'mushroom',n:3,label:'林间采集'},{type:'event',id:'chicken',n:2,label:'流浪农夫'}];
  s.route=route;
  const encounterPlan=makeSpecialEncounterPlan(s,route),map=insertPlannedFieldEncounter(
@@ -4689,8 +4744,10 @@ function settleField(s,reason='retreat'){const f=s.field;if(!f||f.settled)return
  nextPhase(s,'research');return true}
 function skipField(s){if(s.phase!=='field'||s.field)return false;nextPhase(s,'research');return true}
 function purchase(s,id,n=1){
- if(!['forecast','field','research','menu','prep'].includes(s.phase)||(s.field&&!s.field.settled)||!ING[id]||!(activeWorld(s)==='cloud'?CLOUD_MARKET_STAPLES:MARKET_ROTATION_STAPLES).includes(id)||!Number.isInteger(n)||n<1||n>5)return false;
- const item=ensureDailyMarket(s).goods[id];
+ if(!['forecast','field','research','menu','prep'].includes(s.phase)||(s.field&&!s.field.settled)||!ING[id]||!Number.isInteger(n)||n<1||n>5)return false;
+ const market=ensureDailyMarket(s),legacyCloud=activeWorld(s)==='cloud'&&market.schema===5&&['chicken','onion'].includes(id)&&!!market.goods[id];
+ if(!(activeWorld(s)==='cloud'?CLOUD_MARKET_STAPLES:MARKET_ROTATION_STAPLES).includes(id)&&!legacyCloud)return false;
+ const item=market.goods[id];
  if(!item||item.stock<n||s.coins<item.price*n)return false;
  if(!transact(s,`buy-${s.cycle}-${s.day}-${s.step++}`,'purchase',{[id]:n},-item.price*n))return false;
  item.stock-=n;return true;
@@ -4765,8 +4822,7 @@ function prepStockForecast(s){
  }).sort((a,b)=>b.short-a.short||b.needed-a.needed||a.id.localeCompare(b.id));
  const shortages=ingredients.filter(x=>x.short>0);
  const market=ensureDailyMarket(s);
- const purchasableShortages=shortages.filter(x=>
-  (activeWorld(s)==='cloud'?CLOUD_MARKET_STAPLES:MARKET_ROTATION_STAPLES).includes(x.id)&&(market.goods[x.id]?.stock||0)>0);
+ const purchasableShortages=shortages.filter(x=>(market.goods[x.id]?.stock||0)>0);
  return {guestCount,portionsToCook:afterPrep,coveredByPrep,ingredients,shortages,
   shortageCount:shortages.length,purchasableShortages,purchasableCount:purchasableShortages.length,
   estimated:true};
@@ -4822,7 +4878,7 @@ function serviceDayPlan(s){
  const rule=crowdRules[pressure];
  const baselineCount=Math.min(s.cycle===1?11:14,rule.min+((key>>>5)%rule.spread)+(firstChallenge(s)?1:0)+(s.cycle>1?2:0)+(s.reputation>=10?1:0));
  // The star earns local word-of-mouth; tables DO NOT generate customers.
- const starred=activeWorld(s)==='cloud'?false:ensureChapterProgress(s).stars>=1;
+ const starred=localStars(s)>=1;
  const count=naturalStarAttendance(baselineCount,starred?1:0,pressure,s.reputation);
  const favorite=rule.favorite;
  const baseline=today(s).segments;
@@ -5693,7 +5749,7 @@ const ECOLOGY_ENCOUNTERS={
  roots:{base:3,mix:['boar','sporeling','chicken']},garden:{base:2,mix:['chicken','boar']},
  spring:{base:2,mix:['steam_crab','pepper']},steam:{base:3,mix:['steam_crab','pepper','chicken']},
  ember:{base:3,mix:['pepper','boar','steam_crab']},oasis:{base:2,mix:['steam_crab','chicken']},
- cloud:{base:2,mix:['gust_moth','chicken']},cloud_roost:{base:3,mix:['gust_moth','gust_moth','chicken']}
+ cloud:{base:2,mix:['gust_moth']},cloud_roost:{base:3,mix:['gust_moth']}
 };
 const ecologyDist=(a,b)=>Math.hypot(a.x-b.x,a.y-b.y);
 const ecologyHash=n=>{let h=n>>>0;h=Math.imul(h^(h>>>16),0x45d9f3b);h=Math.imul(h^(h>>>16),0x45d9f3b);return (h^(h>>>16))>>>0;};
@@ -6755,6 +6811,32 @@ const DINER_VOICES={
   ]
  }
 };
+for(const [id,lines] of Object.entries({
+ cloud_weaver:{
+  order:['云汽蒸菜也有吗？','浮苔叶要轻轻蒸。','这阵风让我想吃酸铃。'],
+  choose:['今天的风适合清爽的一口。','云舟上可闻不到这锅香。','试试本地新学的菜吧。'],
+  kitchen:['闻到蒸笼的云汽啦。','封笼时机正好，我看见了。','浮苔在锅里轻轻跳动。'],
+  ready:['刚出笼的香气正好。','这一盘像云朵一样轻。','终于轮到我的晚餐啦。'],
+  delivery:['放在靠云海这边吧。','多谢，风还没吹凉呢。','这盘让我带上云舟吧。'],
+  eat:['味道像顺风一样轻。','酸铃和浮苔好相衬。','下次泊港还想吃这道。'],
+  hurry:['云舟快离港了。','再晚就赶不上顺风了。','能在风转向前上菜吗？'],
+  furious:['赶不上这趟风，我先走。','只好空着肚子登舟了。','风向变了，没法再等。'],
+  stockout:['浮岛的食材也会卖空？','那就等下趟采集船了。','这道菜的浮苔用完了吗？'],
+  mismatch:['想吃些轻盈的当地菜。','今天没有合口味的云米吗？','等有清爽的料理再来。']
+ },
+ cloud_docker:{
+  order:['卸完货，来份管饱的！','酸铃果能提提神。','最好配上热腾腾的云米。'],
+  choose:['下一班货船快靠岸了。','有能扛住一夜搬货的菜吗？','这锅闻起来有点劲。'],
+  kitchen:['后厨的锅气传到栈桥啦。','再来一点酸香就好了。','这火候像船笛一样响。'],
+  ready:['趁热吃完好搬货。','这一份总算上桌了！','还冒着云汽，真香。'],
+  delivery:['这盘放稳，风大。','多谢，我先歇口气。','放这儿，别让风吹走。'],
+  eat:['有力气接下一班船了！','酸铃入口，整个人精神了。','这饭够扎实，能继续搬。'],
+  hurry:['码头还等我卸货呢！','卸货钟快响了。','这班船走前能吃上吗？'],
+  furious:['再等就误了航班。','货船离岸了，下次再说。','我得回栈桥干活了。'],
+  stockout:['看来要等下一船补货。','云米都卖完了？','食材没了，我只好上船。'],
+  mismatch:['没有能填饱肚子的菜吗？','今晚的菜太轻了。','有酸香又管饱的吗？']
+ }
+}))DINER_VOICES[id]=lines;
 const GRILL_VOICES={
  adventurer:{order:['炭火要够劲！','下矿前来串烤的！'],kitchen:['听见炭火噼啪响了！'],ready:['烤串趁热给我！']},
  family:{order:['烤串别太辣，幼菇要分着吃。'],kitchen:['翻面轻一点，别烤焦啦。'],ready:['烤串来了，分着吃吧。']},
@@ -6918,7 +7000,9 @@ const OUTDOOR_QUEUE_LINES=Object.freeze({
  regular:Object.freeze(['咕噜，真热闹！','我想吃脆脆的。','今天好多人呀！','好香，快到了！']),
  critic:Object.freeze(['好味值得等。','门前竟有长队。','希望火候不负盛名。','再看一会儿吧。']),
  stargazer:Object.freeze(['星砂都在排队。','这香气真亮呀。','夜路还长呢。','轮到我就好了。']),
- gardener:Object.freeze(['芽角闻到青菜香！','还要排多久？','今天有蔬食吗？','春天快轮到我啦。'])
+ gardener:Object.freeze(['芽角闻到青菜香！','还要排多久？','今天有蔬食吗？','春天快轮到我啦。']),
+ cloud_weaver:Object.freeze(['风向正好，慢慢排。','今天有浮苔叶吗？','想尝一口云汽菜。']),
+ cloud_docker:Object.freeze(['货船快靠岸了！','搬完货就想吃热饭。','酸铃果还有吗？'])
 });
 const OUTDOOR_QUEUE_URGENT=Object.freeze({
  adventurer:'我的矿车快开啦！',
@@ -6926,7 +7010,9 @@ const OUTDOOR_QUEUE_URGENT=Object.freeze({
  regular:'咕噜，要排多久？',
  critic:'等待也是考验。',
  stargazer:'星砂快散尽了。',
- gardener:'嫩叶快等蔫啦！'
+ gardener:'嫩叶快等蔫啦！',
+ cloud_weaver:'云舟要开了。',
+ cloud_docker:'下班货船就要到了！'
 });
 function phraseHash(str){
  let h=2166136261;
@@ -9405,7 +9491,7 @@ function drawDiner(canvas,s,clock,simTime=s.service?.time??clock){
 let game=load()||newGame();
 let flashUntil=0;
 let message='今天会有怎样的客人上门呢？';
-let overlay='',bookTab='recipes',recipeType='WOK',tileSelected=null,selectedOrderId=null;let servicePanel='';
+let overlay='',bookTab='recipes',bookWorld='current',recipeType='WOK',tileSelected=null,selectedOrderId=null;let servicePanel='';
 let selectedIngredients=activeWorld(game)==='cloud'?['cloud_rice','chicken']:['chicken','chili'],selectedMethod='stir';
 let walking=null,drag=null,selectedRegion=activeWorld(game)==='cloud'?'cloud':'forest';let livePanPointer=null;
 const stick={x:0,y:0,pointer:null,originX:0,originY:0};const keys=new Set();let lastFrame=0,lastSave=0;let gameClock=0;let serviceTickAt=0;const touched=new Map();
@@ -9418,7 +9504,7 @@ const journey=['forecast','field','research','menu','prep','service','report','u
 const meal=r=>`${r.emoji} ${r.name}`;
 const onlyName=id=>ING[id]?.name||id;
 const cookName=type=>({WOK:'炒锅',POT:'炖锅',STEAM:'云汽蒸笼',GRILL:'烤架'}[type]||type);
-const itemCount=()=>Object.keys(game.recipes).length;
+const itemCount=()=>Object.keys(game.recipes).filter(id=>chapterRecipeAvailable(game,id)).length;
 const ingredientChoices=()=>Object.entries(ING).filter(([id])=>activeWorld(game)==='cloud'?
  ['cloud_rice','sky_moss','storm_egg','sour_bell','gale_core','chicken','onion'].includes(id)||(game.inventory[id]||0)>0:
  !['cloud_rice','sky_moss','storm_egg','sour_bell','gale_core'].includes(id)||(game.inventory[id]||0)>0);
@@ -9456,8 +9542,8 @@ function overlayMarkup(){if(!overlay)return '';
  let body='';
  if(overlay==='book'){
   if(bookTab==='guests'){
-   const entries=guestBookEntries(game),met=entries.filter(x=>x.seen).length;
-   const descriptions={adventurer:'从矿井带来猛烈的胃口，格外偏爱辛辣肉香。',family:'雨林的小菌帽一家，温和暖汤最容易打动他们。',regular:'会跳动的史莱姆街坊，喜欢清爽有弹性的菜。',critic:'飘过灵界只为寻找难忘味道的鉴味师。',stargazer:'背着星光行囊的旅人，喜欢清爽、甜香与菌菇风味。',gardener:'长着嫩枝鹿角的田园食客，偏爱真正的蔬食与温和清爽的料理。'};
+   const entries=guestBookEntries(game).filter(x=>bookWorld==='all'||(activeWorld(game)==='cloud'?new Set([...today(game).segments,'critic']).has(x.segment):!x.segment.startsWith('cloud_'))),met=entries.filter(x=>x.seen).length;
+   const descriptions={adventurer:'从矿井带来猛烈的胃口，格外偏爱辛辣肉香。',family:'雨林的小菌帽一家，温和暖汤最容易打动他们。',regular:'会跳动的史莱姆街坊，喜欢清爽有弹性的菜。',critic:'飘过灵界只为寻找难忘味道的鉴味师。',stargazer:'背着星光行囊的旅人，喜欢清爽、甜香与菌菇风味。',gardener:'长着嫩枝鹿角的田园食客，偏爱真正的蔬食与温和清爽的料理。',cloud_docker:'云港码头的搬运客，需要饱腹的菜补充力气，也喜欢酸香。',cloud_weaver:'往返浮岛间的云织旅人，喜欢轻盈清爽的当地料理。'};
    body=`<h2>👥 客人图鉴</h2><p class="sheet-lead">已认识 ${met}/${entries.length} 类食客 · 只有真实到店才会解锁资料。满意用餐 2 次的具名熟客可尝试隐藏菜。</p>
    <div class="v102-guest-list">${entries.map(g=>`<article class="v102-guest-card ${g.seen?'':'unknown'}">
      <div class="v102-guest-icon v104-portrait-frame" aria-hidden="true">${g.seen?`<canvas class="v104-guest-portrait" width="64" height="80" data-guest-portrait="${g.segment}"></canvas>`:'<span class="v104-guest-unknown">?</span>'}</div>
@@ -9468,11 +9554,11 @@ function overlayMarkup(){if(!overlay)return '';
      </div></article>`).join('')}</div>`;
   }else{
   ensureRecipeVariants(game);
-  const shown=Object.entries(RECIPES).filter(([id,r])=>recipeCookware(r)===recipeType&&(game.recipes[id]||RECIPE_PROFILES[id]||r.station==='GRILL'&&ensureKitchen(game).grillOwned||activeWorld(game)==='cloud'&&r.ids.some(x=>['cloud_rice','sky_moss','storm_egg','sour_bell','gale_core'].includes(x))));
-  body=`<h2>📖 料理工艺图鉴</h2><p class="sheet-lead">已解锁 ${itemCount()} 道料理 · 每道菜可收藏不同做法。<b>当前默认工艺已经影响实际营业；点击版本可以更换。</b></p><div class="v102-book-tabs v015-cook-tabs" role="tablist" aria-label="按厨具查看菜谱">${['WOK','POT','STEAM','GRILL'].map(type=>`<button type="button" data-recipe-type="${type}" aria-selected="${recipeType===type}" class="${recipeType===type?'active':''}">${cookName(type)}</button>`).join('')}</div><div class="book-list v063-book-list">${shown.map(([id,r])=>{const learned=!!game.recipes[id],variants=game.recipeVariants?.[id]||[],active=game.activeVariantIds?.[id];
+  const shown=Object.entries(RECIPES).filter(([id,r])=>recipeCookware(r)===recipeType&&(bookWorld==='all'||chapterRecipeAvailable(game,id))&&(game.recipes[id]||RECIPE_PROFILES[id]||r.station==='GRILL'&&ensureKitchen(game).grillOwned||activeWorld(game)==='cloud'&&r.ids.some(x=>['cloud_rice','sky_moss','storm_egg','sour_bell','gale_core'].includes(x))));
+  body=`<h2>📖 料理工艺图鉴</h2><p class="sheet-lead">本章已解锁 ${itemCount()} 道料理 · 每道菜可收藏不同做法。<b>当前默认工艺已经影响实际营业；点击版本可以更换。</b></p><div class="v102-book-tabs v015-cook-tabs" role="tablist" aria-label="按厨具查看菜谱">${['WOK','POT','STEAM','GRILL'].map(type=>`<button type="button" data-recipe-type="${type}" aria-selected="${recipeType===type}" class="${recipeType===type?'active':''}">${cookName(type)}</button>`).join('')}</div><div class="book-list v063-book-list">${shown.map(([id,r])=>{const learned=!!game.recipes[id],variants=game.recipeVariants?.[id]||[],active=game.activeVariantIds?.[id];
     return `<div class="v063-book-entry"><button class="book-item" data-book="${id}"><span class="book-icon">${learned?r.emoji:'❔'}</span><div><strong>${learned?esc(r.name):'未发现的料理'}</strong><small>${learned?`${r.ids.map(onlyName).join(' + ')} · ${stationName(r.station,r)} · 已知 ${variants.length} 种工艺${chapterRecipeAvailable(game,id)?'':' · 仅原食堂上架'}`:(r.method==='steam'?'云汽蒸笼 · ':r.station==='GRILL'?'烤架 · ':'')+esc(r.hint)}</small></div><span>›</span></button>${learned?`<div class="v063-variant-list">${variants.map(v=>`<button data-choose-variant="${id}::${v.variantId}" class="v063-variant-chip ${active===v.variantId?'active':''}">${active===v.variantId?'✓ ':''}${esc(v.styleLabel||LIVE_STYLES[v.style]||'标准工艺')} · 品质 ${v.quality} · ${recipeCraftSnapshot(game,id,v)?.price}币 / ${r.time+(recipeCraftSnapshot(game,id,v)?.timeDelta||0)}秒${v.secondaryTrait?' · '+esc(v.secondaryTrait):''}</button>`).join('')}</div>`:''}</div>`}).join('')}</div>`;
   }
-  body=`<div class="v102-book-tabs" role="tablist" aria-label="图鉴分类"><button type="button" role="tab" data-book-tab="recipes" aria-selected="${bookTab==='recipes'}" class="${bookTab==='recipes'?'active':''}">📖 菜谱</button><button type="button" role="tab" data-book-tab="guests" aria-selected="${bookTab==='guests'}" class="${bookTab==='guests'?'active':''}">👥 客人</button></div>`+body;
+  body=`<div class="v102-book-tabs" role="group" aria-label="图鉴范围"><button type="button" data-book-world="current" aria-pressed="${bookWorld==='current'}" class="${bookWorld==='current'?'active':''}">当前食堂</button><button type="button" data-book-world="all" aria-pressed="${bookWorld==='all'}" class="${bookWorld==='all'?'active':''}">全部见闻</button></div><div class="v102-book-tabs" role="tablist" aria-label="图鉴分类"><button type="button" role="tab" data-book-tab="recipes" aria-selected="${bookTab==='recipes'}" class="${bookTab==='recipes'?'active':''}">📖 菜谱</button><button type="button" role="tab" data-book-tab="guests" aria-selected="${bookTab==='guests'}" class="${bookTab==='guests'?'active':''}">👥 客人</button></div>`+body;
  }else if(overlay==='field-bag'){
   const f=game.field;
   body=`<h2>🎒 野外背包 · ${fieldBagSlotsUsed(f)}/${f.capacity||8} 格</h2>
@@ -9488,8 +9574,8 @@ function overlayMarkup(){if(!overlay)return '';
   };
   // Other warehouse inventory is reference only, not a fifth "missing" shop slot.
   const elsewhere=Object.entries(ING).filter(([id])=>!market.goods[id]);
-  body=`<h2>食材采购</h2><p class="sheet-lead">每天从 8 种普通食材随机上架 4 种，四种均有当日限额；售罄后次日换货。野外也可获取普通食材。</p>
-  <h3>第 ${totalBusinessDay(game)} 天 · 今日上架 ${offers.length} 种</h3>${activeWorld(game)==='cloud'?`<div class="v015-ferry"><strong>航运委托 ×${game.ferryCredits||0}</strong><small>原店实际营业成交后获得；每个云港营业日最多领取一批云谷米×2、浮苔叶×1。</small><button data-act="ferry-supply" ${!canShop||!(game.ferryCredits||0)||game.ledger?.some(x=>x.id===`ferry-supply-${game.cycle}-${game.day}`)?'disabled':''}>领取补给</button></div>`:''}<div class="stock-list" aria-label="今日可采购食材">${offers.map(stockLine).join('')}</div>
+  body=`<h2>食材采购</h2><p class="sheet-lead">${activeWorld(game)==='cloud'?'云港每日供应四种当地食材，旧世界普通食材通过原店真实营业获得航运委托；既有存档的旧报价保留至当日结束。':'每天从 8 种普通食材随机上架 4 种，四种均有当日限额；售罄后次日换货。野外也可获取普通食材。'}</p>
+  <h3>第 ${totalBusinessDay(game)} 天 · 今日上架 ${offers.length} 种</h3>${activeWorld(game)==='cloud'?`<div class="v015-ferry"><strong>航运委托 ×${game.ferryCredits||0}</strong><small>原店真实营业成交后获得；每个云港营业日最多领取一批旧世界食材。</small><div class="v093-buy-actions">${Object.entries(FERRY_SUPPLY_PACKS).map(([id,pack])=>`<button data-act="ferry-supply:${id}" ${!canShop||!(game.ferryCredits||0)||game.ledger?.some(x=>x.id===`ferry-supply-${game.cycle}-${game.day}`)?'disabled':''}>${pack.name} · ${Object.entries(pack.items).map(([ingredient,n])=>ING[ingredient].name+'×'+n).join('、')}</button>`).join('')}</div></div>`:''}<div class="stock-list" aria-label="今日可采购食材">${offers.map(stockLine).join('')}</div>
   <details class="v013e-warehouse-details"><summary>查看其他仓库库存（非今日商品）</summary><div class="stock-list">${elsewhere.map(([id,ing])=>`<div class="detail-row">${ingredientIconHtml(id,20)} ${ing.name} · 库存 ×${game.inventory[id]||0}</div>`).join('')}</div></details>`;
  }else if(overlay==='premium'){
   const options=premiumMenuOptions(game),active=premiumMenuActive(game)?game.premiumMenu:null;
@@ -9527,7 +9613,7 @@ function overlayMarkup(){if(!overlay)return '';
    };
    body='<h2>👩‍🍳 食堂伙伴</h2><p class="sheet-lead">每位帮厨按本人实际完成的订单获得经验；增加厨位必须配备人手才能真正出餐。开门前直接选择左、中、右优先站位；已选位置不可重复安排。营业时，空闲帮厨仍会自动走到缺人的炉台支援。</p><div class="staff-roster">'+row('helper')+row('waiter')+(crew.helper2.hired?row('helper2'):'')+'</div>';
  }else if(overlay==='settings'){
-  body=`<h2>⚙ 游戏设置</h2><p class="sheet-lead">ODDPOT · v0.15.0-alpha.3 · 单机本地存档</p>${b('guide-replay','重看第一轮引导','secondary')}${b('reset','重置存档，从第 1 天重新开始','danger')}<p class="sheet-lead">切到后台时营业会自动暂停。更换设备不会同步存档。</p>`;
+  body=`<h2>⚙ 游戏设置</h2><p class="sheet-lead">ODDPOT · v0.15.0-alpha.4 · 单机本地存档</p>${b('guide-replay','重看第一轮引导','secondary')}${b('reset','重置存档，从第 1 天重新开始','danger')}<p class="sheet-lead">切到后台时营业会自动暂停。更换设备不会同步存档。</p>`;
  }else if(overlay==='details'){
   const r=game.report;body=r?`<h2>营业账本详情</h2><p class="sheet-lead">本日订单由真实食材库存、工位工作秒数和顾客等待事件计算。</p><div class="book-list">${Object.entries(r.byDish).map(([id,d])=>`<div class="detail-row">${RECIPES[id].emoji} ${RECIPES[id].name}：售出 ${d.count} 份 · 满意 ${Math.round(d.totalSat/d.count)}</div>`).join('')}<div class="detail-row">左厨位占用 ${r.congestion.WOK||0} 秒 / 右厨位 ${r.congestion.POT||0} 秒${r.congestion.CENTER!==undefined?' / 中厨位 '+r.congestion.CENTER+' 秒':''}</div><div class="detail-row">食材耗用估值 ${r.cost} · 宣传 ${r.finance?.marketingCost||0} · 工资 ${r.finance?.wage||0} · 招待支出 ${r.hospitalityCost||0} · 收入 ${r.revenue} · 经营利润 ${r.profit} · 现金净变动 ${r.finance?.cashChange??'旧版无记录'}</div></div>`:'';
  }
@@ -9551,7 +9637,7 @@ function restaurantView(interactive=false){
 function sceneTag(title,sub=''){return `<div class="scene-tag"><strong>${title}</strong>${sub?`<small>${sub}</small>`:''}</div>`}
 function starInvite(){
  const progress=ensureChapterProgress(game);
- if(activeWorld(game)==='cloud')return `<div class="v12-star-invite"><strong>☁ 云港浮岛 · ${game.cloudProgress?.stars?'首枚港口星章':'新章'}</strong><small>当地目标：探索带回食材，再向云港食客真实售出 6 份当地料理 · ${game.cloudProgress?.servedLocal||0}/6${game.cloudProgress?.stars?' ✓':''}。云汽蒸笼需在成长页购入。</small></div>`;
+ if(activeWorld(game)==='cloud')return `<div class="v12-star-invite"><strong>☁ 云港浮岛 · ${game.cloudProgress?.stars?'首枚港口星章':'新章'}</strong><small>当地目标：探索带回食材，再向云港食客真实售出 6 份当地料理 · ${game.cloudProgress?.servedLocal||0}/6${game.cloudProgress?.stars?' ✓ · 自然客流增加':''}。云汽蒸笼可在成长页购入并升级；下一枚星章与下一扇门尚未开放。</small></div>`;
  if(progress.stars>=3)return `<div class="v12-star-invite"><strong>✦✦✦ 万味会宴完成</strong><small>云港浮岛已开放。可在预告或成长页进入传送门。</small></div>`;
  if(progress.stars===2){const active=thirdStarRequested(game),ready=thirdStarAvailable(game);
   return `<div class="v12-star-invite"><strong>✦✦ 万味会宴 · 第三星</strong><small>菌帽一家、芽角鹿客、幽灵鉴味师三席真实到店；至少两席满意完成、售出6单且利润不亏。${ready?'今晚可报名':'明天可再申请'}</small>${ready?`<button type="button" data-act="third-star-request" aria-pressed="${active}">${active?'已预约今晚 · 取消评鉴':'申请今晚会宴'}</button>`:''}</div>`;}
@@ -9605,8 +9691,8 @@ function forecast(){
  </div>`,'' ];
 }
 function bossHint(region){
- const hot=region==='spring',ingredient=hot?'ember_pepper':'mushroom_heart',boss=hot?'熔壳椒王':'孢冠菇王';
- const first=!game.bossCleared?.[hot?'ember_king':'spore_king'];
+ const hot=region==='spring',cloud=region==='cloud',ingredient=cloud?'gale_core':hot?'ember_pepper':'mushroom_heart',boss=cloud?'风暴首领':hot?'熔壳椒王':'孢冠菇王';
+ const first=!game.bossCleared?.[cloud?'gust_king':hot?'ember_king':'spore_king'];
  return {boss,name:ING[ingredient].name,qty:first?2:1,icon:ingredientIconHtml(ingredient,20)};
 }
 function field(){
@@ -9624,7 +9710,7 @@ function field(){
    <div class="ux-field-label"><strong>带一件厨具</strong></div>
    <div class="v08-weapon-picks">${fieldWeaponChoices(game).map(({type,level,slotIndex,fitted})=>`<button class="v08-weapon-pick ${selectedFieldWeaponType(game)===type?'chosen':''}" data-weapon="${type}" aria-pressed="${selectedFieldWeaponType(game)===type}">${type==='GRILL'?'🍢 烤叉':type==='WOK'?'🛡️ 炒锅剑盾':'🍲 炖锅投弹'} · Lv${level}<small>${fitted?`${slotIndex===0?'左':slotIndex===1?'右':'中'}厨位装配`:'背包备用'} · ${type==='GRILL'?(level>1?'前刺 0.72 秒 · 喷焰 3.0 格':'前刺 0.88 秒 · 喷焰 2.7 格'):type==='WOK'?(level>1?'挥击 0.62 秒 · 格挡 0.70 秒':'挥击 0.70 秒 · 格挡 0.45 秒'):(level>1?'投弹 0.30 秒 · 爆炸半径 0.75 格':'投弹 0.38 秒 · 爆炸半径 0.65 格')}</small></button>`).join('')}</div>
    <div class="ux-field-label"><strong>选择路线出发</strong></div>
-   <div class="route-options">${activeRoutes.map(r=>`<button class="route-card ${/risk/.test(r.id)?'route-risk':'route-safe'}" data-route="${r.id}"><span class="route-emoji" aria-hidden="true">${r.emoji}</span><div><strong>${r.name}</strong><small>${r.subtitle}${/risk/.test(r.id)&&activeWorld(game)!=='cloud'?` · 第三段挑战${bossHint(selectedRegion).boss}，为奖励留背包格`:''}</small></div><span class="route-risk-label">${/risk/.test(r.id)?'战斗':'采集'}</span><b aria-hidden="true">›</b></button>`).join('')}</div>
+   <div class="route-options">${activeRoutes.map(r=>`<button class="route-card ${/risk/.test(r.id)?'route-risk':'route-safe'}" data-route="${r.id}"><span class="route-emoji" aria-hidden="true">${r.emoji}</span><div><strong>${r.name}</strong><small>${r.subtitle}${/risk/.test(r.id)?` · 第三段挑战${bossHint(selectedRegion).boss}，为奖励留背包格`:''}</small></div><span class="route-risk-label">${/risk/.test(r.id)?'战斗':'采集'}</span><b aria-hidden="true">›</b></button>`).join('')}</div>
   </div></div>`,
  `<div class="dock-head"><span>三段路 · 可随时回店</span><span>背包 ${game.bagSlots||8} 格</span></div><div class="action-row">${b('bento','🍱 便当','secondary')}${b('skip-field','先去研发','secondary wide')}</div>`]
  }
@@ -9632,7 +9718,7 @@ function field(){
   const boss=bossHint(f.region),slots=fieldBagSlotsUsed(f),full=slots>=f.capacity;
   return [`<div class="forest-scene v08-branch-scene"><div class="v08-branch-panel"><small>第 ${f.segmentIndex}/3 段探索完成</small><h2>继续深入，还是回饭店？</h2>
   <p>背包 ${slots}/${f.capacity} 格 · 生命 ${f.hp}/3 · ${f.weapon?.type||'WOK'} Lv${f.weapon?.level||1}</p>
-  ${f.dangerCommitment&&f.region!=='cloud'?`<div class="v082-boss-promise">⚔️ 第三段必遇 ${boss.boss} · ${boss.icon}${boss.name} ×${boss.qty}</div>`:''}
+  ${f.dangerCommitment?`<div class="v082-boss-promise">⚔️ 第三段必遇 ${boss.boss} · ${boss.icon}${boss.name} ×${boss.qty}</div>`:''}
   <div class="v08-branch-cards">${f.choices.map(c=>`<button class="v08-branch-card" data-branch="${c.choiceId}">
   <strong>${c.danger?'⚔️':'🌿'} ${c.name}</strong><span>${c.description}</span>
   <small>${c.danger?`狩猎深入 · 最终挑战 ${boss.boss}，击败可拾取 ${boss.name}`:'🌱 采集为主 · 普通食材与奇遇'}</small>
@@ -9738,7 +9824,7 @@ function research(){const c=game.cook;
  if(c){const heat=previewHeat(c);const board=c.tiles.map((t,i)=>`<button class="wok-tile ${t?'filled':''} ${tileSelected===i?'active':''} ${t&&heat[i]>ING[t.id].hi?'too-hot':''}" data-tile="${i}">${t?`<span>${ingredientIconHtml(t.id,28)}</span><b>${t.heat}</b><small>→${heat[i]}</small>`:`<small>${[1,2,1,2,3,2,1,2,1][i]}</small>`}</button>`).join('');return [
  `<div class="wok-scene"><div class="wok-caption">🔥 ${c.method==='stir'?'爆炒':'焖煮'} · 第 ${Math.min(c.beats+1,3)} / 3 拍 · <b>${c.beats===3?'可以出锅':'拖动或点击换位'}</b></div><div class="wok-rim"><div class="wok-grid">${board}</div></div><div class="wok-ingredients">${c.tiles.filter(Boolean).map(t=>`<div>${ingredientIconHtml(t.id,28)} <strong>${t.heat}</strong><small>理想 ${ING[t.id].lo}–${ING[t.id].hi}</small></div>`).join('')}</div><div class="wok-explainer">${c.beats===3?'三拍完成！现在出锅看看发现了什么。':'每拍可换位或颠锅一次。火候累积，避免生熟不均与焦化。'}</div></div>`,
  `<div class="fire-modes">${[-1,0,1].map(v=>b(`flame:${v}`,v===-1?'小火':v===0?'标准':'猛火',c.flame===v?'chosen':'',c.beats===3)).join('')}</div><div class="action-row">${b('toss','↻ 颠锅','secondary',c.beats===3)}${c.beats===3?b('finish','🍽 起锅鉴定！','primary wide'):b('heat','🔥 加热一拍','primary wide')}</div>`];}
- const recipeCount=Object.keys(RECIPES).length;
+ const recipeCount=Object.keys(RECIPES).filter(id=>chapterRecipeAvailable(game,id)).length;
  return [`<div class="research-scene"><div class="research-board"><div class="cauldron">🍳</div><div class="research-label">自由搭配食材，解锁新的料理</div><div class="ingredients-board">${Object.entries(ING).map(([id,ing])=>`<button class="ingredient-tile ${selectedIngredients.includes(id)?'picked':''}" data-ingredient="${id}" ${!game.inventory[id]&&!selectedIngredients.includes(id)?'disabled':''}><span>${ingredientIconHtml(id,24)}</span><strong>${ing.name}</strong><small>×${game.inventory[id]||0}</small></button>`).join('')}</div><div class="selected-caption">已下料：${selectedIngredients.map(id=>ingredientIconHtml(id,22)).join(' + ')} ${selectedIngredients.length}/3</div><div class="hint-glow">📖 已掌握 ${itemCount()}/${recipeCount} 道菜 · ${recipeCount-itemCount()} 道等待发现</div></div></div>`,
  `<div class="action-row method-pick">${b('method:stir','🔥 爆炒',selectedMethod==='stir'?'chosen':'secondary')}${b('method:stew','🍲 焖煮',selectedMethod==='stew'?'chosen':'secondary')}${b('book','📖 图鉴','secondary')}</div><div class="action-row">${b('start-research','开锅实验','primary wide',selectedIngredients.length<2||!canUse(game,selectedIngredients))}${b('to-menu','去上架 →','secondary')}</div>`]
 }
@@ -9764,7 +9850,7 @@ function prepInventoryCheck(){
 }
 function preOpenMarketing(){
  const campaign=selectedCampaign(game),m=ensureManagement(game),wage=Object.entries(ensureCrew(game)).reduce((n,[role,c])=>n+(c.hired&&c.onDuty?crewWage(role,c.level):0),0);
- return '<details class="v014-marketing"><summary>📣 揽客：'+esc(campaign.name)+' · '+(campaign.cost?'🪙'+campaign.cost:'免费')+'</summary><section class="v12c-marketing" aria-label="今晚揽客计划"><div class="v12c-marketing-title"><b>选择今晚的揽客方式</b><span>工资 '+wage+' · 欠薪 '+m.wageDebt+'</span></div><div class="v12c-campaigns">'+Object.values(CAMPAIGNS).map(c=>'<button type="button" data-act="promo:'+c.id+'" aria-pressed="'+(campaign.id===c.id)+'" class="'+(campaign.id===c.id?'selected':'')+'" '+(c.stars&&(activeWorld(game)==='cloud'?game.cloudProgress?.stars||0:game.chapterProgress?.stars||0)<c.stars?'disabled':'')+'><b>'+esc(c.name)+'</b><small>'+(c.cost?'🪙'+c.cost:'免费')+' · +'+c.guests.length+'客</small></button>').join('')+'</div><small class="v12c-marketing-note">'+esc(campaign.desc)+' · 开门时才扣费；真实成交后才有收入。</small></section></details>';
+ return '<details class="v014-marketing"><summary>📣 揽客：'+esc(campaign.name)+' · '+(campaign.cost?'🪙'+campaign.cost:'免费')+'</summary><section class="v12c-marketing" aria-label="今晚揽客计划"><div class="v12c-marketing-title"><b>选择今晚的揽客方式</b><span>工资 '+wage+' · 欠薪 '+m.wageDebt+'</span></div><div class="v12c-campaigns">'+Object.values(CAMPAIGNS).filter(c=>activeWorld(game)==='cloud'?c.id==='none'||c.chapter==='cloud':!c.chapter).map(c=>'<button type="button" data-act="promo:'+c.id+'" aria-pressed="'+(campaign.id===c.id)+'" class="'+(campaign.id===c.id?'selected':'')+'" '+(c.stars&&(activeWorld(game)==='cloud'?game.cloudProgress?.stars||0:game.chapterProgress?.stars||0)<c.stars?'disabled':'')+'><b>'+esc(c.name)+'</b><small>'+(c.cost?'🪙'+c.cost:'免费')+' · +'+c.guests.length+'客</small></button>').join('')+'</div><small class="v12c-marketing-note">'+esc(campaign.desc)+' · 开门时才扣费；真实成交后才有收入。</small></section></details>';
 }
 function prep(){
  const k=ensureKitchen(game),preview=kitchenPreview(game);
@@ -9816,7 +9902,7 @@ function service(){
   ${goal?'<div class="v075-goal">🎯 '+esc(goal.label)+' · <b id="v075-goal">'+goal.value+'/'+goal.target+'</b></div>':''}
   ${modal}${paused}${end}</div>`,''];
 }
-function report(){const r=game.report;const lead=newRecipeLead(game);if(!r)return ['',''];return [`<div class="report-scene" aria-label="今日营业结算"><h2 class="report-header">${r.secondRating?.passed&&r.secondRating.stage===2?'✦✦ 获得第二枚万味星章！':r.secondRating?.passed?'✦ 二星首夜通过！':r.secondRating?'✦ 二星评鉴未达标':r.rating?.passed?'✦ 获得万味星章！':r.rating?'✦ 评鉴结束，下次再试':r.won?'🏆 击败爆炎厨王！':r.challenge?'🔥 爆炎厨王：挑战结束':'🌙 打烊啦，看看大家怎么说'}</h2><div class="report-stats"><div><small>今晚收入</small><b>🪙 ${r.revenue}</b></div><div><small>贡献利润</small><b>${r.profit}</b></div><div><small>成功上菜</small><b>${r.served}/${r.totalOrders||7}</b></div><div><small>平均满意</small><b>${r.sat}</b></div></div>${reportPromotionBanner()}${r.ferryEarned?`<div class="v015-ferry"><strong>🪁 获得航运委托 ×1</strong><small>来自原食堂今天的真实上菜；可在云港每日领取一批本地补给。</small></div>`:''}${ratingReceipt(r)}${secondRatingReceipt(r)}${r.finance?`<div class="v12c-finance"><strong>🪙 经营账本 · 真实收支</strong><span>营业收入 ${r.revenue} · 食材估值 ${r.cost} · 宣传 ${r.finance.marketingCost} · 工资 ${r.finance.wage}</span><span>其他营业支出 ${(r.eventExpense||0)+(r.hospitalityCost||0)} · 经营利润 <b>${r.profit}</b></span><span>本日现金净变动（含采购与投资）<b>${r.finance.cashChange>=0?'+':''}${r.finance.cashChange}</b></span><small>${CAMPAIGNS[r.finance.campaignId]?.name||'自然营业'}：新增 ${r.finance.promotionGuests} 客 · 到店 ${r.finance.marketingArrived||0} · 成交 ${r.finance.marketingServed||0} 单 · 销售 ${r.finance.marketingRevenue||0} 金币</small><small>已付工资 ${r.finance.paid} · 结算后欠薪 ${r.finance.debt}</small></div>`:''}${r.kitchen?`<div class="kitchen-report"><strong>厨房复盘</strong>${r.kitchen.slots.map((slot,i)=>`<span>${['左','右','中'][i]} ${cookName(slot.type)} Lv.${slot.level} · ${r.kitchen.stats?.[['WOK','POT','CENTER'][i]]?.count||0} 单 · 节约 ${r.kitchen.stats?.[['WOK','POT','CENTER'][i]]?.secondsSaved||0} 秒</span>`).join('')}</div>`:''}${r.byCraft&&Object.keys(r.byCraft).length?`<div class="v063-craft-report"><strong>🥘 本晚工艺表现（实际销售）</strong>${Object.values(r.byCraft).map(x=>`<div class="v063-craft-row"><b>${esc(RECIPES[x.recipeId]?.name||'料理')} · ${esc(x.styleLabel)}</b><small>售出 ${x.count} 份 · 评价 ${Math.round(x.totalSat/x.count)} · 实收 ${x.revenue} 金币${x.revenue!==x.baseRevenue? '（相比基础 '+(x.revenue-x.baseRevenue>0?'+':'')+(x.revenue-x.baseRevenue)+'）':''}</small></div>`).join('')}</div>` :''}${r.staff?.crew&&(r.staff.crew.helper.hired||r.staff.crew.waiter.hired||r.staff.crew.helper2?.hired)?`<div class="staff-report"><b>员工今日贡献</b>${r.staff.crew.helper.hired?`<span>帮厨：参与 ${r.staff.stats.helperOrders} 单 · 实省 ${r.staff.stats.helperSeconds} 秒</span>`:''}${r.staff.crew.helper2?.hired?`<span>${crewRoleName(game,'helper2')}：参与 ${r.staff.stats.helper2Orders||0} 单 · 实省 ${r.staff.stats.helper2Seconds||0} 秒</span>`:''}${r.staff.crew.waiter.hired?`<span>跑堂：照顾 ${r.staff.stats.waiterOrders} 桌 · 额外耐心 ${r.staff.stats.waiterBonus} 秒 · 延误挽回 ${r.staff.stats.waiterSaved} 单</span>`:''}<small>员工餐食材成本 ${r.staff.foodCost} 金币（计入利润）</small></div>`:''}${r.growth?`<div class="v12c-growth-report"><b>🌟 员工成长</b>${Object.entries(r.growth.earned).map(([role,n])=>`<span>${crewRoleName(game,role)} · 工作经验 +${n} · Lv.${(game.crew?.[role]?.level||r.growth.after[role].level)}（累计 ${r.growth.after[role].xp}）</span>`).join('')}</div>`:''}${r.regularGuests?.length?`<div class="v010-regular-report">👥 今天认识或再见了：${r.regularGuests.slice(0,3).map(g=>esc(g.name)+(g.happyMeals>=2?' · 熟客':'')).join('、')}</div>`:''}${r.premium?.recipeId?`<div class="v010-premium-report"><strong>✨ 隐藏菜 · ${esc(RECIPES[r.premium.recipeId]?.name||'稀有料理')}</strong><span>限量 ${r.premium.limit} 份 · 接单 ${r.premium.ordered} · 完成 ${r.premium.sold} · 实收 ${r.premium.revenue} 金币</span></div>`:''}<div class="daily-goal-result"><b>今日任务：${r.goal?.label||'完成营业'}</b><span>${r.goal?`${r.goal.value}/${r.goal.target} · ${r.goal.success?'达成！口碑 +2':'未达成，下次再试'}`:'常规营业'}</span></div><div class="guest-verdict"><strong>💬 今日食客点评</strong><p>${r.suggested}</p></div>${r.guestReviews?.length?`<div class="guest-feedback-list"><strong>真实食客回访</strong>${r.guestReviews.slice(0,3).map(x=>`<div class="review-line"><span>${RECIPES[x.recipeId]?.name||'今日料理'}</span><span>“${esc(x.text)}” · ${x.sat}分</span></div>`).join('')}</div>`:''}${r.choices?.length?`<div class="v04-choices"><small>店长今日决策</small>${r.choices.map(c=>`<span>${c.type==='menu_swap'?`临时换菜：${RECIPES[c.before].name} → ${RECIPES[c.after].name}`:`第${c.wave}波：${({sign:'辣味招牌',kitchen:'整理后厨',steady:'稳定营业',soup:'温和推荐',assist:'临时帮厨',publicity:'试吃宣传'})[c.choice]||c.choice}`}</span>`).join('')}</div>`:''}${r.challenge?`<div class="boss-mini">厨王赛得分 <b>${r.challenge.score}</b> / 对手 70　${r.won?'🏆 获得猛火掌控':'未达标，下轮仍可挑战'}</div>`:''}${r.queue?`<section class="v12e-queue-report" aria-label="门外真实等位"><strong>🚪 门外等位与接待</strong><span>峰值 ${r.queue.peak} 位 · 等位后入店 ${r.queue.waited} 位 · 等位流失 ${r.queue.abandoned} 位</span><small>平均成功等位 ${r.queue.waited?Math.round(r.queue.waitSeconds/r.queue.waited):0} 秒 · 未入座 ${r.unseated} 位${r.queue.peak===0?' · 今晚没有形成排队':''}</small></section>`:''}<div class="v09-growth-report"><b>🏠 经营成长 · 第 ${r.absoluteDay||totalBusinessDay(game)} 天</b><span>食堂 ${r.tableCount||2} 桌 / ${(r.tableCount||2)*2} 席 · 今日等位高峰 ${r.queuePeak||0} 人 · 未能入座 ${r.unseated||0} 人</span><span>累计营业额 ${game.history.reduce((n,x)=>n+x.revenue,0)} 金币 · 累计招待 ${game.history.reduce((n,x)=>n+x.served,0)} 人</span></div><div class="recipe-lead"><small>🔎 顾客带来的研发灵感</small><strong>${lead?`“${lead.hint}”`:'目前的菜谱已经全部解锁！'}</strong>${lead?`<span>可尝试 ${lead.ingredients.map(id=>ingredientIconHtml(id,22)).join(' + ')}</span>`:''}</div></div>`,
+function report(){const r=game.report;const lead=newRecipeLead(game);if(!r)return ['',''];return [`<div class="report-scene" aria-label="今日营业结算"><h2 class="report-header">${r.secondRating?.passed&&r.secondRating.stage===2?'✦✦ 获得第二枚万味星章！':r.secondRating?.passed?'✦ 二星首夜通过！':r.secondRating?'✦ 二星评鉴未达标':r.rating?.passed?'✦ 获得万味星章！':r.rating?'✦ 评鉴结束，下次再试':r.won?'🏆 击败爆炎厨王！':r.challenge?'🔥 爆炎厨王：挑战结束':'🌙 打烊啦，看看大家怎么说'}</h2><div class="report-stats"><div><small>今晚收入</small><b>🪙 ${r.revenue}</b></div><div><small>贡献利润</small><b>${r.profit}</b></div><div><small>成功上菜</small><b>${r.served}/${r.totalOrders||7}</b></div><div><small>平均满意</small><b>${r.sat}</b></div></div>${reportPromotionBanner()}${r.ferryEarned?`<div class="v015-ferry"><strong>🪁 获得航运委托 ×1</strong><small>来自原食堂今天的真实上菜；可在云港每日领取一批旧世界普通食材。</small></div>`:''}${ratingReceipt(r)}${secondRatingReceipt(r)}${r.finance?`<div class="v12c-finance"><strong>🪙 经营账本 · 真实收支</strong><span>营业收入 ${r.revenue} · 食材估值 ${r.cost} · 宣传 ${r.finance.marketingCost} · 工资 ${r.finance.wage}</span><span>其他营业支出 ${(r.eventExpense||0)+(r.hospitalityCost||0)} · 经营利润 <b>${r.profit}</b></span><span>本日现金净变动（含采购与投资）<b>${r.finance.cashChange>=0?'+':''}${r.finance.cashChange}</b></span><small>${CAMPAIGNS[r.finance.campaignId]?.name||'自然营业'}：新增 ${r.finance.promotionGuests} 客 · 到店 ${r.finance.marketingArrived||0} · 成交 ${r.finance.marketingServed||0} 单 · 销售 ${r.finance.marketingRevenue||0} 金币</small><small>已付工资 ${r.finance.paid} · 结算后欠薪 ${r.finance.debt}</small></div>`:''}${r.kitchen?`<div class="kitchen-report"><strong>厨房复盘</strong>${r.kitchen.slots.map((slot,i)=>`<span>${['左','右','中'][i]} ${cookName(slot.type)} Lv.${slot.level} · ${r.kitchen.stats?.[['WOK','POT','CENTER'][i]]?.count||0} 单 · 节约 ${r.kitchen.stats?.[['WOK','POT','CENTER'][i]]?.secondsSaved||0} 秒</span>`).join('')}</div>`:''}${r.byCraft&&Object.keys(r.byCraft).length?`<div class="v063-craft-report"><strong>🥘 本晚工艺表现（实际销售）</strong>${Object.values(r.byCraft).map(x=>`<div class="v063-craft-row"><b>${esc(RECIPES[x.recipeId]?.name||'料理')} · ${esc(x.styleLabel)}</b><small>售出 ${x.count} 份 · 评价 ${Math.round(x.totalSat/x.count)} · 实收 ${x.revenue} 金币${x.revenue!==x.baseRevenue? '（相比基础 '+(x.revenue-x.baseRevenue>0?'+':'')+(x.revenue-x.baseRevenue)+'）':''}</small></div>`).join('')}</div>` :''}${r.staff?.crew&&(r.staff.crew.helper.hired||r.staff.crew.waiter.hired||r.staff.crew.helper2?.hired)?`<div class="staff-report"><b>员工今日贡献</b>${r.staff.crew.helper.hired?`<span>${crewRoleName(game,'helper')}：参与 ${r.staff.stats.helperOrders} 单 · 实省 ${r.staff.stats.helperSeconds} 秒</span>`:''}${r.staff.crew.helper2?.hired?`<span>${crewRoleName(game,'helper2')}：参与 ${r.staff.stats.helper2Orders||0} 单 · 实省 ${r.staff.stats.helper2Seconds||0} 秒</span>`:''}${r.staff.crew.waiter.hired?`<span>跑堂：照顾 ${r.staff.stats.waiterOrders} 桌 · 额外耐心 ${r.staff.stats.waiterBonus} 秒 · 延误挽回 ${r.staff.stats.waiterSaved} 单</span>`:''}<small>员工餐食材成本 ${r.staff.foodCost} 金币（计入利润）</small></div>`:''}${r.growth?`<div class="v12c-growth-report"><b>🌟 员工成长</b>${Object.entries(r.growth.earned).map(([role,n])=>`<span>${crewRoleName(game,role)} · 工作经验 +${n} · Lv.${(game.crew?.[role]?.level||r.growth.after[role].level)}（累计 ${r.growth.after[role].xp}）</span>`).join('')}</div>`:''}${r.regularGuests?.length?`<div class="v010-regular-report">👥 今天认识或再见了：${r.regularGuests.slice(0,3).map(g=>esc(g.name)+(g.happyMeals>=2?' · 熟客':'')).join('、')}</div>`:''}${r.premium?.recipeId?`<div class="v010-premium-report"><strong>✨ 隐藏菜 · ${esc(RECIPES[r.premium.recipeId]?.name||'稀有料理')}</strong><span>限量 ${r.premium.limit} 份 · 接单 ${r.premium.ordered} · 完成 ${r.premium.sold} · 实收 ${r.premium.revenue} 金币</span></div>`:''}<div class="daily-goal-result"><b>今日任务：${r.goal?.label||'完成营业'}</b><span>${r.goal?`${r.goal.value}/${r.goal.target} · ${r.goal.success?'达成！口碑 +2':'未达成，下次再试'}`:'常规营业'}</span></div><div class="guest-verdict"><strong>💬 今日食客点评</strong><p>${r.suggested}</p></div>${r.guestReviews?.length?`<div class="guest-feedback-list"><strong>真实食客回访</strong>${r.guestReviews.slice(0,3).map(x=>`<div class="review-line"><span>${RECIPES[x.recipeId]?.name||'今日料理'}</span><span>“${esc(x.text)}” · ${x.sat}分</span></div>`).join('')}</div>`:''}${r.choices?.length?`<div class="v04-choices"><small>店长今日决策</small>${r.choices.map(c=>`<span>${c.type==='menu_swap'?`临时换菜：${RECIPES[c.before].name} → ${RECIPES[c.after].name}`:`第${c.wave}波：${({sign:'辣味招牌',kitchen:'整理后厨',steady:'稳定营业',soup:'温和推荐',assist:'临时帮厨',publicity:'试吃宣传'})[c.choice]||c.choice}`}</span>`).join('')}</div>`:''}${r.challenge?`<div class="boss-mini">厨王赛得分 <b>${r.challenge.score}</b> / 对手 70　${r.won?'🏆 获得猛火掌控':'未达标，下轮仍可挑战'}</div>`:''}${r.queue?`<section class="v12e-queue-report" aria-label="门外真实等位"><strong>🚪 门外等位与接待</strong><span>峰值 ${r.queue.peak} 位 · 等位后入店 ${r.queue.waited} 位 · 等位流失 ${r.queue.abandoned} 位</span><small>平均成功等位 ${r.queue.waited?Math.round(r.queue.waitSeconds/r.queue.waited):0} 秒 · 未入座 ${r.unseated} 位${r.queue.peak===0?' · 今晚没有形成排队':''}</small></section>`:''}<div class="v09-growth-report"><b>🏠 经营成长 · 第 ${r.absoluteDay||totalBusinessDay(game)} 天</b><span>食堂 ${r.tableCount||2} 桌 / ${(r.tableCount||2)*2} 席 · 今日等位高峰 ${r.queuePeak||0} 人 · 未能入座 ${r.unseated||0} 人</span><span>累计营业额 ${game.history.reduce((n,x)=>n+x.revenue,0)} 金币 · 累计招待 ${game.history.reduce((n,x)=>n+x.served,0)} 人</span></div><div class="recipe-lead"><small>🔎 顾客带来的研发灵感</small><strong>${lead?`“${lead.hint}”`:'目前的菜谱已经全部解锁！'}</strong>${lead?`<span>可尝试 ${lead.ingredients.map(id=>ingredientIconHtml(id,22)).join(' + ')}</span>`:''}</div></div>`,
  `<div class="action-row">${b('details','📊 账本','secondary')}${b('to-upgrade','🌅 结束本日 →','primary wide')}</div>`]}
 function secondRatingReceipt(r){
  const q=r?.secondRating;if(!q)return '';
@@ -9847,7 +9933,7 @@ function roomUpgradePanel(){
 }
 function upgrade(){
  const k=ensureKitchen(game);
- return [`<div class="scene-bg diner-bg">${restaurantView(false)}<div class="upgrade-card kitchen-upgrade-card"><h2>🏠 食堂又能长大一点</h2>${roomUpgradePanel()}<div class="v13a-bundle-panel" aria-label="第三厨位与第二帮厨组合扩建"><strong>${k.thirdUnlocked?`✓ 中央厨位与${crewRoleName(game,'helper2')}已到岗`:`🔥 后厨扩编 · 中央厨位＋${crewRoleName(game,'helper2')}`}</strong><small>${k.thirdUnlocked?'中央炉可独立接单；下一次备餐配置锅具、员工餐及两名帮厨的岗位。':`同时增加真实第三炉与帮厨${crewRoleName(game,'helper2')}；首星和第四桌后解锁。`}</small>${k.thirdUnlocked?'<span>已完成扩建</span>':b('third-kitchen-bundle','扩建＋雇佣 · '+THIRD_KITCHEN_BUNDLE_COST+' 金币','primary wide',!thirdKitchenBundleAvailable(game))}</div>${(activeWorld(game)==='cloud'?game.cloudProgress?.stars||0:game.chapterProgress?.stars||0)>=2?`<div class="v014b-grill-unlock"><strong>🍢 双面烤架与烤叉</strong><small>${k.grillOwned?'已拥有 · 备餐时任意厨位可装烤架，探索可选烤叉':'十道精选烤菜 · 任意厨位真实接单 · 探索新增穿刺武器'}</small>${k.grillOwned?'<span>已购入</span>':b('buy-grill','购入组合 · '+GRILL_COST+' 金币','secondary',!grillAvailable(game))}</div>`:''}<div class="upgrade-feature">📊 累计收入 ${(game.history||[]).reduce((n,x)=>n+x.revenue,0)} · 招待 ${(game.history||[]).reduce((n,x)=>n+x.served,0)} 位</div><h3 class="v014-upgrade-label">升级厨具</h3>${['WOK','POT',...(k.grillOwned?['GRILL']:[])].map(type=>{const level=k.mastery[type],cost=cookwareUpgradeCost(game,type),name=type==='WOK'?'炒锅':type==='POT'?'炖锅':'烤架';const gain=type==='WOK'?'挥击 0.70→0.62 秒 · 格挡 0.45→0.70 秒':type==='POT'?'投弹 0.38→0.30 秒 · 爆炸 0.65→0.75 格':'前刺 0.88→0.72 秒 · 喷焰 2.7→3.0 格';return `<div class="kitchen-upgrade-row"><div><strong>${name} · 全店共享 Lv.${level}</strong><small>${level>=2?'✓ 已生效 · 每单 -2 秒 · '+gain:'每单 -2 秒 · '+gain}</small></div>${b(`upgrade-kitchen:${type}`,cost===null?'已满级':`${cost} 金币升级`, 'secondary',cost===null||game.coins<cost)}</div>`}).join('')}<div class="upgrade-feature">🎒 背包 ${game.bagSlots||8}/12 格 · ${bagUpgradePrice(game)===null?'已满级':`扩容 ${bagUpgradePrice(game)} 金币`}</div>${b('upgrade-bag','增加背包 2 格','secondary',bagUpgradePrice(game)===null||game.coins<bagUpgradePrice(game))}<details class="v014-upgrade-notes"><summary>升级规则</summary><p>厨位决定产能，厨具等级全店共享。换装同类厨具不会重复收费。${game.tech?'猛火掌控已解锁':'赢得厨王赛后解锁猛火掌控'}。</p></details></div></div>`,
+ return [`<div class="scene-bg diner-bg">${restaurantView(false)}<div class="upgrade-card kitchen-upgrade-card"><h2>🏠 食堂又能长大一点</h2>${roomUpgradePanel()}<div class="v13a-bundle-panel" aria-label="第三厨位与第二帮厨组合扩建"><strong>${k.thirdUnlocked?`✓ 中央厨位与${crewRoleName(game,'helper2')}已到岗`:`🔥 后厨扩编 · 中央厨位＋${crewRoleName(game,'helper2')}`}</strong><small>${k.thirdUnlocked?'中央炉可独立接单；下一次备餐配置锅具、员工餐及两名帮厨的岗位。':`同时增加真实第三炉与帮厨${crewRoleName(game,'helper2')}；首星和第四桌后解锁。`}</small>${k.thirdUnlocked?'<span>已完成扩建</span>':b('third-kitchen-bundle','扩建＋雇佣 · '+THIRD_KITCHEN_BUNDLE_COST+' 金币','primary wide',!thirdKitchenBundleAvailable(game))}</div>${(activeWorld(game)==='cloud'?game.cloudProgress?.stars||0:game.chapterProgress?.stars||0)>=2?`<div class="v014b-grill-unlock"><strong>🍢 双面烤架与烤叉</strong><small>${k.grillOwned?'已拥有 · 备餐时任意厨位可装烤架，探索可选烤叉':'十道精选烤菜 · 任意厨位真实接单 · 探索新增穿刺武器'}</small>${k.grillOwned?'<span>已购入</span>':b('buy-grill','购入组合 · '+GRILL_COST+' 金币','secondary',!grillAvailable(game))}</div>`:''}<div class="upgrade-feature">📊 累计收入 ${(game.history||[]).reduce((n,x)=>n+x.revenue,0)} · 招待 ${(game.history||[]).reduce((n,x)=>n+x.served,0)} 位</div><h3 class="v014-upgrade-label">升级厨具</h3>${['WOK','POT',...(k.steamerOwned?['STEAM']:[]),...(k.grillOwned?['GRILL']:[])].map(type=>{const level=k.mastery[type],cost=cookwareUpgradeCost(game,type),name=type==='WOK'?'炒锅':type==='POT'?'炖锅':type==='STEAM'?'云汽蒸笼':'烤架';const gain=type==='WOK'?'挥击 0.70→0.62 秒 · 格挡 0.45→0.70 秒':type==='POT'?'投弹 0.38→0.30 秒 · 爆炸 0.65→0.75 格':type==='STEAM'?'本地蒸制培训，无探索武器':'前刺 0.88→0.72 秒 · 喷焰 2.7→3.0 格';return `<div class="kitchen-upgrade-row"><div><strong>${name} · 全店共享 Lv.${level}</strong><small>${level>=2?'✓ 已生效 · 每单 -2 秒 · '+gain:'每单 -2 秒 · '+gain}${activeWorld(game)==='cloud'&&['WOK','POT'].includes(type)&&game.worlds?.hearth?.kitchen?.mastery?.[type]>=2&&level<2?' · 原店经验折价':''}</small></div>${b(`upgrade-kitchen:${type}`,cost===null?'已满级':`${cost} 金币升级`, 'secondary',cost===null||game.coins<cost)}</div>`}).join('')}<div class="upgrade-feature">🎒 背包 ${game.bagSlots||8}/12 格 · ${bagUpgradePrice(game)===null?'已满级':`扩容 ${bagUpgradePrice(game)} 金币`}</div>${b('upgrade-bag','增加背包 2 格','secondary',bagUpgradePrice(game)===null||game.coins<bagUpgradePrice(game))}<details class="v014-upgrade-notes"><summary>升级规则</summary><p>厨位决定产能，厨具等级全店共享。换装同类厨具不会重复收费。${game.tech?'猛火掌控已解锁':'赢得厨王赛后解锁猛火掌控'}。</p></details></div></div>`,
  `<div class="action-row">${b('next-day','开始营业第 '+(totalBusinessDay(game)+1)+' 天','primary wide')}</div>`]
 }
 function render(){
@@ -9910,9 +9996,9 @@ function action(act){
  if(act.startsWith('promote:')){note(promoteCrew(game,act.slice(8))?'员工成功晋升！新形象立即可见，效率与新工资从下次营业起生效。':'经验不足、资金不足或暂不能晋升。');return}
  if(act.startsWith('hire:')){note(hireCrew(game,act.slice(5))?'伙伴加入食堂！':'金币不足或已经雇佣。');return}
  if(act==='field-bag'){if(game.phase==='field'&&game.field){releaseStick();overlay='field-bag';render()}return}
- if(act==='book'){bookTab='recipes';overlay='book';render();return}
+ if(act==='book'){bookTab='recipes';bookWorld='current';overlay='book';render();return}
  if(act==='stock'||act==='premium'||act==='settings'||act==='details'||act==='bento'){overlay=act;render();return}
- if(act==='ferry-supply'){note(redeemFerrySupply(game)?'航运补给已入当地仓库：云谷米×2、浮苔叶×1。':'今天无法再次领取，或没有航运委托。');return}
+ if(act.startsWith('ferry-supply:')){const packId=act.slice(13);note(redeemFerrySupply(game,packId)?'原店食材已运抵云港仓库。':'今天无法再次领取，或没有航运委托。');return}
  if(act==='reset'){if(confirm('清空本设备的 v0.4 试玩存档？')){localStorage.removeItem('oddpot-prototype-v04');game=newGame();selectedIngredients=['chicken','chili'];overlay='';note('新旅程开始，祝你研究出奇味料理！')}return}
  if(act.startsWith('buy:')){const [,id,n]=act.split(':'),count=n?Number(n):1;
   note(purchase(game,id,count)?'已采购 '+count+' 份，食材进入仓库。':'金币不足、当日售罄或当前阶段不能采购。');return}
@@ -9947,7 +10033,7 @@ function action(act){
  if(act==='clear-table'){selectedOrderId=null;note('点餐桌查看客人的实时订单，再决定是否优先出餐。');return}
  if(act==='close'){const r=closeService(game);note(r?'日报已经生成。今天的客人会告诉你该研发什么新菜。':'请先完成本晚营业。');return}
  if(act==='to-upgrade'){nextPhase(game,'upgrade');note('所有食材与新菜都会保留到下一天。');return}
- if(act.startsWith('upgrade-kitchen:')){const i=Number(act.split(':')[1]);note(buyCookwareUpgrade(game,act.split(':')[1])?'该类厨具全店永久升到 Lv.2！所有同类厨位和探索装备都共享。':'金币不足或此类厨具已升级。');return}
+ if(act.startsWith('upgrade-kitchen:')){const type=act.slice(16);note(buyCookwareUpgrade(game,type)?type==='STEAM'?'云汽蒸笼升到 Lv.2！当地所有蒸笼厨位每单节省 2 秒。':'该类厨具当前食堂永久升到 Lv.2！同类厨位与探索装备共享。':'金币不足或此类厨具已升级。');return}
  if(act==='upgrade'){note(buyUpgrade(game)?'厨位升级成功。':'已经升级或金币不足。');return}
  if(act==='upgrade-bag'){note(buyBagUpgrade(game)?`背包扩容完成！下次探索可带 ${game.bagSlots} 格。`:'金币不足或已经升满背包。');return}
  if(act==='third-kitchen-bundle'){note(buyThirdKitchenBundle(game)?`中央厨位和新帮厨${crewRoleName(game,'helper2')}同时加入！下一营业日可在员工面板安排上岗。`:'需要首星、第四桌和足够金币；这个组合只可购买一次。');return}
@@ -9979,6 +10065,7 @@ app.addEventListener('click',e=>{
  }
  const route=e.target.closest('[data-route]');if(route){const entered=enterField(game,route.dataset.route);if(entered)startActionField(game);if(entered){message='出发！';flashUntil=0;render()}else note('无法进入路线');return}
  const item=e.target.closest('[data-ingredient]');if(item){const id=item.dataset.ingredient;if(selectedIngredients.includes(id))selectedIngredients=selectedIngredients.filter(i=>i!==id);else if(selectedIngredients.length<3)selectedIngredients=[...selectedIngredients,id];else message='一锅最多放三种食材。';render();return}
+ const scope=e.target.closest('[data-book-world]');if(scope){bookWorld=scope.dataset.bookWorld==='all'?'all':'current';render();return}
  const tab=e.target.closest('[data-book-tab]');if(tab){bookTab=tab.dataset.bookTab==='guests'?'guests':'recipes';render();return}
  const typeTab=e.target.closest('[data-recipe-type]');if(typeTab){recipeType=typeTab.dataset.recipeType;render();return}
  const book=e.target.closest('[data-book]');if(book){const r=RECIPES[book.dataset.book];if(!chapterRecipeAvailable(game,book.dataset.book)){note('这道菜只保存在图鉴中；当前世界没有稳定的食材来源。');return}selectedIngredients=[...r.ids];selectedMethod=r.method;overlay='';note(`已选择实验线索：${r.hint}`);return}

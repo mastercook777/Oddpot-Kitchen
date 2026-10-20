@@ -3,14 +3,19 @@ import {ING} from './data.js?v=0.14.0-alpha.5';
 const encounterHash=n=>{let h=n>>>0;h=Math.imul(h^(h>>>16),0x45d9f3b);h=Math.imul(h^(h>>>16),0x45d9f3b);return (h^(h>>>16))>>>0;};
 export const SPECIAL_ENCOUNTER_KINDS=['merchant','traveler','ecology'];
 export function specialEncounterOffer(kind,region='forest'){
+ if(region==='cloud'){
+  if(kind==='merchant')return {coins:24,cost:{},gain:{storm_egg:2}};
+  if(kind==='traveler')return {coins:0,cost:{cloud_rice:2},gain:{sour_bell:2}};
+  if(kind==='ecology')return {coins:0,cost:{},gain:{sky_moss:1}};
+ }
  if(kind==='merchant')return {coins:36,cost:{},gain:{tide_sour_pulp:2}};
  if(kind==='traveler')return {coins:0,cost:{[region==='spring'?'potato':'mushroom']:2},gain:{starlit_nectar:2}};
  if(kind==='ecology')return {coins:0,cost:{},gain:{[region==='spring'?'potato':'mushroom']:1}};
  return null;
 }
 export function makeSpecialEncounterPlan(s,route){
- const region=String(route).startsWith('spring')?'spring':'forest',risk=/risk/.test(route);
- const seed=encounterHash((s.seed||20261009)+(s.cycle||1)*1009+(s.day||1)*139+(region==='spring'?104729:0));
+ const region=String(route).startsWith('cloud')?'cloud':String(route).startsWith('spring')?'spring':'forest',risk=/risk/.test(route);
+ const seed=encounterHash((s.seed||20261009)+(s.cycle||1)*1009+(s.day||1)*139+(region==='spring'?104729:region==='cloud'?209759:0));
  const misses=Math.min(2,Math.max(0,Number(s.encounterProgress?.misses)||0)),npc=misses>=2||seed%100<(risk?50:40);
  const encounters=[],segment=2+encounterHash(seed+5)%2,key=`${s.cycle}-${s.day}-${region}`;
  if(npc){const kind=encounterHash(seed+17)%100<(risk?70:30)?'merchant':'traveler';
@@ -22,6 +27,11 @@ export function makeSpecialEncounterPlan(s,route){
  return {version:'0.11-C',region,npcScheduled:npc,encounters};
 }
 export function specialEncounterDetails(n){
+ if(n?.region==='cloud'){
+  if(n.kind==='merchant')return {title:'港口雷羽摊主',line:'「雷羽蛋刚从巢缘收来，两枚装一筐。想省一次狩猎，就拿金币来换。」',hint:'只售当地常材；风暴晶核仍须亲自挑战首领。'};
+  if(n.kind==='traveler')return {title:'换货的云舟客',line:'「我的酸铃果有余，能拿两份云谷米换吗？」',hint:'交易只使用这趟野外背包里的云谷米。'};
+  return {title:'浮苔风窝',line:'浮苔顺着云流在此聚成一团。',hint:'可采集少量浮苔叶，不会直接解锁菜谱。'};
+ }
  if(n?.kind==='merchant')return {title:'神秘商人',line:'「酸得会拐弯，一包两份。先试一锅，再留一份招待识货的客人。」',hint:'酸浆适合鸡肉与蒜瓣爆炒，也能与土豆、洋葱慢炖。'};
  if(n?.kind==='traveler')return {title:'采蜜旅人',line:'「蜜蜂不收金币，我也不收。拿你这趟找到的食材换吧。」',hint:'花蜜可以翻炒魔菜，或与鸡肉、洋葱轻搅慢炖。'};
  return {title:n?.region==='spring'?'温泉晶簇':'月露花丛',line:'一处尚未被取走的自然馈赠。可以安全采一点，或付出体力深入调查。',hint:'这里得到普通食材；不会直接解锁菜谱。'};

@@ -37,7 +37,7 @@ export function insertPlannedFieldEncounter(map,plan,segment){
  const where=candidates[0];
  map.nodes.push({key:plan.eventId,eventId:plan.eventId,kind:plan.kind,region:plan.region,
   ...(plan.offer?{offer:structuredClone(plan.offer),status:'available'}:{}),
-  id:plan.region==='spring'?'potato':'mushroom',type:'event',
+  id:plan.region==='cloud'?'sky_moss':plan.region==='spring'?'potato':'mushroom',type:'event',
   x:where.x,y:where.y,n:1,claimed:false});
  return map;
 }

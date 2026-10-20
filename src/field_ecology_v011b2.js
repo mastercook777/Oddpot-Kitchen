@@ -8,7 +8,7 @@ export const ECOLOGY_ENCOUNTERS={
  roots:{base:3,mix:['boar','sporeling','chicken']},garden:{base:2,mix:['chicken','boar']},
  spring:{base:2,mix:['steam_crab','pepper']},steam:{base:3,mix:['steam_crab','pepper','chicken']},
  ember:{base:3,mix:['pepper','boar','steam_crab']},oasis:{base:2,mix:['steam_crab','chicken']},
- cloud:{base:2,mix:['gust_moth','chicken']},cloud_roost:{base:3,mix:['gust_moth','gust_moth','chicken']}
+ cloud:{base:2,mix:['gust_moth']},cloud_roost:{base:3,mix:['gust_moth']}
 };
 const ecologyDist=(a,b)=>Math.hypot(a.x-b.x,a.y-b.y);
 const ecologyHash=n=>{let h=n>>>0;h=Math.imul(h^(h>>>16),0x45d9f3b);h=Math.imul(h^(h>>>16),0x45d9f3b);return (h^(h>>>16))>>>0;};

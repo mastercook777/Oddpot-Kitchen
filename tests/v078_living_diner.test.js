@@ -12,7 +12,7 @@ const sample=(segment='regular',status='ordering')=>({
  reviewAt:21,reviewedAt:23,reviewText:'非常好吃！',reviewType:'delicious'
 });
 test('all six customer segments have distinct, multiple voice lines for every meaningful activity',()=>{
- const types=['adventurer','family','regular','critic','stargazer','gardener'];
+ const types=['adventurer','family','regular','critic','stargazer','gardener','cloud_weaver','cloud_docker'];
  assert.deepEqual(Object.keys(DINER_VOICES).sort(),types.sort());
  const kinds=['order','choose','kitchen','ready','delivery','eat','hurry','furious','stockout','mismatch'];
  for(const type of types){
@@ -22,7 +22,7 @@ test('all six customer segments have distinct, multiple voice lines for every me
   }
  }
  const guests=types.map(s=>diningSpeechCue(sample(s),2.6)?.text);
- assert.equal(new Set(guests).size,6,'opening phrases must sound distinct by archetype');
+ assert.equal(new Set(guests).size,types.length,'opening phrases must sound distinct by archetype');
 });
 test('speech for a real dish leads with the actual recipe name and is deterministic across frames',()=>{
  const o=sample('critic','queued');
@@ -126,12 +126,12 @@ test('long daily report scrolls from TOP and semantic title does not clip or dra
 });
 test('version, offline bundle and complete JavaScript stay parseable',()=>{
  const html=source('../index.html'),app=source('../src/app.js'),build=source('../scripts/build-standalone.py');
- assert.equal(JSON.parse(source('../package.json')).version,'0.15.0-alpha.3');
- assert.match(html,/Oddpot Kitchen v0\.15\.0-alpha\.3/);
- assert.match(html,/app\.js\?v=0\.15\.0-alpha\.3/);
- assert.match(app,/ODDPOT · v0\.15\.0-alpha\.3/);
+ assert.equal(JSON.parse(source('../package.json')).version,'0.15.0-alpha.4');
+ assert.match(html,/Oddpot Kitchen v0\.15\.0-alpha\.4/);
+ assert.match(html,/app\.js\?v=0\.15\.0-alpha\.4/);
+ assert.match(app,/ODDPOT · v0\.15\.0-alpha\.4/);
  assert.match(build,/diner_polish_v078\.css/);
- assert.match(build,/v0\.15\.0-alpha\.3 离线版/);
+ assert.match(build,/v0\.15\.0-alpha\.4 离线版/);
  for(const path of ['../src/app.js','../src/diner_ambience_v077.js','../src/engine.js','../src/scenes_v04.js']){
   const p=spawnSync(process.execPath,['--check',new URL(path,import.meta.url).pathname],{encoding:'utf8'});
   assert.equal(p.status,0,path+' '+p.stderr);

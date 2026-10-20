@@ -31,8 +31,8 @@ test('regenerated standalone JS is syntactically valid and includes all v0.6.3-A
 });
 test('full catalog has 84 pairs/triples for each vessel, and retains legacy 12 plus six curated recipes',()=>{
  assert.equal(Object.keys(ING).length,17);
- assert.equal(Object.keys(RECIPE_INDEX).length,194);
- assert.equal(Object.keys(RECIPES).length,193); // original combinations plus eight authored Cloud Harbor dishes
+ assert.equal(Object.keys(RECIPE_INDEX).length,204);
+ assert.equal(Object.keys(RECIPES).length,203); // original combinations plus eighteen authored Cloud Harbor dishes
  const ids=['beef','chicken','chili','garlic','mushroom','cabbage','onion','potato'];
  for(let i=0;i<ids.length;i++)for(let j=i+1;j<ids.length;j++){
   const choices=[[ids[i],ids[j]]];

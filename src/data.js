@@ -53,7 +53,9 @@ ING.gale_core={name:'风暴晶核',emoji:'💠',tags:['轻盈','鲜','浓郁'],l
 // Daily market rotates among ALL eight ordinary ingredients. FIELD_ONLY items remain
 // important in exploration and receive tighter shop quantities and higher prices.
 export const MARKET_ROTATION_STAPLES=['beef','chicken','chili','garlic','mushroom','cabbage','onion','potato'];
-export const CLOUD_MARKET_STAPLES=['cloud_rice','sky_moss','storm_egg','sour_bell','chicken','onion'];
+// The port market sells local harvests. Old-world staples arrive through the
+// Hearth ferry commission, not as random Cloud Harbor forage or market stock.
+export const CLOUD_MARKET_STAPLES=['cloud_rice','sky_moss','storm_egg','sour_bell'];
 export const SHOP_STAPLES=Object.keys(ING).filter(id=>ING[id].acquisitionPolicy==='SHOP_STAPLE');
 export const FIELD_INGREDIENTS=Object.keys(ING).filter(id=>ING[id].acquisitionPolicy!=='SHOP_STAPLE');
 export const DEFAULT_INVENTORY={beef:3,chicken:10,chili:2,garlic:9,mushroom:12,cabbage:8,onion:5,potato:5};
@@ -113,6 +115,16 @@ const CLOUD_RECIPES={
  sour_rice:{name:'酸铃炒云米',emoji:'🍳',ids:['cloud_rice','sour_bell'],method:'stir',station:'WOK',time:8,price:26,tags:['酸','饱腹','开胃'],cost:9,hint:'酸铃果为云米提味'},
  sky_egg_chicken:{name:'雷羽金鸡',emoji:'🍳',ids:['storm_egg','chicken','onion'],method:'stir',station:'WOK',time:10,price:37,tags:['肉','鲜','甜香'],cost:16,hint:'雷羽蛋包裹鸡肉与洋葱'},
  moss_soup:{name:'云苔清汤',emoji:'🥣',ids:['sky_moss','onion'],method:'stew',station:'POT',time:9,price:22,tags:['清爽','温和','轻盈'],cost:6,hint:'浮苔叶与洋葱慢煮'},
+  rice_moss_stir:{name:'浮苔云谷小炒',emoji:'🍳',ids:['cloud_rice','sky_moss'],method:'stir',station:'WOK',time:7,price:24,tags:['清爽','轻盈','鲜'],cost:7,hint:'云谷米与浮苔叶轻快翻炒'},
+  rice_egg_pot:{name:'雷羽云米粥',emoji:'🥣',ids:['cloud_rice','storm_egg'],method:'stew',station:'POT',time:10,price:31,tags:['饱腹','温和','鲜'],cost:11,hint:'云谷米与雷羽蛋煮成浓粥'},
+  moss_egg_stir:{name:'浮苔雷蛋小炒',emoji:'🍳',ids:['sky_moss','storm_egg'],method:'stir',station:'WOK',time:8,price:32,tags:['轻盈','鲜','香'],cost:10,hint:'雷羽蛋包住浮苔叶，快火翻炒'},
+  sour_moss_stir:{name:'酸铃浮苔脆炒',emoji:'🥬',ids:['sky_moss','sour_bell'],method:'stir',station:'WOK',time:7,price:25,tags:['酸','清爽','开胃'],cost:8,hint:'酸铃果与浮苔叶同锅，保住酸香'},
+  sour_egg_pot:{name:'酸铃雷蛋羹',emoji:'🥣',ids:['storm_egg','sour_bell'],method:'stew',station:'POT',time:9,price:34,tags:['酸','鲜','温和'],cost:12,hint:'雷羽蛋和酸铃果慢煮成羹'},
+  rice_moss_bell:{name:'三风云谷饭',emoji:'🍚',ids:['cloud_rice','sky_moss','sour_bell'],method:'stew',station:'POT',time:11,price:34,tags:['轻盈','清爽','饱腹'],cost:12,hint:'米香、叶香与酸铃分层入锅'},
+  mushroom_cloud_stir:{name:'菌香云米炒',emoji:'🍄',ids:['cloud_rice','mushroom'],method:'stir',station:'WOK',time:8,price:29,tags:['菌香','饱腹','鲜'],cost:9,hint:'旧店的蘑菇与云谷米翻出菌香'},
+  garlic_moss_pot:{name:'蒜香浮苔汤',emoji:'🥣',ids:['sky_moss','garlic'],method:'stew',station:'POT',time:9,price:27,tags:['香','清爽','温和'],cost:8,hint:'旧店蒜瓣给浮苔清汤添香'},
+  potato_egg_stir:{name:'雷蛋煎薯',emoji:'🍳',ids:['storm_egg','potato'],method:'stir',station:'WOK',time:9,price:36,tags:['饱腹','鲜','香'],cost:13,hint:'旧店土豆与雷羽蛋一同煎熟'},
+  chili_bell_pot:{name:'酸铃火椒汤',emoji:'🥣',ids:['sour_bell','chili'],method:'stew',station:'POT',time:9,price:28,tags:['酸','辣','开胃'],cost:8,hint:'旧店火椒与酸铃果煮出酸辣'},
  gale_core_steam:{name:'风核云汽珍羹',emoji:'💠',ids:['gale_core','sky_moss','storm_egg'],method:'steam',station:'POT',time:12,price:57,tags:['轻盈','清爽','鲜','浓郁'],cost:27,hint:'风暴晶核与雷羽蛋、浮苔叶加盖蒸透',rare:true}
 };
 for(const [id,r] of Object.entries(CLOUD_RECIPES)){
