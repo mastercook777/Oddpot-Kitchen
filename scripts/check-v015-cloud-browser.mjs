@@ -2,7 +2,7 @@ import {chromium} from 'playwright';
 import assert from 'node:assert/strict';
 import {spawn} from 'node:child_process';
 import {mkdir} from 'node:fs/promises';
-import {newGame,travelPortal,enterField} from '../src/engine.js';
+import {newGame,travelPortal} from '../src/engine.js';
 
 const url='http://127.0.0.1:5173/',key='oddpot-prototype-v04',out='docs/screenshots/v015-cloud';
 await mkdir(out,{recursive:true});
@@ -49,9 +49,11 @@ try{
   await page.locator('[data-act="to-field"]').click();
   assert.ok(await page.locator('[data-route="cloud_safe"]').isVisible());
   await page.screenshot({path:`${out}/routes-${width}.png`});
-  const island=cloud(width);island.phase='field';assert.equal(enterField(island,'cloud_safe'),true);
-  await open(island);
-  assert.ok(await page.locator('canvas').first().isVisible());
+  await page.locator('[data-route="cloud_safe"]').click();
+  assert.equal((await page.evaluate(k=>JSON.parse(localStorage.getItem(k)),key)).field.action,true);
+  assert.ok(await page.locator('#forest-canvas').isVisible());
+  assert.ok(await page.evaluate(()=>{const c=document.querySelector('#forest-canvas');return c.width>0&&c.height>0&&c.getContext('2d').getImageData(c.width>>1,c.height>>1,1,1).data[3]>0}), 'field canvas has rendered pixels');
+  assert.ok(!(await page.locator('#field-clock').innerText()).includes('NaN'));
   await page.screenshot({path:`${out}/island-${width}.png`});
   const choices=cloud(width);choices.phase='menu';choices.recipes.cloud_rice_chicken=80;choices.recipes.sour_rice=80;choices.recipes.steam_cloud_rice=80;
   choices.kitchen.steamerOwned=true;choices.menu=['sour_rice','cloud_rice_chicken','sour_rice'];
