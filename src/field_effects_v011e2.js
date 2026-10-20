@@ -35,6 +35,11 @@ export function drawFieldProjectile(c,p,type='enemy'){
  }else{
   const spore=p.source==='spore',gust=p.source==='gust',a=Math.atan2(p.vy||0,p.vx||1);
   c.translate(p.x,p.y);c.rotate(a);
+  if(p.windSheet){
+   c.fillStyle='#d7f3edaa';c.beginPath();c.ellipse(0,0,.30,.16,0,0,Math.PI*2);c.fill();
+   for(const offset of [-.17,0,.17]){c.beginPath();c.moveTo(-.37,offset*.7);c.quadraticCurveTo(-.12,offset-.08,.25,offset);c.strokeStyle='#7ec2dab8';c.lineWidth=.055;c.stroke();}
+   c.restore();return;
+  }
   c.strokeStyle=gust?'#b6e3ef99':spore?'#8abbc577':'#e9976877';c.lineWidth=.09;c.beginPath();c.moveTo(-.27,0);c.quadraticCurveTo(-.16,-.03,0,0);c.stroke();
   fieldFxEllipse(c,0,0,.14,spore?.14:.10,gust?'#84b5db':spore?'#90c7c3':'#efad70');
   fieldFxEllipse(c,.025,-.018,.065,.055,gust?'#f9e7a7':spore?'#daf2da':'#fff0b9');

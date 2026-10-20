@@ -3,10 +3,10 @@ import {createEcologyEnemies,ecologyEngagedEnemies,stepEcologyEnemy} from './fie
 import {stepMiniBoss,stepBossZones} from './field_bosses_v011g.js';
 // v0.4 real-time forest encounter. The underlying kitchen inventory remains
 // governed by engine.settleField; this file only mutates the expedition bag.
-import {ING} from './data.js?v=0.15.0-alpha.1';
+import {ING} from './data.js?v=0.15.0-alpha.3';
 import {fieldHarvestTargetSuffix} from './field_target_v012f.js?v=0.13.0-alpha.9';
 import {meleeProfile,meleeAttackWouldHit} from './field_combat_feedback_v084.js?v=0.8.4';
-import {clamp, rand, settleField,addFieldBag,resolveSpecialFieldEvent} from './engine.js?v=0.15.0-alpha.1';
+import {clamp, rand, settleField,addFieldBag,resolveSpecialFieldEvent} from './engine.js?v=0.15.0-alpha.3';
 import {hazardPhase} from './field_rules_v011a.js';
 import {fieldEnemySpawnCandidates} from './field_world_v011b1.js';
 const dist=(a,b)=>Math.hypot(a.x-b.x,a.y-b.y);
@@ -308,18 +308,18 @@ export function stepActionField(s,axisX,axisY,dt){
    }
    else{
     const aim=e.aim||f.pos,ang=Math.atan2(aim.y-e.y,aim.x-e.x);
-    const spreads=e.isBoss?e.kind==='boss_spore'?[-.55,0,.55]:[-.27,0,.27]:[0];
-    const source=e.kind==='boss_spore'||e.kind==='sporeling'?'spore':'pepper';
+    const spreads=e.kind==='gust_moth'?[-.36,0,.36]:e.isBoss?e.kind==='boss_spore'?[-.55,0,.55]:[-.27,0,.27]:[0];
+    const source=e.kind==='gust_moth'?'gust':e.kind==='boss_spore'||e.kind==='sporeling'?'spore':'pepper';
     for(const spread of spreads){
      const theta=ang+spread,speed=source==='spore'?(e.isBoss?1.9:2.1):e.isBoss?3.1:2.8;
-     f.projectiles.push({x:e.x,y:e.y,vx:Math.cos(theta)*speed,vy:Math.sin(theta)*speed,
-       ownerX:e.x,ownerY:e.y,life:3,source});
+     f.projectiles.push({x:e.x-Math.sin(ang)*spread,y:e.y+Math.cos(ang)*spread,vx:Math.cos(source==='gust'?ang:theta)*speed,vy:Math.sin(source==='gust'?ang:theta)*speed,
+       ownerX:e.x,ownerY:e.y,life:3,source,windSheet:source==='gust',side:spread<0?-1:1});
     }
    }
   }}
  }
  stepBossZones(f,dt,(amount,source,attacker)=>hurt(s,amount,source,attacker));
- for(const p of f.projectiles){p.x+=p.vx*dt;p.y+=p.vy*dt;p.life-=dt;if(dist(f.pos,p)<.28){p.life=0;hurt(s,1,p.source||'pepper',{x:p.ownerX??p.x,y:p.ownerY??p.y})}}f.projectiles=f.projectiles.filter(p=>p.life>0&&!blocked(f,p,0));
+ for(const p of f.projectiles){p.x+=p.vx*dt;p.y+=p.vy*dt;p.life-=dt;if(dist(f.pos,p)<(p.windSheet?.38:.28)){p.life=0;hurt(s,1,p.source||'pepper',{x:p.ownerX??p.x,y:p.ownerY??p.y});if(p.windSheet){const speed=Math.hypot(p.vx,p.vy)||1,next={x:f.pos.x-p.vy/speed*.26*(p.side||1),y:f.pos.y+p.vx/speed*.26*(p.side||1)};if(!blocked(f,next,.18)){f.pos=next;f.x=next.x;f.y=next.y;}}}}f.projectiles=f.projectiles.filter(p=>p.life>0&&!blocked(f,p,0));
  advancePlayerProjectiles(s,dt);
  if(f.attackCd<=0){
   const isPot=f.weapon?.type==='POT',isFork=f.weapon?.type==='GRILL',range=isPot?3.5:isFork?(f.weapon?.level>1?2.35:2.1):1.25;

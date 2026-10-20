@@ -676,9 +676,59 @@ function drawOutdoorQueueChatter(c,queue,t,L,T,W,H){
 
 // Compact cutaway outside the entry: environmental context, not a modal panel.
 // Weather is consistent for the day; standing visitors are actual pending orders.
+function drawCloudRestaurantBackdrop(c,t,w,h){
+ const x=f=>f*w,y=f=>f*h;
+ const sky=c.createLinearGradient(0,0,0,h);sky.addColorStop(0,'#80bbdb');sky.addColorStop(.55,'#d1e8df');sky.addColorStop(1,'#638fac');rect(c,0,0,w,h,sky);
+ // Distant floating silhouettes are visible through the entire open upper deck.
+ for(const [i,px,py,scale] of [[0,.15,.095,.8],[1,.73,.115,1.15],[2,.48,.047,.48]]){
+  const X=x(px+Math.sin(t*.14+i)*.008),Y=y(py),W=w*.17*scale;
+  c.fillStyle=i===1?'#6698a8':'#86abba';c.beginPath();c.ellipse(X,Y,W,7*scale,0,0,Math.PI*2);c.fill();
+  c.beginPath();c.moveTo(X-W*.73,Y+2);c.lineTo(X,Y+28*scale);c.lineTo(X+W*.70,Y+2);c.fill();
+  line(c,X-W*.65,Y-4,X+W*.64,Y-4,'#e2ead0',3);
+ }
+ for(let i=0;i<8;i++){
+  const px=x(((i*.19+t*.003)%1.4)-.20),py=y(.20+i*.105),rw=w*(.10+i%3*.04);
+  c.fillStyle='#f1f9f0a8';c.beginPath();c.ellipse(px,py,rw,7+i%3*2,0,0,Math.PI*2);c.fill();
+ }
+ // A smaller suspended stone platform creates real visual height. Walkable
+ // geometry remains owned by dinerFloor, so no misleading clickable ledges.
+ c.fillStyle='#65849a';c.beginPath();c.moveTo(x(.06),y(.18));c.lineTo(x(.94),y(.18));c.lineTo(x(.91),y(.945));c.lineTo(x(.50),y(.985));c.lineTo(x(.09),y(.945));c.closePath();c.fill();
+ c.fillStyle='#c4d5d0';c.beginPath();c.moveTo(x(.065),y(.165));c.lineTo(x(.935),y(.165));c.lineTo(x(.92),y(.926));c.lineTo(x(.50),y(.969));c.lineTo(x(.08),y(.926));c.closePath();c.fill();
+ for(let row=0;row<12;row++){
+  const yy=y(.19+row*.061);line(c,x(.09),yy,x(.91),yy,'#7097a046',1.3);
+  for(let col=0;col<8;col++)line(c,x(.105+col*.105+(row%2)*.05),yy,x(.105+col*.105+(row%2)*.05),yy+h*.061,'#83a9ad3a',1);
+ }
+ // Open rails and mooring ropes at the void-facing edges.
+ for(const side of [.075,.925]){
+  line(c,x(side),y(.18),x(side),y(.90),'#315c7188',4);
+  for(let j=0;j<6;j++){
+   const Y=y(.23+j*.13);circle(c,x(side),Y,3,'#ddcf9b');
+   line(c,x(side),Y,x(side+(side<.5?.035:-.035)),Y+13,'#67849b',2);
+  }
+ }
+ // The harbour pennants sway above the cookware without hiding it.
+ for(const px of [.35,.65]){
+  line(c,x(px),y(.01),x(px),y(.19),'#6b8192',1.5);
+  c.fillStyle='#e7c789';c.beginPath();c.moveTo(x(px),y(.035));c.lineTo(x(px+(px<.5?.09:-.09)),y(.066));c.lineTo(x(px),y(.089));c.fill();
+ }
+}
 export function drawDinerDoorway(c,s,t,w,h){
  const g=dinerFloor(s),p=g.doorwayView,queue=dinerQueueGuests(s,t),weather=dinerWeather(s);
  const L=p.left*w,R=p.right*w,T=p.top*h,B=p.bottom*h,W=R-L,H=B-T;
+ if(s.activeWorld==='cloud'){
+  c.save();c.fillStyle='#4b7188';c.beginPath();c.roundRect(L-6,T-6,W+12,H+12,10);c.fill();c.beginPath();c.rect(L,T,W,H);c.clip();
+  const sky=c.createLinearGradient(0,T,0,B);sky.addColorStop(0,'#7cbada');sky.addColorStop(1,'#eff9ec');c.fillStyle=sky;c.fillRect(L,T,W,H);
+  for(const [i,px] of [.18,.52,.83].entries()){
+   const X=L+px*W,Y=T+H*(.48+i*.06);c.fillStyle='#759cab';c.beginPath();c.ellipse(X,Y,W*.12,H*.06,0,0,Math.PI*2);c.fill();
+   c.beginPath();c.moveTo(X-W*.09,Y);c.lineTo(X,Y+H*.28);c.lineTo(X+W*.09,Y);c.fill();
+  }
+  c.fillStyle='#9bb9c0';c.fillRect(L,T+H*.77,W,H*.23);
+  for(let i=0;i<5;i++)line(c,L+i*W*.23,T+H*.80,L+i*W*.23,T+H,'#526f8299',2);
+  queue.slice(0,4).forEach((o,i)=>pixelActor(c,o.segment,L+W*(.20+i*.205),T+H*.77,DINER_ACTOR_SCALE*.82,{walk:0}));
+  c.fillStyle='#294e68cb';c.fillRect(L+6,T+6,94,22);text(c,'☁ 等位 '+queue.length,L+51,T+17,'#fff6dd',11);
+  drawOutdoorQueueChatter(c,queue,t,L,T,W,H);c.strokeStyle='#e4d4aa';c.lineWidth=4;c.strokeRect(L+2,T+2,W-4,H-4);c.restore();
+  return {queue:queue.length,weather:'breeze'};
+ }
  c.save();
  c.fillStyle='#4c382d';c.beginPath();c.roundRect(L-6,T-6,W+12,H+12,12);c.fill();
  c.fillStyle='#c39965';c.beginPath();c.roundRect(L-3,T-3,W+6,H+6,9);c.fill();
@@ -735,16 +785,17 @@ function drawRestaurantV075(c,s,t,w,h){
   c.beginPath();c.roundRect(X,Y,W,H,R);c.fillStyle=color;c.fill();
   if(stroke){c.strokeStyle=stroke;c.lineWidth=2;c.stroke();}
  };
- rect(c,0,0,w,h,'#6f513b');
+ const cloud=s.activeWorld==='cloud';
+ if(cloud)drawCloudRestaurantBackdrop(c,t,w,h);else rect(c,0,0,w,h,'#6f513b');
  // Rich warm tile floor: one drawable scene rather than HTML furniture overlay.
- for(let row=0;row<Math.ceil(h/28);row++){
+ for(let row=0;!cloud&&row<Math.ceil(h/28);row++){
   rect(c,0,row*28,w,27,row%2?'#796045':'#72563e');
   line(c,0,row*28,w,row*28,'#4b382ca0',1);
   for(let column=0;column<Math.ceil(w/36);column++)
     line(c,column*36+(row%2)*18,row*28,column*36+(row%2)*18,row*28+27,'#9d775022',1);
  }
  // Shrink the redundant upper wall; the game HUD already displays the name.
- rect(c,0,0,w,h*.145,'#304f3e');rect(c,0,h*.145-7,w,8,'#b88c5c');
+ if(!cloud)rect(c,0,0,w,h*.145,'#304f3e');rect(c,0,h*.145-7,w,8,cloud?'#e2d6aa':'#b88c5c');
  for(const xx of [.09,.91]){rr(x(xx)-10,h*.072,20,38,5,'#6e937e','#cfae7d');rect(c,x(xx)-5,h*.083,10,18,'#3e6e68')}
  // The two active stoves are deliberately compact; the centre is reserved for
  // a later third production slot. No area names are printed on screen.
@@ -756,7 +807,7 @@ function drawRestaurantV075(c,s,t,w,h){
    // A top-down charcoal rack, not a round pot: raised legs, ember bed,
    // spaced grates, and two skewers laid crosswise over the coals.
    const gw=rw*.94,gh=24,gy=Y-17;
-   rr(X-rw/2,Y-24,rw,51,7,'#513c30','#b99765');
+   rr(X-rw/2,Y-24,rw,51,7,cloud?'#476b80':'#513c30',cloud?'#e5d6ad':'#b99765');
    rect(c,X-gw*.42,gy+gh,5,8,'#392f2c');rect(c,X+gw*.42-5,gy+gh,5,8,'#392f2c');
    rr(X-gw/2-2,gy-3,gw+4,gh+7,3,'#343c3d','#bd9b70');
    rr(X-gw*.43,gy,gw*.86,gh,2,'#622e29','#d69a69');
@@ -774,8 +825,8 @@ function drawRestaurantV075(c,s,t,w,h){
    }
    if(busy){for(let j=0;j<3;j++)circle(c,X-11+j*10,gy-5-Math.sin(t*5+j)*2,1.8,'#f7c57d88')}
   }else{
-   rr(X-rw/2,Y-24,rw,51,7,'#513c30','#b99765');
-   rr(X-rw*.43,Y-20,rw*.86,39,5,'#916d49','#d8ae74');
+   rr(X-rw/2,Y-24,rw,51,7,cloud?'#476b80':'#513c30',cloud?'#e5d6ad':'#b99765');
+   rr(X-rw*.43,Y-20,rw*.86,39,5,cloud?'#9dbabd':'#916d49',cloud?'#e8dcba':'#d8ae74');
    circle(c,X,Y-4,Math.min(21,w*.057),'#d7c19b');
    circle(c,X,Y-4,Math.min(17,w*.047),type==='WOK'?'#394b49':'#587580','#d5c9a7');
    if(type==='POT'){circle(c,X,Y-4,Math.min(11,w*.034),'#ac7a51');rect(c,X-18,Y-7,36,4,'#dbc39a')}
@@ -794,17 +845,17 @@ function drawRestaurantV075(c,s,t,w,h){
  // Before the REAL expansion purchase, show the old sealed central hearth.
  if((v?.kitchenSnapshot?.length||(!v&&s.kitchen?.thirdUnlocked?3:2))<3){
   const reserve=g.reservedStove,RX=x(reserve.x),RY=y(reserve.y);
-  rr(RX-21,RY-20,42,42,6,'#463c34','#907859');
-  rr(RX-16,RY-15,32,27,4,'#625647','#927d60');
+  rr(RX-21,RY-20,42,42,6,cloud?'#456576':'#463c34',cloud?'#d7cfab':'#907859');
+  rr(RX-16,RY-15,32,27,4,cloud?'#688c9b':'#625647',cloud?'#adc9cb':'#927d60');
   line(c,RX-13,RY+8,RX+13,RY-12,'#998469',3);
   line(c,RX-13,RY-12,RX+13,RY+8,'#998469',3);
  }
  // Compact pass counter: continuous centre aisle, no full-width obstruction.
  for(const [from,to] of [[.075,.390],[.610,.925]]){
-  rr(x(from),y(g.geometry.counterTop),x(to-from),h*.039,4,'#5b3e2e','#cda575');
-  rect(c,x(from),y(g.geometry.counterTop),x(to-from),4,'#c39965');
+  rr(x(from),y(g.geometry.counterTop),x(to-from),h*.039,4,cloud?'#5c8395':'#5b3e2e',cloud?'#eee2bd':'#cda575');
+  rect(c,x(from),y(g.geometry.counterTop),x(to-from),4,cloud?'#d9e5d6':'#c39965');
  }
- rr(x(.441),y(.389),x(.118),h*.025,4,'#9e805d','#caaa77');
+ rr(x(.441),y(.389),x(.118),h*.025,4,cloud?'#a2bdba':'#9e805d',cloud?'#f0e1bd':'#caaa77');
  const pending=v?.orders?.filter(o=>o.status==='pickup')||[];
  pending.slice(0,3).forEach((o,i)=>{dish(c,x(.50+(i-(Math.min(pending.length,3)-1)/2)*.046),y(.400),RECIPES[o.recipeId]?.station||'WOK')});
  const target=v?.hero?.carryOrderId?v.orders.find(o=>o.id===v.hero.carryOrderId&&o.status==='carried'):null;
@@ -817,9 +868,9 @@ function drawRestaurantV075(c,s,t,w,h){
    rr(X+sign*side*.77-8,Y-10,16,24,4,'#4e372c','#a87d56');
    rr(X+sign*side*.77-7,Y-14,14,13,3,'#78573b','#bc9366');
   }
-  rr(X-half-3,Y-half+7,side+6,side+5,6,'#493124','#67462e');
-  rr(X-half,Y-half,side,side,5,i>=2?'#916b48':'#a0754a','#e0b27b');
-  rr(X-half+4,Y-half+4,side-8,side-8,3,'#ae865a','#c69d65');
+  rr(X-half-3,Y-half+7,side+6,side+5,6,cloud?'#42677c':'#493124',cloud?'#83a7af':'#67462e');
+  rr(X-half,Y-half,side,side,5,cloud?'#a6c5c4':i>=2?'#916b48':'#a0754a',cloud?'#e7dab3':'#e0b27b');
+  rr(X-half+4,Y-half+4,side-8,side-8,3,cloud?'#c7dcd2':'#ae865a',cloud?'#a3c5c0':'#c69d65');
   line(c,X-half+6,Y-4,X+half-6,Y-4,'#8d6845',1);
   line(c,X-half+6,Y+6,X+half-6,Y+6,'#8d6845',1);
   // A single subtle rune is part of the wood, not an in-world UI name.
@@ -899,13 +950,13 @@ function drawRestaurantV075(c,s,t,w,h){
     const alpha=Math.max(0,Math.min(1,(t-start)/Math.max(.1,until-start)));
     pt={x:from.x+(to.x-from.x)*alpha,y:from.y+(to.y-from.y)*alpha};
    }
-   actors.push({id:role,x:pt.x,y:pt.y,kind:role,level:person.level||1,
+   actors.push({id:role,x:pt.x,y:pt.y,kind:s.activeWorld==='cloud'?'cloud_'+role:role,level:person.level||1,
     walk:moving?t*2:false,working:!moving&&!!v.stations[['WOK','POT','CENTER'][station]]});
   }
   if(crew?.waiter?.hired){
    const pos=waiterDeliveryPose(s,t);
    const delivery=pos.plate?v.orders.find(o=>o.status==='delivering'&&Number.isFinite(o.deliveryAt)):null;
-   actors.push({id:'waiter',x:pos.x,y:pos.y,kind:'waiter',level:crew.waiter.level||1,walk:pos.moving,plate:pos.plate,plateRecipeId:delivery?.recipeId});
+   actors.push({id:'waiter',x:pos.x,y:pos.y,kind:s.activeWorld==='cloud'?'cloud_waiter':'waiter',level:crew.waiter.level||1,walk:pos.moving,plate:pos.plate,plateRecipeId:delivery?.recipeId});
   }
   if(v.hero){
    const hero=v.hero,zone=heroZone(hero,s);
@@ -918,7 +969,7 @@ function drawRestaurantV075(c,s,t,w,h){
  }
  else {
   const reduced=globalThis.matchMedia?.('(prefers-reduced-motion: reduce)').matches||false;
-  for(const person of homeKitchenActors(s,t,reduced))actors.push(person);
+  for(const person of homeKitchenActors(s,t,reduced))actors.push(s.activeWorld==='cloud'&&['helper','helper2','waiter'].includes(person.kind)?{...person,kind:'cloud_'+person.kind}:person);
   // The idle room has no active orders. This is a small visual cue only.
   for(const stove of reduced?[]:[g.stoveLeft,g.stoveRight,...(s.kitchen?.thirdUnlocked?[g.reservedStove]:[])]){
    const X=x(stove.x),Y=y(stove.y);

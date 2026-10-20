@@ -22,10 +22,10 @@ test('fixed-seed real arrival plans choose grill recipes for multiple existing g
 
 test('recipe book and menu use actual GRILL label, not pot; old saves do not auto-learn new dishes',()=>{
  const app=readFileSync(new URL('../src/app.js',import.meta.url),'utf8');
- assert.match(app,/const shown=Object\.entries\(RECIPES\)\.filter\(\(\[id,r\]\)=>game\.recipes\[id\].*r\.station==='GRILL'.*grillOwned/);
+ assert.match(app,/const shown=Object\.entries\(RECIPES\)\.filter\(\(\[id,r\]\)=>recipeCookware\(r\)===recipeType.*r\.station==='GRILL'.*grillOwned/);
  assert.match(app,/const stationName=.*recipe\?\.method==='steam'\?'云汽蒸笼':type==='GRILL'\?'烤架'/);
  assert.match(app,/r\.ids\.map\(onlyName\).*stationName\(r\.station,r\)/);
- assert.match(app,/esc\(r\.name\)\} · \$\{stationName\(r\.station,r\)\}/);
+ assert.match(app,/esc\(r\.name\)\} · \$\{cookName\(recipeCookware\(r\)\)\}/);
  const s=newGame(77);assert.equal(s.recipes.grill_garlic_mushroom,undefined);
  for(const [id,r] of Object.entries(RECIPES))if(r.station!=='GRILL')s.recipes[id]=75;
  assert.equal(newRecipeLead(s),null,'unowned grill does not advertise unavailable research');

@@ -1,4 +1,4 @@
-<!doctype html><html lang="zh-CN"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1.0,maximum-scale=1.0,viewport-fit=cover,user-scalable=no"><meta name="apple-mobile-web-app-capable" content="yes"><meta name="theme-color" content="#1b3c2b"><title>怪味食堂 · v0.15.0-alpha.1 离线版</title><style>.ingredient-icon{display:inline-block;width:var(--ingredient-size,24px);height:var(--ingredient-size,24px);max-width:none;object-fit:contain;image-rendering:pixelated;vertical-align:-.24em;flex:none;pointer-events:none;user-select:none}
+<!doctype html><html lang="zh-CN"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1.0,maximum-scale=1.0,viewport-fit=cover,user-scalable=no"><meta name="apple-mobile-web-app-capable" content="yes"><meta name="theme-color" content="#1b3c2b"><title>怪味食堂 · v0.15.0-alpha.3 离线版</title><style>.ingredient-icon{display:inline-block;width:var(--ingredient-size,24px);height:var(--ingredient-size,24px);max-width:none;object-fit:contain;image-rendering:pixelated;vertical-align:-.24em;flex:none;pointer-events:none;user-select:none}
 .stock-line>span .ingredient-icon{margin-right:3px}.target-chip .ingredient-icon{vertical-align:middle}.book-icon .ingredient-icon{display:block}
 .v063-food-icon .ingredient-icon{width:1em;height:1em;vertical-align:top;filter:none}.v063-receipt-line .ingredient-icon{vertical-align:middle}
 .v063-food-picker button>span,.v063-drop>span{line-height:1}.v063-food-picker .ingredient-icon,.v063-drop .ingredient-icon{vertical-align:top}
@@ -1182,6 +1182,11 @@
 .v076-home .v12-star-invite:has(.portal-picks){display:grid;grid-template-columns:1fr;gap:5px}
 .v076-home .v12-star-invite:has(.portal-picks)>button{grid-column:1;grid-row:auto;min-height:40px}
 .v063-vessels:has([data-act="method:steam"]){grid-template-columns:repeat(2,minmax(0,1fr))}
+.v015-cook-tabs{display:flex;gap:4px;overflow-x:auto;padding:4px 0 8px;scrollbar-width:thin}
+.v015-cook-tabs button{flex:0 0 auto;min-width:70px;min-height:38px}
+.v015-ferry{display:grid;gap:5px;padding:10px;margin:8px 0;border:1px solid #9dcad7;border-radius:10px;background:#365e75;color:#f1f6e9}
+.v015-ferry small{line-height:1.45;color:#e0f0ed}.v015-ferry button{min-height:42px;border:1px solid #d9e5c4;border-radius:7px;background:#d9e5c4;color:#26465d;font-weight:700}.v015-ferry button:disabled{opacity:.45}
+.world-cloud .kitchen-choice{display:flex;flex-wrap:wrap;gap:4px}.world-cloud .kitchen-choice button{flex:1 1 42%;min-height:34px}
 @media(max-width:390px){.portal-picks{padding:5px;gap:3px}.portal-picks button{font-size:10px;min-height:28px!important}.v076-home .v12-star-invite:has(.portal-picks){padding:5px 8px}}
 
 .v12-star-invite{
@@ -4006,40 +4011,64 @@ function newGame(seed=20261009){return {version:4,seed,cycle:1,day:1,onboarding:
 // engine. Dormant restaurants keep their own economy and transaction IDs.
 const LOCAL_CHAPTER_FIELDS=['cycle','day','dining','market','phase','coins','reputation','inventory','crew','staffFoodCost','management','kitchen','bagSlots','selectedWeaponSlot','bento','route','field','cook','menu','prep','prepVariants','prepCost','manualCost','service','report','lastCook','researchReceipt','ledger','logs','result','step','history','premiumMenu','bossCleared','encounterProgress','cloudProgress'];
 function activeWorld(s){return s.activeWorld==='cloud'?'cloud':'hearth'}
+const CLOUD_LOCAL_INGREDIENTS=new Set(['cloud_rice','sky_moss','storm_egg','sour_bell','gale_core']);
+const CLOUD_PANTRY=new Set([...CLOUD_LOCAL_INGREDIENTS,'chicken','onion']);
+function recipeCookware(recipe){return recipe?.method==='steam'?'STEAM':recipe?.station}
+function cookwareOwned(s,recipe){const type=recipeCookware(recipe),k=ensureKitchen(s);return type==='STEAM'?k.steamerOwned:type==='GRILL'?k.grillOwned:!!type}
+function chapterRecipeAvailable(s,id){
+ const r=RECIPES[id];if(!r)return false;
+ return activeWorld(s)==='cloud'?r.ids.some(x=>CLOUD_LOCAL_INGREDIENTS.has(x))&&r.ids.every(x=>CLOUD_PANTRY.has(x)):!r.ids.some(x=>CLOUD_LOCAL_INGREDIENTS.has(x));
+}
+function crewRoleName(s,role){return activeWorld(s)==='cloud'?({helper:'阿岚',waiter:'小羽',helper2:'小栖'}[role]||CREW_ROLES[role]?.name):CREW_ROLES[role]?.name}
+function redeemFerrySupply(s){
+ if(activeWorld(s)!=='cloud'||!['forecast','field','research','menu','prep'].includes(s.phase)||s.field&&!s.field.settled||(s.ferryCredits||0)<1||s.ledger?.some(x=>x.id===`ferry-supply-${s.cycle}-${s.day}`))return false;
+ if(!transact(s,`ferry-supply-${s.cycle}-${s.day}`,'ferry_supply',{cloud_rice:2,sky_moss:1},0))return false;
+ s.ferryCredits--;return true;
+}
+function settleCloudRoster(s){
+ if(activeWorld(s)!=='cloud'||s.cloudProgress?.localCrew)return;
+ s.cloudProgress??={explored:false,servedLocal:0};s.crew??={};s.crew.helper??={};
+ // Early portal saves copied a Hearth hire into the Cloud roster. Keep
+ // experience earned by the local helper, but remove unpurchased copied staff.
+ for(const role of ['waiter','helper2'])if(s.crew[role]?.hired&&!s.ledger?.some(x=>x.id===`crew-hire-${role}`)&&!s.ledger?.some(x=>x.id==='third-kitchen-crew-bundle'&&role==='helper2')){
+  s.crew[role]={hired:false,meals:0,feed:null};
+ }
+ s.crew.helper.hired=true;s.crew.helper.onDuty=true;s.crew.helper.station=0;
+ s.cloudProgress.localCrew=true;
+ const valid=Object.keys(s.recipes||{}).filter(id=>chapterRecipeAvailable(s,id));
+ s.menu=(s.menu||[]).slice(0,3).map(id=>chapterRecipeAvailable(s,id)&&s.recipes[id]?id:valid[0]||'');
+ while(s.menu.length<3)s.menu.push(valid[0]||'');
+ s.premiumMenu=null;
+ if(s.phase==='prep'&&!canMenu(s))s.phase='research';
+}
 function localStars(s){return activeWorld(s)==='cloud'?(s.cloudProgress?.stars||0):(s.chapterProgress?.stars||0)}
 function portalAvailable(s){return (s.chapterProgress?.stars||0)>=3&&['forecast','upgrade'].includes(s.phase)&&(!s.field||s.field.settled)&&(!s.service||s.service.reportBuilt)}
 function travelPortal(s,destination,selection={}){
  if(!['hearth','cloud'].includes(destination)||!portalAvailable(s)||destination===activeWorld(s))return false;
  s.worlds??={};
  const source=activeWorld(s);
- const travelingCrew=ensureCrew(s);
+ ensureCrew(s);
  s.worlds[source]=Object.fromEntries(LOCAL_CHAPTER_FIELDS.map(key=>[key,clone(s[key])]));
  if(!s.worlds.cloud&&destination==='cloud'){
   const fresh=newGame((s.seed^0x51ad)>>>0);
-  fresh.inventory={chicken:6,mushroom:4,cabbage:4,onion:4,garlic:4,cloud_rice:4,sky_moss:4,storm_egg:1};
+  fresh.inventory={chicken:6,onion:4,cloud_rice:4,sky_moss:4,storm_egg:1};
   fresh.coins=120;fresh.dining={tableCount:2};
-  fresh.cloudProgress={explored:false,servedLocal:0};
+  fresh.cloudProgress={explored:false,servedLocal:0,localCrew:true};
   const tool=['WOK','POT','GRILL'].includes(selection.tool)?selection.tool:['WOK','POT','GRILL'].find(type=>(s.kitchen?.mastery?.[type]||1)>1)||'WOK';
   const inherited=Math.max(1,Math.min(2,s.kitchen?.mastery?.[tool]||1));
   if(tool==='GRILL'&&s.kitchen?.grillOwned)fresh.kitchen.grillOwned=true;
   fresh.kitchen.mastery={WOK:1,POT:1,GRILL:1,[tool]:inherited};
   fresh.kitchen.slots=[{type:'WOK',level:fresh.kitchen.mastery.WOK},{type:'POT',level:fresh.kitchen.mastery.POT}];
   const role=['helper','waiter','helper2'].includes(selection.crew)&&s.crew?.[selection.crew]?.hired?selection.crew:['helper','waiter','helper2'].find(candidate=>s.crew?.[candidate]?.hired);
-  if(s.crew?.[role]?.hired){fresh.crew[role]=clone(s.crew[role]);if(role==='helper2')fresh.crew[role].station=1;}
+  fresh.crew.helper={hired:true,onDuty:true,station:0,meals:0,feed:null,xp:0,level:1};
+  fresh.menu=['','',''];
   s.worlds.cloud=Object.fromEntries(LOCAL_CHAPTER_FIELDS.map(key=>[key,clone(fresh[key])]));
-  s.portalCarry={tool,crew:s.crew?.[role]?.hired?role:null};
+  s.portalCarry={tool,mentor:s.crew?.[role]?.hired?role:null};
  }
  const target=s.worlds[destination];if(!target)return false;
- // The restaurant payroll and roster stay local; a carried employee retains
- // their higher earned level and experience across the two saved rosters.
- const sharedRole=s.portalCarry?.crew;
- if(sharedRole&&travelingCrew[sharedRole]?.hired&&target.crew?.[sharedRole]?.hired){
-  const from=travelingCrew[sharedRole],to=target.crew[sharedRole];
-  to.xp=Math.max(to.xp||0,from.xp||0);to.level=Math.max(to.level||1,from.level||1);
-  s.worlds[source].crew[sharedRole].xp=to.xp;s.worlds[source].crew[sharedRole].level=to.level;
- }
  for(const key of LOCAL_CHAPTER_FIELDS)s[key]=clone(target[key]);
  s.activeWorld=destination;
+ settleCloudRoster(s);
  ensureKitchen(s);ensureCrew(s);ensureManagement(s);
  return true;
 }
@@ -4085,10 +4114,10 @@ const currentPremiumDay=s=>`${s.cycle}-${s.day}`;
 function premiumMenuActive(s){
  const p=s.premiumMenu;
  return !!(p&&p.dayKey===currentPremiumDay(s)&&p.recipeId&&p.limit>0&&
-  s.recipes?.[p.recipeId]&&RECIPES[p.recipeId]?.rare&&!s.menu.includes(p.recipeId));
+  s.recipes?.[p.recipeId]&&chapterRecipeAvailable(s,p.recipeId)&&RECIPES[p.recipeId]?.rare&&!s.menu.includes(p.recipeId));
 }
 function premiumMenuOptions(s){
- return Object.entries(RECIPES).filter(([id,r])=>r.rare&&s.recipes?.[id]&&!s.menu.includes(id))
+ return Object.entries(RECIPES).filter(([id,r])=>r.rare&&chapterRecipeAvailable(s,id)&&s.recipes?.[id]&&!s.menu.includes(id))
   .map(([id,r])=>{const craft=recipeCraftSnapshot(s,id);
    const stock=recipeAvailableServings(s,id,{ignorePremium:true});
    return {id,name:r.name,stock,price:Math.round(craft.price*PREMIUM_PRICE_FACTOR),quality:craft.quality,recipe:r};});
@@ -4207,8 +4236,8 @@ function reassignIdleCooks(v){
   }
   if(w.autoSupport===false||v.time-(w.lastMoveTime??-999)<4)continue;
   const current=helperPosition(w),key=stationId(current),type=v.kitchenSnapshot?.[current]?.type;
-  if(v.stations[key]||v.queued.some(id=>{const o=v.orders.find(x=>x.id===id);return o&&RECIPES[o.recipeId]?.station===type}))continue;
-  const candidates=v.kitchenSnapshot.map((slot,i)=>({i,key:stationId(i),slot})).filter(c=>c.i!==current&&!stationTaken(v,c.i,role)&&(v.stations[c.key]||v.queued.some(id=>{const o=v.orders.find(x=>x.id===id);return o&&RECIPES[o.recipeId]?.station===c.slot.type})));
+  if(v.stations[key]||v.queued.some(id=>{const o=v.orders.find(x=>x.id===id);return o&&recipeCookware(RECIPES[o.recipeId])===type}))continue;
+  const candidates=v.kitchenSnapshot.map((slot,i)=>({i,key:stationId(i),slot})).filter(c=>c.i!==current&&!stationTaken(v,c.i,role)&&(v.stations[c.key]||v.queued.some(id=>{const o=v.orders.find(x=>x.id===id);return o&&recipeCookware(RECIPES[o.recipeId])===c.slot.type})));
   if(!candidates.length)continue;
   candidates.sort((a,b)=>Number(!!v.stations[b.key])-Number(!!v.stations[a.key])||Math.abs(a.i-current)-Math.abs(b.i-current));
   const next=candidates[0].i;
@@ -4232,23 +4261,24 @@ function ensureKitchen(s){
   POT:Math.max(1,...old.filter(x=>x.type==='POT').map(x=>x.level===2?2:1)),
   GRILL:Math.max(1,...old.filter(x=>x.type==='GRILL').map(x=>x.level===2?2:1))};
  }
- for(const type of ['WOK','POT','GRILL'])s.kitchen.mastery[type]=Math.max(s.kitchen.mastery[type]===2?2:1,...s.kitchen.slots.filter(slot=>slot.type===type).map(slot=>slot.level===2?2:1),1);
+ s.kitchen.mastery.STEAM??=1;
+ for(const type of ['WOK','POT','GRILL','STEAM'])s.kitchen.mastery[type]=Math.max(s.kitchen.mastery[type]===2?2:1,...s.kitchen.slots.filter(slot=>slot.type===type).map(slot=>slot.level===2?2:1),1);
  s.kitchen.grillOwned??=false;
  s.kitchen.steamerOwned??=false;
- s.kitchen.slots=(s.kitchen.thirdUnlocked?[0,1,2]:[0,1]).map(i=>{const v=s.kitchen.slots[i]||{};const type=s.kitchen.grillOwned&&v.type==='GRILL'?'GRILL':v.type==='WOK'?'WOK':'POT';return {type,level:s.kitchen.mastery[type]}});
+ s.kitchen.slots=(s.kitchen.thirdUnlocked?[0,1,2]:[0,1]).map(i=>{const v=s.kitchen.slots[i]||{};const type=s.kitchen.grillOwned&&v.type==='GRILL'?'GRILL':s.kitchen.steamerOwned&&v.type==='STEAM'?'STEAM':v.type==='WOK'?'WOK':'POT';return {type,level:s.kitchen.mastery[type]}});
  s.kitchen.extraRefits??=0;s.kitchen.freeRefitUsed??=false;
  return s.kitchen;
 }
 function kitchenDayKey(s){return `${s.cycle}-${s.day}`}
 function kitchenRefitCost(s){const k=ensureKitchen(s);return k.refitDay===kitchenDayKey(s)&&k.freeRefitUsed?12:0}
 function configureKitchenSlot(s,index,type){
- if(s.phase!=='prep'||index<0||index>=ensureKitchen(s).slots.length||!['WOK','POT','GRILL'].includes(type)||type==='GRILL'&&!ensureKitchen(s).grillOwned)return false;
+ if(s.phase!=='prep'||index<0||index>=ensureKitchen(s).slots.length||!['WOK','POT','GRILL','STEAM'].includes(type)||type==='GRILL'&&!ensureKitchen(s).grillOwned||type==='STEAM'&&!ensureKitchen(s).steamerOwned)return false;
  const k=ensureKitchen(s);if(k.slots[index].type===type)return false;
  const today=kitchenDayKey(s),normalFee=kitchenRefitCost(s);
  // Never soft-lock a player who experimented with a free refit. If the
  // kitchen is currently incompatible and this change restores coverage,
  // allow an emergency zero-cost correction when money is insufficient.
- const coverageAfter=(()=>{const types=k.slots.map((x,i)=>i===index?type:x.type);return s.menu.every(id=>!s.recipes[id]||!RECIPES[id]||types.includes(RECIPES[id].station)&&(RECIPES[id].method!=='steam'||k.steamerOwned))})();
+ const coverageAfter=(()=>{const types=k.slots.map((x,i)=>i===index?type:x.type);return s.menu.every(id=>!s.recipes[id]||!RECIPES[id]||types.includes(recipeCookware(RECIPES[id])))})();
  const fee=normalFee>s.coins&&!kitchenHasMenuCoverage(s)&&coverageAfter?0:normalFee;
  if(s.coins<fee)return false;
  const seq=k.extraRefits||0;
@@ -4257,17 +4287,18 @@ function configureKitchenSlot(s,index,type){
  k.refitDay=today;k.freeRefitUsed=true;k.slots[index].type=type;k.slots[index].level=k.mastery[type];return true;
 }
 function kitchenHasMenuCoverage(s){
- const k=ensureKitchen(s),needed=new Set(s.menu.filter(id=>s.recipes[id]&&RECIPES[id]).map(id=>RECIPES[id].station));
- return [...needed].every(type=>k.slots.some(slot=>slot.type===type))&&s.menu.every(id=>RECIPES[id]?.method!=='steam'||k.steamerOwned);
+ const k=ensureKitchen(s),ids=s.menu.filter(id=>s.recipes[id]&&chapterRecipeAvailable(s,id));
+ const needed=new Set(ids.map(id=>recipeCookware(RECIPES[id])));
+ return (activeWorld(s)!=='cloud'||canMenu(s))&&[...needed].every(type=>k.slots.some(slot=>slot.type===type))&&(!needed.has('STEAM')||k.steamerOwned);
 }
 function kitchenPreview(s){
- const k=ensureKitchen(s),demand={WOK:0,POT:0,GRILL:0};
- for(const id of s.menu)if(s.recipes[id]&&RECIPES[id])demand[RECIPES[id].station]++;
- const capacity=Object.fromEntries(['WOK','POT','GRILL'].map(type=>[type,k.slots.filter(x=>x.type===type).length]));
- const types=['WOK','POT',...(k.grillOwned||demand.GRILL?['GRILL']:[])];
+ const k=ensureKitchen(s),demand={WOK:0,POT:0,GRILL:0,STEAM:0};
+ for(const id of s.menu)if(s.recipes[id]&&chapterRecipeAvailable(s,id))demand[recipeCookware(RECIPES[id])]++;
+ const capacity=Object.fromEntries(['WOK','POT','GRILL','STEAM'].map(type=>[type,k.slots.filter(x=>x.type===type).length]));
+ const types=['WOK','POT',...(k.grillOwned||demand.GRILL?['GRILL']:[]),...(k.steamerOwned||demand.STEAM?['STEAM']:[])];
  const risk=types.filter(type=>demand[type]&&!capacity[type]);
  const pressure=types.map(type=>({type,menu:demand[type],capacity:capacity[type],pressure:capacity[type]?demand[type]/capacity[type]:null}));
- return {pressure,risk,valid:risk.length===0};
+ return {pressure,risk,valid:risk.length===0&&canMenu(s)};
 }
 const GRILL_COST=180;
 const STEAMER_COST=85;
@@ -4401,7 +4432,7 @@ if(s.service){s.service.walkable??=false;if(s.service.walkable){s.service.hero??
  const taken=new Set(active.map(o=>o.tableId).filter(x=>x!==undefined));
  for(const o of active){if(o.tableId==null){const n=[0,1].find(i=>!taken.has(i));if(n!==undefined){o.tableId=n;taken.add(n)}}o.seatId??=0;}
  }
-ensureKitchen(s);ensureCrew(s);ensureManagement(s);ensureChapterProgress(s);ensureRecipeVariants(s);s.prepVariants??={};s.dining??={tableCount:2};s.premiumMenu??=null;s.guestRelationships??={};ensureGuestDex(s);s.history??=[];if(s.market?.dayKey!==kitchenDayKey(s))s.market=null;if(s.service)s.service.tableCount??=s.dining.tableCount;
+settleCloudRoster(s);ensureKitchen(s);ensureCrew(s);ensureManagement(s);ensureChapterProgress(s);ensureRecipeVariants(s);s.prepVariants??={};s.dining??={tableCount:2};s.premiumMenu??=null;s.guestRelationships??={};ensureGuestDex(s);s.history??=[];if(s.market?.dayKey!==kitchenDayKey(s))s.market=null;if(s.service)s.service.tableCount??=s.dining.tableCount;
 s.bagSlots = s.bagSlots===6?8:s.bagSlots===7?10:s.bagSlots===8&&s._bagMigrated!==true&&s._v08Save!==true?12:s.bagSlots;
 s._bagMigrated=true;s._v08Save=true;s.selectedWeaponSlot??=0;
 if(s.field){s.field.capacity??=s.bagSlots;s.field.capacity=Math.max(s.field.capacity,s.bagSlots);syncFieldBagStacks(s.field);s.field.weapon??=fieldWeaponSnapshot(s);if(!s.field.segmentIndex){s.field.segmentIndex=3;s.field.segmentStatus='active';s.field.legacyField=true;}}
@@ -4697,7 +4728,13 @@ const effects=[...new Set([...c.effects,...(c.adj.spice>=2&&good.every(Boolean)?
 let synergy=effects.length>=2?25:effects.length?18:10;let technique=id?15:0;let quality=clamp(Math.round(heatScore+synergy+technique),0,100);const sellable=Boolean(id)&&!undersafe&&quality>=40;return {recipeId:id,quality,heatScore:Math.round(heatScore),effects,ids,tiles:clone(c.tiles),sellable,reason:!id?'未匹配已开放的料理配方':undersafe?'肉类未达到安全熟度':quality<40?'火候偏差过大':'成功',heat:tiles.map(t=>({id:t.id,heat:t.heat,ideal:`${ING[t.id].lo}–${ING[t.id].hi}`}))};}
 function finishCook(s){const c=s.cook;if(!c||c.beats!==3)return false;const r=cookOutcome(c,s.tech);const fee=c.context==='research',premium=!!(!fee&&s.service?.orders?.find(o=>o.id===c.orderId)?.premium);const ok=consume(s,r.ids,c.txn,premium);if(!ok)return false;if(premium)s.service.premiumConsumed=(s.service.premiumConsumed||0)+1;s.lastCook=r;s.cook=null;if(fee&&r.sellable){s.recipes[r.recipeId]=Math.max(s.recipes[r.recipeId]||0,Math.min(r.quality,90));s.learned[r.recipeId]=true;}if(!fee&&s.service){s.manualCost+=materialCost(r.ids);const order=s.service.orders.find(o=>o.id===c.orderId);if(order&&order.status==='queued'){order.manual={quality:r.quality,sellable:r.sellable,recipeId:r.recipeId};order.manualMaterialsConsumed=true;order.manualTimePaid=false;}}return r;}
 function synergyFor(menu){const rs=[...new Set(menu)].map(id=>RECIPES[id]).filter(Boolean);if(rs.some(r=>r.tags.includes('辣')&&r.tags.includes('肉'))&&rs.some(r=>r.station==='POT'))return '辛香暖胃';if(rs.filter(r=>r.tags.includes('菌香')).length>=2)return '菌香组合';return null}
-function canMenu(s){return s.menu.length===3&&s.menu.every(id=>s.recipes[id]&&RECIPES[id]);}
+function canMenu(s){return s.menu.length===3&&s.menu.every(id=>s.recipes[id]&&chapterRecipeAvailable(s,id)&&cookwareOwned(s,RECIPES[id]))&&new Set(s.menu.map(id=>recipeCookware(RECIPES[id]))).size<=ensureKitchen(s).slots.length;}
+function selectMenuRecipe(s,slot,id){
+ if(s.phase!=='menu'||!Number.isInteger(slot)||slot<0||slot>2||!s.recipes?.[id]||!chapterRecipeAvailable(s,id)||!cookwareOwned(s,RECIPES[id]))return false;
+ const next=[...s.menu];next[slot]=id;
+ if(new Set(next.filter(x=>s.recipes?.[x]&&chapterRecipeAvailable(s,x)).map(x=>recipeCookware(RECIPES[x]))).size>ensureKitchen(s).slots.length)return false;
+ s.menu=next;return true;
+}
 // A *forecast*, not a reservation: distribute expected guests evenly across
 // the three selected dishes. Dishes may be duplicated in menu slots.
 // Pre-cooked meals count as already supplied; their ingredients are not needed
@@ -4984,7 +5021,7 @@ function chooseServiceEvent(s,choice){
 }
 function swapBreakMenu(s,slot,id){
  const v=s.service;
- if(s.phase!=='service'||!v?.breakAt||v.breakUsed||!Number.isInteger(slot)||slot<0||slot>2||!s.recipes[id]||!RECIPES[id])return false;
+ if(s.phase!=='service'||!v?.breakAt||v.breakUsed||!Number.isInteger(slot)||slot<0||slot>2||!s.recipes[id]||!chapterRecipeAvailable(s,id)||!v.kitchenSnapshot.some(k=>k.type===recipeCookware(RECIPES[id])))return false;
  const before=s.menu[slot];if(before===id)return false;s.menu[slot]=id;v.breakUsed=true;v.decisionFlash=`下一波新上架：${RECIPES[id].name}`;v.decisionAt=v.time;
  record(s,{type:'menu_swap',wave:v.breakAt,slot,before,after:id});return true;
 }
@@ -5236,7 +5273,7 @@ for(const st of Object.keys(v.stations)){if(v.stations[st])continue;
   // Do not let an unattended left bench steal a WOK order from staffed centre.
   continue;
  }
- let i=v.queued.findIndex(id=>{const o=v.orders.find(x=>x.id===id);return o&&RECIPES[o.recipeId].station===slot.type});if(i<0)continue;const id=v.queued.splice(i,1)[0];const o=v.orders.find(x=>x.id===id);const r=RECIPES[o.recipeId];if(o.manual){o.status='cooking';v.stations[st]={orderId:id,left:stationDuration(s,st,r,v),quality:o.manual.sellable&&o.manual.recipeId===o.recipeId?o.manual.quality:0};if(!o.manual.sellable||o.manual.recipeId!==o.recipeId){o.status='left';o.leftReason='制作失败';o.leftAt=v.time;record(s,{type:'failed_cook',order:id})}continue;}
+ let i=v.queued.findIndex(id=>{const o=v.orders.find(x=>x.id===id);return o&&recipeCookware(RECIPES[o.recipeId])===slot.type});if(i<0)continue;const id=v.queued.splice(i,1)[0];const o=v.orders.find(x=>x.id===id);const r=RECIPES[o.recipeId];if(o.manual){o.status='cooking';v.stations[st]={orderId:id,left:stationDuration(s,st,r,v),quality:o.manual.sellable&&o.manual.recipeId===o.recipeId?o.manual.quality:0};if(!o.manual.sellable||o.manual.recipeId!==o.recipeId){o.status='left';o.leftReason='制作失败';o.leftAt=v.time;record(s,{type:'failed_cook',order:id})}continue;}
 const prepared=s.prepVariants?.[o.recipeId]||[];
 const match=prepared.findIndex(x=>x.variantId===(o.craft?.variantId||''));
 if((s.prep[o.recipeId]||0)>0&&(match>=0||!prepared.length)){
@@ -5270,6 +5307,8 @@ for(const o of served){
 const prev=s.report,cong=v.congestion.WOK>v.congestion.POT*1.5&&v.congestion.WOK>15;
 const suggested=rej.length?'存在无法接单的顾客：优先补料或调整菜单。':left.length?(cong?'炒锅排队太长：尝试增加焖煮菜或提前备餐。':'顾客等太久：提前备餐或调整紧急订单优先级。'):served.some(o=>o.sat<70)?'订单全部完成，但部分客群满意度低：尝试不同风味菜。': '这套菜单运行顺畅，下次可测试更高售价的招牌菜。';
 const finance=payroll(s,v,transact),growth=settleCrewExperience(s,v);const revenue=v.income;let cost=v.cost+s.prepCost+s.manualCost+(s.staffFoodCost||0);const hospitalityCost=v.events.filter(e=>e.type==='guest_care').length*5;const eventExpense=v.eventExpense||0;const staffFoodCost=s.staffFoodCost||0;s.prep={};s.prepVariants={};s.prepCost=0;s.manualCost=0;s.staffFoodCost=0;
+ const ferryEarned=activeWorld(s)==='hearth'&&!!s.worlds?.cloud&&served.length>0&&uniqueAdd(s.ledger,`ferry-commission-${s.cycle}-${s.day}`,'ferry_commission',{served:served.length});
+ if(ferryEarned)s.ferryCredits=(s.ferryCredits||0)+1;
 const challenge=firstChallenge(s)?challengeScore(v):null;const won=!!challenge&&challenge.score>70;
 if(won&&!s.tech){s.tech=true;uniqueAdd(s.ledger,'first-boss-reward','unlock',{tech:'heat-mastery'})}
 const rating=v.ratingAttempt?scoreFirstStar(v.orders):null;
@@ -5303,7 +5342,7 @@ const goal=serviceGoalResult(v);if(goal?.success&&uniqueAdd(s.ledger,`goal-${s.c
 const premiumOrders=v.orders.filter(o=>o.premium),premiumSales=premiumOrders.filter(o=>o.status==='served');
 const premiumReport={recipeId:v.premiumOffered?.recipeId||null,limit:v.premiumOffered?.limit||0,ordered:premiumOrders.length,sold:premiumSales.length,revenue:premiumSales.reduce((sum,o)=>sum+(o.craft?.price||0),0),qualifiedVisitors:v.orders.filter(o=>o.segment==='critic'||premiumGuestEligible(s,o)).length,regularVisits:v.events.filter(e=>e.type==='regular_visit').length};
 const regularGuests=v.events.filter(e=>e.type==='regular_visit').map(e=>({guestId:e.guestId,name:s.guestRelationships?.[e.guestId]?.name||'熟客',happyMeals:e.happyMeals,sat:e.sat}));
-s.report={rating,secondRating,premium:premiumReport,regularGuests,day:s.day,absoluteDay:totalBusinessDay(s),tableCount:v.tableCount,unseated:v.orders.filter(o=>o.tableId==null).length,queuePeak:v.queuePeak||0,queue:queueServiceReport(v),goal,scenario:v.scenario||'常规晚餐',totalOrders:v.orders.length,revenue,cost,profit:revenue-cost-hospitalityCost-eventExpense-finance.wage-(v.marketing?.cost||0),finance:{...finance,marketingCost:v.marketing?.cost||0,campaignId:v.marketing?.id||'none',promotionGuests:v.marketing?.guests||0,marketingArrived:v.orders.filter(o=>o.promotionGuest&&o.doorAt!==undefined).length,marketingServed:served.filter(o=>o.promotionGuest).length,marketingRevenue:served.filter(o=>o.promotionGuest).reduce((n,o)=>n+(o.craft?.price??RECIPES[o.recipeId]?.price??0),0),cashChange:s.coins-ensureManagement(s).openingCoins},growth,hospitalityCost,eventExpense,choices:v.events.filter(e=>e.type==='management_choice'||e.type==='menu_swap'),served:served.length,left:left.length,rejected:rej.length,sat:Math.round(served.reduce((a,o)=>a+o.sat,0)/Math.max(1,served.length)),byDish,byCraft,guestReviews:v.events.filter(e=>e.type==='reviewed').map(e=>({recipeId:e.recipeId,sat:e.sat,text:e.text,reason:e.reason})),congestion:v.congestion,kitchen:{slots:clone(v.kitchenSnapshot||ensureKitchen(s).slots),stats:clone(v.stationStats||{})},staff:{crew:clone(v.crew||{}),stats:clone(v.staffStats||{}),foodCost:staffFoodCost},synergy:synergyFor(s.menu),suggested,challenge,won};s.result=won?'win':challenge?'loss':null;
+s.report={ferryEarned,rating,secondRating,premium:premiumReport,regularGuests,day:s.day,absoluteDay:totalBusinessDay(s),tableCount:v.tableCount,unseated:v.orders.filter(o=>o.tableId==null).length,queuePeak:v.queuePeak||0,queue:queueServiceReport(v),goal,scenario:v.scenario||'常规晚餐',totalOrders:v.orders.length,revenue,cost,profit:revenue-cost-hospitalityCost-eventExpense-finance.wage-(v.marketing?.cost||0),finance:{...finance,marketingCost:v.marketing?.cost||0,campaignId:v.marketing?.id||'none',promotionGuests:v.marketing?.guests||0,marketingArrived:v.orders.filter(o=>o.promotionGuest&&o.doorAt!==undefined).length,marketingServed:served.filter(o=>o.promotionGuest).length,marketingRevenue:served.filter(o=>o.promotionGuest).reduce((n,o)=>n+(o.craft?.price??RECIPES[o.recipeId]?.price??0),0),cashChange:s.coins-ensureManagement(s).openingCoins},growth,hospitalityCost,eventExpense,choices:v.events.filter(e=>e.type==='management_choice'||e.type==='menu_swap'),served:served.length,left:left.length,rejected:rej.length,sat:Math.round(served.reduce((a,o)=>a+o.sat,0)/Math.max(1,served.length)),byDish,byCraft,guestReviews:v.events.filter(e=>e.type==='reviewed').map(e=>({recipeId:e.recipeId,sat:e.sat,text:e.text,reason:e.reason})),congestion:v.congestion,kitchen:{slots:clone(v.kitchenSnapshot||ensureKitchen(s).slots),stats:clone(v.stationStats||{})},staff:{crew:clone(v.crew||{}),stats:clone(v.staffStats||{}),foodCost:staffFoodCost},synergy:synergyFor(s.menu),suggested,challenge,won};s.result=won?'win':challenge?'loss':null;
  s.report.thirdRating=thirdRating;
  s.history??=[];s.history.push({day:totalBusinessDay(s),revenue:s.report.revenue,profit:s.report.profit,
    served:s.report.served,arrivals:s.report.totalOrders,unseated:s.report.unseated,
@@ -5509,7 +5548,7 @@ function resolveSpecialFieldEvent(s,choice){
 const MINI_BOSS_PATTERNS=Object.freeze({
  boss_spore:[{kind:'fan',windup:.85},{kind:'burst',windup:1.0},{kind:'ring',windup:1.05}],
  boss_ember:[{kind:'fan',windup:.85},{kind:'charge',windup:.95},{kind:'burst',windup:1.0}],
- boss_gust:[{kind:'fan',windup:.9},{kind:'charge',windup:1.05},{kind:'ring',windup:1.15}]
+ boss_gust:[{kind:'wall',windup:1.1},{kind:'vortex',windup:1.35},{kind:'lightning',windup:1.1}]
 });
 function bossChargeEnd(f,origin,aim,blocked){
  const dx=aim.x-origin.x,dy=aim.y-origin.y,d=Math.hypot(dx,dy)||1,max=Math.min(2.4,d+.35);let end={...origin};
@@ -5530,10 +5569,20 @@ function stepMiniBoss(f,e,dt,{blocked,hurt}){
  if(e.warning>0){
   // Old saves already inside a legacy warning finish the old fan once.
   e.bossAttack??={kind:'fan',windup:e.windupTotal||.85,origin:{x:e.x,y:e.y},aim:{...(e.aim||f.pos)}};
+  if(e.kind==='boss_gust'&&e.bossAttack.kind==='vortex'){
+   const dx=e.x-f.pos.x,dy=e.y-f.pos.y,d=Math.hypot(dx,dy);
+   if(d>.58&&d<3.6){const p={x:f.pos.x+dx/d*.65*dt,y:f.pos.y+dy/d*.65*dt};if(!blocked(f,p,.18)){f.pos=p;f.x=p.x;f.y=p.y;}}
+  }
   e.warning=Math.max(0,e.warning-dt);if(e.warning>0)return;
   const a=e.bossAttack,angle=Math.atan2(a.aim.y-a.origin.y,a.aim.x-a.origin.x),spore=e.kind==='boss_spore',gust=e.kind==='boss_gust';
   const fire=(theta,speed)=>f.projectiles.push({x:e.x,y:e.y,vx:Math.cos(theta)*speed,vy:Math.sin(theta)*speed,ownerX:e.x,ownerY:e.y,ownerId:e.id,life:3,source:gust?'gust':spore?'spore':'pepper'});
-  if(a.kind==='fan')for(const offset of spore?[-.55,0,.55]:gust?[-.42,0,.42]:[-.27,0,.27])fire(angle+offset,spore?1.9:gust?2.5:3.1);
+  if(gust&&a.kind==='wall')for(const offset of [-.72,-.36,0,.36,.72])f.projectiles.push({x:e.x-Math.sin(angle)*offset,y:e.y+Math.cos(angle)*offset,vx:Math.cos(angle)*2.35,vy:Math.sin(angle)*2.35,ownerX:e.x,ownerY:e.y,ownerId:e.id,life:2.8,source:'gust',windSheet:true,side:offset<0?-1:1});
+  else if(gust&&a.kind==='vortex'){
+   f.bossZones??=[];const safe=Math.atan2(f.pos.y-e.y,f.pos.x-e.x);
+   for(let i=0;i<8;i++){const theta=i*Math.PI/4;if(Math.cos(theta-safe)>.84)continue;f.bossZones.push({ownerId:e.id,x:e.x+Math.cos(theta)*1.65,y:e.y+Math.sin(theta)*1.65,radius:.38,life:.50,source:'gust'});}
+  }else if(gust&&a.kind==='lightning'){
+   f.bossZones??=[];for(const offset of [-.9,0,.9])f.bossZones.push({ownerId:e.id,x:a.aim.x+Math.cos(angle+Math.PI/2)*offset,y:a.aim.y+Math.sin(angle+Math.PI/2)*offset,radius:.34,life:.42,source:'gust'});
+  }else if(a.kind==='fan')for(const offset of spore?[-.55,0,.55]:[-.27,0,.27])fire(angle+offset,spore?1.9:3.1);
   else if(a.kind==='ring')for(let i=1;i<8;i++)fire(angle+i*Math.PI/4,1.7);
   else if(a.kind==='burst'){
    f.bossZones??=[];f.bossZones.push({ownerId:e.id,x:a.aim.x,y:a.aim.y,radius:.8,life:.25,source:gust?'gust':spore?'spore':'pepper'});
@@ -5544,7 +5593,8 @@ function stepMiniBoss(f,e,dt,{blocked,hurt}){
  if(d<3.6&&d>.85){const speed=.47*(e.slowTime>0?.45:1),next={x:e.x+dx/d*speed*dt,y:e.y+dy/d*speed*dt};if(!blocked(f,next,.18)){e.x=next.x;e.y=next.y;}}
  if(d>=4||e.cooldown>0)return;
  const pattern=MINI_BOSS_PATTERNS[e.kind]||MINI_BOSS_PATTERNS.boss_spore;
- const attack=pattern[(e.attackCycle||0)%pattern.length];e.attackCycle=(e.attackCycle||0)+1;
+ const phase=e.kind==='boss_gust'&&e.hp<e.maxHp*.5?[pattern[1],pattern[2],pattern[0]]:pattern;
+ const attack=phase[(e.attackCycle||0)%phase.length];e.attackCycle=(e.attackCycle||0)+1;
  const origin={x:e.x,y:e.y},aim={...f.pos};
  e.bossAttack={...attack,origin,aim};if(attack.kind==='charge')e.bossAttack.end=bossChargeEnd(f,origin,aim,blocked);
  e.aim=aim;e.attackOrigin=origin;e.warning=attack.windup;e.windupTotal=attack.windup;
@@ -5610,7 +5660,15 @@ function drawMiniBossWarning(c,e){
  if(e.hp<=0||!e.bossAttack)return;const a=e.bossAttack;
  c.save();c.lineCap='round';const col=e.kind==='boss_gust'?'#d2eaf4':e.kind==='boss_spore'?'#cbd3b2':'#eed09d',q=Math.max(0,Math.min(1,1-(e.warning||0)/a.windup));
  c.strokeStyle=col;c.lineWidth=.065;c.fillStyle=e.kind==='boss_gust'?'#a8d5ee2d':e.kind==='boss_spore'?'#bcb3d42d':'#e89b6a2d';
- if(a.kind==='burst'){
+ if(e.kind==='boss_gust'&&a.kind==='wall'){
+  const theta=Math.atan2(a.aim.y-a.origin.y,a.aim.x-a.origin.x),nx=-Math.sin(theta)*.87,ny=Math.cos(theta)*.87,dx=Math.cos(theta)*3,dy=Math.sin(theta)*3;
+  c.beginPath();c.moveTo(a.origin.x+nx,a.origin.y+ny);c.lineTo(a.origin.x+nx+dx,a.origin.y+ny+dy);c.lineTo(a.origin.x-nx+dx,a.origin.y-ny+dy);c.lineTo(a.origin.x-nx,a.origin.y-ny);c.closePath();c.fill();c.stroke();
+ }else if(e.kind==='boss_gust'&&a.kind==='vortex'){
+  c.beginPath();c.arc(e.x,e.y,1.65,0,Math.PI*2);c.stroke();
+  for(let i=0;i<8;i++){const theta=i*Math.PI/4;c.beginPath();c.arc(e.x+Math.cos(theta)*1.65,e.y+Math.sin(theta)*1.65,.38,0,Math.PI*2);c.stroke();}
+ }else if(e.kind==='boss_gust'&&a.kind==='lightning'){
+  const theta=Math.atan2(a.aim.y-a.origin.y,a.aim.x-a.origin.x);for(const offset of [-.9,0,.9]){c.beginPath();c.arc(a.aim.x-Math.sin(theta)*offset,a.aim.y+Math.cos(theta)*offset,.34,0,Math.PI*2);c.fill();c.stroke();}
+ }else if(a.kind==='burst'){
   c.beginPath();c.arc(a.aim.x,a.aim.y,.8,0,Math.PI*2);c.fill();c.stroke();
   c.beginPath();c.arc(a.aim.x,a.aim.y,.8,-Math.PI/2,-Math.PI/2+q*Math.PI*2);c.lineWidth=.10;c.stroke();
  }else if(a.kind==='charge'){
@@ -5721,11 +5779,15 @@ function stepEcologyEnemy(f,e,dt,engaged,{blocked,hurt}){
    e.strikeFx={ttl:.28,duration:.28,x:e.x,y:e.y,dx:Math.cos(angle),dy:Math.sin(angle)};e.lungeFx=.28;
    e.cooldown=e.kind==='chicken'?1.7:2.0;if(e.kind==='chicken')e.retreatTime=.65;
   }else if(ecologyHasSight(f,e,aim)){
-   const spore=e.kind==='sporeling',gust=e.kind==='gust_moth',speed=spore?2.1:gust?2.4:2.8;
-   f.projectiles.push({x:e.x,y:e.y,vx:Math.cos(angle)*speed,vy:Math.sin(angle)*speed,ownerX:e.x,ownerY:e.y,ownerId:e.id,life:3,source:gust?'gust':spore?'spore':'pepper'});
-   e.cooldown=spore?2.9:gust?2.7:2.5;
+   const spore=e.kind==='sporeling',gust=e.kind==='gust_moth',speed=spore?2.1:gust?2.15:2.8;
+   if(gust){
+    // Three parallel crosswind ribbons occupy a lane. The warning commits to
+    // an aim point, so stepping outside the band dodges the entire attack.
+    for(const offset of [-.36,0,.36])f.projectiles.push({x:e.x-Math.sin(angle)*offset,y:e.y+Math.cos(angle)*offset,vx:Math.cos(angle)*speed,vy:Math.sin(angle)*speed,ownerX:e.x,ownerY:e.y,ownerId:e.id,life:2.3,source:'gust',windSheet:true,side:offset<0?-1:1});
+   }else f.projectiles.push({x:e.x,y:e.y,vx:Math.cos(angle)*speed,vy:Math.sin(angle)*speed,ownerX:e.x,ownerY:e.y,ownerId:e.id,life:3,source:spore?'spore':'pepper'});
+   e.cooldown=gust?3.3:spore?2.9:2.5;
   }else e.cooldown=.6;
-  e.attackOrigin=null;return;
+  e.attackOrigin=null;e.ecologyAttack=null;return;
  }
  if(!engaged){
   if(ecologyDist(e,e.home)>1.2){moveEcologyEnemy(f,e,e.home,.78*slow,dt,blocked);return;}
@@ -5743,12 +5805,17 @@ function stepEcologyEnemy(f,e,dt,engaged,{blocked,hurt}){
  const melee=meleeProfile(e.kind),trigger=e.kind==='boar'?2.15:melee?melee.trigger:3.2;
  if(ecologyDist(e,f.pos)>=trigger)return;
  e.aim={...f.pos};e.attackOrigin={x:e.x,y:e.y};
- e.warning=e.kind==='boar'?1:melee?melee.windup:e.kind==='sporeling'?.72:.55;e.windupTotal=e.warning;
+ e.warning=e.kind==='boar'?1:melee?melee.windup:e.kind==='gust_moth'?.95:e.kind==='sporeling'?.72:.55;e.windupTotal=e.warning;
  e.intentKind=melee?'melee':'ranged';
  if(e.kind==='boar')e.ecologyAttack={origin:{...e.attackOrigin},end:ecologyChargeEnd(f,e,e.aim,blocked)};
+ if(e.kind==='gust_moth')e.ecologyAttack={kind:'wind_sheet',origin:{...e.attackOrigin},end:{...e.aim}};
 }
 function drawEcologyWarning(c,e){
  if(e.hp<=0||!e.ecologyAttack)return;const a=e.ecologyAttack;
+ if(a.kind==='wind_sheet'){
+  const angle=Math.atan2(a.end.y-a.origin.y,a.end.x-a.origin.x),dx=Math.cos(angle)*3.4,dy=Math.sin(angle)*3.4,nx=-Math.sin(angle)*.58,ny=Math.cos(angle)*.58;
+  c.save();c.beginPath();c.moveTo(a.origin.x+nx,a.origin.y+ny);c.lineTo(a.origin.x+dx+nx,a.origin.y+dy+ny);c.lineTo(a.origin.x+dx-nx,a.origin.y+dy-ny);c.lineTo(a.origin.x-nx,a.origin.y-ny);c.closePath();c.fillStyle='#b6e8f148';c.fill();c.strokeStyle='#e4f7ed';c.lineWidth=.055;c.setLineDash([.18,.12]);c.stroke();c.restore();return;
+ }
  c.save();c.lineCap='round';c.beginPath();c.moveTo(a.origin.x,a.origin.y);c.lineTo(a.end.x,a.end.y);
  c.strokeStyle='#dc98732e';c.lineWidth=.96;c.stroke();c.strokeStyle='#efcf9b';c.lineWidth=.055;c.stroke();
  c.beginPath();c.arc(a.end.x,a.end.y,.48,0,Math.PI*2);c.lineWidth=.04;c.stroke();c.restore();
@@ -6112,18 +6179,18 @@ function stepActionField(s,axisX,axisY,dt){
    }
    else{
     const aim=e.aim||f.pos,ang=Math.atan2(aim.y-e.y,aim.x-e.x);
-    const spreads=e.isBoss?e.kind==='boss_spore'?[-.55,0,.55]:[-.27,0,.27]:[0];
-    const source=e.kind==='boss_spore'||e.kind==='sporeling'?'spore':'pepper';
+    const spreads=e.kind==='gust_moth'?[-.36,0,.36]:e.isBoss?e.kind==='boss_spore'?[-.55,0,.55]:[-.27,0,.27]:[0];
+    const source=e.kind==='gust_moth'?'gust':e.kind==='boss_spore'||e.kind==='sporeling'?'spore':'pepper';
     for(const spread of spreads){
      const theta=ang+spread,speed=source==='spore'?(e.isBoss?1.9:2.1):e.isBoss?3.1:2.8;
-     f.projectiles.push({x:e.x,y:e.y,vx:Math.cos(theta)*speed,vy:Math.sin(theta)*speed,
-       ownerX:e.x,ownerY:e.y,life:3,source});
+     f.projectiles.push({x:e.x-Math.sin(ang)*spread,y:e.y+Math.cos(ang)*spread,vx:Math.cos(source==='gust'?ang:theta)*speed,vy:Math.sin(source==='gust'?ang:theta)*speed,
+       ownerX:e.x,ownerY:e.y,life:3,source,windSheet:source==='gust',side:spread<0?-1:1});
     }
    }
   }}
  }
  stepBossZones(f,dt,(amount,source,attacker)=>hurt(s,amount,source,attacker));
- for(const p of f.projectiles){p.x+=p.vx*dt;p.y+=p.vy*dt;p.life-=dt;if(dist(f.pos,p)<.28){p.life=0;hurt(s,1,p.source||'pepper',{x:p.ownerX??p.x,y:p.ownerY??p.y})}}f.projectiles=f.projectiles.filter(p=>p.life>0&&!blocked(f,p,0));
+ for(const p of f.projectiles){p.x+=p.vx*dt;p.y+=p.vy*dt;p.life-=dt;if(dist(f.pos,p)<(p.windSheet?.38:.28)){p.life=0;hurt(s,1,p.source||'pepper',{x:p.ownerX??p.x,y:p.ownerY??p.y});if(p.windSheet){const speed=Math.hypot(p.vx,p.vy)||1,next={x:f.pos.x-p.vy/speed*.26*(p.side||1),y:f.pos.y+p.vx/speed*.26*(p.side||1)};if(!blocked(f,next,.18)){f.pos=next;f.x=next.x;f.y=next.y;}}}}f.projectiles=f.projectiles.filter(p=>p.life>0&&!blocked(f,p,0));
  advancePlayerProjectiles(s,dt);
  if(f.attackCd<=0){
   const isPot=f.weapon?.type==='POT',isFork=f.weapon?.type==='GRILL',range=isPot?3.5:isFork?(f.weapon?.level>1?2.35:2.1):1.25;
@@ -6197,6 +6264,9 @@ function r(c,x,y,w,h,col){c.fillStyle=col;c.fillRect(x|0,y|0,w|0,h|0)}
 // v0.12-D staff apparel is layered onto the ORIGINAL working pixel actor.
 // The descriptor and the painted silhouette share one authoritative level contract.
 const CREW_APPEARANCES={
+ cloud_helper:[{label:'云港见习帮厨',uniform:'风帆白厨帽 · 天青围裙',accent:'#84b6cc'},{label:'风帆厨师',uniform:'双层披肩 · 云纹胸针',accent:'#d7c88d'},{label:'航路掌勺',uniform:'高帆厨帽 · 金色风向徽',accent:'#f1d884'}],
+ cloud_waiter:[{label:'云港跑堂',uniform:'轻羽帽 · 浅蓝背心',accent:'#80b3d2'},{label:'航船侍者',uniform:'羽纹肩带 · 银蓝围领',accent:'#a9d5dc'},{label:'港口引路人',uniform:'银羽高帽 · 灯塔胸针',accent:'#f2d883'}],
+ cloud_helper2:[{label:'云港后厨',uniform:'浮云短衫 · 帆布袖口',accent:'#739cbc'},{label:'风炉匠人',uniform:'云纹披肩 · 铜色围裙',accent:'#d7b778'},{label:'星帆主厨',uniform:'羽帆高帽 · 天青纹章',accent:'#f0d587'}],
  helper2:[
   {label:'见习后厨',uniform:'炭蓝短衫 · 杏色厨帽',accent:'#527d85'},
   {label:'资深后厨',uniform:'铜蓝厨衣 · 绒白围裙',accent:'#639a9c'},
@@ -6261,7 +6331,7 @@ function paintCrewRank(c,kind,level,arm){
  }
 }
 function person(c,kind,walk,attack,level=1){
- const p={chef:['#477a91','#e7d4a7','#7e4f37'],helper:['#d27a46','#f2d69a','#654730'],helper2:['#517d85','#ead2ae','#36595b'],waiter:['#708d62','#dfc18e','#466251'],adventurer:['#4d8a66','#c59d55','#5d4630'],family:['#d67872','#f0cf79','#8a5747'],regular:['#729aba','#9bc1ce','#6c5440'],critic:['#795777','#bb9abd','#362e48'],stargazer:['#41576e','#c3b67e','#7f5c91'],gardener:['#688947','#b6d27b','#465d37'],cloud_docker:['#66728b','#e1c27e','#46546c'],cloud_weaver:['#8c9cbb','#d7dbea','#5c728e']}[kind]||['#729aba','#9bc1ce','#6c5440'];
+ const p={chef:['#477a91','#e7d4a7','#7e4f37'],helper:['#d27a46','#f2d69a','#654730'],helper2:['#517d85','#ead2ae','#36595b'],waiter:['#708d62','#dfc18e','#466251'],cloud_helper:['#629fbc','#eff0d6','#4b6d85'],cloud_waiter:['#91b9d2','#f2e2b9','#557a99'],cloud_helper2:['#778fb6','#e7dfbd','#455d80'],adventurer:['#4d8a66','#c59d55','#5d4630'],family:['#d67872','#f0cf79','#8a5747'],regular:['#729aba','#9bc1ce','#6c5440'],critic:['#795777','#bb9abd','#362e48'],stargazer:['#41576e','#c3b67e','#7f5c91'],gardener:['#688947','#b6d27b','#465d37'],cloud_docker:['#66728b','#e1c27e','#46546c'],cloud_weaver:['#8c9cbb','#d7dbea','#5c728e']}[kind]||['#729aba','#9bc1ce','#6c5440'];
  const step=walk?Math.round(Math.sin(walk*13)*2):0,arm=attack? -7:Math.round(Math.sin(walk*13+2)*1);
  // Shoes, alternating leg pixels, outlined torso/arms, expressive large face.
  r(c,3,18+step,5,5,P.outline);r(c,10,18-step,5,5,P.outline);
@@ -6272,9 +6342,9 @@ function person(c,kind,walk,attack,level=1){
  r(c,5,11,8,8,p[1]);r(c,8,11,2,6,kind==='chef'?'#d26f52':p[0]);
  r(c,3,2,13,11,P.outline);r(c,4,3,11,9,P.skin);r(c,5,4,9,6,P.skinLight);
  r(c,5,6,2,2,P.outline);r(c,12,6,2,2,P.outline);r(c,9,9,3,1,'#9d644f');
- if(kind==='chef'||kind==='helper'||kind==='helper2'){
+ if(kind==='chef'||kind==='helper'||kind==='helper2'||kind==='cloud_helper'||kind==='cloud_helper2'){
   r(c,2,1,15,4,P.outline);r(c,3,1,13,3,P.white);r(c,5,-4,9,6,P.outline);r(c,6,-4,7,5,P.white);r(c,8,-6,4,3,P.white);
- }else if(kind==='waiter'){
+ }else if(kind==='waiter'||kind==='cloud_waiter'){
   r(c,2,0,14,3,'#466251');r(c,6,-2,7,3,'#ddc391');r(c,6,13,8,3,'#e9daa7');
  }else if(kind==='adventurer'){
   // Ironhorn dwarf: horned helmet, copper beard and heavy travel pack.
@@ -6313,7 +6383,16 @@ function person(c,kind,walk,attack,level=1){
   r(c,3,0,13,4,'#52ae9d');r(c,4,3,5,2,'#70debc');r(c,1,1,2,2,'#8be9d3');r(c,15,1,2,2,'#8be9d3');
  }
  // The newest kitchen worker is recognisable at Lv1 without enlarging the silhouette.
- if(kind==='helper2'){r(c,4,11,11,5,'#547f87');r(c,5,15,9,5,'#e9d4a5');r(c,7,1,5,2,'#7ca3a1');if(level>=2)paintCrewRank(c,kind,level,arm);}
+ if(kind.startsWith('cloud_')&&CREW_APPEARANCES[kind]){
+  // Local port workers wear winged collars and a sail-shaped cap. This is
+  // painted on the actual service actor and the same portrait renderer.
+  r(c,2,11,4,8,'#d8e9e5');r(c,13,11+arm,4,8,'#d8e9e5');
+  r(c,5,12,9,7,level>=3?'#f0d48d':'#e7efe5');
+  r(c,4,0,11,2,'#e3cf9d');r(c,7,-8,5,7,P.outline);r(c,8,-8,3,7,level>=2?'#f4d584':'#b6dfe3');
+  r(c,12,-5,4,3,'#f8efe0');r(c,14,-4,3,2,'#91c1d1');
+  if(level>=2){r(c,6,11,7,2,'#e6c377');r(c,8,14,3,3,'#fff0c4');}
+  if(level>=3){r(c,7,-10,5,3,'#f5dd98');r(c,2,10,3,4,'#f0d589');}
+ }else if(kind==='helper2'){r(c,4,11,11,5,'#547f87');r(c,5,15,9,5,'#e9d4a5');r(c,7,1,5,2,'#7ca3a1');if(level>=2)paintCrewRank(c,kind,level,arm);}
  else paintCrewRank(c,kind,level,arm);
  if(attack){
   // A readable, off-center utensil silhouette synchronized to the attack state.
@@ -7816,6 +7895,19 @@ function hfGroundInto(c,f,plan){
  const p=HYBRID_FIELD_PALETTES[plan.style],w=f.worldW,h=f.worldH;
  c.save();c.beginPath();c.rect(0,0,w,h);c.clip();
  const base=c.createLinearGradient(0,0,w,h);base.addColorStop(0,p.light);base.addColorStop(.45,p.base);base.addColorStop(1,p.shade);c.fillStyle=base;c.fillRect(0,0,w,h);
+ if(plan.style==='cloud'||plan.style==='cloud_roost'){
+  const sky=c.createLinearGradient(0,0,w,h);sky.addColorStop(0,'#8ac1d9');sky.addColorStop(.62,'#d9ebeb');sky.addColorStop(1,'#7da8c5');c.fillStyle=sky;c.fillRect(0,0,w,h);
+  // The actual walkable map is a suspended slab. Its narrow sky border lies
+  // outside all tile centres; blocked cells become visible crevices below.
+  hfPoly(c,[[.16,.45],[w*.58,.20],[w-.16,.48],[w-.1,h-.42],[w*.46,h-.1],[.12,h-.45]],'#567f9a');
+  hfPoly(c,[[.16,.24],[w*.60,.12],[w-.16,.25],[w-.17,h-.53],[w*.46,h-.25],[.18,h-.52]],p.base);
+  hfLine(c,[[.2,.34],[w*.60,.2],[w-.2,.36]],p.high,.10);
+  hfLine(c,[[.2,h-.55],[w*.46,h-.28],[w-.2,h-.55]],p.dark,.10);
+  for(const [i,px,py] of [[0,w*.16,h*.10],[1,w*.81,h*.13],[2,w*.90,h*.85]]){
+   c.save();c.globalAlpha=.44;hfEllipse(c,px,py,.8+i*.2,.13,'#6c99b2');
+   hfPoly(c,[[px-.48,py],[px,py+.44],[px+.45,py]],'#719bb0');c.restore();
+  }
+ }
  for(let i=0;i<9;i++){
   const o=f.obstacles[i%f.obstacles.length],n=hfHash(plan.seed+i*1291),x=o?o.x+.7:(n%100)/10,y=o?o.y+.85:((n>>>8)%140)/10,r=1.6+(n%7)*.12;
   const glaze=c.createRadialGradient(x,y,.05,x,y,r);glaze.addColorStop(0,p.dark+'24');glaze.addColorStop(1,p.dark+'00');c.fillStyle=glaze;c.fillRect(x-r,y-r,r*2,r*2);
@@ -7897,6 +7989,11 @@ function drawHybridFieldObstacle(c,o,style,index=0){
   hfEllipse(c,0,.14,.42,.14,p.dark);hfLeaf(c,-.22,-.16,.38,.30,p.dark);hfLeaf(c,.22,-.30,.40,.32,p.object);
   hfLeaf(c,-.13,-.42,.34,.24,p.object);hfLeaf(c,.11,-.52,.23,.15,p.high);
   hfLine(c,[[-.10,-.24],[.05,-.35],[.16,-.31]],p.high,.034);
+ }else if(style==='cloud'||style==='cloud_roost'){
+  hfEllipse(c,0,.14,.51,.42,'#507d9a');hfEllipse(c,0,.02,.40,.28,'#c1e0e5');
+  hfPoly(c,[[-.43,-.17],[-.28,-.39],[.18,-.42],[.45,-.16],[.19,.06],[-.32,.04]],p.rim);
+  hfLine(c,[[-.40,-.19],[-.21,-.42],[.22,-.42],[.42,-.19]],p.high,.06);
+  hfLine(c,[[0,-.37],[0,-.62],[.16,-.71]],'#e8d29b',.05);
  }else if(style==='oasis'){
   hfPoly(c,[[-.38,.20],[-.26,-.43],[-.02,-.81],[.16,-.70],[.37,.16]],p.dark);
   hfPoly(c,[[-.25,-.40],[-.02,-.78],[.08,.13],[-.24,.15]],p.object);
@@ -7978,6 +8075,11 @@ function drawFieldProjectile(c,p,type='enemy'){
  }else{
   const spore=p.source==='spore',gust=p.source==='gust',a=Math.atan2(p.vy||0,p.vx||1);
   c.translate(p.x,p.y);c.rotate(a);
+  if(p.windSheet){
+   c.fillStyle='#d7f3edaa';c.beginPath();c.ellipse(0,0,.30,.16,0,0,Math.PI*2);c.fill();
+   for(const offset of [-.17,0,.17]){c.beginPath();c.moveTo(-.37,offset*.7);c.quadraticCurveTo(-.12,offset-.08,.25,offset);c.strokeStyle='#7ec2dab8';c.lineWidth=.055;c.stroke();}
+   c.restore();return;
+  }
   c.strokeStyle=gust?'#b6e3ef99':spore?'#8abbc577':'#e9976877';c.lineWidth=.09;c.beginPath();c.moveTo(-.27,0);c.quadraticCurveTo(-.16,-.03,0,0);c.stroke();
   fieldFxEllipse(c,0,0,.14,spore?.14:.10,gust?'#84b5db':spore?'#90c7c3':'#efad70');
   fieldFxEllipse(c,.025,-.018,.065,.055,gust?'#f9e7a7':spore?'#daf2da':'#fff0b9');
@@ -8870,9 +8972,59 @@ function drawOutdoorQueueChatter(c,queue,t,L,T,W,H){
 
 // Compact cutaway outside the entry: environmental context, not a modal panel.
 // Weather is consistent for the day; standing visitors are actual pending orders.
+function drawCloudRestaurantBackdrop(c,t,w,h){
+ const x=f=>f*w,y=f=>f*h;
+ const sky=c.createLinearGradient(0,0,0,h);sky.addColorStop(0,'#80bbdb');sky.addColorStop(.55,'#d1e8df');sky.addColorStop(1,'#638fac');rect(c,0,0,w,h,sky);
+ // Distant floating silhouettes are visible through the entire open upper deck.
+ for(const [i,px,py,scale] of [[0,.15,.095,.8],[1,.73,.115,1.15],[2,.48,.047,.48]]){
+  const X=x(px+Math.sin(t*.14+i)*.008),Y=y(py),W=w*.17*scale;
+  c.fillStyle=i===1?'#6698a8':'#86abba';c.beginPath();c.ellipse(X,Y,W,7*scale,0,0,Math.PI*2);c.fill();
+  c.beginPath();c.moveTo(X-W*.73,Y+2);c.lineTo(X,Y+28*scale);c.lineTo(X+W*.70,Y+2);c.fill();
+  line(c,X-W*.65,Y-4,X+W*.64,Y-4,'#e2ead0',3);
+ }
+ for(let i=0;i<8;i++){
+  const px=x(((i*.19+t*.003)%1.4)-.20),py=y(.20+i*.105),rw=w*(.10+i%3*.04);
+  c.fillStyle='#f1f9f0a8';c.beginPath();c.ellipse(px,py,rw,7+i%3*2,0,0,Math.PI*2);c.fill();
+ }
+ // A smaller suspended stone platform creates real visual height. Walkable
+ // geometry remains owned by dinerFloor, so no misleading clickable ledges.
+ c.fillStyle='#65849a';c.beginPath();c.moveTo(x(.06),y(.18));c.lineTo(x(.94),y(.18));c.lineTo(x(.91),y(.945));c.lineTo(x(.50),y(.985));c.lineTo(x(.09),y(.945));c.closePath();c.fill();
+ c.fillStyle='#c4d5d0';c.beginPath();c.moveTo(x(.065),y(.165));c.lineTo(x(.935),y(.165));c.lineTo(x(.92),y(.926));c.lineTo(x(.50),y(.969));c.lineTo(x(.08),y(.926));c.closePath();c.fill();
+ for(let row=0;row<12;row++){
+  const yy=y(.19+row*.061);line(c,x(.09),yy,x(.91),yy,'#7097a046',1.3);
+  for(let col=0;col<8;col++)line(c,x(.105+col*.105+(row%2)*.05),yy,x(.105+col*.105+(row%2)*.05),yy+h*.061,'#83a9ad3a',1);
+ }
+ // Open rails and mooring ropes at the void-facing edges.
+ for(const side of [.075,.925]){
+  line(c,x(side),y(.18),x(side),y(.90),'#315c7188',4);
+  for(let j=0;j<6;j++){
+   const Y=y(.23+j*.13);circle(c,x(side),Y,3,'#ddcf9b');
+   line(c,x(side),Y,x(side+(side<.5?.035:-.035)),Y+13,'#67849b',2);
+  }
+ }
+ // The harbour pennants sway above the cookware without hiding it.
+ for(const px of [.35,.65]){
+  line(c,x(px),y(.01),x(px),y(.19),'#6b8192',1.5);
+  c.fillStyle='#e7c789';c.beginPath();c.moveTo(x(px),y(.035));c.lineTo(x(px+(px<.5?.09:-.09)),y(.066));c.lineTo(x(px),y(.089));c.fill();
+ }
+}
 function drawDinerDoorway(c,s,t,w,h){
  const g=dinerFloor(s),p=g.doorwayView,queue=dinerQueueGuests(s,t),weather=dinerWeather(s);
  const L=p.left*w,R=p.right*w,T=p.top*h,B=p.bottom*h,W=R-L,H=B-T;
+ if(s.activeWorld==='cloud'){
+  c.save();c.fillStyle='#4b7188';c.beginPath();c.roundRect(L-6,T-6,W+12,H+12,10);c.fill();c.beginPath();c.rect(L,T,W,H);c.clip();
+  const sky=c.createLinearGradient(0,T,0,B);sky.addColorStop(0,'#7cbada');sky.addColorStop(1,'#eff9ec');c.fillStyle=sky;c.fillRect(L,T,W,H);
+  for(const [i,px] of [.18,.52,.83].entries()){
+   const X=L+px*W,Y=T+H*(.48+i*.06);c.fillStyle='#759cab';c.beginPath();c.ellipse(X,Y,W*.12,H*.06,0,0,Math.PI*2);c.fill();
+   c.beginPath();c.moveTo(X-W*.09,Y);c.lineTo(X,Y+H*.28);c.lineTo(X+W*.09,Y);c.fill();
+  }
+  c.fillStyle='#9bb9c0';c.fillRect(L,T+H*.77,W,H*.23);
+  for(let i=0;i<5;i++)line(c,L+i*W*.23,T+H*.80,L+i*W*.23,T+H,'#526f8299',2);
+  queue.slice(0,4).forEach((o,i)=>pixelActor(c,o.segment,L+W*(.20+i*.205),T+H*.77,DINER_ACTOR_SCALE*.82,{walk:0}));
+  c.fillStyle='#294e68cb';c.fillRect(L+6,T+6,94,22);text(c,'☁ 等位 '+queue.length,L+51,T+17,'#fff6dd',11);
+  drawOutdoorQueueChatter(c,queue,t,L,T,W,H);c.strokeStyle='#e4d4aa';c.lineWidth=4;c.strokeRect(L+2,T+2,W-4,H-4);c.restore();
+  return {queue:queue.length,weather:'breeze'};
+ }
  c.save();
  c.fillStyle='#4c382d';c.beginPath();c.roundRect(L-6,T-6,W+12,H+12,12);c.fill();
  c.fillStyle='#c39965';c.beginPath();c.roundRect(L-3,T-3,W+6,H+6,9);c.fill();
@@ -8929,16 +9081,17 @@ function drawRestaurantV075(c,s,t,w,h){
   c.beginPath();c.roundRect(X,Y,W,H,R);c.fillStyle=color;c.fill();
   if(stroke){c.strokeStyle=stroke;c.lineWidth=2;c.stroke();}
  };
- rect(c,0,0,w,h,'#6f513b');
+ const cloud=s.activeWorld==='cloud';
+ if(cloud)drawCloudRestaurantBackdrop(c,t,w,h);else rect(c,0,0,w,h,'#6f513b');
  // Rich warm tile floor: one drawable scene rather than HTML furniture overlay.
- for(let row=0;row<Math.ceil(h/28);row++){
+ for(let row=0;!cloud&&row<Math.ceil(h/28);row++){
   rect(c,0,row*28,w,27,row%2?'#796045':'#72563e');
   line(c,0,row*28,w,row*28,'#4b382ca0',1);
   for(let column=0;column<Math.ceil(w/36);column++)
     line(c,column*36+(row%2)*18,row*28,column*36+(row%2)*18,row*28+27,'#9d775022',1);
  }
  // Shrink the redundant upper wall; the game HUD already displays the name.
- rect(c,0,0,w,h*.145,'#304f3e');rect(c,0,h*.145-7,w,8,'#b88c5c');
+ if(!cloud)rect(c,0,0,w,h*.145,'#304f3e');rect(c,0,h*.145-7,w,8,cloud?'#e2d6aa':'#b88c5c');
  for(const xx of [.09,.91]){rr(x(xx)-10,h*.072,20,38,5,'#6e937e','#cfae7d');rect(c,x(xx)-5,h*.083,10,18,'#3e6e68')}
  // The two active stoves are deliberately compact; the centre is reserved for
  // a later third production slot. No area names are printed on screen.
@@ -8950,7 +9103,7 @@ function drawRestaurantV075(c,s,t,w,h){
    // A top-down charcoal rack, not a round pot: raised legs, ember bed,
    // spaced grates, and two skewers laid crosswise over the coals.
    const gw=rw*.94,gh=24,gy=Y-17;
-   rr(X-rw/2,Y-24,rw,51,7,'#513c30','#b99765');
+   rr(X-rw/2,Y-24,rw,51,7,cloud?'#476b80':'#513c30',cloud?'#e5d6ad':'#b99765');
    rect(c,X-gw*.42,gy+gh,5,8,'#392f2c');rect(c,X+gw*.42-5,gy+gh,5,8,'#392f2c');
    rr(X-gw/2-2,gy-3,gw+4,gh+7,3,'#343c3d','#bd9b70');
    rr(X-gw*.43,gy,gw*.86,gh,2,'#622e29','#d69a69');
@@ -8968,8 +9121,8 @@ function drawRestaurantV075(c,s,t,w,h){
    }
    if(busy){for(let j=0;j<3;j++)circle(c,X-11+j*10,gy-5-Math.sin(t*5+j)*2,1.8,'#f7c57d88')}
   }else{
-   rr(X-rw/2,Y-24,rw,51,7,'#513c30','#b99765');
-   rr(X-rw*.43,Y-20,rw*.86,39,5,'#916d49','#d8ae74');
+   rr(X-rw/2,Y-24,rw,51,7,cloud?'#476b80':'#513c30',cloud?'#e5d6ad':'#b99765');
+   rr(X-rw*.43,Y-20,rw*.86,39,5,cloud?'#9dbabd':'#916d49',cloud?'#e8dcba':'#d8ae74');
    circle(c,X,Y-4,Math.min(21,w*.057),'#d7c19b');
    circle(c,X,Y-4,Math.min(17,w*.047),type==='WOK'?'#394b49':'#587580','#d5c9a7');
    if(type==='POT'){circle(c,X,Y-4,Math.min(11,w*.034),'#ac7a51');rect(c,X-18,Y-7,36,4,'#dbc39a')}
@@ -8988,17 +9141,17 @@ function drawRestaurantV075(c,s,t,w,h){
  // Before the REAL expansion purchase, show the old sealed central hearth.
  if((v?.kitchenSnapshot?.length||(!v&&s.kitchen?.thirdUnlocked?3:2))<3){
   const reserve=g.reservedStove,RX=x(reserve.x),RY=y(reserve.y);
-  rr(RX-21,RY-20,42,42,6,'#463c34','#907859');
-  rr(RX-16,RY-15,32,27,4,'#625647','#927d60');
+  rr(RX-21,RY-20,42,42,6,cloud?'#456576':'#463c34',cloud?'#d7cfab':'#907859');
+  rr(RX-16,RY-15,32,27,4,cloud?'#688c9b':'#625647',cloud?'#adc9cb':'#927d60');
   line(c,RX-13,RY+8,RX+13,RY-12,'#998469',3);
   line(c,RX-13,RY-12,RX+13,RY+8,'#998469',3);
  }
  // Compact pass counter: continuous centre aisle, no full-width obstruction.
  for(const [from,to] of [[.075,.390],[.610,.925]]){
-  rr(x(from),y(g.geometry.counterTop),x(to-from),h*.039,4,'#5b3e2e','#cda575');
-  rect(c,x(from),y(g.geometry.counterTop),x(to-from),4,'#c39965');
+  rr(x(from),y(g.geometry.counterTop),x(to-from),h*.039,4,cloud?'#5c8395':'#5b3e2e',cloud?'#eee2bd':'#cda575');
+  rect(c,x(from),y(g.geometry.counterTop),x(to-from),4,cloud?'#d9e5d6':'#c39965');
  }
- rr(x(.441),y(.389),x(.118),h*.025,4,'#9e805d','#caaa77');
+ rr(x(.441),y(.389),x(.118),h*.025,4,cloud?'#a2bdba':'#9e805d',cloud?'#f0e1bd':'#caaa77');
  const pending=v?.orders?.filter(o=>o.status==='pickup')||[];
  pending.slice(0,3).forEach((o,i)=>{dish(c,x(.50+(i-(Math.min(pending.length,3)-1)/2)*.046),y(.400),RECIPES[o.recipeId]?.station||'WOK')});
  const target=v?.hero?.carryOrderId?v.orders.find(o=>o.id===v.hero.carryOrderId&&o.status==='carried'):null;
@@ -9011,9 +9164,9 @@ function drawRestaurantV075(c,s,t,w,h){
    rr(X+sign*side*.77-8,Y-10,16,24,4,'#4e372c','#a87d56');
    rr(X+sign*side*.77-7,Y-14,14,13,3,'#78573b','#bc9366');
   }
-  rr(X-half-3,Y-half+7,side+6,side+5,6,'#493124','#67462e');
-  rr(X-half,Y-half,side,side,5,i>=2?'#916b48':'#a0754a','#e0b27b');
-  rr(X-half+4,Y-half+4,side-8,side-8,3,'#ae865a','#c69d65');
+  rr(X-half-3,Y-half+7,side+6,side+5,6,cloud?'#42677c':'#493124',cloud?'#83a7af':'#67462e');
+  rr(X-half,Y-half,side,side,5,cloud?'#a6c5c4':i>=2?'#916b48':'#a0754a',cloud?'#e7dab3':'#e0b27b');
+  rr(X-half+4,Y-half+4,side-8,side-8,3,cloud?'#c7dcd2':'#ae865a',cloud?'#a3c5c0':'#c69d65');
   line(c,X-half+6,Y-4,X+half-6,Y-4,'#8d6845',1);
   line(c,X-half+6,Y+6,X+half-6,Y+6,'#8d6845',1);
   // A single subtle rune is part of the wood, not an in-world UI name.
@@ -9093,13 +9246,13 @@ function drawRestaurantV075(c,s,t,w,h){
     const alpha=Math.max(0,Math.min(1,(t-start)/Math.max(.1,until-start)));
     pt={x:from.x+(to.x-from.x)*alpha,y:from.y+(to.y-from.y)*alpha};
    }
-   actors.push({id:role,x:pt.x,y:pt.y,kind:role,level:person.level||1,
+   actors.push({id:role,x:pt.x,y:pt.y,kind:s.activeWorld==='cloud'?'cloud_'+role:role,level:person.level||1,
     walk:moving?t*2:false,working:!moving&&!!v.stations[['WOK','POT','CENTER'][station]]});
   }
   if(crew?.waiter?.hired){
    const pos=waiterDeliveryPose(s,t);
    const delivery=pos.plate?v.orders.find(o=>o.status==='delivering'&&Number.isFinite(o.deliveryAt)):null;
-   actors.push({id:'waiter',x:pos.x,y:pos.y,kind:'waiter',level:crew.waiter.level||1,walk:pos.moving,plate:pos.plate,plateRecipeId:delivery?.recipeId});
+   actors.push({id:'waiter',x:pos.x,y:pos.y,kind:s.activeWorld==='cloud'?'cloud_waiter':'waiter',level:crew.waiter.level||1,walk:pos.moving,plate:pos.plate,plateRecipeId:delivery?.recipeId});
   }
   if(v.hero){
    const hero=v.hero,zone=heroZone(hero,s);
@@ -9112,7 +9265,7 @@ function drawRestaurantV075(c,s,t,w,h){
  }
  else {
   const reduced=globalThis.matchMedia?.('(prefers-reduced-motion: reduce)').matches||false;
-  for(const person of homeKitchenActors(s,t,reduced))actors.push(person);
+  for(const person of homeKitchenActors(s,t,reduced))actors.push(s.activeWorld==='cloud'&&['helper','helper2','waiter'].includes(person.kind)?{...person,kind:'cloud_'+person.kind}:person);
   // The idle room has no active orders. This is a small visual cue only.
   for(const stove of reduced?[]:[g.stoveLeft,g.stoveRight,...(s.kitchen?.thirdUnlocked?[g.reservedStove]:[])]){
    const X=x(stove.x),Y=y(stove.y);
@@ -9249,7 +9402,7 @@ function drawDiner(canvas,s,clock,simTime=s.service?.time??clock){
 let game=load()||newGame();
 let flashUntil=0;
 let message='今天会有怎样的客人上门呢？';
-let overlay='',bookTab='recipes',tileSelected=null,selectedOrderId=null;let servicePanel='';
+let overlay='',bookTab='recipes',recipeType='WOK',tileSelected=null,selectedOrderId=null;let servicePanel='';
 let selectedIngredients=activeWorld(game)==='cloud'?['cloud_rice','chicken']:['chicken','chili'],selectedMethod='stir';
 let walking=null,drag=null,selectedRegion=activeWorld(game)==='cloud'?'cloud':'forest';let livePanPointer=null;
 const stick={x:0,y:0,pointer:null,originX:0,originY:0};const keys=new Set();let lastFrame=0,lastSave=0;let gameClock=0;let serviceTickAt=0;const touched=new Map();
@@ -9261,6 +9414,7 @@ const phaseLabels={forecast:'开店前',field:'野外取材',research:'料理研
 const journey=['forecast','field','research','menu','prep','service','report','upgrade'];
 const meal=r=>`${r.emoji} ${r.name}`;
 const onlyName=id=>ING[id]?.name||id;
+const cookName=type=>({WOK:'炒锅',POT:'炖锅',STEAM:'云汽蒸笼',GRILL:'烤架'}[type]||type);
 const itemCount=()=>Object.keys(game.recipes).length;
 const ingredientChoices=()=>Object.entries(ING).filter(([id])=>activeWorld(game)==='cloud'?
  ['cloud_rice','sky_moss','storm_egg','sour_bell','gale_core','chicken','onion'].includes(id)||(game.inventory[id]||0)>0:
@@ -9284,7 +9438,7 @@ function shell(stage,dock){
  return `<div class="game-shell ${activeWorld(game)==='cloud'?'world-cloud':''} ${walk?'v075-game-shell':''} ${home?'v076-home-shell':''} ${game.phase==='field'&&game.field?.action?'is-field-playing':''}">${hud()}${guideMarkup()}<main class="stage ${game.phase}${game.cook?' wok-active':''}">${stage}${playablePhase()?sceneNotice():''}</main>${playablePhase()||home?'':toast()}${walk||home?'':`<nav class="dock">${dock}</nav>`}${overlayMarkup()}</div>`;
 }
 function earnedPromotions(){
- return Object.keys(CREW_ROLES).map(role=>({role,name:CREW_ROLES[role].name,promotion:crewPromotion(game,role)}))
+ return Object.keys(CREW_ROLES).map(role=>({role,name:crewRoleName(game,role),promotion:crewPromotion(game,role)}))
   .filter(x=>x.promotion?.ready);
 }
 const stationName=(type,recipe)=>recipe?.method==='steam'?'云汽蒸笼':type==='GRILL'?'烤架':type==='WOK'?'炒锅':'炖锅';
@@ -9311,9 +9465,9 @@ function overlayMarkup(){if(!overlay)return '';
      </div></article>`).join('')}</div>`;
   }else{
   ensureRecipeVariants(game);
-  const shown=Object.entries(RECIPES).filter(([id,r])=>game.recipes[id]||RECIPE_PROFILES[id]||r.station==='GRILL'&&ensureKitchen(game).grillOwned||activeWorld(game)==='cloud'&&r.ids.some(x=>['cloud_rice','sky_moss','storm_egg','sour_bell','gale_core'].includes(x)));
-  body=`<h2>📖 料理工艺图鉴</h2><p class="sheet-lead">已解锁 ${itemCount()} 道料理 · 每道菜可收藏不同做法。<b>当前默认工艺已经影响实际营业；点击版本可以更换。</b></p><div class="book-list v063-book-list">${shown.map(([id,r])=>{const learned=!!game.recipes[id],variants=game.recipeVariants?.[id]||[],active=game.activeVariantIds?.[id];
-    return `<div class="v063-book-entry"><button class="book-item" data-book="${id}"><span class="book-icon">${learned?r.emoji:'❔'}</span><div><strong>${learned?esc(r.name):'未发现的料理'}</strong><small>${learned?`${r.ids.map(onlyName).join(' + ')} · ${stationName(r.station,r)} · 已知 ${variants.length} 种工艺`:(r.method==='steam'?'云汽蒸笼 · ':r.station==='GRILL'?'烤架 · ':'')+esc(r.hint)}</small></div><span>›</span></button>${learned?`<div class="v063-variant-list">${variants.map(v=>`<button data-choose-variant="${id}::${v.variantId}" class="v063-variant-chip ${active===v.variantId?'active':''}">${active===v.variantId?'✓ ':''}${esc(v.styleLabel||LIVE_STYLES[v.style]||'标准工艺')} · 品质 ${v.quality} · ${recipeCraftSnapshot(game,id,v)?.price}币 / ${r.time+(recipeCraftSnapshot(game,id,v)?.timeDelta||0)}秒${v.secondaryTrait?' · '+esc(v.secondaryTrait):''}</button>`).join('')}</div>`:''}</div>`}).join('')}</div>`;
+  const shown=Object.entries(RECIPES).filter(([id,r])=>recipeCookware(r)===recipeType&&(game.recipes[id]||RECIPE_PROFILES[id]||r.station==='GRILL'&&ensureKitchen(game).grillOwned||activeWorld(game)==='cloud'&&r.ids.some(x=>['cloud_rice','sky_moss','storm_egg','sour_bell','gale_core'].includes(x))));
+  body=`<h2>📖 料理工艺图鉴</h2><p class="sheet-lead">已解锁 ${itemCount()} 道料理 · 每道菜可收藏不同做法。<b>当前默认工艺已经影响实际营业；点击版本可以更换。</b></p><div class="v102-book-tabs v015-cook-tabs" role="tablist" aria-label="按厨具查看菜谱">${['WOK','POT','STEAM','GRILL'].map(type=>`<button type="button" data-recipe-type="${type}" aria-selected="${recipeType===type}" class="${recipeType===type?'active':''}">${cookName(type)}</button>`).join('')}</div><div class="book-list v063-book-list">${shown.map(([id,r])=>{const learned=!!game.recipes[id],variants=game.recipeVariants?.[id]||[],active=game.activeVariantIds?.[id];
+    return `<div class="v063-book-entry"><button class="book-item" data-book="${id}"><span class="book-icon">${learned?r.emoji:'❔'}</span><div><strong>${learned?esc(r.name):'未发现的料理'}</strong><small>${learned?`${r.ids.map(onlyName).join(' + ')} · ${stationName(r.station,r)} · 已知 ${variants.length} 种工艺${chapterRecipeAvailable(game,id)?'':' · 仅原食堂上架'}`:(r.method==='steam'?'云汽蒸笼 · ':r.station==='GRILL'?'烤架 · ':'')+esc(r.hint)}</small></div><span>›</span></button>${learned?`<div class="v063-variant-list">${variants.map(v=>`<button data-choose-variant="${id}::${v.variantId}" class="v063-variant-chip ${active===v.variantId?'active':''}">${active===v.variantId?'✓ ':''}${esc(v.styleLabel||LIVE_STYLES[v.style]||'标准工艺')} · 品质 ${v.quality} · ${recipeCraftSnapshot(game,id,v)?.price}币 / ${r.time+(recipeCraftSnapshot(game,id,v)?.timeDelta||0)}秒${v.secondaryTrait?' · '+esc(v.secondaryTrait):''}</button>`).join('')}</div>`:''}</div>`}).join('')}</div>`;
   }
   body=`<div class="v102-book-tabs" role="tablist" aria-label="图鉴分类"><button type="button" role="tab" data-book-tab="recipes" aria-selected="${bookTab==='recipes'}" class="${bookTab==='recipes'?'active':''}">📖 菜谱</button><button type="button" role="tab" data-book-tab="guests" aria-selected="${bookTab==='guests'}" class="${bookTab==='guests'?'active':''}">👥 客人</button></div>`+body;
  }else if(overlay==='field-bag'){
@@ -9332,7 +9486,7 @@ function overlayMarkup(){if(!overlay)return '';
   // Other warehouse inventory is reference only, not a fifth "missing" shop slot.
   const elsewhere=Object.entries(ING).filter(([id])=>!market.goods[id]);
   body=`<h2>食材采购</h2><p class="sheet-lead">每天从 8 种普通食材随机上架 4 种，四种均有当日限额；售罄后次日换货。野外也可获取普通食材。</p>
-  <h3>第 ${totalBusinessDay(game)} 天 · 今日上架 ${offers.length} 种</h3><div class="stock-list" aria-label="今日可采购食材">${offers.map(stockLine).join('')}</div>
+  <h3>第 ${totalBusinessDay(game)} 天 · 今日上架 ${offers.length} 种</h3>${activeWorld(game)==='cloud'?`<div class="v015-ferry"><strong>航运委托 ×${game.ferryCredits||0}</strong><small>原店实际营业成交后获得；每个云港营业日最多领取一批云谷米×2、浮苔叶×1。</small><button data-act="ferry-supply" ${!canShop||!(game.ferryCredits||0)||game.ledger?.some(x=>x.id===`ferry-supply-${game.cycle}-${game.day}`)?'disabled':''}>领取补给</button></div>`:''}<div class="stock-list" aria-label="今日可采购食材">${offers.map(stockLine).join('')}</div>
   <details class="v013e-warehouse-details"><summary>查看其他仓库库存（非今日商品）</summary><div class="stock-list">${elsewhere.map(([id,ing])=>`<div class="detail-row">${ingredientIconHtml(id,20)} ${ing.name} · 库存 ×${game.inventory[id]||0}</div>`).join('')}</div></details>`;
  }else if(overlay==='premium'){
   const options=premiumMenuOptions(game),active=premiumMenuActive(game)?game.premiumMenu:null;
@@ -9343,7 +9497,7 @@ function overlayMarkup(){if(!overlay)return '';
     <div class="v010-premium-actions"><button data-premium-set="${x.id}:1" ${x.stock<1?'disabled':''}>限量 1 份</button><button data-premium-set="${x.id}:2" ${x.stock<2?'disabled':''}>限量 2 份</button></div>
    </div>`).join(''):'<p class="sheet-lead">暂时没有已研发的稀有料理。尝试击败食材首领，研发特别菜谱。</p>'}</div>`;
  }else if(overlay.startsWith('menu:')){
-  const slot=Number(overlay.split(':')[1]);body=`<h2>更换第 ${slot+1} 道上架菜</h2><p class="sheet-lead">“可做份数”按当前工艺与可用库存计算，已扣除隐藏菜预留。不同料理共用的材料不能重复计算。</p><div class="book-list">${Object.keys(game.recipes).filter(id=>RECIPES[id]).map(id=>{const r=RECIPES[id],craft=recipeCraftSnapshot(game,id),isPremium=game.premiumMenu?.recipeId===id&&premiumMenuActive(game),count=recipeAvailableServings(game,id,{ignorePremium:!!isPremium});return `<button data-menu-pick="${slot}:${id}" class="book-item v101-menu-option"><span class="book-icon">${r.emoji}</span><div><strong>${esc(r.name)} · ${stationName(r.station,r)}</strong><small>${r.time+(craft?.timeDelta||0)}秒 · ${craft?.price}金币 · ${craft?.ingredientIds.map(onlyName).join(' + ')}</small><span class="v101-serving-tag ${count===0?'shortage':''}">${count===0?'缺料 · ':''}可做 ${count} 份${isPremium?' · 选为日常将撤下隐藏菜':''}</span></div><span>›</span></button>`}).join('')}</div>`;
+  const slot=Number(overlay.split(':')[1]);body=`<h2>更换第 ${slot+1} 道上架菜</h2><p class="sheet-lead">本章可上架的已研发菜；两厨位只能覆盖两种厨具。“可做份数”按当前库存计算。</p><div class="book-list">${Object.keys(game.recipes).filter(id=>chapterRecipeAvailable(game,id)).map(id=>{const r=RECIPES[id],craft=recipeCraftSnapshot(game,id),isPremium=game.premiumMenu?.recipeId===id&&premiumMenuActive(game),count=recipeAvailableServings(game,id,{ignorePremium:!!isPremium}),owned=cookwareOwned(game,r),next=[...game.menu];next[slot]=id;const tooMany=new Set(next.filter(x=>game.recipes[x]&&chapterRecipeAvailable(game,x)).map(x=>recipeCookware(RECIPES[x]))).size>ensureKitchen(game).slots.length;return `<button ${!owned||tooMany?'disabled':''} data-menu-pick="${slot}:${id}" class="book-item v101-menu-option"><span class="book-icon">${r.emoji}</span><div><strong>${esc(r.name)} · ${cookName(recipeCookware(r))}</strong><small>${r.time+(craft?.timeDelta||0)}秒 · ${craft?.price}金币 · ${craft?.ingredientIds.map(onlyName).join(' + ')}</small><span class="v101-serving-tag ${count===0?'shortage':''}">${!owned?'未购买厨具 · ':tooMany?'超出厨位种类 · ':count===0?'缺料 · ':''}可做 ${count} 份${isPremium?' · 选为日常将撤下隐藏菜':''}</span></div><span>›</span></button>`}).join('')||'<p class="sheet-lead">还没有可上架的本地料理；先探索并研发。</p>'}</div>`;
  }else if(overlay==='bento'){
   const prepared=game.bento?.day===game.cycle+'-'+game.day;
   const possibilities=availableBento(game);
@@ -9356,11 +9510,11 @@ function overlayMarkup(){if(!overlay)return '';
  }else if(overlay==='crew'){
    const crew=ensureCrew(game),eff=crewEffects(game);
    const identity=(role,level)=>{
-    const look=crewAppearance(role,level);
-    return '<div class="v12d-staff-identity"><canvas class="v12d-staff-portrait" width="68" height="82" data-crew-portrait="'+role+'" data-level="'+look.level+'" role="img" aria-label="'+(CREW_ROLES[role]?.name||'员工')+' '+esc(look.label)+'像素形象"></canvas><div class="v12d-staff-profile"><strong>'+esc(look.label)+'</strong><small>'+esc(look.uniform)+'</small></div><span class="v12d-tier" aria-label="职业阶级 '+look.level+'">Lv.'+look.level+'</span></div>';
+    const kind=activeWorld(game)==='cloud'?'cloud_'+role:role,look=crewAppearance(kind,level);
+    return '<div class="v12d-staff-identity"><canvas class="v12d-staff-portrait" width="68" height="82" data-crew-portrait="'+kind+'" data-level="'+look.level+'" role="img" aria-label="'+(crewRoleName(game,role)||'员工')+' '+esc(look.label)+'像素形象"></canvas><div class="v12d-staff-profile"><strong>'+esc(look.label)+'</strong><small>'+esc(look.uniform)+'</small></div><span class="v12d-tier" aria-label="职业阶级 '+look.level+'">Lv.'+look.level+'</span></div>';
    };
    const row=role=>{
-    const person=crew[role],def=CREW_ROLES[role],meal=activeCrewMeal(game,role),promotion=crewPromotion(game,role);
+    const person=crew[role],def={...CREW_ROLES[role],name:crewRoleName(game,role)},meal=activeCrewMeal(game,role),promotion=crewPromotion(game,role);
     if(!person.hired)return '<div class="staff-person">'+identity(role,1)+'<div class="staff-person-head"><b>'+(role==='waiter'?'🧺':'🍳')+' '+def.name+' · '+def.job+'</b><span>入职 '+def.hireCost+' 金币</span></div>'+b('hire:'+role,'雇佣 '+def.name,'primary',game.coins<def.hireCost)+'</div>';
     const isCook=role!=='waiter';const current=isCook?'优先：'+(['左','右','中'][person.station]||'未指定')+'厨位 · 空闲时自动支援 · 每单 -'+(eff[role]?.seconds||0)+'秒':'顾客耐心 +'+eff.waiter.patience+'秒';
     const duty=game.phase==='prep'?'<div class="v12c-duty"><button data-act="duty:'+role+':on" class="'+(person.onDuty?'active':'')+'">✓ 今晚上岗</button><button data-act="duty:'+role+':off" class="'+(!person.onDuty?'active':'')+'">◌ 今晚休息</button></div>':'';
@@ -9370,7 +9524,7 @@ function overlayMarkup(){if(!overlay)return '';
    };
    body='<h2>👩‍🍳 食堂伙伴</h2><p class="sheet-lead">每位帮厨按本人实际完成的订单获得经验；增加厨位必须配备人手才能真正出餐。开门前直接选择左、中、右优先站位；已选位置不可重复安排。营业时，空闲帮厨仍会自动走到缺人的炉台支援。</p><div class="staff-roster">'+row('helper')+row('waiter')+(crew.helper2.hired?row('helper2'):'')+'</div>';
  }else if(overlay==='settings'){
-  body=`<h2>⚙ 游戏设置</h2><p class="sheet-lead">ODDPOT · v0.15.0-alpha.1 · 单机本地存档</p>${b('guide-replay','重看第一轮引导','secondary')}${b('reset','重置存档，从第 1 天重新开始','danger')}<p class="sheet-lead">切到后台时营业会自动暂停。更换设备不会同步存档。</p>`;
+  body=`<h2>⚙ 游戏设置</h2><p class="sheet-lead">ODDPOT · v0.15.0-alpha.3 · 单机本地存档</p>${b('guide-replay','重看第一轮引导','secondary')}${b('reset','重置存档，从第 1 天重新开始','danger')}<p class="sheet-lead">切到后台时营业会自动暂停。更换设备不会同步存档。</p>`;
  }else if(overlay==='details'){
   const r=game.report;body=r?`<h2>营业账本详情</h2><p class="sheet-lead">本日订单由真实食材库存、工位工作秒数和顾客等待事件计算。</p><div class="book-list">${Object.entries(r.byDish).map(([id,d])=>`<div class="detail-row">${RECIPES[id].emoji} ${RECIPES[id].name}：售出 ${d.count} 份 · 满意 ${Math.round(d.totalSat/d.count)}</div>`).join('')}<div class="detail-row">左厨位占用 ${r.congestion.WOK||0} 秒 / 右厨位 ${r.congestion.POT||0} 秒${r.congestion.CENTER!==undefined?' / 中厨位 '+r.congestion.CENTER+' 秒':''}</div><div class="detail-row">食材耗用估值 ${r.cost} · 宣传 ${r.finance?.marketingCost||0} · 工资 ${r.finance?.wage||0} · 招待支出 ${r.hospitalityCost||0} · 收入 ${r.revenue} · 经营利润 ${r.profit} · 现金净变动 ${r.finance?.cashChange??'旧版无记录'}</div></div>`:'';
  }
@@ -9388,7 +9542,7 @@ function restaurantView(interactive=false){
      <span class="seat-label">${i+1}号桌 · ${orders.length}/2 位</span>
    </button>`;
  };
- const st=position=>{const job=v?.stations[position],slot=(v?.kitchenSnapshot||ensureKitchen(game).slots)[['WOK','POT','CENTER'].indexOf(position)],r=job?RECIPES[v.orders.find(o=>o.id===job.orderId)?.recipeId]:null;return `<button class="diner-station" data-station="${position}" ${interactive?'':'disabled'}><span class="station-object">${slot.type==='GRILL'?'🍢':slot.type==='WOK'?'🍳':'🍲'}</span><strong>${slot.type==='GRILL'?'烤架':slot.type==='WOK'?'炒锅':'炖锅'} Lv.${slot.level}</strong><small>${r?`${r.emoji} ${job.left}s`:'待命'}</small></button>`};
+ const st=position=>{const job=v?.stations[position],slot=(v?.kitchenSnapshot||ensureKitchen(game).slots)[['WOK','POT','CENTER'].indexOf(position)],r=job?RECIPES[v.orders.find(o=>o.id===job.orderId)?.recipeId]:null;return `<button class="diner-station" data-station="${position}" ${interactive?'':'disabled'}><span class="station-object">${slot.type==='GRILL'?'🍢':slot.type==='WOK'?'🍳':'🍲'}</span><strong>${cookName(slot.type)} Lv.${slot.level}</strong><small>${r?`${r.emoji} ${job.left}s`:'待命'}</small></button>`};
  return `<div class="diner-world"><canvas id="diner-canvas" class="diner-canvas"></canvas><div class="diner-top"><div class="shop-sign">ODDPOT · 边境小食堂</div><div class="tiny-window">🌙</div></div><div class="diner-kitchen">${st('WOK')}<div class="cook-avatar"><span>👩‍🍳</span><small>主厨</small></div>${st('POT')}</div><div class="service-counter"><i></i>出餐柜台<i></i></div><div class="diner-tables">${table(0)}${table(1)}${v?.tableCount>=3?table(2):''}${v?.tableCount>=4?table(3):''}</div><div class="diner-floor"><span>🪴</span><span class="diner-entry">🚪<small>欢迎光临</small></span><span>🪴</span></div>${v?`<div class="scene-corner">已服务 ${v.orders.filter(o=>o.status==='served').length}/${v.orders.length}</div>`:''}${interactive&&v?.walkable?`<div id="diner-stick" class="diner-float-stick" aria-hidden="true"><div id="diner-stick-knob" class="diner-float-knob"></div></div><button id="diner-special" data-act="hero-special" class="diner-special" type="button" hidden aria-label="主动使用主厨技能"></button>`:''}</div>`;
 }
 function sceneTag(title,sub=''){return `<div class="scene-tag"><strong>${title}</strong>${sub?`<small>${sub}</small>`:''}</div>`}
@@ -9415,7 +9569,7 @@ function portalPanel(){
  if(!portalAvailable(game))return '';
  const cloud=activeWorld(game)==='cloud',selection=game.portalSelection||{},roles=['helper','waiter','helper2'].filter(role=>game.crew?.[role]?.hired);
  const types=['WOK','POT',...(game.kitchen?.grillOwned?['GRILL']:[])];
- return `<section class="v12-star-invite" aria-label="云港传送门"><strong>🌀 ${cloud?'返回边境食堂':'云港浮岛 · 第一扇传送门'}</strong><small>${cloud?'原食堂和三星进度仍在。':'开辟当地食堂，原店进度完整保留。首次进入选一位同行员工及一类厨具专长。'}</small>${!cloud&&!game.worlds?.cloud?`<div class="portal-picks"><small>同行伙伴：${roles.length?roles.map(role=>`<button data-act="portal-crew:${role}" aria-pressed="${(selection.crew||roles[0])===role}">${CREW_ROLES[role].name}</button>`).join(''):'主厨独自前往'}</small><small>厨具：${types.map(type=>`<button data-act="portal-tool:${type}" aria-pressed="${(selection.tool||types.find(t=>game.kitchen.mastery[t]>1)||'WOK')===type}">${type==='WOK'?'炒锅':type==='POT'?'炖锅':'烤架'} Lv.${game.kitchen.mastery[type]}</button>`).join('')}</small></div>`:''}<button data-act="portal-travel">${cloud?'返回原食堂':'进入云港浮岛'}</button></section>`;
+ return `<section class="v12-star-invite" aria-label="云港传送门"><strong>🌀 ${cloud?'返回边境食堂':'云港浮岛 · 第一扇传送门'}</strong><small>${cloud?'原食堂的真实营业可积累航运委托；当前有 '+(game.ferryCredits||0)+' 张。':'当地伙伴阿岚将值守新店。原店员工继续留守，首次进入可带走一类厨具经验。'}</small>${!cloud&&!game.worlds?.cloud?`<div class="portal-picks"><small>厨具经验：${types.map(type=>`<button data-act="portal-tool:${type}" aria-pressed="${(selection.tool||types.find(t=>game.kitchen.mastery[t]>1)||'WOK')===type}">${cookName(type)} Lv.${game.kitchen.mastery[type]}</button>`).join('')}</small></div>`:''}<button data-act="portal-travel">${cloud?'返回原食堂':'进入云港浮岛'}</button></section>`;
 }
 function forecast(){
  const plan=serviceDayPlan(game);
@@ -9585,8 +9739,8 @@ function research(){const c=game.cook;
  return [`<div class="research-scene"><div class="research-board"><div class="cauldron">🍳</div><div class="research-label">自由搭配食材，解锁新的料理</div><div class="ingredients-board">${Object.entries(ING).map(([id,ing])=>`<button class="ingredient-tile ${selectedIngredients.includes(id)?'picked':''}" data-ingredient="${id}" ${!game.inventory[id]&&!selectedIngredients.includes(id)?'disabled':''}><span>${ingredientIconHtml(id,24)}</span><strong>${ing.name}</strong><small>×${game.inventory[id]||0}</small></button>`).join('')}</div><div class="selected-caption">已下料：${selectedIngredients.map(id=>ingredientIconHtml(id,22)).join(' + ')} ${selectedIngredients.length}/3</div><div class="hint-glow">📖 已掌握 ${itemCount()}/${recipeCount} 道菜 · ${recipeCount-itemCount()} 道等待发现</div></div></div>`,
  `<div class="action-row method-pick">${b('method:stir','🔥 爆炒',selectedMethod==='stir'?'chosen':'secondary')}${b('method:stew','🍲 焖煮',selectedMethod==='stew'?'chosen':'secondary')}${b('book','📖 图鉴','secondary')}</div><div class="action-row">${b('start-research','开锅实验','primary wide',selectedIngredients.length<2||!canUse(game,selectedIngredients))}${b('to-menu','去上架 →','secondary')}</div>`]
 }
-function menu(){const syn=synergyFor(game.menu);const wok=game.menu.filter(id=>RECIPES[id]?.station==='WOK').length,pot=game.menu.filter(id=>RECIPES[id]?.station==='POT').length,grill=game.menu.filter(id=>RECIPES[id]?.station==='GRILL').length;
- return [`<div class="menu-scene"><div class="menu-title">🪧 今晚的三道菜</div><div class="menu-blackboard">${game.menu.map((id,i)=>{const r=RECIPES[id],craft=recipeCraftSnapshot(game,id),count=recipeAvailableServings(game,id);return `<button class="menu-line" data-edit-slot="${i}" aria-label="替换第 ${i+1} 道菜：${esc(r?.name||'未选择')}，售价 ${craft?.price}，制作 ${r?.time+(craft?.timeDelta||0)} 秒，可做 ${count} 份"><span class="menu-num">0${i+1}</span><span class="menu-icon">${r?.emoji||'❔'}</span><div><strong>${r?.name||'未选择'}</strong><span class="v014-menu-value"><b>🪙 ${craft?.price}</b><em>⏱ ${r?.time+(craft?.timeDelta||0)} 秒</em><i class="${count===0?'shortage':''}">可做 ${count} 份</i></span><small>${esc(activeRecipeVariant(game,id)?.styleLabel||'标准工艺')}</small></div><span class="menu-switch" aria-hidden="true">⇄</span></button>`}).join('')}</div><div class="synergy-box">✨ ${syn?`主共鸣：${syn}`:'当前没有主共鸣'}</div><button type="button" class="v010-premium-entry" data-act="premium"><span>✨ 隐藏菜</span><strong>${premiumMenuActive(game)?esc(RECIPES[game.premiumMenu.recipeId]?.name)+' · 限'+game.premiumMenu.limit+'份':'未设置 · 可选稀有料理'}</strong><span>›</span></button><details class="v014-menu-notes"><summary>客人口味与厨房安排</summary><p>${esc(today(game).hint)}</p><div class="menu-balance"><div>🍳 炒锅 <strong>${wok} 道</strong></div><div>🍲 炖锅 <strong>${pot} 道</strong></div>${grill?`<div>🍢 烤架 <strong>${grill} 道</strong></div>`:''}</div><small>可做份数按单道菜计算；多道菜共用的食材不可相加。</small></details></div>`,
+function menu(){const syn=synergyFor(game.menu);const wok=game.menu.filter(id=>recipeCookware(RECIPES[id])==='WOK').length,pot=game.menu.filter(id=>recipeCookware(RECIPES[id])==='POT').length,steam=game.menu.filter(id=>recipeCookware(RECIPES[id])==='STEAM').length,grill=game.menu.filter(id=>recipeCookware(RECIPES[id])==='GRILL').length;
+ return [`<div class="menu-scene"><div class="menu-title">🪧 今晚的三道菜</div><div class="menu-blackboard">${game.menu.map((id,i)=>{const r=RECIPES[id],craft=recipeCraftSnapshot(game,id),count=recipeAvailableServings(game,id);if(!r)return `<button class="menu-line" data-edit-slot="${i}"><span class="menu-num">0${i+1}</span><strong>＋ 选择本地料理</strong></button>`;return `<button class="menu-line" data-edit-slot="${i}" aria-label="替换第 ${i+1} 道菜：${esc(r?.name||'未选择')}，售价 ${craft?.price}，制作 ${r?.time+(craft?.timeDelta||0)} 秒，可做 ${count} 份"><span class="menu-num">0${i+1}</span><span class="menu-icon">${r?.emoji||'❔'}</span><div><strong>${r?.name||'未选择'}</strong><span class="v014-menu-value"><b>🪙 ${craft?.price}</b><em>⏱ ${r?.time+(craft?.timeDelta||0)} 秒</em><i class="${count===0?'shortage':''}">可做 ${count} 份</i></span><small>${esc(activeRecipeVariant(game,id)?.styleLabel||'标准工艺')}</small></div><span class="menu-switch" aria-hidden="true">⇄</span></button>`}).join('')}</div><div class="synergy-box">✨ ${syn?`主共鸣：${syn}`:'当前没有主共鸣'}</div><button type="button" class="v010-premium-entry" data-act="premium"><span>✨ 隐藏菜</span><strong>${premiumMenuActive(game)?esc(RECIPES[game.premiumMenu.recipeId]?.name)+' · 限'+game.premiumMenu.limit+'份':'未设置 · 可选稀有料理'}</strong><span>›</span></button><details class="v014-menu-notes"><summary>客人口味与厨房安排</summary><p>${esc(today(game).hint)}</p><div class="menu-balance"><div>🍳 炒锅 <strong>${wok} 道</strong></div><div>🍲 炖锅 <strong>${pot} 道</strong></div>${steam?`<div>♨️ 蒸笼 <strong>${steam} 道</strong></div>`:''}${grill?`<div>🍢 烤架 <strong>${grill} 道</strong></div>`:''}</div><small>可做份数按单道菜计算；多道菜共用的食材不可相加。</small></details></div>`,
  `<div class="action-row">${b('book','📖 图鉴','secondary')}${b('to-prep','菜单定好了 →','primary wide',!canMenu(game))}</div>`]
 }
 // The pre-opening stock check is deliberately small, unlike the full stock
@@ -9611,10 +9765,10 @@ function preOpenMarketing(){
 }
 function prep(){
  const k=ensureKitchen(game),preview=kitchenPreview(game);
- const slotCards=k.slots.map((slot,i)=>`<div class="kitchen-config-slot"><span><b>${['左厨位','右厨位','中厨位'][i]}</b><small>Lv.${slot.level}${slot.level===2?' · 制作 -2秒':''}</small></span><div class="kitchen-choice"><button data-act="kitchen:${i}:WOK" class="${slot.type==='WOK'?'active':''}" aria-pressed="${slot.type==='WOK'}">炒锅</button><button data-act="kitchen:${i}:POT" class="${slot.type==='POT'?'active':''}" aria-pressed="${slot.type==='POT'}">炖锅</button>${k.grillOwned?`<button data-act="kitchen:${i}:GRILL" class="${slot.type==='GRILL'?'active':''}" aria-pressed="${slot.type==='GRILL'}">烤架</button>`:''}</div></div>`).join('');
+ const slotCards=k.slots.map((slot,i)=>`<div class="kitchen-config-slot"><span><b>${['左厨位','右厨位','中厨位'][i]}</b><small>Lv.${slot.level}${slot.level===2?' · 制作 -2秒':''}</small></span><div class="kitchen-choice"><button data-act="kitchen:${i}:WOK" class="${slot.type==='WOK'?'active':''}" aria-pressed="${slot.type==='WOK'}">炒锅</button><button data-act="kitchen:${i}:POT" class="${slot.type==='POT'?'active':''}" aria-pressed="${slot.type==='POT'}">炖锅</button>${k.steamerOwned?`<button data-act="kitchen:${i}:STEAM" class="${slot.type==='STEAM'?'active':''}" aria-pressed="${slot.type==='STEAM'}">蒸笼</button>`:''}${k.grillOwned?`<button data-act="kitchen:${i}:GRILL" class="${slot.type==='GRILL'?'active':''}" aria-pressed="${slot.type==='GRILL'}">烤架</button>`:''}</div></div>`).join('');
  const dayPlan=serviceDayPlan(game),availableUpgrades=earnedPromotions();
- const pressure=preview.pressure.map(p=>`${p.type==='GRILL'?'烤架':p.type==='WOK'?'炒锅':'炖锅'} ${p.menu}菜 / ${p.capacity}位`).join('　');
- return [`<div class="scene-bg diner-bg">${restaurantView(false)}<div class="prep-card kitchen-prep-card"><h2>厨房排布 · 备餐</h2><div class="kitchen-config-head">${preview.valid?'设备覆盖菜单':'缺少：'+preview.risk.map(t=>t==='GRILL'?'烤架':t==='WOK'?'炒锅':'炖锅').join(' / ')}</div><div class="kitchen-config-slots">${slotCards}</div><p class="kitchen-pressure">${pressure}</p><p class="kitchen-refit">本日首次换锅免费 · 后续每次 ${kitchenRefitCost(game)||12} 金币</p><button class="staff-open-prep ${availableUpgrades.length?'v12e-staff-ready':''}" data-act="crew">👩‍🍳 排班、工资与晋升 <span>${availableUpgrades.length?availableUpgrades.length+'人可晋升 ✦':Object.values(ensureCrew(game)).filter(x=>x.hired).length+'/'+(k.thirdUnlocked?'3':'2')+' 人 ›'}</span></button><div class="service-day-brief"><b>${dayPlan.pressure}${dayPlan.starred?' · ✦ 星章口碑热潮':''}</b><span>预计 ${dayPlan.count} 人 · ${dayPlan.goal.label}${dayPlan.starred?' · 高峰可能等位':''}</span></div>${premiumMenuActive(game)?`<div class="v101-premium-summary" aria-label="今晚隐藏菜单"><span aria-hidden="true">✨</span><div><strong>隐藏菜 · ${esc(RECIPES[game.premiumMenu.recipeId]?.name)}</strong><small>限量 ${game.premiumMenu.limit} 份 · 食材已预留</small></div></div>`:''}${starInvite()}${preOpenMarketing()}${prepInventoryCheck()}<div class="prep-divider">开业前预制</div><div class="prep-items">${game.menu.map(id=>`<button class="prep-item" data-act="prep:${id}" ${!canUse(game,recipeCraftSnapshot(game,id).ingredientIds)?'disabled':''}>${RECIPES[id].emoji} ${RECIPES[id].name}<span>已备 ${game.prep[id]||0} · ＋1</span></button>`).join('')}</div></div></div>`,
+ const pressure=preview.pressure.map(p=>`${cookName(p.type)} ${p.menu}菜 / ${p.capacity}位`).join('　');
+ return [`<div class="scene-bg diner-bg">${restaurantView(false)}<div class="prep-card kitchen-prep-card"><h2>厨房排布 · 备餐</h2><div class="kitchen-config-head">${preview.valid?'设备覆盖菜单':'缺少：'+preview.risk.map(t=>cookName(t)).join(' / ')}</div><div class="kitchen-config-slots">${slotCards}</div><p class="kitchen-pressure">${pressure}</p><p class="kitchen-refit">本日首次换锅免费 · 后续每次 ${kitchenRefitCost(game)||12} 金币</p><button class="staff-open-prep ${availableUpgrades.length?'v12e-staff-ready':''}" data-act="crew">👩‍🍳 排班、工资与晋升 <span>${availableUpgrades.length?availableUpgrades.length+'人可晋升 ✦':Object.values(ensureCrew(game)).filter(x=>x.hired).length+'/'+(k.thirdUnlocked?'3':'2')+' 人 ›'}</span></button><div class="service-day-brief"><b>${dayPlan.pressure}${dayPlan.starred?' · ✦ 星章口碑热潮':''}</b><span>预计 ${dayPlan.count} 人 · ${dayPlan.goal.label}${dayPlan.starred?' · 高峰可能等位':''}</span></div>${premiumMenuActive(game)?`<div class="v101-premium-summary" aria-label="今晚隐藏菜单"><span aria-hidden="true">✨</span><div><strong>隐藏菜 · ${esc(RECIPES[game.premiumMenu.recipeId]?.name)}</strong><small>限量 ${game.premiumMenu.limit} 份 · 食材已预留</small></div></div>`:''}${starInvite()}${preOpenMarketing()}${prepInventoryCheck()}<div class="prep-divider">开业前预制</div><div class="prep-items">${game.menu.map(id=>`<button class="prep-item" data-act="prep:${id}" ${!canUse(game,recipeCraftSnapshot(game,id).ingredientIds)?'disabled':''}>${RECIPES[id].emoji} ${RECIPES[id].name}<span>已备 ${game.prep[id]||0} · ＋1</span></button>`).join('')}</div></div></div>`,
  `<div class="dock-head"><span>${preview.valid?'厨房就绪，可开业': '先给菜单配置所需锅具'}</span><span>金币 ${game.coins}</span></div><div class="action-row">${b('crew','员工','secondary')}${b('open','开门迎客','primary wide',!preview.valid)}</div>`]
 }
 function serviceLegacy(){const v=game.service;if(!v)return ['<div class="empty">餐厅正在准备...</div>',b('open','开业','primary')];
@@ -9659,7 +9813,7 @@ function service(){
   ${goal?'<div class="v075-goal">🎯 '+esc(goal.label)+' · <b id="v075-goal">'+goal.value+'/'+goal.target+'</b></div>':''}
   ${modal}${paused}${end}</div>`,''];
 }
-function report(){const r=game.report;const lead=newRecipeLead(game);if(!r)return ['',''];return [`<div class="report-scene" aria-label="今日营业结算"><h2 class="report-header">${r.secondRating?.passed&&r.secondRating.stage===2?'✦✦ 获得第二枚万味星章！':r.secondRating?.passed?'✦ 二星首夜通过！':r.secondRating?'✦ 二星评鉴未达标':r.rating?.passed?'✦ 获得万味星章！':r.rating?'✦ 评鉴结束，下次再试':r.won?'🏆 击败爆炎厨王！':r.challenge?'🔥 爆炎厨王：挑战结束':'🌙 打烊啦，看看大家怎么说'}</h2><div class="report-stats"><div><small>今晚收入</small><b>🪙 ${r.revenue}</b></div><div><small>贡献利润</small><b>${r.profit}</b></div><div><small>成功上菜</small><b>${r.served}/${r.totalOrders||7}</b></div><div><small>平均满意</small><b>${r.sat}</b></div></div>${reportPromotionBanner()}${ratingReceipt(r)}${secondRatingReceipt(r)}${r.finance?`<div class="v12c-finance"><strong>🪙 经营账本 · 真实收支</strong><span>营业收入 ${r.revenue} · 食材估值 ${r.cost} · 宣传 ${r.finance.marketingCost} · 工资 ${r.finance.wage}</span><span>其他营业支出 ${(r.eventExpense||0)+(r.hospitalityCost||0)} · 经营利润 <b>${r.profit}</b></span><span>本日现金净变动（含采购与投资）<b>${r.finance.cashChange>=0?'+':''}${r.finance.cashChange}</b></span><small>${CAMPAIGNS[r.finance.campaignId]?.name||'自然营业'}：新增 ${r.finance.promotionGuests} 客 · 到店 ${r.finance.marketingArrived||0} · 成交 ${r.finance.marketingServed||0} 单 · 销售 ${r.finance.marketingRevenue||0} 金币</small><small>已付工资 ${r.finance.paid} · 结算后欠薪 ${r.finance.debt}</small></div>`:''}${r.kitchen?`<div class="kitchen-report"><strong>厨房复盘</strong>${r.kitchen.slots.map((slot,i)=>`<span>${['左','右','中'][i]} ${slot.type==='GRILL'?'烤架':slot.type==='WOK'?'炒锅':'炖锅'} Lv.${slot.level} · ${r.kitchen.stats?.[['WOK','POT','CENTER'][i]]?.count||0} 单 · 节约 ${r.kitchen.stats?.[['WOK','POT','CENTER'][i]]?.secondsSaved||0} 秒</span>`).join('')}</div>`:''}${r.byCraft&&Object.keys(r.byCraft).length?`<div class="v063-craft-report"><strong>🥘 本晚工艺表现（实际销售）</strong>${Object.values(r.byCraft).map(x=>`<div class="v063-craft-row"><b>${esc(RECIPES[x.recipeId]?.name||'料理')} · ${esc(x.styleLabel)}</b><small>售出 ${x.count} 份 · 评价 ${Math.round(x.totalSat/x.count)} · 实收 ${x.revenue} 金币${x.revenue!==x.baseRevenue? '（相比基础 '+(x.revenue-x.baseRevenue>0?'+':'')+(x.revenue-x.baseRevenue)+'）':''}</small></div>`).join('')}</div>` :''}${r.staff?.crew&&(r.staff.crew.helper.hired||r.staff.crew.waiter.hired||r.staff.crew.helper2?.hired)?`<div class="staff-report"><b>员工今日贡献</b>${r.staff.crew.helper.hired?`<span>帮厨：参与 ${r.staff.stats.helperOrders} 单 · 实省 ${r.staff.stats.helperSeconds} 秒</span>`:''}${r.staff.crew.helper2?.hired?`<span>小炭：参与 ${r.staff.stats.helper2Orders||0} 单 · 实省 ${r.staff.stats.helper2Seconds||0} 秒</span>`:''}${r.staff.crew.waiter.hired?`<span>跑堂：照顾 ${r.staff.stats.waiterOrders} 桌 · 额外耐心 ${r.staff.stats.waiterBonus} 秒 · 延误挽回 ${r.staff.stats.waiterSaved} 单</span>`:''}<small>员工餐食材成本 ${r.staff.foodCost} 金币（计入利润）</small></div>`:''}${r.growth?`<div class="v12c-growth-report"><b>🌟 员工成长</b>${Object.entries(r.growth.earned).map(([role,n])=>`<span>${CREW_ROLES[role].name} · 工作经验 +${n} · Lv.${(game.crew?.[role]?.level||r.growth.after[role].level)}（累计 ${r.growth.after[role].xp}）</span>`).join('')}</div>`:''}${r.regularGuests?.length?`<div class="v010-regular-report">👥 今天认识或再见了：${r.regularGuests.slice(0,3).map(g=>esc(g.name)+(g.happyMeals>=2?' · 熟客':'')).join('、')}</div>`:''}${r.premium?.recipeId?`<div class="v010-premium-report"><strong>✨ 隐藏菜 · ${esc(RECIPES[r.premium.recipeId]?.name||'稀有料理')}</strong><span>限量 ${r.premium.limit} 份 · 接单 ${r.premium.ordered} · 完成 ${r.premium.sold} · 实收 ${r.premium.revenue} 金币</span></div>`:''}<div class="daily-goal-result"><b>今日任务：${r.goal?.label||'完成营业'}</b><span>${r.goal?`${r.goal.value}/${r.goal.target} · ${r.goal.success?'达成！口碑 +2':'未达成，下次再试'}`:'常规营业'}</span></div><div class="guest-verdict"><strong>💬 今日食客点评</strong><p>${r.suggested}</p></div>${r.guestReviews?.length?`<div class="guest-feedback-list"><strong>真实食客回访</strong>${r.guestReviews.slice(0,3).map(x=>`<div class="review-line"><span>${RECIPES[x.recipeId]?.name||'今日料理'}</span><span>“${esc(x.text)}” · ${x.sat}分</span></div>`).join('')}</div>`:''}${r.choices?.length?`<div class="v04-choices"><small>店长今日决策</small>${r.choices.map(c=>`<span>${c.type==='menu_swap'?`临时换菜：${RECIPES[c.before].name} → ${RECIPES[c.after].name}`:`第${c.wave}波：${({sign:'辣味招牌',kitchen:'整理后厨',steady:'稳定营业',soup:'温和推荐',assist:'临时帮厨',publicity:'试吃宣传'})[c.choice]||c.choice}`}</span>`).join('')}</div>`:''}${r.challenge?`<div class="boss-mini">厨王赛得分 <b>${r.challenge.score}</b> / 对手 70　${r.won?'🏆 获得猛火掌控':'未达标，下轮仍可挑战'}</div>`:''}${r.queue?`<section class="v12e-queue-report" aria-label="门外真实等位"><strong>🚪 门外等位与接待</strong><span>峰值 ${r.queue.peak} 位 · 等位后入店 ${r.queue.waited} 位 · 等位流失 ${r.queue.abandoned} 位</span><small>平均成功等位 ${r.queue.waited?Math.round(r.queue.waitSeconds/r.queue.waited):0} 秒 · 未入座 ${r.unseated} 位${r.queue.peak===0?' · 今晚没有形成排队':''}</small></section>`:''}<div class="v09-growth-report"><b>🏠 经营成长 · 第 ${r.absoluteDay||totalBusinessDay(game)} 天</b><span>食堂 ${r.tableCount||2} 桌 / ${(r.tableCount||2)*2} 席 · 今日等位高峰 ${r.queuePeak||0} 人 · 未能入座 ${r.unseated||0} 人</span><span>累计营业额 ${game.history.reduce((n,x)=>n+x.revenue,0)} 金币 · 累计招待 ${game.history.reduce((n,x)=>n+x.served,0)} 人</span></div><div class="recipe-lead"><small>🔎 顾客带来的研发灵感</small><strong>${lead?`“${lead.hint}”`:'目前的菜谱已经全部解锁！'}</strong>${lead?`<span>可尝试 ${lead.ingredients.map(id=>ingredientIconHtml(id,22)).join(' + ')}</span>`:''}</div></div>`,
+function report(){const r=game.report;const lead=newRecipeLead(game);if(!r)return ['',''];return [`<div class="report-scene" aria-label="今日营业结算"><h2 class="report-header">${r.secondRating?.passed&&r.secondRating.stage===2?'✦✦ 获得第二枚万味星章！':r.secondRating?.passed?'✦ 二星首夜通过！':r.secondRating?'✦ 二星评鉴未达标':r.rating?.passed?'✦ 获得万味星章！':r.rating?'✦ 评鉴结束，下次再试':r.won?'🏆 击败爆炎厨王！':r.challenge?'🔥 爆炎厨王：挑战结束':'🌙 打烊啦，看看大家怎么说'}</h2><div class="report-stats"><div><small>今晚收入</small><b>🪙 ${r.revenue}</b></div><div><small>贡献利润</small><b>${r.profit}</b></div><div><small>成功上菜</small><b>${r.served}/${r.totalOrders||7}</b></div><div><small>平均满意</small><b>${r.sat}</b></div></div>${reportPromotionBanner()}${r.ferryEarned?`<div class="v015-ferry"><strong>🪁 获得航运委托 ×1</strong><small>来自原食堂今天的真实上菜；可在云港每日领取一批本地补给。</small></div>`:''}${ratingReceipt(r)}${secondRatingReceipt(r)}${r.finance?`<div class="v12c-finance"><strong>🪙 经营账本 · 真实收支</strong><span>营业收入 ${r.revenue} · 食材估值 ${r.cost} · 宣传 ${r.finance.marketingCost} · 工资 ${r.finance.wage}</span><span>其他营业支出 ${(r.eventExpense||0)+(r.hospitalityCost||0)} · 经营利润 <b>${r.profit}</b></span><span>本日现金净变动（含采购与投资）<b>${r.finance.cashChange>=0?'+':''}${r.finance.cashChange}</b></span><small>${CAMPAIGNS[r.finance.campaignId]?.name||'自然营业'}：新增 ${r.finance.promotionGuests} 客 · 到店 ${r.finance.marketingArrived||0} · 成交 ${r.finance.marketingServed||0} 单 · 销售 ${r.finance.marketingRevenue||0} 金币</small><small>已付工资 ${r.finance.paid} · 结算后欠薪 ${r.finance.debt}</small></div>`:''}${r.kitchen?`<div class="kitchen-report"><strong>厨房复盘</strong>${r.kitchen.slots.map((slot,i)=>`<span>${['左','右','中'][i]} ${cookName(slot.type)} Lv.${slot.level} · ${r.kitchen.stats?.[['WOK','POT','CENTER'][i]]?.count||0} 单 · 节约 ${r.kitchen.stats?.[['WOK','POT','CENTER'][i]]?.secondsSaved||0} 秒</span>`).join('')}</div>`:''}${r.byCraft&&Object.keys(r.byCraft).length?`<div class="v063-craft-report"><strong>🥘 本晚工艺表现（实际销售）</strong>${Object.values(r.byCraft).map(x=>`<div class="v063-craft-row"><b>${esc(RECIPES[x.recipeId]?.name||'料理')} · ${esc(x.styleLabel)}</b><small>售出 ${x.count} 份 · 评价 ${Math.round(x.totalSat/x.count)} · 实收 ${x.revenue} 金币${x.revenue!==x.baseRevenue? '（相比基础 '+(x.revenue-x.baseRevenue>0?'+':'')+(x.revenue-x.baseRevenue)+'）':''}</small></div>`).join('')}</div>` :''}${r.staff?.crew&&(r.staff.crew.helper.hired||r.staff.crew.waiter.hired||r.staff.crew.helper2?.hired)?`<div class="staff-report"><b>员工今日贡献</b>${r.staff.crew.helper.hired?`<span>帮厨：参与 ${r.staff.stats.helperOrders} 单 · 实省 ${r.staff.stats.helperSeconds} 秒</span>`:''}${r.staff.crew.helper2?.hired?`<span>小炭：参与 ${r.staff.stats.helper2Orders||0} 单 · 实省 ${r.staff.stats.helper2Seconds||0} 秒</span>`:''}${r.staff.crew.waiter.hired?`<span>跑堂：照顾 ${r.staff.stats.waiterOrders} 桌 · 额外耐心 ${r.staff.stats.waiterBonus} 秒 · 延误挽回 ${r.staff.stats.waiterSaved} 单</span>`:''}<small>员工餐食材成本 ${r.staff.foodCost} 金币（计入利润）</small></div>`:''}${r.growth?`<div class="v12c-growth-report"><b>🌟 员工成长</b>${Object.entries(r.growth.earned).map(([role,n])=>`<span>${crewRoleName(game,role)} · 工作经验 +${n} · Lv.${(game.crew?.[role]?.level||r.growth.after[role].level)}（累计 ${r.growth.after[role].xp}）</span>`).join('')}</div>`:''}${r.regularGuests?.length?`<div class="v010-regular-report">👥 今天认识或再见了：${r.regularGuests.slice(0,3).map(g=>esc(g.name)+(g.happyMeals>=2?' · 熟客':'')).join('、')}</div>`:''}${r.premium?.recipeId?`<div class="v010-premium-report"><strong>✨ 隐藏菜 · ${esc(RECIPES[r.premium.recipeId]?.name||'稀有料理')}</strong><span>限量 ${r.premium.limit} 份 · 接单 ${r.premium.ordered} · 完成 ${r.premium.sold} · 实收 ${r.premium.revenue} 金币</span></div>`:''}<div class="daily-goal-result"><b>今日任务：${r.goal?.label||'完成营业'}</b><span>${r.goal?`${r.goal.value}/${r.goal.target} · ${r.goal.success?'达成！口碑 +2':'未达成，下次再试'}`:'常规营业'}</span></div><div class="guest-verdict"><strong>💬 今日食客点评</strong><p>${r.suggested}</p></div>${r.guestReviews?.length?`<div class="guest-feedback-list"><strong>真实食客回访</strong>${r.guestReviews.slice(0,3).map(x=>`<div class="review-line"><span>${RECIPES[x.recipeId]?.name||'今日料理'}</span><span>“${esc(x.text)}” · ${x.sat}分</span></div>`).join('')}</div>`:''}${r.choices?.length?`<div class="v04-choices"><small>店长今日决策</small>${r.choices.map(c=>`<span>${c.type==='menu_swap'?`临时换菜：${RECIPES[c.before].name} → ${RECIPES[c.after].name}`:`第${c.wave}波：${({sign:'辣味招牌',kitchen:'整理后厨',steady:'稳定营业',soup:'温和推荐',assist:'临时帮厨',publicity:'试吃宣传'})[c.choice]||c.choice}`}</span>`).join('')}</div>`:''}${r.challenge?`<div class="boss-mini">厨王赛得分 <b>${r.challenge.score}</b> / 对手 70　${r.won?'🏆 获得猛火掌控':'未达标，下轮仍可挑战'}</div>`:''}${r.queue?`<section class="v12e-queue-report" aria-label="门外真实等位"><strong>🚪 门外等位与接待</strong><span>峰值 ${r.queue.peak} 位 · 等位后入店 ${r.queue.waited} 位 · 等位流失 ${r.queue.abandoned} 位</span><small>平均成功等位 ${r.queue.waited?Math.round(r.queue.waitSeconds/r.queue.waited):0} 秒 · 未入座 ${r.unseated} 位${r.queue.peak===0?' · 今晚没有形成排队':''}</small></section>`:''}<div class="v09-growth-report"><b>🏠 经营成长 · 第 ${r.absoluteDay||totalBusinessDay(game)} 天</b><span>食堂 ${r.tableCount||2} 桌 / ${(r.tableCount||2)*2} 席 · 今日等位高峰 ${r.queuePeak||0} 人 · 未能入座 ${r.unseated||0} 人</span><span>累计营业额 ${game.history.reduce((n,x)=>n+x.revenue,0)} 金币 · 累计招待 ${game.history.reduce((n,x)=>n+x.served,0)} 人</span></div><div class="recipe-lead"><small>🔎 顾客带来的研发灵感</small><strong>${lead?`“${lead.hint}”`:'目前的菜谱已经全部解锁！'}</strong>${lead?`<span>可尝试 ${lead.ingredients.map(id=>ingredientIconHtml(id,22)).join(' + ')}</span>`:''}</div></div>`,
  `<div class="action-row">${b('details','📊 账本','secondary')}${b('to-upgrade','🌅 结束本日 →','primary wide')}</div>`]}
 function secondRatingReceipt(r){
  const q=r?.secondRating;if(!q)return '';
@@ -9755,6 +9909,7 @@ function action(act){
  if(act==='field-bag'){if(game.phase==='field'&&game.field){releaseStick();overlay='field-bag';render()}return}
  if(act==='book'){bookTab='recipes';overlay='book';render();return}
  if(act==='stock'||act==='premium'||act==='settings'||act==='details'||act==='bento'){overlay=act;render();return}
+ if(act==='ferry-supply'){note(redeemFerrySupply(game)?'航运补给已入当地仓库：云谷米×2、浮苔叶×1。':'今天无法再次领取，或没有航运委托。');return}
  if(act==='reset'){if(confirm('清空本设备的 v0.4 试玩存档？')){localStorage.removeItem('oddpot-prototype-v04');game=newGame();selectedIngredients=['chicken','chili'];overlay='';note('新旅程开始，祝你研究出奇味料理！')}return}
  if(act.startsWith('buy:')){const [,id,n]=act.split(':'),count=n?Number(n):1;
   note(purchase(game,id,count)?'已采购 '+count+' 份，食材进入仓库。':'金币不足、当日售罄或当前阶段不能采购。');return}
@@ -9792,10 +9947,10 @@ function action(act){
  if(act.startsWith('upgrade-kitchen:')){const i=Number(act.split(':')[1]);note(buyCookwareUpgrade(game,act.split(':')[1])?'该类厨具全店永久升到 Lv.2！所有同类厨位和探索装备都共享。':'金币不足或此类厨具已升级。');return}
  if(act==='upgrade'){note(buyUpgrade(game)?'厨位升级成功。':'已经升级或金币不足。');return}
  if(act==='upgrade-bag'){note(buyBagUpgrade(game)?`背包扩容完成！下次探索可带 ${game.bagSlots} 格。`:'金币不足或已经升满背包。');return}
- if(act==='third-kitchen-bundle'){note(buyThirdKitchenBundle(game)?'中央厨位和新帮厨小炭同时加入！下一营业日可在员工面板安排上岗。':'需要首星、第四桌和足够金币；这个组合只可购买一次。');return}
+ if(act==='third-kitchen-bundle'){note(buyThirdKitchenBundle(game)?`中央厨位和新帮厨${crewRoleName(game,'helper2')}同时加入！下一营业日可在员工面板安排上岗。`:'需要首星、第四桌和足够金币；这个组合只可购买一次。');return}
   if(act==='expand-room'){note(expandDiningRoom(game)?`扩建完成！餐厅现有 ${tableCapacity(game)} 个真实座位。`:'请先满足当前桌位的星章、营业进度和金币条件。');return}
  if(act==='buy-grill'){note(buyGrill(game)?'烤架与烤叉已到店！备餐时把中央工位配置为烤架。':'需要第二星、中央厨位和足够金币。');return}
- if(act==='buy-steamer'){note(buySteamer(game)?'云汽蒸笼已装在深锅旁！下次研发可选择蒸制。':'先完成一次云港探索并准备足够金币。');return}
+ if(act==='buy-steamer'){note(buySteamer(game)?'云汽蒸笼已购入！备餐时把一个厨位设为蒸笼，就能供应蒸菜。':'先完成一次云港探索并准备足够金币。');return}
  if(act==='next-day'){advanceDay(game);note('🌅 新的一天！客人偏好与探索路线在变化。');return}
 }
 app.addEventListener('click',e=>{
@@ -9810,8 +9965,8 @@ app.addEventListener('click',e=>{
  const bp=e.target.closest('[data-breakprep]');if(bp){servicePanel='';note(breakPrep(game,bp.dataset.breakprep)?game.service.decisionFlash+'，下波同款订单将优先出餐。':'原料不足或本波应急机会已用。');return}
  const swap=e.target.closest('[data-apply-swap]');if(swap){const slot=Number(swap.dataset.applySwap),id=app.querySelector(`[data-swap-slot="${slot}"]`)?.value;const ok=swapBreakMenu(game,slot,id);servicePanel='';note(ok?game.service.decisionFlash+'，只影响尚未入店的顾客。':'无法换菜：只能一次，或与现有菜相同。');return}
  const bento=e.target.closest('[data-bento]');if(bento){note(prepareBento(game,bento.dataset.bento)?'🍱 便当已制作，出门探索时自动生效。':'无法制作：材料不足或今天已经带了便当。');return}
- const feed=e.target.closest('[data-feed]');if(feed){const [role,id]=feed.dataset.feed.split(':');if(feedCrew(game,role,id)){note(`${CREW_ROLES[role].name}吃下${RECIPES[id].name}，今晚能力已提升。`);}else note('已经吃过员工餐，或者材料不足。');return}
- const assign=e.target.closest('[data-assign]');if(assign){const [role,index]=assign.dataset.assign.includes(':')?assign.dataset.assign.split(':'):['helper',assign.dataset.assign];note(assignCrew(game,Number(index),role)?CREW_ROLES[role].name+'的优先站位已设置。营业空闲时仍会动态支援。':'站位未变更或已有员工选择，请先安排空闲位置。');return}
+ const feed=e.target.closest('[data-feed]');if(feed){const [role,id]=feed.dataset.feed.split(':');if(feedCrew(game,role,id)){note(`${crewRoleName(game,role)}吃下${RECIPES[id].name}，今晚能力已提升。`);}else note('已经吃过员工餐，或者材料不足。');return}
+ const assign=e.target.closest('[data-assign]');if(assign){const [role,index]=assign.dataset.assign.includes(':')?assign.dataset.assign.split(':'):['helper',assign.dataset.assign];note(assignCrew(game,Number(index),role)?crewRoleName(game,role)+'的优先站位已设置。营业空闲时仍会动态支援。':'站位未变更或已有员工选择，请先安排空闲位置。');return}
  const a=e.target.closest('[data-act]');if(a){if(!a.disabled)action(a.dataset.act);return}
  const region=e.target.closest('[data-region]');if(region){selectedRegion=region.dataset.region;render();return}
  const weapon=e.target.closest('[data-weapon]');if(weapon){if(selectFieldWeapon(game,weapon.dataset.weapon))render();return}
@@ -9822,13 +9977,14 @@ app.addEventListener('click',e=>{
  const route=e.target.closest('[data-route]');if(route){const entered=enterField(game,route.dataset.route);if(entered)startActionField(game);if(entered){message='出发！';flashUntil=0;render()}else note('无法进入路线');return}
  const item=e.target.closest('[data-ingredient]');if(item){const id=item.dataset.ingredient;if(selectedIngredients.includes(id))selectedIngredients=selectedIngredients.filter(i=>i!==id);else if(selectedIngredients.length<3)selectedIngredients=[...selectedIngredients,id];else message='一锅最多放三种食材。';render();return}
  const tab=e.target.closest('[data-book-tab]');if(tab){bookTab=tab.dataset.bookTab==='guests'?'guests':'recipes';render();return}
- const book=e.target.closest('[data-book]');if(book){const r=RECIPES[book.dataset.book];selectedIngredients=[...r.ids];selectedMethod=r.method;overlay='';note(`已选择实验线索：${r.hint}`);return}
+ const typeTab=e.target.closest('[data-recipe-type]');if(typeTab){recipeType=typeTab.dataset.recipeType;render();return}
+ const book=e.target.closest('[data-book]');if(book){const r=RECIPES[book.dataset.book];if(!chapterRecipeAvailable(game,book.dataset.book)){note('这道菜只保存在图鉴中；当前世界没有稳定的食材来源。');return}selectedIngredients=[...r.ids];selectedMethod=r.method;overlay='';note(`已选择实验线索：${r.hint}`);return}
  const special=e.target.closest('[data-premium-set]');if(special){const [id,n]=special.dataset.premiumSet.split(':');const ok=setPremiumMenu(game,id,Number(n));overlay=ok?'':overlay;note(ok?'已准备隐藏菜（只有合资格食客可能点单），真实稀有原料已预留。':'库存不足或菜谱尚未研发。');return}
  const clear=e.target.closest('[data-premium-clear]');if(clear){if(setPremiumMenu(game,null)){overlay='';note('已撤下今晚的隐藏菜。')}return}
  const slot=e.target.closest('[data-edit-slot]');if(slot){overlay=`menu:${slot.dataset.editSlot}`;render();return}
- const pick=e.target.closest('[data-menu-pick]');if(pick){const [slot,id]=pick.dataset.menuPick.split(':');game.menu[Number(slot)]=id;if(game.premiumMenu?.recipeId===id)setPremiumMenu(game,null);overlay='';note(`已上架 ${RECIPES[id].name}，看看厨房的双工位负担。`);return}
+ const pick=e.target.closest('[data-menu-pick]');if(pick){const [slot,id]=pick.dataset.menuPick.split(':');if(!selectMenuRecipe(game,Number(slot),id)){note('当前厨具未购买，或菜单超出厨位可覆盖的种类。');return}if(game.premiumMenu?.recipeId===id)setPremiumMenu(game,null);overlay='';note(`已上架 ${RECIPES[id].name}。`);return}
  const seat=e.target.closest('[data-seat]');if(seat){const id=+seat.dataset.seat,seatTarget=e.target.closest('[data-seat-index]');const seats=tableSeatState(game.service,id);const o=seatTarget?seats[Number(seatTarget.dataset.seatIndex)]:seats.find(Boolean);selectedOrderId=o?.id||null;note(o?`${CUSTOMERS[o.segment].name}：${o.recipeId?'点了'+RECIPES[o.recipeId].name:'正在挑选菜单'}。`:'这把椅子目前空着。');return}
- const station=e.target.closest('[data-station]');if(station){const pos=station.dataset.station,v=game.service,idx=['WOK','POT','CENTER'].indexOf(pos),slot=(v?.kitchenSnapshot||ensureKitchen(game).slots)[idx];if(!slot)return;const queue=v?v.queued.filter(id=>RECIPES[v.orders.find(o=>o.id===id)?.recipeId]?.station===slot.type).length:0;note(`${['左','右','中'][idx]}厨位：${slot.type==='GRILL'?'烤架':slot.type==='WOK'?'炒锅':'炖锅'} Lv.${slot.level}，同类候餐 ${queue} 单。`);return}
+ const station=e.target.closest('[data-station]');if(station){const pos=station.dataset.station,v=game.service,idx=['WOK','POT','CENTER'].indexOf(pos),slot=(v?.kitchenSnapshot||ensureKitchen(game).slots)[idx];if(!slot)return;const queue=v?v.queued.filter(id=>RECIPES[v.orders.find(o=>o.id===id)?.recipeId]?.station===slot.type).length:0;note(`${['左','右','中'][idx]}厨位：${cookName(slot.type)} Lv.${slot.level}，同类候餐 ${queue} 单。`);return}
  // Realtime field uses the thumb joystick; no grid click-to-walk.
  
 });

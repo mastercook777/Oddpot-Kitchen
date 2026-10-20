@@ -38,7 +38,7 @@ test('v0.13-B old paid position levels turn into type mastery with no repeat fee
  const s=setup();s.kitchen.mastery=undefined;s.upgrade=false;
  s.kitchen.slots=[{type:'WOK',level:2},{type:'WOK',level:1},{type:'POT',level:2}];
  const money=s.coins;ensureKitchen(s);
- assert.deepEqual(s.kitchen.mastery,{WOK:2,POT:2,GRILL:1});
+ assert.deepEqual(s.kitchen.mastery,{WOK:2,POT:2,GRILL:1,STEAM:1});
  assert.equal(s.kitchen.slots[0].level,2);
  assert.equal(s.kitchen.slots[1].level,2);
  assert.equal(s.kitchen.slots[2].level,2);

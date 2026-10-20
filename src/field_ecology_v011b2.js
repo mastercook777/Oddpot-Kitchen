@@ -96,11 +96,15 @@ export function stepEcologyEnemy(f,e,dt,engaged,{blocked,hurt}){
    e.strikeFx={ttl:.28,duration:.28,x:e.x,y:e.y,dx:Math.cos(angle),dy:Math.sin(angle)};e.lungeFx=.28;
    e.cooldown=e.kind==='chicken'?1.7:2.0;if(e.kind==='chicken')e.retreatTime=.65;
   }else if(ecologyHasSight(f,e,aim)){
-   const spore=e.kind==='sporeling',gust=e.kind==='gust_moth',speed=spore?2.1:gust?2.4:2.8;
-   f.projectiles.push({x:e.x,y:e.y,vx:Math.cos(angle)*speed,vy:Math.sin(angle)*speed,ownerX:e.x,ownerY:e.y,ownerId:e.id,life:3,source:gust?'gust':spore?'spore':'pepper'});
-   e.cooldown=spore?2.9:gust?2.7:2.5;
+   const spore=e.kind==='sporeling',gust=e.kind==='gust_moth',speed=spore?2.1:gust?2.15:2.8;
+   if(gust){
+    // Three parallel crosswind ribbons occupy a lane. The warning commits to
+    // an aim point, so stepping outside the band dodges the entire attack.
+    for(const offset of [-.36,0,.36])f.projectiles.push({x:e.x-Math.sin(angle)*offset,y:e.y+Math.cos(angle)*offset,vx:Math.cos(angle)*speed,vy:Math.sin(angle)*speed,ownerX:e.x,ownerY:e.y,ownerId:e.id,life:2.3,source:'gust',windSheet:true,side:offset<0?-1:1});
+   }else f.projectiles.push({x:e.x,y:e.y,vx:Math.cos(angle)*speed,vy:Math.sin(angle)*speed,ownerX:e.x,ownerY:e.y,ownerId:e.id,life:3,source:spore?'spore':'pepper'});
+   e.cooldown=gust?3.3:spore?2.9:2.5;
   }else e.cooldown=.6;
-  e.attackOrigin=null;return;
+  e.attackOrigin=null;e.ecologyAttack=null;return;
  }
  if(!engaged){
   if(ecologyDist(e,e.home)>1.2){moveEcologyEnemy(f,e,e.home,.78*slow,dt,blocked);return;}
@@ -118,12 +122,17 @@ export function stepEcologyEnemy(f,e,dt,engaged,{blocked,hurt}){
  const melee=meleeProfile(e.kind),trigger=e.kind==='boar'?2.15:melee?melee.trigger:3.2;
  if(ecologyDist(e,f.pos)>=trigger)return;
  e.aim={...f.pos};e.attackOrigin={x:e.x,y:e.y};
- e.warning=e.kind==='boar'?1:melee?melee.windup:e.kind==='sporeling'?.72:.55;e.windupTotal=e.warning;
+ e.warning=e.kind==='boar'?1:melee?melee.windup:e.kind==='gust_moth'?.95:e.kind==='sporeling'?.72:.55;e.windupTotal=e.warning;
  e.intentKind=melee?'melee':'ranged';
  if(e.kind==='boar')e.ecologyAttack={origin:{...e.attackOrigin},end:ecologyChargeEnd(f,e,e.aim,blocked)};
+ if(e.kind==='gust_moth')e.ecologyAttack={kind:'wind_sheet',origin:{...e.attackOrigin},end:{...e.aim}};
 }
 export function drawEcologyWarning(c,e){
  if(e.hp<=0||!e.ecologyAttack)return;const a=e.ecologyAttack;
+ if(a.kind==='wind_sheet'){
+  const angle=Math.atan2(a.end.y-a.origin.y,a.end.x-a.origin.x),dx=Math.cos(angle)*3.4,dy=Math.sin(angle)*3.4,nx=-Math.sin(angle)*.58,ny=Math.cos(angle)*.58;
+  c.save();c.beginPath();c.moveTo(a.origin.x+nx,a.origin.y+ny);c.lineTo(a.origin.x+dx+nx,a.origin.y+dy+ny);c.lineTo(a.origin.x+dx-nx,a.origin.y+dy-ny);c.lineTo(a.origin.x-nx,a.origin.y-ny);c.closePath();c.fillStyle='#b6e8f148';c.fill();c.strokeStyle='#e4f7ed';c.lineWidth=.055;c.setLineDash([.18,.12]);c.stroke();c.restore();return;
+ }
  c.save();c.lineCap='round';c.beginPath();c.moveTo(a.origin.x,a.origin.y);c.lineTo(a.end.x,a.end.y);
  c.strokeStyle='#dc98732e';c.lineWidth=.96;c.stroke();c.strokeStyle='#efcf9b';c.lineWidth=.055;c.stroke();
  c.beginPath();c.arc(a.end.x,a.end.y,.48,0,Math.PI*2);c.lineWidth=.04;c.stroke();c.restore();

@@ -3,7 +3,7 @@
 export const MINI_BOSS_PATTERNS=Object.freeze({
  boss_spore:[{kind:'fan',windup:.85},{kind:'burst',windup:1.0},{kind:'ring',windup:1.05}],
  boss_ember:[{kind:'fan',windup:.85},{kind:'charge',windup:.95},{kind:'burst',windup:1.0}],
- boss_gust:[{kind:'fan',windup:.9},{kind:'charge',windup:1.05},{kind:'ring',windup:1.15}]
+ boss_gust:[{kind:'wall',windup:1.1},{kind:'vortex',windup:1.35},{kind:'lightning',windup:1.1}]
 });
 export function bossChargeEnd(f,origin,aim,blocked){
  const dx=aim.x-origin.x,dy=aim.y-origin.y,d=Math.hypot(dx,dy)||1,max=Math.min(2.4,d+.35);let end={...origin};
@@ -24,10 +24,20 @@ export function stepMiniBoss(f,e,dt,{blocked,hurt}){
  if(e.warning>0){
   // Old saves already inside a legacy warning finish the old fan once.
   e.bossAttack??={kind:'fan',windup:e.windupTotal||.85,origin:{x:e.x,y:e.y},aim:{...(e.aim||f.pos)}};
+  if(e.kind==='boss_gust'&&e.bossAttack.kind==='vortex'){
+   const dx=e.x-f.pos.x,dy=e.y-f.pos.y,d=Math.hypot(dx,dy);
+   if(d>.58&&d<3.6){const p={x:f.pos.x+dx/d*.65*dt,y:f.pos.y+dy/d*.65*dt};if(!blocked(f,p,.18)){f.pos=p;f.x=p.x;f.y=p.y;}}
+  }
   e.warning=Math.max(0,e.warning-dt);if(e.warning>0)return;
   const a=e.bossAttack,angle=Math.atan2(a.aim.y-a.origin.y,a.aim.x-a.origin.x),spore=e.kind==='boss_spore',gust=e.kind==='boss_gust';
   const fire=(theta,speed)=>f.projectiles.push({x:e.x,y:e.y,vx:Math.cos(theta)*speed,vy:Math.sin(theta)*speed,ownerX:e.x,ownerY:e.y,ownerId:e.id,life:3,source:gust?'gust':spore?'spore':'pepper'});
-  if(a.kind==='fan')for(const offset of spore?[-.55,0,.55]:gust?[-.42,0,.42]:[-.27,0,.27])fire(angle+offset,spore?1.9:gust?2.5:3.1);
+  if(gust&&a.kind==='wall')for(const offset of [-.72,-.36,0,.36,.72])f.projectiles.push({x:e.x-Math.sin(angle)*offset,y:e.y+Math.cos(angle)*offset,vx:Math.cos(angle)*2.35,vy:Math.sin(angle)*2.35,ownerX:e.x,ownerY:e.y,ownerId:e.id,life:2.8,source:'gust',windSheet:true,side:offset<0?-1:1});
+  else if(gust&&a.kind==='vortex'){
+   f.bossZones??=[];const safe=Math.atan2(f.pos.y-e.y,f.pos.x-e.x);
+   for(let i=0;i<8;i++){const theta=i*Math.PI/4;if(Math.cos(theta-safe)>.84)continue;f.bossZones.push({ownerId:e.id,x:e.x+Math.cos(theta)*1.65,y:e.y+Math.sin(theta)*1.65,radius:.38,life:.50,source:'gust'});}
+  }else if(gust&&a.kind==='lightning'){
+   f.bossZones??=[];for(const offset of [-.9,0,.9])f.bossZones.push({ownerId:e.id,x:a.aim.x+Math.cos(angle+Math.PI/2)*offset,y:a.aim.y+Math.sin(angle+Math.PI/2)*offset,radius:.34,life:.42,source:'gust'});
+  }else if(a.kind==='fan')for(const offset of spore?[-.55,0,.55]:[-.27,0,.27])fire(angle+offset,spore?1.9:3.1);
   else if(a.kind==='ring')for(let i=1;i<8;i++)fire(angle+i*Math.PI/4,1.7);
   else if(a.kind==='burst'){
    f.bossZones??=[];f.bossZones.push({ownerId:e.id,x:a.aim.x,y:a.aim.y,radius:.8,life:.25,source:gust?'gust':spore?'spore':'pepper'});
@@ -38,7 +48,8 @@ export function stepMiniBoss(f,e,dt,{blocked,hurt}){
  if(d<3.6&&d>.85){const speed=.47*(e.slowTime>0?.45:1),next={x:e.x+dx/d*speed*dt,y:e.y+dy/d*speed*dt};if(!blocked(f,next,.18)){e.x=next.x;e.y=next.y;}}
  if(d>=4||e.cooldown>0)return;
  const pattern=MINI_BOSS_PATTERNS[e.kind]||MINI_BOSS_PATTERNS.boss_spore;
- const attack=pattern[(e.attackCycle||0)%pattern.length];e.attackCycle=(e.attackCycle||0)+1;
+ const phase=e.kind==='boss_gust'&&e.hp<e.maxHp*.5?[pattern[1],pattern[2],pattern[0]]:pattern;
+ const attack=phase[(e.attackCycle||0)%phase.length];e.attackCycle=(e.attackCycle||0)+1;
  const origin={x:e.x,y:e.y},aim={...f.pos};
  e.bossAttack={...attack,origin,aim};if(attack.kind==='charge')e.bossAttack.end=bossChargeEnd(f,origin,aim,blocked);
  e.aim=aim;e.attackOrigin=origin;e.warning=attack.windup;e.windupTotal=attack.windup;
@@ -104,7 +115,15 @@ export function drawMiniBossWarning(c,e){
  if(e.hp<=0||!e.bossAttack)return;const a=e.bossAttack;
  c.save();c.lineCap='round';const col=e.kind==='boss_gust'?'#d2eaf4':e.kind==='boss_spore'?'#cbd3b2':'#eed09d',q=Math.max(0,Math.min(1,1-(e.warning||0)/a.windup));
  c.strokeStyle=col;c.lineWidth=.065;c.fillStyle=e.kind==='boss_gust'?'#a8d5ee2d':e.kind==='boss_spore'?'#bcb3d42d':'#e89b6a2d';
- if(a.kind==='burst'){
+ if(e.kind==='boss_gust'&&a.kind==='wall'){
+  const theta=Math.atan2(a.aim.y-a.origin.y,a.aim.x-a.origin.x),nx=-Math.sin(theta)*.87,ny=Math.cos(theta)*.87,dx=Math.cos(theta)*3,dy=Math.sin(theta)*3;
+  c.beginPath();c.moveTo(a.origin.x+nx,a.origin.y+ny);c.lineTo(a.origin.x+nx+dx,a.origin.y+ny+dy);c.lineTo(a.origin.x-nx+dx,a.origin.y-ny+dy);c.lineTo(a.origin.x-nx,a.origin.y-ny);c.closePath();c.fill();c.stroke();
+ }else if(e.kind==='boss_gust'&&a.kind==='vortex'){
+  c.beginPath();c.arc(e.x,e.y,1.65,0,Math.PI*2);c.stroke();
+  for(let i=0;i<8;i++){const theta=i*Math.PI/4;c.beginPath();c.arc(e.x+Math.cos(theta)*1.65,e.y+Math.sin(theta)*1.65,.38,0,Math.PI*2);c.stroke();}
+ }else if(e.kind==='boss_gust'&&a.kind==='lightning'){
+  const theta=Math.atan2(a.aim.y-a.origin.y,a.aim.x-a.origin.x);for(const offset of [-.9,0,.9]){c.beginPath();c.arc(a.aim.x-Math.sin(theta)*offset,a.aim.y+Math.cos(theta)*offset,.34,0,Math.PI*2);c.fill();c.stroke();}
+ }else if(a.kind==='burst'){
   c.beginPath();c.arc(a.aim.x,a.aim.y,.8,0,Math.PI*2);c.fill();c.stroke();
   c.beginPath();c.arc(a.aim.x,a.aim.y,.8,-Math.PI/2,-Math.PI/2+q*Math.PI*2);c.lineWidth=.10;c.stroke();
  }else if(a.kind==='charge'){
