@@ -345,6 +345,7 @@ export function selectStaffSpeech(s,t,customerCues=[]){
  if(!v?.walkable||!Number.isFinite(t)||v.paused||v.breakAt||v.done)return null;
  if((customerCues||[]).some(c=>c.priority>=7)||(customerCues||[]).length>=2)return null;
  const helper=!!crew?.helper?.hired,waiter=!!crew?.waiter?.hired;
+ const helperName=s.activeWorld==='cloud'?'阿岚':'阿火',waiterName=s.activeWorld==='cloud'?'小羽':'小芽';
  if(!helper&&!waiter)return null;
  const events=v.events||[];
  // A prep failure gets a distinct staff acknowledgment AFTER the rejected
@@ -364,7 +365,7 @@ export function selectStaffSpeech(s,t,customerCues=[]){
     e.type==='started'&&e.station===station||e.type==='plate_ready'&&v.orders.some(o=>o.id===e.order&&RECIPES[o.recipeId]?.station===station)?'helper':null;
   if(staff==='helper'&&!helper||staff==='waiter'&&!waiter||!staff)continue;
   const phrases=staff==='helper'?
-   e.type==='started'?['这锅我看着！','火候交给阿火！','下一盘马上来！']:
+   e.type==='started'?['这锅我看着！',`火候交给${helperName}！`,'下一盘马上来！']:
    ['新鲜出锅！','出餐台准备好啦！','香喷喷的，出锅！']:
    e.type==='waiter_pickup'?['我去送菜！','这盘交给我！','送餐出发！']:
    ['这桌送到了！','我继续招呼客人。','马上去拿下一盘！'];
@@ -377,8 +378,8 @@ export function selectStaffSpeech(s,t,customerCues=[]){
  const cycle=t%24,role=cycle<1.35?'helper':cycle>=2&&cycle<3.35?'waiter':null;
  if(!role)return null;
  const offset=role==='helper'?0:2;
- const lines=role==='helper'?['小芽，下一盘准备好！','我看火，你看客人！','端菜交给你啦！']:
- ['收到，我去送餐！','放心，桌边我照顾！','盘子我来拿，阿火！'];
+ const lines=role==='helper'?[`${waiterName}，下一盘准备好！`,'我看火，你看客人！','端菜交给你啦！']:
+ ['收到，我去送餐！','放心，桌边我照顾！',`盘子我来拿，${helperName}！`];
  const index=Math.floor(t/24)%lines.length;
  return {id:'staff-chat-'+role+'-'+Math.floor(t/24),staffRole:role,kind:'staff',priority:1,
   text:lines[index],phase:clampSpeech((cycle-offset)/1.35)};
