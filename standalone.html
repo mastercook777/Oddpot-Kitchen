@@ -1,4 +1,4 @@
-<!doctype html><html lang="zh-CN"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1.0,maximum-scale=1.0,viewport-fit=cover,user-scalable=no"><meta name="apple-mobile-web-app-capable" content="yes"><meta name="theme-color" content="#1b3c2b"><title>怪味食堂 · v0.15.0-alpha.3 离线版</title><style>.ingredient-icon{display:inline-block;width:var(--ingredient-size,24px);height:var(--ingredient-size,24px);max-width:none;object-fit:contain;image-rendering:pixelated;vertical-align:-.24em;flex:none;pointer-events:none;user-select:none}
+<!doctype html><html lang="zh-CN"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1.0,maximum-scale=1.0,viewport-fit=cover,user-scalable=no"><meta name="apple-mobile-web-app-capable" content="yes"><meta name="theme-color" content="#1b3c2b"><title>怪味食堂 · v0.15.0-alpha.4 离线版</title><style>.ingredient-icon{display:inline-block;width:var(--ingredient-size,24px);height:var(--ingredient-size,24px);max-width:none;object-fit:contain;image-rendering:pixelated;vertical-align:-.24em;flex:none;pointer-events:none;user-select:none}
 .stock-line>span .ingredient-icon{margin-right:3px}.target-chip .ingredient-icon{vertical-align:middle}.book-icon .ingredient-icon{display:block}
 .v063-food-icon .ingredient-icon{width:1em;height:1em;vertical-align:top;filter:none}.v063-receipt-line .ingredient-icon{vertical-align:middle}
 .v063-food-picker button>span,.v063-drop>span{line-height:1}.v063-food-picker .ingredient-icon,.v063-drop .ingredient-icon{vertical-align:top}
@@ -2995,8 +2995,17 @@ function reviewLiveCook(result){
    const hit=!!(a.t>=4&&(a.with||[]).length>=2);
    grade=hit?'good':'warning';
    detail=hit?'4 秒后两料同锅收汁，浓香加分 +5':'本次收汁未触发加分：需 4 秒后且两料同锅';
+  }else if(a.type==='seal'){
+   // Sealing changes the real steam cooking rate; the +8 quality belongs
+   // to the *pair* seal -> vent after at least two seconds, not sealing alone.
+   detail='封笼形成保温云汽，改善食材熟化；单独封笼不增加品质';
+  }else if(a.type==='vent'){
+   const hit=!!(facts.steamEven&&a===actions.find(x=>x.type==='vent'));
+   grade=hit?'good':'warning';
+   detail=hit?'封笼至少 2 秒后、全料同笼排汽，云汽匀蒸 · 品质 +8':
+     '未触发云汽匀蒸：需先封笼至少 2 秒并下齐食材；过早排汽品质 -7';
   }else{grade='warning';detail='未产生对应工艺加成'}
-  const actionName={flip:'翻炒',toss:'颠勺',gentle:'轻搅',reduce:'收汁'}[a.type]||a.type;
+  const actionName={flip:'翻炒',toss:'颠勺',gentle:'轻搅',reduce:'收汁',seal:'封笼',vent:'排汽'}[a.type]||a.type;
   steps.push({type:'action',time:a.t,grade,label:actionName,detail});
  }
  const missing=(result.doneness||[]).filter(d=>d.label==='未下锅');
@@ -3009,7 +3018,8 @@ function reviewLiveCook(result){
   detail:grade==='good'?'所有已下食材成熟':grade==='warning'?'至少一种食材略欠火，品质受到实际扣分':'存在真实夹生、焦糊或漏料问题'});
  steps.sort((a,b)=>a.time-b.time||({drop:0,action:1,missing:2,finish:3}[a.type]-{drop:0,action:1,missing:2,finish:3}[b.type]));
  // The global cap is 90, but the reachable theoretical maximum is lower.
- const maxQuality=result.vessel==='WOK'?87:86;
+ const maxQuality=result.vessel==='WOK'?87:result.vessel==='STEAM'?
+   80+((result.ids||[]).some(id=>id!==facts.primaryIngredient&&PRIMARY_AROMATIC[id])?4:0):86;
  return {steps,maxQuality,atReachableMax:!!(result.sellable&&result.quality>=maxQuality)};
 }
 function legacyVariant(recipeId,quality){
