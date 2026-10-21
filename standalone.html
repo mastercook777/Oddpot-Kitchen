@@ -9356,7 +9356,7 @@ function drawRestaurantV075(c,s,t,w,h){
  }
  // Shrink the redundant upper wall; the game HUD already displays the name.
  if(!cloud)rect(c,0,0,w,h*.145,'#304f3e');rect(c,0,h*.145-7,w,8,cloud?'#e2d6aa':'#b88c5c');
- for(const xx of [.09,.91]){rr(x(xx)-10,h*.072,20,38,5,'#6e937e','#cfae7d');rect(c,x(xx)-5,h*.083,10,18,'#3e6e68')}
+ // v0.15-F: obsolete saturated wall posts were mistaken for controls; remove them from both chapters.
  // The two active stoves are deliberately compact; the centre is reserved for
  // a later third production slot. No area names are printed on screen.
  for(const [i,key] of (v?.kitchenSnapshot?.length>=3||!v&&s.kitchen?.thirdUnlocked?['WOK','POT','CENTER']:['WOK','POT']).entries()){
@@ -9366,26 +9366,22 @@ function drawRestaurantV075(c,s,t,w,h){
   if(type==='STEAM'){
    drawCloudSteamerStation(c,X,Y,rw,t,!!busy,slot?.level||1);
   }else if(type==='GRILL'){
-   // A top-down charcoal rack, not a round pot: raised legs, ember bed,
-   // spaced grates, and two skewers laid crosswise over the coals.
-   const gw=rw*.94,gh=24,gy=Y-17;
+   // Low, horizontal charcoal rack, not a cluster of four vertical
+   // coloured posts that players could mistake for interactive devices.
+   const gw=rw*.95,gy=Y-16;
    rr(X-rw/2,Y-24,rw,51,7,cloud?'#476b80':'#513c30',cloud?'#e5d6ad':'#b99765');
-   rect(c,X-gw*.42,gy+gh,5,8,'#392f2c');rect(c,X+gw*.42-5,gy+gh,5,8,'#392f2c');
-   rr(X-gw/2-2,gy-3,gw+4,gh+7,3,'#343c3d','#bd9b70');
-   rr(X-gw*.43,gy,gw*.86,gh,2,'#622e29','#d69a69');
-   for(let ember=0;ember<6;ember++){
-    const ex=X-gw*.33+ember*gw*.13,ey=gy+6+(ember%2)*9;
-    circle(c,ex,ey,busy?2.9:1.8,busy?'#f49442':'#a95637');
-   }
-   for(let rail=0;rail<6;rail++)line(c,X-gw*.37+rail*gw*.15,gy+2,X-gw*.37+rail*gw*.15,gy+gh-2,'#81918b',2);
-   for(const [n,sy] of [gy+8,gy+17].entries()){
-    line(c,X-gw*.57,sy,X+gw*.56,sy,'#e0ba7b',2.1);
-    for(let part=0;part<3;part++){
-     const sx=X-gw*.27+part*gw*.26;
-     rr(sx-3,sy-3,6,6,2,busy?(n?'#d78653':'#bd6c41'):'#aa916f','#f0c986');
+   rr(X-gw/2,gy,gw,27,4,'#353d3e','#d9b879');
+   rr(X-gw*.43,gy+3,gw*.86,20,2,'#61362d','#a88b72');
+   for(let ember=0;ember<7;ember++)circle(c,X-gw*.33+ember*gw*.11,gy+13+(ember%2)*4,busy?2.2:1.25,busy?'#f1a25b':'#975a3b');
+   for(let rail=0;rail<5;rail++)line(c,X-gw*.35+rail*gw*.17,gy+2,X-gw*.35+rail*gw*.17,gy+24,'#a8abaa',1.4);
+   for(const [row,sy] of [gy+7,gy+18].entries()){
+    line(c,X-gw*.52,sy,X+gw*.52,sy,'#edcf8c',2);
+    for(let item=0;item<3;item++){
+     const ix=X-gw*.27+item*gw*.27;
+     rr(ix-4,sy-2.6,8,5.2,2,busy?(row?'#a76840':'#c89462'):'#ab855f','#f0d39a');
     }
    }
-   if(busy){for(let j=0;j<3;j++)circle(c,X-11+j*10,gy-5-Math.sin(t*5+j)*2,1.8,'#f7c57d88')}
+   if(busy)for(let j=0;j<3;j++)circle(c,X-12+j*12,gy-5-Math.sin(t*4+j)*2,1.7,'#e8d8b599');
   }else{
    rr(X-rw/2,Y-24,rw,51,7,cloud?'#476b80':'#513c30',cloud?'#e5d6ad':'#b99765');
    rr(X-rw*.43,Y-20,rw*.86,39,5,cloud?'#9dbabd':'#916d49',cloud?'#e8dcba':'#d8ae74');
@@ -9518,10 +9514,14 @@ function drawRestaurantV075(c,s,t,w,h){
    actors.push({id:role,x:pt.x,y:pt.y,kind:s.activeWorld==='cloud'?'cloud_'+role:role,level:person.level||1,
     walk:moving?t*2:false,working:!moving&&!!v.stations[['WOK','POT','CENTER'][station]]});
   }
-  if(crew?.waiter?.hired){
-   const pos=waiterDeliveryPose(s,t);
-   const delivery=pos.plate?v.orders.find(o=>o.status==='delivering'&&Number.isFinite(o.deliveryAt)):null;
-   actors.push({id:'waiter',x:pos.x,y:pos.y,kind:s.activeWorld==='cloud'?'cloud_waiter':'waiter',level:crew.waiter.level||1,walk:pos.moving,plate:pos.plate,plateRecipeId:delivery?.recipeId});
+  for(const role of ['waiter',...(s.activeWorld==='cloud'?['waiter2']:[])]){
+   const person=crew?.[role];if(!person?.hired)continue;
+   const pos=waiterDeliveryPose(s,t,role);
+   const delivery=pos.plate?v.orders.find(o=>o.status==='delivering'&&(o.deliveryRole||'waiter')===role&&Number.isFinite(o.deliveryAt)):null;
+   // Two idle couriers stand apart rather than stacking on the exact pass point;
+   // moving paths remain driven by the actual role-locked order.
+   const idleOffset=!pos.moving&&s.activeWorld==='cloud'&&crew?.waiter?.hired&&crew?.waiter2?.hired?(role==='waiter'?-0.045:0.045):0;
+   actors.push({id:role,x:pos.x+idleOffset,y:pos.y,kind:s.activeWorld==='cloud'?'cloud_'+role:role,level:person.level||1,walk:pos.moving,plate:pos.plate,plateRecipeId:delivery?.recipeId});
   }
   if(v.hero){
    const hero=v.hero,zone=heroZone(hero,s);
@@ -9534,7 +9534,7 @@ function drawRestaurantV075(c,s,t,w,h){
  }
  else {
   const reduced=globalThis.matchMedia?.('(prefers-reduced-motion: reduce)').matches||false;
-  for(const person of homeKitchenActors(s,t,reduced))actors.push(s.activeWorld==='cloud'&&['helper','helper2','waiter'].includes(person.kind)?{...person,kind:'cloud_'+person.kind}:person);
+  for(const person of homeKitchenActors(s,t,reduced))actors.push(s.activeWorld==='cloud'&&['helper','helper2','waiter','waiter2'].includes(person.kind)?{...person,kind:'cloud_'+person.kind}:person);
   // The idle room has no active orders. This is a small visual cue only.
   for(const stove of reduced?[]:[g.stoveLeft,g.stoveRight,...(s.kitchen?.thirdUnlocked?[g.reservedStove]:[])]){
    const X=x(stove.x),Y=y(stove.y);
