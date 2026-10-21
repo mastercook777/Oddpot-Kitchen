@@ -126,12 +126,12 @@ test('long daily report scrolls from TOP and semantic title does not clip or dra
 });
 test('version, offline bundle and complete JavaScript stay parseable',()=>{
  const html=source('../index.html'),app=source('../src/app.js'),build=source('../scripts/build-standalone.py');
- assert.equal(JSON.parse(source('../package.json')).version,'0.15.0-alpha.5');
- assert.match(html,/Oddpot Kitchen v0\.15\.0-alpha\.5/);
- assert.match(html,/app\.js\?v=0\.15\.0-alpha\.5/);
- assert.match(app,/ODDPOT · v0\.15\.0-alpha\.5/);
+ assert.equal(JSON.parse(source('../package.json')).version,'0.15.0-alpha.6');
+ assert.match(html,/Oddpot Kitchen v0\.15\.0-alpha\.6/);
+ assert.match(html,/app\.js\?v=0\.15\.0-alpha\.6/);
+ assert.match(app,/ODDPOT · v0\.15\.0-alpha\.6/);
  assert.match(build,/diner_polish_v078\.css/);
- assert.match(build,/v0\.15\.0-alpha\.5 离线版/);
+ assert.match(build,/v0\.15\.0-alpha\.6 离线版/);
  for(const path of ['../src/app.js','../src/diner_ambience_v077.js','../src/engine.js','../src/scenes_v04.js']){
   const p=spawnSync(process.execPath,['--check',new URL(path,import.meta.url).pathname],{encoding:'utf8'});
   assert.equal(p.status,0,path+' '+p.stderr);
