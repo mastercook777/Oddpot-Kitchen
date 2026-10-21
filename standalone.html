@@ -3243,6 +3243,7 @@ function homeKitchenActors(s,time,reducedMotion=false){
   actors.push({id:'home-helper2',kind:'helper2',level:crew.helper2.level||1,x:base+sway(3.5,.032),y:.32+sway(4,.012),walk:moving,working:moving});
  }
  if(crew.waiter?.hired)actors.push({id:'home-waiter',kind:'waiter',level:crew.waiter.level||1,x:.5+sway(4.3,.105),y:.57+sway(5,.02),walk:moving});
+ if(s.activeWorld==='cloud'&&crew.waiter2?.hired)actors.push({id:'home-waiter2',kind:'waiter2',level:crew.waiter2.level||1,x:.60+sway(2.7,.065),y:.62+sway(3.1,.015),walk:moving});
  return actors;
 }
 
