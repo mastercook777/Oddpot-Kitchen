@@ -1,7 +1,7 @@
 # 《怪味食堂》START_HERE · 新对话 / Codex / 开发接续入口
 
-> **最新核对：2026-10-20｜`main` 版本 `0.15.0-alpha.4`**  
-> **代码状态：v0.15.0-alpha.4 已合并 main、16/16 PR CI 通过；本次 Pages 发布未独立核验，玩家 iPhone/Android 云港返工体验仍待验收。**  
+> **最新核对：2026-10-21｜`main` 版本 `0.15.0-alpha.5`**  
+> **代码状态：v0.15.0-alpha.5 已合并 main；528/528 Node、16/16 PR CI 通过；Pages 线上实时版本无法独立核验，iPhone/Android 云港素材与蒸笼控场手感仍待玩家验收。**  
 > 仓库：https://github.com/mastercook777/Oddpot-Kitchen · [线上试玩](https://mastercook777.github.io/Oddpot-Kitchen/)  
 > 本文是**入口而非版本流水账**；具体已实装读 [PROJECT_STATE](PROJECT_STATE.md)，下一步优先级读 [ROADMAP](ROADMAP.md)。旧版设计与更新历史可从文档索引、Git 记录回溯。
 
@@ -15,7 +15,7 @@
 
 ## 当前阅读顺序（新代理不要从 v0.12 开始）
 
-**最新指令/未发布切片（2026-10-21）**：玩家要求云港蒸笼正式进入升级体系、探索成为与现有三武器区分的控场流派，同时必须有非换色的当地经营素材。先读 [v0.15-E 正式规格](V0.15E_CLOUD_STEAMER_WEAPON_AND_ASSETS_SPEC.md)；分支 `feature/v015e-cloud-steamer-identity` 正在实现 alpha.5，**尚不可把分支代码写成 main 已发布**，CI 和 iPhone 玩家视觉/手感验收待单列。旧版 [v0.15-B](V0.15B_THIRD_STAR_CLOUD_HARBOR_SPEC.md) 中「蒸笼暂不对应探索武器」的判断已被本次用户明确需求取代。
+**最新特色化已实现（2026-10-21，alpha.5）**：用户要求补蒸笼付费升级、云港独立经营素材和第四探索武器。已按 [v0.15-E](V0.15E_CLOUD_STEAMER_WEAPON_AND_ASSETS_SPEC.md) / [PR #88](https://github.com/mastercook777/Oddpot-Kitchen/pull/88) 合并 `main`：STEAM 95币 Lv2/每单 -2 秒、云汽脉冲+原地减速雾域、独立帆索货吊/晶石六角桌/蒸笼和武器特效。528/528 Node 与16/16 PR Actions 通过；**Pages 发布和玩家 iPhone 视觉、控场手感均未由用户验收**。v0.15-B「蒸笼暂不对应探索武器」已过时；下一步仍是 P0 真机验收及 P1 双章经济审计。
 
 **最新补丁（已合并 main，待 Pages/玩家验收）**：[v0.15-C.1 蒸笼研发复盘反馈修复](V0.15C1_STEAM_TECHNIQUE_RECAP_FIX.md)，[PR #87](https://github.com/mastercook777/Oddpot-Kitchen/pull/87)。截图中 `seal / vent` 被误标黄是复盘漏识别动作，**实际出锅的云汽匀蒸品质 80 一直正确**。现在封笼/排汽中文显示、实际 +8/过早 -7 提示、蒸笼可达满分一致，`0.15.0-alpha.4` 已合并，520/520 Node 与 16/16 PR CI 通过、离线包同步；**Pages 线上实际发布与玩家 iPhone 复测另行确认**。下一任务仍是 P0 云港真机验收与 P1 双章经济审计。
 
@@ -46,6 +46,6 @@
 
 ## 发布基线与历史
 
-- `main`：**0.15.0-alpha.3**，v0.15-C 云港返工 [PR #84](https://github.com/mastercook777/Oddpot-Kitchen/pull/84) 和发布确认 [PR #85](https://github.com/mastercook777/Oddpot-Kitchen/pull/85)。这只是**最新核对时**的版本；每次任务重新读取 `package.json` 与提交。
+- `main`：**0.15.0-alpha.5**，v0.15-E 已合并；历史 v0.15-C 云港返工 [PR #84](https://github.com/mastercook777/Oddpot-Kitchen/pull/84) 和发布确认 [PR #85](https://github.com/mastercook777/Oddpot-Kitchen/pull/85)。这只是**最新核对时**的版本；每次任务重新读取 `package.json` 与提交。
 - v0.15-B 关于“携带原店员工并共享经验”“旧菜只靠缺料自然淘汰”的叙述**被 v0.15-C 覆盖**；不可重新实现旧规则。
 - 原文以逐版本追加的形式累积到 v0.12/v0.13/v0.14，容易让新对话选择过期方向。现改为短交接入口，原历史仍在 [Git 历史](https://github.com/mastercook777/Oddpot-Kitchen/commits/main/docs/START_HERE.md)，配套设计稿链接见 [ROADMAP 索引](ROADMAP.md#五版本与设计资料索引历史不是活跃待办)。
