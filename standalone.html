@@ -4029,7 +4029,25 @@ function chapterRecipeAvailable(s,id){
  const r=RECIPES[id];if(!r)return false;
  return activeWorld(s)==='cloud'?r.ids.some(x=>CLOUD_LOCAL_INGREDIENTS.has(x))&&r.ids.every(x=>CLOUD_PANTRY.has(x)):!r.ids.some(x=>CLOUD_LOCAL_INGREDIENTS.has(x));
 }
-function crewRoleName(s,role){return activeWorld(s)==='cloud'?({helper:'阿岚',waiter:'小羽',helper2:'小栖'}[role]||CREW_ROLES[role]?.name):CREW_ROLES[role]?.name}
+// v0.15-F: the atlas must never promise a research shortcut that the
+// real live-cooking engine would reject (region, station, inventory, phase).
+function recipeAtlasRegion(id){
+ const r=RECIPES[id];return r&&r.ids.some(x=>CLOUD_LOCAL_INGREDIENTS.has(x))?'cloud':'hearth';
+}
+function recipeResearchAccess(s,id){
+ const r=RECIPES[id];if(!r)return {ready:false,reason:'未收录的料理',region:null};
+ const region=recipeAtlasRegion(id),type=recipeCookware(r);
+ if(!chapterRecipeAvailable(s,id))return {ready:false,region,type,reason:region==='cloud'?'仅云港地区可研发':'仅边境地区可研发'};
+ if(!cookwareOwned(s,r))return {ready:false,region,type,reason:'尚未购入'+({STEAM:'云汽蒸笼',GRILL:'烤架'}[type]||'对应厨具')};
+ const reserved=premiumReserved(s),needed=countIds(r.ids);
+ const missing=Object.entries(needed).filter(([item,n])=>(s.inventory?.[item]||0)-(reserved[item]||0)<n)
+  .map(([item,n])=>ING[item].name+' ×'+Math.max(1,n-Math.max(0,(s.inventory?.[item]||0)-(reserved[item]||0))));
+ if(missing.length)return {ready:false,region,type,reason:'缺少 '+missing.join('、')};
+ if(s.phase!=='research')return {ready:false,region,type,reason:'请在料理研发阶段使用'};
+ if(s.cook)return {ready:false,region,type,reason:'当前料理完成后再研发'};
+ return {ready:true,region,type,reason:'可立即研发'};
+}
+function crewRoleName(s,role){return activeWorld(s)==='cloud'?({helper:'阿岚',waiter:'小羽',helper2:'小栖',waiter2:'小澜'}[role]||CREW_ROLES[role]?.name):CREW_ROLES[role]?.name}
 function redeemFerrySupply(s){
  if(activeWorld(s)!=='cloud'||!['forecast','field','research','menu','prep'].includes(s.phase)||s.field&&!s.field.settled||(s.ferryCredits||0)<1||s.ledger?.some(x=>x.id===`ferry-supply-${s.cycle}-${s.day}`))return false;
  if(!transact(s,`ferry-supply-${s.cycle}-${s.day}`,'ferry_supply',{cloud_rice:2,sky_moss:1},0))return false;
@@ -4374,7 +4392,7 @@ function stationDuration(s,position,recipe,v,order=null){
 
 // A two-person restaurant team. Feed uses real standard-recipe ingredients;
 // meals grant one service-day buff plus a tiny, capped long-term familiarity.
-const CREW_ROLES={helper:{name:'阿火',job:'帮厨',hireCost:40},waiter:{name:'小芽',job:'跑堂',hireCost:35},helper2:{name:'小炭',job:'后厨帮手',hireCost:0}};
+const CREW_ROLES={helper:{name:'阿火',job:'帮厨',hireCost:40},waiter:{name:'小芽',job:'跑堂',hireCost:35},waiter2:{name:'小澜',job:'云港跑堂',hireCost:55},helper2:{name:'小炭',job:'后厨帮手',hireCost:0}};
 function ensureCrew(s){
  ensureStaffProgress(s);
  for(const role of Object.keys(CREW_ROLES)){
@@ -4387,7 +4405,7 @@ function ensureCrew(s){
  return s.crew;
 }
 function hireCrew(s,role){
- if(!['prep','upgrade'].includes(s.phase)||!CREW_ROLES[role]||role==='helper2')return false;
+ if(!['prep','upgrade'].includes(s.phase)||!CREW_ROLES[role]||role==='helper2'||role==='waiter2'&&(activeWorld(s)!=='cloud'||localStars(s)<1))return false;
  const c=ensureCrew(s)[role],price=CREW_ROLES[role].hireCost;
  if(c.hired||s.coins<price||!transact(s,`crew-hire-${role}`,'crew_hire',{},-price))return false;
  c.hired=true;c.onDuty=true;return true;
@@ -4405,7 +4423,7 @@ function activeCrewMeal(s,role){
  const c=ensureCrew(s)[role];return c?.hired&&c.feed?.day===kitchenDayKey(s)?c.feed:null;
 }
 function crewEffects(s){
- const crew=ensureCrew(s),helper=crew.helper,helper2=crew.helper2,waiter=crew.waiter;
+ const crew=ensureCrew(s),helper=crew.helper,helper2=crew.helper2,waiter=crew.waiter,waiter2=crew.waiter2;
  const f=activeCrewMeal(s,'helper'),f2=activeCrewMeal(s,'helper2'),w=activeCrewMeal(s,'waiter');
  const hr=f?.recipeId?RECIPES[f.recipeId]:null,h2r=f2?.recipeId?RECIPES[f2.recipeId]:null,wr=w?.recipeId?RECIPES[w.recipeId]:null;
  const helperActive=helper.hired&&helper.onDuty,helper2Active=helper2.hired&&helper2.onDuty,waiterActive=waiter.hired&&waiter.onDuty;
@@ -4413,9 +4431,10 @@ function crewEffects(s){
  const helperMeal=helperActive&&hr?(hr.tags.includes('辣')&&ensureKitchen(s).slots[helper.station].type==='WOK'?2:hr.tags.includes('菌香')?1:0)+(f.quality>=85?1:0)+(f.craftBonus?.role==='helper'&&ensureKitchen(s).slots[helper.station].type==='WOK'?Math.min(1,f.craftBonus.bonus):0):0;
  const helper2Base=helper2Active?1+(helper2.meals>=3?1:0)+(helper2.level>=2?1:0):0;
  const helper2Meal=helper2Active&&h2r?(h2r.tags.includes('辣')&&ensureKitchen(s).slots[helper2.station]?.type==='WOK'?2:h2r.tags.includes('菌香')?1:0)+(f2.quality>=85?1:0):0;
+ const waiter2Active=activeWorld(s)==='cloud'&&waiter2.hired&&waiter2.onDuty;
  const waiterBase=waiterActive?3+(waiter.meals>=3?1:0)+(waiter.level>=2?2:0)+(waiter.level>=3?1:0):0;
  const waiterMeal=waiterActive&&wr?(wr.tags.includes('温和')?6:wr.tags.includes('菌香')?4:2)+(w.quality>=85?2:0)+(w.craftBonus?.role==='waiter'?Math.min(1,w.craftBonus.bonus):0):0;
- return {helper:{hired:helperActive,station:helper.station,seconds:Math.min(4,helperBase+helperMeal),fed:helperActive&&!!f,recipeId:f?.recipeId||null,meals:helper.meals,level:helper.level,salary:helperActive?crewWage('helper',helper.level):0},helper2:{hired:helper2Active,station:helper2.station,seconds:Math.min(4,helper2Base+helper2Meal),fed:helper2Active&&!!f2,recipeId:f2?.recipeId||null,meals:helper2.meals,level:helper2.level,salary:helper2Active?crewWage('helper2',helper2.level):0},waiter:{hired:waiterActive,patience:Math.min(12,waiterBase+waiterMeal),fed:waiterActive&&!!w,recipeId:w?.recipeId||null,meals:waiter.meals,level:waiter.level,salary:waiterActive?crewWage('waiter',waiter.level):0}};
+ return {helper:{hired:helperActive,station:helper.station,seconds:Math.min(4,helperBase+helperMeal),fed:helperActive&&!!f,recipeId:f?.recipeId||null,meals:helper.meals,level:helper.level,salary:helperActive?crewWage('helper',helper.level):0},helper2:{hired:helper2Active,station:helper2.station,seconds:Math.min(4,helper2Base+helper2Meal),fed:helper2Active&&!!f2,recipeId:f2?.recipeId||null,meals:helper2.meals,level:helper2.level,salary:helper2Active?crewWage('helper2',helper2.level):0},waiter:{hired:waiterActive,patience:Math.min(12,waiterBase+waiterMeal),fed:waiterActive&&!!w,recipeId:w?.recipeId||null,meals:waiter.meals,level:waiter.level,salary:waiterActive?crewWage('waiter',waiter.level):0},waiter2:{hired:waiter2Active,patience:waiter2Active?Math.min(3,2+(waiter2.level>=2?1:0)):0,level:waiter2.level,salary:waiter2Active?crewWage('waiter2',waiter2.level):0,fed:waiter2Active&&!!activeCrewMeal(s,'waiter2')}};
 }
 function feedCrew(s,role,recipeId){
  if(s.phase!=='prep'||!CREW_ROLES[role]||!s.recipes[recipeId]||!chapterRecipeAvailable(s,recipeId))return false;
@@ -5060,7 +5079,7 @@ function deliverWalkableOrder(s,o,by){
  const v=s.service;
  if(!v.walkable||!['pickup','carried','delivering'].includes(o.status))return false;
  if(o.status==='carried'&&by!=='hero')return false;
- if(o.status==='delivering'&&by!=='waiter')return false;
+ if(o.status==='delivering'&&!['waiter','waiter2'].includes(by))return false;
  if(o.status==='pickup'&&by!=='self')return false;
  if(v.hero?.carryOrderId===o.id)v.hero.carryOrderId=null;
  o.status='flying';o.deliveryMode=by;
@@ -5133,17 +5152,35 @@ function stepWalkableShift(s){
  if(!h||!v.walkable)return;
  const zone=heroZone(h,s);
  if(h.carryOrderId&&!v.orders.some(o=>o.id===h.carryOrderId&&o.status==='carried'))h.carryOrderId=null;
- // Player food handling is controlled by advanceWalkableInteraction() with
- // short physical dwell, NEVER teleported at the next whole-second tick.
- // Kitchenless orders sit on the pass. Helpers deliver without player travel,
- // but always via the same delivery/landing path used by the original ledger.
+ // Each hired local waiter has one authoritative order claim and return timer.
+ // Mutating pickup -> delivering is atomic within this single 1s service tick:
+ // a second waiter or the player's hand cannot claim the same plate.
+ v.waiterBusyUntilByRole??={waiter:v.waiterBusyUntil||0,waiter2:0};
+ const roles=['waiter','waiter2'].filter(role=>v.crew?.[role]?.hired);
  for(const o of v.orders){
-  if(o.status==='pickup'&&v.time-o.pickupAt>=(v.crew.waiter.hired?2:9)&&(!v.crew.waiter.hired||(!v.orders.some(other=>other.status==='delivering')&&v.time>=(v.waiterBusyUntil||0)))){
-   if(v.crew.waiter.hired){o.status='delivering';o.deliveryAt=v.time;record(s,{type:'waiter_pickup',order:o.id});}
-   else deliverWalkableOrder(s,o,'self');
+  if(o.status==='pickup'){
+   if(!roles.length){
+    if(v.time-o.pickupAt>=9)deliverWalkableOrder(s,o,'self');
+   }else if(v.time-o.pickupAt>=2){
+    const role=roles.find(r=>v.time>=(v.waiterBusyUntilByRole[r]||0)&&
+      !v.orders.some(other=>other.status==='delivering'&&(other.deliveryRole||'waiter')===r));
+    if(role){
+     o.status='delivering';o.deliveryAt=v.time;o.deliveryRole=role;
+     record(s,{type:'waiter_pickup',role,order:o.id});
+    }
+   }
   }
-  if(o.status==='delivering'&&v.time-o.deliveryAt>=(v.crew?.waiter?.level>=3&&!v.waiterExpressUsed&&v.time>=30&&v.time<=80?1:3)){if(v.crew?.waiter?.level>=3&&!v.waiterExpressUsed&&v.time>=30&&v.time<=80){v.waiterExpressUsed=true;record(s,{type:'crew_skill',role:'waiter',order:o.id})}
-   if(deliverWalkableOrder(s,o,'waiter')){v.waiterBusyUntil=v.time+2;record(s,{type:'waiter_return',order:o.id,table:o.tableId});}
+  if(o.status==='delivering'){
+   const role=o.deliveryRole||'waiter'; // pre-F saved active shifts
+   const express=role==='waiter'&&v.crew?.waiter?.level>=3&&!v.waiterExpressUsed&&v.time>=30&&v.time<=80;
+   if(v.time-o.deliveryAt>=(express?1:3)){
+    if(express){v.waiterExpressUsed=true;record(s,{type:'crew_skill',role,order:o.id});}
+    if(deliverWalkableOrder(s,o,role)){
+     v.waiterBusyUntilByRole[role]=v.time+2;
+     if(role==='waiter')v.waiterBusyUntil=v.time+2;
+     record(s,{type:'waiter_return',role,order:o.id,table:o.tableId});
+    }
+   }
   }
  }
  const active=!!h.carryOrderId||(stationIdx(zone)>=0&&!!v.stations[zone]);
@@ -5191,7 +5228,7 @@ function advanceGuestMeals(s){
     rel.visits++;if(o.sat>=80)rel.happyMeals++;rel.lastDay=totalBusinessDay(s);
     record(s,{type:'regular_visit',order:o.id,guestId:o.guestId,sat:o.sat,happyMeals:rel.happyMeals});
    }
-   if(v.staffStats&&(v.crew?.waiter?.patience||0)>0&&wait>(o.basePatience||o.patience))v.staffStats.waiterSaved++;
+   if(v.staffStats&&((v.crew?.waiter?.patience||0)+(v.crew?.waiter2?.patience||0))>0&&wait>(o.basePatience||o.patience))v.staffStats.waiterSaved++;
    record(s,{type:'reviewed',order:o.id,recipeId:o.recipeId,sat:o.sat,reason:review.type,text:review.text});
   }
   if(o.status==='review'&&v.time-o.reviewAt>=DINER_TIMING.review){
@@ -5209,7 +5246,7 @@ function advanceGuestOrders(s){
   if(o.status==='ordering'&&v.time-o.seatedAt>=DINER_TIMING.order){
    selectArrivalDish(s,o);
    if(o.fit<45||!o.recipeId){o.status='rejected';o.rejectReason='菜单不匹配';o.leftAt=v.time;record(s,{type:'rejected',order:o.id,reason:'菜单不匹配'});continue;}
-   o.basePatience=o.patience;const bonus=v.crew?.waiter?.patience||0;
+   o.basePatience=o.patience;const bonus=Math.min(12,(v.crew?.waiter?.patience||0)+(v.crew?.waiter2?.patience||0));
    // Outdoor waiting uses up real customer patience; reset at ordering must not be a free time bank.
    const queuePenalty=Math.min(24,Math.round((o.queueSeconds||0)*1.15));
    o.patience=Math.max(8,o.patience+bonus-queuePenalty);v.staffStats.waiterBonus+=bonus;if(bonus)v.staffStats.waiterOrders++;
@@ -5278,7 +5315,7 @@ for(const st of Object.keys(v.stations)){const job=v.stations[st];if(job){v.cong
   else record(s,{type:'waste',order:job.orderId});
  }
 }}
-for(const o of v.orders){if((o.status==='queued'||o.status==='cooking'||(v.walkable&&['pickup','carried','delivering'].includes(o.status)))&&v.time-o.arrival>o.patience){if(v.walkable&&o.status==='delivering'){v.waiterBusyUntil=v.time+2;record(s,{type:'waiter_return',order:o.id,table:o.tableId});}o.status='left';o.leftReason='等待超时';o.leftAt=v.time;if(v.hero?.carryOrderId===o.id)v.hero.carryOrderId=null;s.reputation=Math.max(-20,s.reputation-1);v.queued=v.queued.filter(id=>id!==o.id);record(s,{type:'left',order:o.id,reason:'等待超时'});}}
+for(const o of v.orders){if((o.status==='queued'||o.status==='cooking'||(v.walkable&&['pickup','carried','delivering'].includes(o.status)))&&v.time-o.arrival>o.patience){if(v.walkable&&o.status==='delivering'){const role=o.deliveryRole||'waiter';v.waiterBusyUntilByRole??={waiter:v.waiterBusyUntil||0,waiter2:0};v.waiterBusyUntilByRole[role]=v.time+2;if(role==='waiter')v.waiterBusyUntil=v.time+2;record(s,{type:'waiter_return',role,order:o.id,table:o.tableId});}o.status='left';o.leftReason='等待超时';o.leftAt=v.time;if(v.hero?.carryOrderId===o.id)v.hero.carryOrderId=null;s.reputation=Math.max(-20,s.reputation-1);v.queued=v.queued.filter(id=>id!==o.id);record(s,{type:'left',order:o.id,reason:'等待超时'});}}
 for(const st of Object.keys(v.stations)){if(v.stations[st])continue;
  const ix=stationIdx(st),slot=v.kitchenSnapshot?.[ix];if(!slot)continue;
  // A new hearth without its employee or the player physically present does not steal work.
