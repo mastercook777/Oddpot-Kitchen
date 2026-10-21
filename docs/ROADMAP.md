@@ -1,6 +1,6 @@
 # 《怪味食堂》ROADMAP · 当前经营与章节开发路线
 
-> **更新：2026-10-21｜已合并代码基线：`main` / `0.15.0-alpha.5`**  
+> **更新：2026-10-21｜已合并代码基线：`main` / `0.15.0-alpha.6`**  
 > 这是**未来开发与待验收**的唯一活动路线图；实际已实现机制请查 [PROJECT_STATE](PROJECT_STATE.md)，新任务从 [START_HERE](START_HERE.md) 进入。历史版本的“待开发/当前版本”只适用于当时，不覆盖本页。  
 > **状态口径**：已实现（代码进入 main）／自动验证通过／待玩家真机验收／候选设计／已确认待实现／开发中／已验收，彼此不得混用。
 
@@ -14,11 +14,11 @@
 | 自动验证与发布 | [PR #84](https://github.com/mastercook777/Oddpot-Kitchen/pull/84) 已合并，[发布记录 #85](https://github.com/mastercook777/Oddpot-Kitchen/pull/85)；最后记录 515 项 Node、16/16 PR CI、Chrome 320/375/390 与离线入口通过，Pages 关键文件 HTTP 200 | **iPhone／Android 真机的浮岛辨识度、中文显示、帧率、触摸与经营感仍待玩家验收**；不能将 CI 绿灯写成用户验收 |
 | 经营经济分析 | [v0.14-F](V0.14F_P1_ECONOMY_RESULTS.md) 已在旧世界 alpha.5 做 9,408 个多日真实营业夜审计 | 审计没有证明真实探索战斗净收获，更**不等于**已量化 v0.15 云港两章供需、委托收益和实际通关时长 |
 
-当前 `package.json` 为 `0.15.0-alpha.5`（本次 Pages 实际线上发布须另核）。线上试玩：https://mastercook777.github.io/Oddpot-Kitchen/ 。历史计划 [2026-10-18 经营→三星→传送门](NEXT_DEVELOPMENT_PLAN_2026-10-18.md) 的 P3/P4 已由 v0.15 完成首个可玩版本，不能继续当作活跃待办。
+当前 `package.json` 为 `0.15.0-alpha.6`（本次 Pages 实际线上发布须另核）。线上试玩：https://mastercook777.github.io/Oddpot-Kitchen/ 。历史计划 [2026-10-18 经营→三星→传送门](NEXT_DEVELOPMENT_PLAN_2026-10-18.md) 的 P3/P4 已由 v0.15 完成首个可玩版本，不能继续当作活跃待办。
 
 ## 二、现在的开发队列（从上往下推进）
 
-**当前玩家要求的 P0 直接开发单：v0.15-F（分支代码已实现，待 PR CI/合并）**：试玩发现图鉴直达研发失效、两世界炉台彩色立柱干扰视觉、云港缺服务员配置差异。已按 [先行规格](V0.15F_RESEARCH_ATLAS_CLOUD_DUAL_WAITERS_SPEC.md) 补地区/库存快速研发入口、扁平炭架美术减噪、云港星章后第二跑堂（独立招募/排班/成长/并行取盘/资金与订单），分支版本 `0.15.0-alpha.6`。**不得将此条写成 main 已发布或已验收**；仍需审查“已点研发不能二次开锅”、并行送餐不能重复成交、旧云港档与原店 roster 隔离，完成 Node/移动 Chrome/离线/Pages 分项核验。云港整体经济审计和 P3/P4 保持未完成。
+**最新 P0 问题修复 v0.15-F 已合并代码（alpha.6）**：原图鉴一键研发失效、炉台装饰杂乱、云港没有第二跑堂，现按 [规格与结果](V0.15F_RESEARCH_ATLAS_CLOUD_DUAL_WAITERS_SPEC.md) 由 [PR #89](https://github.com/mastercook777/Oddpot-Kitchen/pull/89) 合并 main。地区/库存/厨具一键进入真实研发；两地低矮横置炭架、移除装饰柱；云港首星后 55 币独立雇佣第二跑堂，双路真实取盘/送餐、独立工资/XP/出勤和视觉。**536/536 Node、16/16 PR Actions 通过**；Pages 当前文件实际可访问状态尚未独立核验，玩家 iPhone/Android 主观体验待验收。P1 双章供需与财务经济仍需独立证据，不因增加跑堂而宣称已平衡；云港二星/三星及下一扇门仍未实装。
 
 
 **P0 特色化切片已完成代码交付（v0.15.0-alpha.5）**：玩家要求蒸笼升级、云港专属经营素材与蒸笼探索武器，现 [v0.15-E](V0.15E_CLOUD_STEAMER_WEAPON_AND_ASSETS_SPEC.md) 和 [PR #88](https://github.com/mastercook777/Oddpot-Kitchen/pull/88) 已合并。STEAM Lv2 云港金币 95／真实厨位每单 -2s、近身云汽双目标脉冲／原地持续控场减速雾域、六角晶石桌及港口帆索吊货／叠层蒸笼单独 Canvas 素材；**528/528 Node 和 16/16 Actions 成功**。**待完成：Pages 本次实际发布独立核验、玩家 iPhone 美术/手感验收、P1 双章经济实证**。此次没有完成云港后续二星/三星、第二门或整体经济平衡。
