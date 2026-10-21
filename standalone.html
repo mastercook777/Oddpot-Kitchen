@@ -1,4 +1,4 @@
-<!doctype html><html lang="zh-CN"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1.0,maximum-scale=1.0,viewport-fit=cover,user-scalable=no"><meta name="apple-mobile-web-app-capable" content="yes"><meta name="theme-color" content="#1b3c2b"><title>怪味食堂 · v0.15.0-alpha.5 离线版</title><style>.ingredient-icon{display:inline-block;width:var(--ingredient-size,24px);height:var(--ingredient-size,24px);max-width:none;object-fit:contain;image-rendering:pixelated;vertical-align:-.24em;flex:none;pointer-events:none;user-select:none}
+<!doctype html><html lang="zh-CN"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1.0,maximum-scale=1.0,viewport-fit=cover,user-scalable=no"><meta name="apple-mobile-web-app-capable" content="yes"><meta name="theme-color" content="#1b3c2b"><title>怪味食堂 · v0.15.0-alpha.6 离线版</title><style>.ingredient-icon{display:inline-block;width:var(--ingredient-size,24px);height:var(--ingredient-size,24px);max-width:none;object-fit:contain;image-rendering:pixelated;vertical-align:-.24em;flex:none;pointer-events:none;user-select:none}
 .stock-line>span .ingredient-icon{margin-right:3px}.target-chip .ingredient-icon{vertical-align:middle}.book-icon .ingredient-icon{display:block}
 .v063-food-icon .ingredient-icon{width:1em;height:1em;vertical-align:top;filter:none}.v063-receipt-line .ingredient-icon{vertical-align:middle}
 .v063-food-picker button>span,.v063-drop>span{line-height:1}.v063-food-picker .ingredient-icon,.v063-drop .ingredient-icon{vertical-align:top}
@@ -1188,6 +1188,15 @@
 .v015-ferry small{line-height:1.45;color:#e0f0ed}.v015-ferry button{min-height:42px;border:1px solid #d9e5c4;border-radius:7px;background:#d9e5c4;color:#26465d;font-weight:700}.v015-ferry button:disabled{opacity:.45}
 .world-cloud .kitchen-choice{display:flex;flex-wrap:wrap;gap:4px}.world-cloud .kitchen-choice button{flex:1 1 42%;min-height:34px}
 @media(max-width:390px){.portal-picks{padding:5px;gap:3px}.portal-picks button{font-size:10px;min-height:28px!important}.v076-home .v12-star-invite:has(.portal-picks){padding:5px 8px}}
+
+/* v0.15-F: functional, compact atlas action states on 320px phones. */
+.v015-region-tabs{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:4px;margin:5px 0 8px}
+.v015-region-tabs button{min-width:0;padding:7px 2px;font-size:11px;white-space:nowrap}
+.v015-atlas-action{font-size:11px;flex-shrink:0;color:#c4c8c1}
+.v015-atlas-action.ready{font-weight:750;color:#2d8958}
+.v015-atlas-status{display:block;padding:3px 12px 7px;color:#b6bdaf;font-size:11px;line-height:1.35}
+.v015-atlas-status.ready{color:#9bd5ae}
+.v063-book-entry .book-item{min-height:48px}
 
 .v12-star-invite{
  display:flex;flex-direction:column;gap:4px;flex:0 0 auto;
@@ -3196,13 +3205,13 @@ function dinerWalk(hero,dx,dy,dt,s=null){
  if(hero.moving)hero.direction=Math.abs(dx)>Math.abs(dy)?dx<0?'left':'right':dy<0?'up':'down';
  return hero.moving;
 }
-function dinerWaiterRoute(s,simTime){
+function dinerWaiterRoute(s,simTime,role='waiter'){
  const v=s?.service,g=dinerFloor(s),home=g.pass;
- const moving=v?.orders?.find(o=>o.status==='delivering'&&Number.isFinite(o.deliveryAt));
+ const moving=v?.orders?.find(o=>o.status==='delivering'&&(o.deliveryRole||'waiter')===role&&Number.isFinite(o.deliveryAt));
  let target=null,progress=0,returning=false,plate=false;
  if(moving){target=moving.tableId;progress=clamp075((simTime-moving.deliveryAt)/3,0,1);plate=true}
  else {
-  const last=(v?.events||[]).slice().reverse().find(e=>e.type==='waiter_return'&&simTime-e.t>=0&&simTime-e.t<2);
+  const last=(v?.events||[]).slice().reverse().find(e=>e.type==='waiter_return'&&(e.role||'waiter')===role&&simTime-e.t>=0&&simTime-e.t<2);
   if(last){target=last.table;progress=1-clamp075((simTime-last.t)/2,0,1);returning=true}
  }
  if(target==null)return {...home,moving:false,plate:false};
@@ -3243,6 +3252,7 @@ function homeKitchenActors(s,time,reducedMotion=false){
   actors.push({id:'home-helper2',kind:'helper2',level:crew.helper2.level||1,x:base+sway(3.5,.032),y:.32+sway(4,.012),walk:moving,working:moving});
  }
  if(crew.waiter?.hired)actors.push({id:'home-waiter',kind:'waiter',level:crew.waiter.level||1,x:.5+sway(4.3,.105),y:.57+sway(5,.02),walk:moving});
+ if(s.activeWorld==='cloud'&&crew.waiter2?.hired)actors.push({id:'home-waiter2',kind:'waiter2',level:crew.waiter2.level||1,x:.60+sway(2.7,.065),y:.62+sway(3.1,.015),walk:moving});
  return actors;
 }
 
@@ -3295,7 +3305,7 @@ function newServiceHero(){
 }
 function heroZone(h,s=null){return dinerSpot(h,s)}
 function walkServiceHero(h,dx,dy,dt,s=null){return dinerWalk(h,dx,dy,dt,s)}
-function waiterDeliveryPose(s,t){return dinerWaiterRoute(s,t)}
+function waiterDeliveryPose(s,t,role='waiter'){return dinerWaiterRoute(s,t,role)}
 // v0.11-A: deterministic field safety/readability rules shared by simulation and Canvas.
 const FIELD_HAZARD_RADIUS = 0.55;
 
@@ -3869,7 +3879,8 @@ const CAMPAIGNS={
 const CREW_GROWTH={
  helper:{wages:[10,14,19],promotionCosts:[0,28,64]},
  helper2:{wages:[12,16,22],promotionCosts:[0,28,64]},
- waiter:{wages:[9,13,18],promotionCosts:[0,28,64]}
+ waiter:{wages:[9,13,18],promotionCosts:[0,28,64]},
+ waiter2:{wages:[11,15,20],promotionCosts:[0,28,64]}
 };
 const CREW_XP_THRESHOLDS={2:8,3:30};
 const currentDayKey=s=>s.cycle+'-'+s.day;
@@ -3946,8 +3957,9 @@ function settleCrewExperience(s,shift){
  const crew=ensureStaffProgress(s),served=new Set(shift.orders.filter(x=>x.status==='served').map(x=>x.id));
  const helperOrders=new Set(shift.events.filter(x=>x.type==='helper_finished'&&(!x.role||x.role==='helper')).map(x=>x.order));
  const helper2Orders=new Set(shift.events.filter(x=>x.type==='helper_finished'&&x.role==='helper2').map(x=>x.order));
- const waiterOrders=new Set(shift.events.filter(x=>x.type==='waiter_pickup'&&served.has(x.order)).map(x=>x.order));
- const earned={helper:shift.crew?.helper?.hired?helperOrders.size:0,waiter:shift.crew?.waiter?.hired?waiterOrders.size:0,helper2:shift.crew?.helper2?.hired?helper2Orders.size:0};
+ const waiterOrders=new Set(shift.events.filter(x=>x.type==='waiter_pickup'&&(!x.role||x.role==='waiter')&&served.has(x.order)).map(x=>x.order));
+ const waiter2Orders=new Set(shift.events.filter(x=>x.type==='waiter_pickup'&&x.role==='waiter2'&&served.has(x.order)).map(x=>x.order));
+ const earned={helper:shift.crew?.helper?.hired?helperOrders.size:0,waiter:shift.crew?.waiter?.hired?waiterOrders.size:0,helper2:shift.crew?.helper2?.hired?helper2Orders.size:0,waiter2:shift.crew?.waiter2?.hired?waiter2Orders.size:0};
  for(const role of Object.keys(earned))crew[role].xp+=earned[role];
  return {earned,after:Object.fromEntries(Object.keys(earned).map(role=>[role,{xp:crew[role].xp,level:crew[role].level}]))};
 }
@@ -4029,7 +4041,25 @@ function chapterRecipeAvailable(s,id){
  const r=RECIPES[id];if(!r)return false;
  return activeWorld(s)==='cloud'?r.ids.some(x=>CLOUD_LOCAL_INGREDIENTS.has(x))&&r.ids.every(x=>CLOUD_PANTRY.has(x)):!r.ids.some(x=>CLOUD_LOCAL_INGREDIENTS.has(x));
 }
-function crewRoleName(s,role){return activeWorld(s)==='cloud'?({helper:'阿岚',waiter:'小羽',helper2:'小栖'}[role]||CREW_ROLES[role]?.name):CREW_ROLES[role]?.name}
+// v0.15-F: the atlas must never promise a research shortcut that the
+// real live-cooking engine would reject (region, station, inventory, phase).
+function recipeAtlasRegion(id){
+ const r=RECIPES[id];return r&&r.ids.some(x=>CLOUD_LOCAL_INGREDIENTS.has(x))?'cloud':'hearth';
+}
+function recipeResearchAccess(s,id){
+ const r=RECIPES[id];if(!r)return {ready:false,reason:'未收录的料理',region:null};
+ const region=recipeAtlasRegion(id),type=recipeCookware(r);
+ if(!chapterRecipeAvailable(s,id))return {ready:false,region,type,reason:region==='cloud'?'仅云港地区可研发':'仅边境地区可研发'};
+ if(!cookwareOwned(s,r))return {ready:false,region,type,reason:'尚未购入'+({STEAM:'云汽蒸笼',GRILL:'烤架'}[type]||'对应厨具')};
+ const reserved=premiumReserved(s),needed=countIds(r.ids);
+ const missing=Object.entries(needed).filter(([item,n])=>(s.inventory?.[item]||0)-(reserved[item]||0)<n)
+  .map(([item,n])=>ING[item].name+' ×'+Math.max(1,n-Math.max(0,(s.inventory?.[item]||0)-(reserved[item]||0))));
+ if(missing.length)return {ready:false,region,type,reason:'缺少 '+missing.join('、')};
+ if(s.phase!=='research')return {ready:false,region,type,reason:'请在料理研发阶段使用'};
+ if(s.cook)return {ready:false,region,type,reason:'当前料理完成后再研发'};
+ return {ready:true,region,type,reason:'可立即研发'};
+}
+function crewRoleName(s,role){return activeWorld(s)==='cloud'?({helper:'阿岚',waiter:'小羽',helper2:'小栖',waiter2:'小澜'}[role]||CREW_ROLES[role]?.name):CREW_ROLES[role]?.name}
 function redeemFerrySupply(s){
  if(activeWorld(s)!=='cloud'||!['forecast','field','research','menu','prep'].includes(s.phase)||s.field&&!s.field.settled||(s.ferryCredits||0)<1||s.ledger?.some(x=>x.id===`ferry-supply-${s.cycle}-${s.day}`))return false;
  if(!transact(s,`ferry-supply-${s.cycle}-${s.day}`,'ferry_supply',{cloud_rice:2,sky_moss:1},0))return false;
@@ -4374,7 +4404,7 @@ function stationDuration(s,position,recipe,v,order=null){
 
 // A two-person restaurant team. Feed uses real standard-recipe ingredients;
 // meals grant one service-day buff plus a tiny, capped long-term familiarity.
-const CREW_ROLES={helper:{name:'阿火',job:'帮厨',hireCost:40},waiter:{name:'小芽',job:'跑堂',hireCost:35},helper2:{name:'小炭',job:'后厨帮手',hireCost:0}};
+const CREW_ROLES={helper:{name:'阿火',job:'帮厨',hireCost:40},waiter:{name:'小芽',job:'跑堂',hireCost:35},waiter2:{name:'小澜',job:'云港跑堂',hireCost:55},helper2:{name:'小炭',job:'后厨帮手',hireCost:0}};
 function ensureCrew(s){
  ensureStaffProgress(s);
  for(const role of Object.keys(CREW_ROLES)){
@@ -4387,7 +4417,7 @@ function ensureCrew(s){
  return s.crew;
 }
 function hireCrew(s,role){
- if(!['prep','upgrade'].includes(s.phase)||!CREW_ROLES[role]||role==='helper2')return false;
+ if(!['prep','upgrade'].includes(s.phase)||!CREW_ROLES[role]||role==='helper2'||role==='waiter2'&&(activeWorld(s)!=='cloud'||localStars(s)<1))return false;
  const c=ensureCrew(s)[role],price=CREW_ROLES[role].hireCost;
  if(c.hired||s.coins<price||!transact(s,`crew-hire-${role}`,'crew_hire',{},-price))return false;
  c.hired=true;c.onDuty=true;return true;
@@ -4405,7 +4435,7 @@ function activeCrewMeal(s,role){
  const c=ensureCrew(s)[role];return c?.hired&&c.feed?.day===kitchenDayKey(s)?c.feed:null;
 }
 function crewEffects(s){
- const crew=ensureCrew(s),helper=crew.helper,helper2=crew.helper2,waiter=crew.waiter;
+ const crew=ensureCrew(s),helper=crew.helper,helper2=crew.helper2,waiter=crew.waiter,waiter2=crew.waiter2;
  const f=activeCrewMeal(s,'helper'),f2=activeCrewMeal(s,'helper2'),w=activeCrewMeal(s,'waiter');
  const hr=f?.recipeId?RECIPES[f.recipeId]:null,h2r=f2?.recipeId?RECIPES[f2.recipeId]:null,wr=w?.recipeId?RECIPES[w.recipeId]:null;
  const helperActive=helper.hired&&helper.onDuty,helper2Active=helper2.hired&&helper2.onDuty,waiterActive=waiter.hired&&waiter.onDuty;
@@ -4413,9 +4443,10 @@ function crewEffects(s){
  const helperMeal=helperActive&&hr?(hr.tags.includes('辣')&&ensureKitchen(s).slots[helper.station].type==='WOK'?2:hr.tags.includes('菌香')?1:0)+(f.quality>=85?1:0)+(f.craftBonus?.role==='helper'&&ensureKitchen(s).slots[helper.station].type==='WOK'?Math.min(1,f.craftBonus.bonus):0):0;
  const helper2Base=helper2Active?1+(helper2.meals>=3?1:0)+(helper2.level>=2?1:0):0;
  const helper2Meal=helper2Active&&h2r?(h2r.tags.includes('辣')&&ensureKitchen(s).slots[helper2.station]?.type==='WOK'?2:h2r.tags.includes('菌香')?1:0)+(f2.quality>=85?1:0):0;
+ const waiter2Active=activeWorld(s)==='cloud'&&waiter2.hired&&waiter2.onDuty;
  const waiterBase=waiterActive?3+(waiter.meals>=3?1:0)+(waiter.level>=2?2:0)+(waiter.level>=3?1:0):0;
  const waiterMeal=waiterActive&&wr?(wr.tags.includes('温和')?6:wr.tags.includes('菌香')?4:2)+(w.quality>=85?2:0)+(w.craftBonus?.role==='waiter'?Math.min(1,w.craftBonus.bonus):0):0;
- return {helper:{hired:helperActive,station:helper.station,seconds:Math.min(4,helperBase+helperMeal),fed:helperActive&&!!f,recipeId:f?.recipeId||null,meals:helper.meals,level:helper.level,salary:helperActive?crewWage('helper',helper.level):0},helper2:{hired:helper2Active,station:helper2.station,seconds:Math.min(4,helper2Base+helper2Meal),fed:helper2Active&&!!f2,recipeId:f2?.recipeId||null,meals:helper2.meals,level:helper2.level,salary:helper2Active?crewWage('helper2',helper2.level):0},waiter:{hired:waiterActive,patience:Math.min(12,waiterBase+waiterMeal),fed:waiterActive&&!!w,recipeId:w?.recipeId||null,meals:waiter.meals,level:waiter.level,salary:waiterActive?crewWage('waiter',waiter.level):0}};
+ return {helper:{hired:helperActive,station:helper.station,seconds:Math.min(4,helperBase+helperMeal),fed:helperActive&&!!f,recipeId:f?.recipeId||null,meals:helper.meals,level:helper.level,salary:helperActive?crewWage('helper',helper.level):0},helper2:{hired:helper2Active,station:helper2.station,seconds:Math.min(4,helper2Base+helper2Meal),fed:helper2Active&&!!f2,recipeId:f2?.recipeId||null,meals:helper2.meals,level:helper2.level,salary:helper2Active?crewWage('helper2',helper2.level):0},waiter:{hired:waiterActive,patience:Math.min(12,waiterBase+waiterMeal),fed:waiterActive&&!!w,recipeId:w?.recipeId||null,meals:waiter.meals,level:waiter.level,salary:waiterActive?crewWage('waiter',waiter.level):0},waiter2:{hired:waiter2Active,patience:waiter2Active?Math.min(3,2+(waiter2.level>=2?1:0)):0,level:waiter2.level,salary:waiter2Active?crewWage('waiter2',waiter2.level):0,fed:waiter2Active&&!!activeCrewMeal(s,'waiter2')}};
 }
 function feedCrew(s,role,recipeId){
  if(s.phase!=='prep'||!CREW_ROLES[role]||!s.recipes[recipeId]||!chapterRecipeAvailable(s,recipeId))return false;
@@ -5060,7 +5091,7 @@ function deliverWalkableOrder(s,o,by){
  const v=s.service;
  if(!v.walkable||!['pickup','carried','delivering'].includes(o.status))return false;
  if(o.status==='carried'&&by!=='hero')return false;
- if(o.status==='delivering'&&by!=='waiter')return false;
+ if(o.status==='delivering'&&!['waiter','waiter2'].includes(by))return false;
  if(o.status==='pickup'&&by!=='self')return false;
  if(v.hero?.carryOrderId===o.id)v.hero.carryOrderId=null;
  o.status='flying';o.deliveryMode=by;
@@ -5133,17 +5164,35 @@ function stepWalkableShift(s){
  if(!h||!v.walkable)return;
  const zone=heroZone(h,s);
  if(h.carryOrderId&&!v.orders.some(o=>o.id===h.carryOrderId&&o.status==='carried'))h.carryOrderId=null;
- // Player food handling is controlled by advanceWalkableInteraction() with
- // short physical dwell, NEVER teleported at the next whole-second tick.
- // Kitchenless orders sit on the pass. Helpers deliver without player travel,
- // but always via the same delivery/landing path used by the original ledger.
+ // Each hired local waiter has one authoritative order claim and return timer.
+ // Mutating pickup -> delivering is atomic within this single 1s service tick:
+ // a second waiter or the player's hand cannot claim the same plate.
+ v.waiterBusyUntilByRole??={waiter:v.waiterBusyUntil||0,waiter2:0};
+ const roles=['waiter','waiter2'].filter(role=>v.crew?.[role]?.hired);
  for(const o of v.orders){
-  if(o.status==='pickup'&&v.time-o.pickupAt>=(v.crew.waiter.hired?2:9)&&(!v.crew.waiter.hired||(!v.orders.some(other=>other.status==='delivering')&&v.time>=(v.waiterBusyUntil||0)))){
-   if(v.crew.waiter.hired){o.status='delivering';o.deliveryAt=v.time;record(s,{type:'waiter_pickup',order:o.id});}
-   else deliverWalkableOrder(s,o,'self');
+  if(o.status==='pickup'){
+   if(!roles.length){
+    if(v.time-o.pickupAt>=9)deliverWalkableOrder(s,o,'self');
+   }else if(v.time-o.pickupAt>=2){
+    const role=roles.find(r=>v.time>=(v.waiterBusyUntilByRole[r]||0)&&
+      !v.orders.some(other=>other.status==='delivering'&&(other.deliveryRole||'waiter')===r));
+    if(role){
+     o.status='delivering';o.deliveryAt=v.time;o.deliveryRole=role;
+     record(s,{type:'waiter_pickup',role,order:o.id});
+    }
+   }
   }
-  if(o.status==='delivering'&&v.time-o.deliveryAt>=(v.crew?.waiter?.level>=3&&!v.waiterExpressUsed&&v.time>=30&&v.time<=80?1:3)){if(v.crew?.waiter?.level>=3&&!v.waiterExpressUsed&&v.time>=30&&v.time<=80){v.waiterExpressUsed=true;record(s,{type:'crew_skill',role:'waiter',order:o.id})}
-   if(deliverWalkableOrder(s,o,'waiter')){v.waiterBusyUntil=v.time+2;record(s,{type:'waiter_return',order:o.id,table:o.tableId});}
+  if(o.status==='delivering'){
+   const role=o.deliveryRole||'waiter'; // pre-F saved active shifts
+   const express=role==='waiter'&&v.crew?.waiter?.level>=3&&!v.waiterExpressUsed&&v.time>=30&&v.time<=80;
+   if(v.time-o.deliveryAt>=(express?1:3)){
+    if(express){v.waiterExpressUsed=true;record(s,{type:'crew_skill',role,order:o.id});}
+    if(deliverWalkableOrder(s,o,role)){
+     v.waiterBusyUntilByRole[role]=v.time+2;
+     if(role==='waiter')v.waiterBusyUntil=v.time+2;
+     record(s,{type:'waiter_return',role,order:o.id,table:o.tableId});
+    }
+   }
   }
  }
  const active=!!h.carryOrderId||(stationIdx(zone)>=0&&!!v.stations[zone]);
@@ -5191,7 +5240,7 @@ function advanceGuestMeals(s){
     rel.visits++;if(o.sat>=80)rel.happyMeals++;rel.lastDay=totalBusinessDay(s);
     record(s,{type:'regular_visit',order:o.id,guestId:o.guestId,sat:o.sat,happyMeals:rel.happyMeals});
    }
-   if(v.staffStats&&(v.crew?.waiter?.patience||0)>0&&wait>(o.basePatience||o.patience))v.staffStats.waiterSaved++;
+   if(v.staffStats&&((v.crew?.waiter?.patience||0)+(v.crew?.waiter2?.patience||0))>0&&wait>(o.basePatience||o.patience))v.staffStats.waiterSaved++;
    record(s,{type:'reviewed',order:o.id,recipeId:o.recipeId,sat:o.sat,reason:review.type,text:review.text});
   }
   if(o.status==='review'&&v.time-o.reviewAt>=DINER_TIMING.review){
@@ -5209,7 +5258,7 @@ function advanceGuestOrders(s){
   if(o.status==='ordering'&&v.time-o.seatedAt>=DINER_TIMING.order){
    selectArrivalDish(s,o);
    if(o.fit<45||!o.recipeId){o.status='rejected';o.rejectReason='菜单不匹配';o.leftAt=v.time;record(s,{type:'rejected',order:o.id,reason:'菜单不匹配'});continue;}
-   o.basePatience=o.patience;const bonus=v.crew?.waiter?.patience||0;
+   o.basePatience=o.patience;const bonus=Math.min(12,(v.crew?.waiter?.patience||0)+(v.crew?.waiter2?.patience||0));
    // Outdoor waiting uses up real customer patience; reset at ordering must not be a free time bank.
    const queuePenalty=Math.min(24,Math.round((o.queueSeconds||0)*1.15));
    o.patience=Math.max(8,o.patience+bonus-queuePenalty);v.staffStats.waiterBonus+=bonus;if(bonus)v.staffStats.waiterOrders++;
@@ -5278,7 +5327,7 @@ for(const st of Object.keys(v.stations)){const job=v.stations[st];if(job){v.cong
   else record(s,{type:'waste',order:job.orderId});
  }
 }}
-for(const o of v.orders){if((o.status==='queued'||o.status==='cooking'||(v.walkable&&['pickup','carried','delivering'].includes(o.status)))&&v.time-o.arrival>o.patience){if(v.walkable&&o.status==='delivering'){v.waiterBusyUntil=v.time+2;record(s,{type:'waiter_return',order:o.id,table:o.tableId});}o.status='left';o.leftReason='等待超时';o.leftAt=v.time;if(v.hero?.carryOrderId===o.id)v.hero.carryOrderId=null;s.reputation=Math.max(-20,s.reputation-1);v.queued=v.queued.filter(id=>id!==o.id);record(s,{type:'left',order:o.id,reason:'等待超时'});}}
+for(const o of v.orders){if((o.status==='queued'||o.status==='cooking'||(v.walkable&&['pickup','carried','delivering'].includes(o.status)))&&v.time-o.arrival>o.patience){if(v.walkable&&o.status==='delivering'){const role=o.deliveryRole||'waiter';v.waiterBusyUntilByRole??={waiter:v.waiterBusyUntil||0,waiter2:0};v.waiterBusyUntilByRole[role]=v.time+2;if(role==='waiter')v.waiterBusyUntil=v.time+2;record(s,{type:'waiter_return',role,order:o.id,table:o.tableId});}o.status='left';o.leftReason='等待超时';o.leftAt=v.time;if(v.hero?.carryOrderId===o.id)v.hero.carryOrderId=null;s.reputation=Math.max(-20,s.reputation-1);v.queued=v.queued.filter(id=>id!==o.id);record(s,{type:'left',order:o.id,reason:'等待超时'});}}
 for(const st of Object.keys(v.stations)){if(v.stations[st])continue;
  const ix=stationIdx(st),slot=v.kitchenSnapshot?.[ix];if(!slot)continue;
  // A new hearth without its employee or the player physically present does not steal work.
@@ -6331,6 +6380,7 @@ function r(c,x,y,w,h,col){c.fillStyle=col;c.fillRect(x|0,y|0,w|0,h|0)}
 const CREW_APPEARANCES={
  cloud_helper:[{label:'云港见习帮厨',uniform:'风帆白厨帽 · 天青围裙',accent:'#84b6cc'},{label:'风帆厨师',uniform:'双层披肩 · 云纹胸针',accent:'#d7c88d'},{label:'航路掌勺',uniform:'高帆厨帽 · 金色风向徽',accent:'#f1d884'}],
  cloud_waiter:[{label:'云港跑堂',uniform:'轻羽帽 · 浅蓝背心',accent:'#80b3d2'},{label:'航船侍者',uniform:'羽纹肩带 · 银蓝围领',accent:'#a9d5dc'},{label:'港口引路人',uniform:'银羽高帽 · 灯塔胸针',accent:'#f2d883'}],
+ cloud_waiter2:[{label:'云港双线跑堂',uniform:'白帆短帽 · 银青快送披肩',accent:'#69ccc2'},{label:'快帆侍者',uniform:'双羽肩饰 · 青金传菜带',accent:'#b1ead7'},{label:'港口领航员',uniform:'双羽高帽 · 珠贝徽章',accent:'#f6daa0'}],
  cloud_helper2:[{label:'云港后厨',uniform:'浮云短衫 · 帆布袖口',accent:'#739cbc'},{label:'风炉匠人',uniform:'云纹披肩 · 铜色围裙',accent:'#d7b778'},{label:'星帆主厨',uniform:'羽帆高帽 · 天青纹章',accent:'#f0d587'}],
  helper2:[
   {label:'见习后厨',uniform:'炭蓝短衫 · 杏色厨帽',accent:'#527d85'},
@@ -6396,7 +6446,7 @@ function paintCrewRank(c,kind,level,arm){
  }
 }
 function person(c,kind,walk,attack,level=1){
- const p={chef:['#477a91','#e7d4a7','#7e4f37'],helper:['#d27a46','#f2d69a','#654730'],helper2:['#517d85','#ead2ae','#36595b'],waiter:['#708d62','#dfc18e','#466251'],cloud_helper:['#629fbc','#eff0d6','#4b6d85'],cloud_waiter:['#91b9d2','#f2e2b9','#557a99'],cloud_helper2:['#778fb6','#e7dfbd','#455d80'],adventurer:['#4d8a66','#c59d55','#5d4630'],family:['#d67872','#f0cf79','#8a5747'],regular:['#729aba','#9bc1ce','#6c5440'],critic:['#795777','#bb9abd','#362e48'],stargazer:['#41576e','#c3b67e','#7f5c91'],gardener:['#688947','#b6d27b','#465d37'],cloud_docker:['#66728b','#e1c27e','#46546c'],cloud_weaver:['#8c9cbb','#d7dbea','#5c728e']}[kind]||['#729aba','#9bc1ce','#6c5440'];
+ const p={chef:['#477a91','#e7d4a7','#7e4f37'],helper:['#d27a46','#f2d69a','#654730'],helper2:['#517d85','#ead2ae','#36595b'],waiter:['#708d62','#dfc18e','#466251'],cloud_helper:['#629fbc','#eff0d6','#4b6d85'],cloud_waiter:['#91b9d2','#f2e2b9','#557a99'],cloud_waiter2:['#4baba5','#f4e7c5','#2b7780'],cloud_helper2:['#778fb6','#e7dfbd','#455d80'],adventurer:['#4d8a66','#c59d55','#5d4630'],family:['#d67872','#f0cf79','#8a5747'],regular:['#729aba','#9bc1ce','#6c5440'],critic:['#795777','#bb9abd','#362e48'],stargazer:['#41576e','#c3b67e','#7f5c91'],gardener:['#688947','#b6d27b','#465d37'],cloud_docker:['#66728b','#e1c27e','#46546c'],cloud_weaver:['#8c9cbb','#d7dbea','#5c728e']}[kind]||['#729aba','#9bc1ce','#6c5440'];
  const step=walk?Math.round(Math.sin(walk*13)*2):0,arm=attack? -7:Math.round(Math.sin(walk*13+2)*1);
  // Shoes, alternating leg pixels, outlined torso/arms, expressive large face.
  r(c,3,18+step,5,5,P.outline);r(c,10,18-step,5,5,P.outline);
@@ -6409,7 +6459,7 @@ function person(c,kind,walk,attack,level=1){
  r(c,5,6,2,2,P.outline);r(c,12,6,2,2,P.outline);r(c,9,9,3,1,'#9d644f');
  if(kind==='chef'||kind==='helper'||kind==='helper2'||kind==='cloud_helper'||kind==='cloud_helper2'){
   r(c,2,1,15,4,P.outline);r(c,3,1,13,3,P.white);r(c,5,-4,9,6,P.outline);r(c,6,-4,7,5,P.white);r(c,8,-6,4,3,P.white);
- }else if(kind==='waiter'||kind==='cloud_waiter'){
+ }else if(kind==='waiter'||kind==='cloud_waiter'||kind==='cloud_waiter2'){
   r(c,2,0,14,3,'#466251');r(c,6,-2,7,3,'#ddc391');r(c,6,13,8,3,'#e9daa7');
  }else if(kind==='adventurer'){
   // Ironhorn dwarf: horned helmet, copper beard and heavy travel pack.
@@ -9317,7 +9367,7 @@ function drawRestaurantV075(c,s,t,w,h){
  }
  // Shrink the redundant upper wall; the game HUD already displays the name.
  if(!cloud)rect(c,0,0,w,h*.145,'#304f3e');rect(c,0,h*.145-7,w,8,cloud?'#e2d6aa':'#b88c5c');
- for(const xx of [.09,.91]){rr(x(xx)-10,h*.072,20,38,5,'#6e937e','#cfae7d');rect(c,x(xx)-5,h*.083,10,18,'#3e6e68')}
+ // v0.15-F: obsolete saturated wall posts were mistaken for controls; remove them from both chapters.
  // The two active stoves are deliberately compact; the centre is reserved for
  // a later third production slot. No area names are printed on screen.
  for(const [i,key] of (v?.kitchenSnapshot?.length>=3||!v&&s.kitchen?.thirdUnlocked?['WOK','POT','CENTER']:['WOK','POT']).entries()){
@@ -9327,26 +9377,22 @@ function drawRestaurantV075(c,s,t,w,h){
   if(type==='STEAM'){
    drawCloudSteamerStation(c,X,Y,rw,t,!!busy,slot?.level||1);
   }else if(type==='GRILL'){
-   // A top-down charcoal rack, not a round pot: raised legs, ember bed,
-   // spaced grates, and two skewers laid crosswise over the coals.
-   const gw=rw*.94,gh=24,gy=Y-17;
+   // Low, horizontal charcoal rack, not a cluster of four vertical
+   // coloured posts that players could mistake for interactive devices.
+   const gw=rw*.95,gy=Y-16;
    rr(X-rw/2,Y-24,rw,51,7,cloud?'#476b80':'#513c30',cloud?'#e5d6ad':'#b99765');
-   rect(c,X-gw*.42,gy+gh,5,8,'#392f2c');rect(c,X+gw*.42-5,gy+gh,5,8,'#392f2c');
-   rr(X-gw/2-2,gy-3,gw+4,gh+7,3,'#343c3d','#bd9b70');
-   rr(X-gw*.43,gy,gw*.86,gh,2,'#622e29','#d69a69');
-   for(let ember=0;ember<6;ember++){
-    const ex=X-gw*.33+ember*gw*.13,ey=gy+6+(ember%2)*9;
-    circle(c,ex,ey,busy?2.9:1.8,busy?'#f49442':'#a95637');
-   }
-   for(let rail=0;rail<6;rail++)line(c,X-gw*.37+rail*gw*.15,gy+2,X-gw*.37+rail*gw*.15,gy+gh-2,'#81918b',2);
-   for(const [n,sy] of [gy+8,gy+17].entries()){
-    line(c,X-gw*.57,sy,X+gw*.56,sy,'#e0ba7b',2.1);
-    for(let part=0;part<3;part++){
-     const sx=X-gw*.27+part*gw*.26;
-     rr(sx-3,sy-3,6,6,2,busy?(n?'#d78653':'#bd6c41'):'#aa916f','#f0c986');
+   rr(X-gw/2,gy,gw,27,4,'#353d3e','#d9b879');
+   rr(X-gw*.43,gy+3,gw*.86,20,2,'#61362d','#a88b72');
+   for(let ember=0;ember<7;ember++)circle(c,X-gw*.33+ember*gw*.11,gy+13+(ember%2)*4,busy?2.2:1.25,busy?'#f1a25b':'#975a3b');
+   for(let rail=0;rail<5;rail++)line(c,X-gw*.35+rail*gw*.17,gy+2,X-gw*.35+rail*gw*.17,gy+24,'#a8abaa',1.4);
+   for(const [row,sy] of [gy+7,gy+18].entries()){
+    line(c,X-gw*.52,sy,X+gw*.52,sy,'#edcf8c',2);
+    for(let item=0;item<3;item++){
+     const ix=X-gw*.27+item*gw*.27;
+     rr(ix-4,sy-2.6,8,5.2,2,busy?(row?'#a76840':'#c89462'):'#ab855f','#f0d39a');
     }
    }
-   if(busy){for(let j=0;j<3;j++)circle(c,X-11+j*10,gy-5-Math.sin(t*5+j)*2,1.8,'#f7c57d88')}
+   if(busy)for(let j=0;j<3;j++)circle(c,X-12+j*12,gy-5-Math.sin(t*4+j)*2,1.7,'#e8d8b599');
   }else{
    rr(X-rw/2,Y-24,rw,51,7,cloud?'#476b80':'#513c30',cloud?'#e5d6ad':'#b99765');
    rr(X-rw*.43,Y-20,rw*.86,39,5,cloud?'#9dbabd':'#916d49',cloud?'#e8dcba':'#d8ae74');
@@ -9479,10 +9525,14 @@ function drawRestaurantV075(c,s,t,w,h){
    actors.push({id:role,x:pt.x,y:pt.y,kind:s.activeWorld==='cloud'?'cloud_'+role:role,level:person.level||1,
     walk:moving?t*2:false,working:!moving&&!!v.stations[['WOK','POT','CENTER'][station]]});
   }
-  if(crew?.waiter?.hired){
-   const pos=waiterDeliveryPose(s,t);
-   const delivery=pos.plate?v.orders.find(o=>o.status==='delivering'&&Number.isFinite(o.deliveryAt)):null;
-   actors.push({id:'waiter',x:pos.x,y:pos.y,kind:s.activeWorld==='cloud'?'cloud_waiter':'waiter',level:crew.waiter.level||1,walk:pos.moving,plate:pos.plate,plateRecipeId:delivery?.recipeId});
+  for(const role of ['waiter',...(s.activeWorld==='cloud'?['waiter2']:[])]){
+   const person=crew?.[role];if(!person?.hired)continue;
+   const pos=waiterDeliveryPose(s,t,role);
+   const delivery=pos.plate?v.orders.find(o=>o.status==='delivering'&&(o.deliveryRole||'waiter')===role&&Number.isFinite(o.deliveryAt)):null;
+   // Two idle couriers stand apart rather than stacking on the exact pass point;
+   // moving paths remain driven by the actual role-locked order.
+   const idleOffset=!pos.moving&&s.activeWorld==='cloud'&&crew?.waiter?.hired&&crew?.waiter2?.hired?(role==='waiter'?-0.045:0.045):0;
+   actors.push({id:role,x:pos.x+idleOffset,y:pos.y,kind:s.activeWorld==='cloud'?'cloud_'+role:role,level:person.level||1,walk:pos.moving,plate:pos.plate,plateRecipeId:delivery?.recipeId});
   }
   if(v.hero){
    const hero=v.hero,zone=heroZone(hero,s);
@@ -9495,7 +9545,7 @@ function drawRestaurantV075(c,s,t,w,h){
  }
  else {
   const reduced=globalThis.matchMedia?.('(prefers-reduced-motion: reduce)').matches||false;
-  for(const person of homeKitchenActors(s,t,reduced))actors.push(s.activeWorld==='cloud'&&['helper','helper2','waiter'].includes(person.kind)?{...person,kind:'cloud_'+person.kind}:person);
+  for(const person of homeKitchenActors(s,t,reduced))actors.push(s.activeWorld==='cloud'&&['helper','helper2','waiter','waiter2'].includes(person.kind)?{...person,kind:'cloud_'+person.kind}:person);
   // The idle room has no active orders. This is a small visual cue only.
   for(const stove of reduced?[]:[g.stoveLeft,g.stoveRight,...(s.kitchen?.thirdUnlocked?[g.reservedStove]:[])]){
    const X=x(stove.x),Y=y(stove.y);
@@ -9632,7 +9682,7 @@ function drawDiner(canvas,s,clock,simTime=s.service?.time??clock){
 let game=load()||newGame();
 let flashUntil=0;
 let message='今天会有怎样的客人上门呢？';
-let overlay='',bookTab='recipes',recipeType='WOK',tileSelected=null,selectedOrderId=null;let servicePanel='';
+let overlay='',bookTab='recipes',recipeType='WOK',bookRegion='current',tileSelected=null,selectedOrderId=null;let servicePanel='';
 let selectedIngredients=activeWorld(game)==='cloud'?['cloud_rice','chicken']:['chicken','chili'],selectedMethod='stir';
 let walking=null,drag=null,selectedRegion=activeWorld(game)==='cloud'?'cloud':'forest';let livePanPointer=null;
 const stick={x:0,y:0,pointer:null,originX:0,originY:0};const keys=new Set();let lastFrame=0,lastSave=0;let gameClock=0;let serviceTickAt=0;const touched=new Map();
@@ -9695,9 +9745,9 @@ function overlayMarkup(){if(!overlay)return '';
      </div></article>`).join('')}</div>`;
   }else{
   ensureRecipeVariants(game);
-  const shown=Object.entries(RECIPES).filter(([id,r])=>recipeCookware(r)===recipeType&&(game.recipes[id]||RECIPE_PROFILES[id]||r.station==='GRILL'&&ensureKitchen(game).grillOwned||activeWorld(game)==='cloud'&&r.ids.some(x=>['cloud_rice','sky_moss','storm_egg','sour_bell','gale_core'].includes(x))));
-  body=`<h2>📖 料理工艺图鉴</h2><p class="sheet-lead">已解锁 ${itemCount()} 道料理 · 每道菜可收藏不同做法。<b>当前默认工艺已经影响实际营业；点击版本可以更换。</b></p><div class="v102-book-tabs v015-cook-tabs" role="tablist" aria-label="按厨具查看菜谱">${['WOK','POT','STEAM','GRILL'].map(type=>`<button type="button" data-recipe-type="${type}" aria-selected="${recipeType===type}" class="${recipeType===type?'active':''}">${cookName(type)}</button>`).join('')}</div><div class="book-list v063-book-list">${shown.map(([id,r])=>{const learned=!!game.recipes[id],variants=game.recipeVariants?.[id]||[],active=game.activeVariantIds?.[id];
-    return `<div class="v063-book-entry"><button class="book-item" data-book="${id}"><span class="book-icon">${learned?r.emoji:'❔'}</span><div><strong>${learned?esc(r.name):'未发现的料理'}</strong><small>${learned?`${r.ids.map(onlyName).join(' + ')} · ${stationName(r.station,r)} · 已知 ${variants.length} 种工艺${chapterRecipeAvailable(game,id)?'':' · 仅原食堂上架'}`:(r.method==='steam'?'云汽蒸笼 · ':r.station==='GRILL'?'烤架 · ':'')+esc(r.hint)}</small></div><span>›</span></button>${learned?`<div class="v063-variant-list">${variants.map(v=>`<button data-choose-variant="${id}::${v.variantId}" class="v063-variant-chip ${active===v.variantId?'active':''}">${active===v.variantId?'✓ ':''}${esc(v.styleLabel||LIVE_STYLES[v.style]||'标准工艺')} · 品质 ${v.quality} · ${recipeCraftSnapshot(game,id,v)?.price}币 / ${r.time+(recipeCraftSnapshot(game,id,v)?.timeDelta||0)}秒${v.secondaryTrait?' · '+esc(v.secondaryTrait):''}</button>`).join('')}</div>`:''}</div>`}).join('')}</div>`;
+  const shown=Object.entries(RECIPES).filter(([id,r])=>recipeCookware(r)===recipeType&&(game.recipes[id]||RECIPE_PROFILES[id]||r.station==='GRILL'&&ensureKitchen(game).grillOwned||recipeAtlasRegion(id)==='cloud')&&(bookRegion==='all'||recipeAtlasRegion(id)===(bookRegion==='current'?activeWorld(game):bookRegion)));
+  body=`<h2>📖 料理工艺图鉴</h2><p class="sheet-lead">已解锁 ${itemCount()} 道料理 · 每道菜可收藏不同做法。<b>当前默认工艺已经影响实际营业；点击版本可以更换。</b></p><div class="v102-book-tabs v015-region-tabs" role="tablist" aria-label="按地区查看菜谱">${[['current','当前地区'],['hearth','边境'],['cloud','云港'],['all','全部']].map(([id,label])=>'<button type="button" data-book-region="'+id+'" aria-selected="'+(bookRegion===id)+'" class="'+(bookRegion===id?'active':'')+'">'+label+'</button>').join('')}</div><div class="v102-book-tabs v015-cook-tabs" role="tablist" aria-label="按厨具查看菜谱">${['WOK','POT','STEAM','GRILL'].map(type=>`<button type="button" data-recipe-type="${type}" aria-selected="${recipeType===type}" class="${recipeType===type?'active':''}">${cookName(type)}</button>`).join('')}</div><div class="book-list v063-book-list">${shown.map(([id,r])=>{const learned=!!game.recipes[id],variants=game.recipeVariants?.[id]||[],active=game.activeVariantIds?.[id],access=recipeResearchAccess(game,id);
+    return `<div class="v063-book-entry"><button class="book-item" data-book="${id}"><span class="book-icon">${learned?r.emoji:'❔'}</span><div><strong>${learned?esc(r.name):'未发现的料理'}</strong><small>${learned?`${r.ids.map(onlyName).join(' + ')} · ${stationName(r.station,r)} · 已知 ${variants.length} 种工艺${chapterRecipeAvailable(game,id)?'':' · 仅原食堂上架'}`:(r.method==='steam'?'云汽蒸笼 · ':r.station==='GRILL'?'烤架 · ':'')+esc(r.hint)}</small></div><span class="v015-atlas-action ${access.ready?'ready':'locked'}">${access.ready?'立即研发':'查看'}</span></button><small class="v015-atlas-status ${access.ready?'ready':''}">${esc(access.reason)} · ${r.ids.map(item=>esc(ING[item]?.name||item)+' ×'+(game.inventory[item]||0)).join(' / ')}</small>${learned?`<div class="v063-variant-list">${variants.map(v=>`<button data-choose-variant="${id}::${v.variantId}" class="v063-variant-chip ${active===v.variantId?'active':''}">${active===v.variantId?'✓ ':''}${esc(v.styleLabel||LIVE_STYLES[v.style]||'标准工艺')} · 品质 ${v.quality} · ${recipeCraftSnapshot(game,id,v)?.price}币 / ${r.time+(recipeCraftSnapshot(game,id,v)?.timeDelta||0)}秒${v.secondaryTrait?' · '+esc(v.secondaryTrait):''}</button>`).join('')}</div>`:''}</div>`}).join('')}</div>`;
   }
   body=`<div class="v102-book-tabs" role="tablist" aria-label="图鉴分类"><button type="button" role="tab" data-book-tab="recipes" aria-selected="${bookTab==='recipes'}" class="${bookTab==='recipes'?'active':''}">📖 菜谱</button><button type="button" role="tab" data-book-tab="guests" aria-selected="${bookTab==='guests'}" class="${bookTab==='guests'?'active':''}">👥 客人</button></div>`+body;
  }else if(overlay==='field-bag'){
@@ -9745,16 +9795,16 @@ function overlayMarkup(){if(!overlay)return '';
    };
    const row=role=>{
     const person=crew[role],def={...CREW_ROLES[role],name:crewRoleName(game,role)},meal=activeCrewMeal(game,role),promotion=crewPromotion(game,role);
-    if(!person.hired)return '<div class="staff-person">'+identity(role,1)+'<div class="staff-person-head"><b>'+(role==='waiter'?'🧺':'🍳')+' '+def.name+' · '+def.job+'</b><span>入职 '+def.hireCost+' 金币</span></div>'+b('hire:'+role,'雇佣 '+def.name,'primary',game.coins<def.hireCost)+'</div>';
-    const isCook=role!=='waiter';const current=isCook?'优先：'+(['左','右','中'][person.station]||'未指定')+'厨位 · 空闲时自动支援 · 每单 -'+(eff[role]?.seconds||0)+'秒':'顾客耐心 +'+eff.waiter.patience+'秒';
+    if(!person.hired)return '<div class="staff-person">'+identity(role,1)+'<div class="staff-person-head"><b>'+(['waiter','waiter2'].includes(role)?'🧺':'🍳')+' '+def.name+' · '+def.job+'</b><span>入职 '+def.hireCost+' 金币</span></div>'+b('hire:'+role,'雇佣 '+def.name+(role==='waiter2'?' · 需云港首星':''),'primary',game.coins<def.hireCost||role==='waiter2'&&(activeWorld(game)!=='cloud'||!(game.cloudProgress?.stars||0)))+'</div>';
+    const isCook=!['waiter','waiter2'].includes(role);const current=isCook?'优先：'+(['左','右','中'][person.station]||'未指定')+'厨位 · 空闲时自动支援 · 每单 -'+(eff[role]?.seconds||0)+'秒':(role==='waiter2'?'第二条独立送餐线路 · ':'取菜及传菜 · ')+'顾客耐心 +'+(eff[role]?.patience||0)+'秒';
     const duty=game.phase==='prep'?'<div class="v12c-duty"><button data-act="duty:'+role+':on" class="'+(person.onDuty?'active':'')+'">✓ 今晚上岗</button><button data-act="duty:'+role+':off" class="'+(!person.onDuty?'active':'')+'">◌ 今晚休息</button></div>':'';
     const promote=promotion?'<div class="v12c-progress"><span>实际工作经验 '+person.xp+'/'+promotion.requiredXP+' · 晋升工资 '+promotion.nextWage+'/晚</span><i style="width:'+Math.min(100,Math.floor(person.xp/promotion.requiredXP*100))+'%"></i></div><button class="v12c-promote" data-act="promote:'+role+'" '+(promotion.ready&&game.coins>=promotion.cost&&['prep','upgrade','report'].includes(game.phase)?'':'disabled')+'>晋升 Lv.'+promotion.level+' · 培训 '+promotion.cost+' 金币 '+(promotion.ready?'✓':'· 经验不足')+'</button>':'<div class="v12c-progress">⭐ 已达满级 · 总工作量 '+person.xp+'</div>';
     const options=person.onDuty&&!meal&&game.phase==='prep'?'<div class="staff-feed-list">'+Object.keys(game.recipes).filter(id=>chapterRecipeAvailable(game,id)).map(id=>'<button data-feed="'+role+':'+id+'" '+(!canUse(game,recipeCraftSnapshot(game,id).ingredientIds)?'disabled':'')+'>'+RECIPES[id].emoji+' '+RECIPES[id].name+'<small>品质 '+recipeCraftSnapshot(game,id).quality+'</small></button>').join('')+'</div>':'';
-    return '<div class="staff-person">'+identity(role,person.level)+'<div class="staff-person-head"><b>'+(role==='waiter'?'🧺':'🍳')+' '+def.name+' · '+def.job+' Lv.'+person.level+'</b><span>工资 '+crewWage(role,person.level)+'/晚</span></div><div class="staff-buff">'+(person.onDuty?current:'今晚休息：无工资，无岗位加成')+' · 员工餐羁绊 '+person.meals+'/3</div>'+duty+promote+(isCook&&game.phase==='prep'&&person.onDuty?'<div class="staff-assign">'+[0,2,1].filter(i=>i<ensureKitchen(game).slots.length).map(i=>'<button data-assign="'+role+':'+i+'" class="'+(person.station===i?'active':'')+'" aria-pressed="'+(person.station===i)+'" '+(crew[role==='helper'?'helper2':'helper']?.hired&&crew[role==='helper'?'helper2':'helper'].station===i?'disabled':'')+'>'+(['左','右','中'][i])+'</button>').join('')+'</div>':'')+'<p>'+(meal?'今日员工餐：'+esc(RECIPES[meal.recipeId].name)+' · 品质 '+meal.quality:person.onDuty&&game.phase==='prep'?'可提供员工餐，临时强化当晚表现':'本次不安排员工餐')+'</p>'+options+'</div>';
+    return '<div class="staff-person">'+identity(role,person.level)+'<div class="staff-person-head"><b>'+(['waiter','waiter2'].includes(role)?'🧺':'🍳')+' '+def.name+' · '+def.job+' Lv.'+person.level+'</b><span>工资 '+crewWage(role,person.level)+'/晚</span></div><div class="staff-buff">'+(person.onDuty?current:'今晚休息：无工资，无岗位加成')+' · 员工餐羁绊 '+person.meals+'/3</div>'+duty+promote+(isCook&&game.phase==='prep'&&person.onDuty?'<div class="staff-assign">'+[0,2,1].filter(i=>i<ensureKitchen(game).slots.length).map(i=>'<button data-assign="'+role+':'+i+'" class="'+(person.station===i?'active':'')+'" aria-pressed="'+(person.station===i)+'" '+(crew[role==='helper'?'helper2':'helper']?.hired&&crew[role==='helper'?'helper2':'helper'].station===i?'disabled':'')+'>'+(['左','右','中'][i])+'</button>').join('')+'</div>':'')+'<p>'+(meal?'今日员工餐：'+esc(RECIPES[meal.recipeId].name)+' · 品质 '+meal.quality:person.onDuty&&game.phase==='prep'?'可提供员工餐，临时强化当晚表现':'本次不安排员工餐')+'</p>'+options+'</div>';
    };
-   body='<h2>👩‍🍳 食堂伙伴</h2><p class="sheet-lead">每位帮厨按本人实际完成的订单获得经验；增加厨位必须配备人手才能真正出餐。开门前直接选择左、中、右优先站位；已选位置不可重复安排。营业时，空闲帮厨仍会自动走到缺人的炉台支援。</p><div class="staff-roster">'+row('helper')+row('waiter')+(crew.helper2.hired?row('helper2'):'')+'</div>';
+   body='<h2>👩‍🍳 食堂伙伴</h2><p class="sheet-lead">'+(activeWorld(game)==='cloud'?'云港可在首枚星章后再聘一名跑堂，双跑堂各自认领一盘并行送餐、各计工资与经验；':'')+'每位帮厨按本人实际完成的订单获得经验；增加厨位必须配备人手才能真正出餐。开门前直接选择左、中、右优先站位；已选位置不可重复安排。营业时，空闲帮厨仍会自动走到缺人的炉台支援。</p><div class="staff-roster">'+row('helper')+row('waiter')+(crew.helper2.hired?row('helper2'):'')+(activeWorld(game)==='cloud'?row('waiter2'):'')+'</div>';
  }else if(overlay==='settings'){
-  body=`<h2>⚙ 游戏设置</h2><p class="sheet-lead">ODDPOT · v0.15.0-alpha.5 · 单机本地存档</p>${b('guide-replay','重看第一轮引导','secondary')}${b('reset','重置存档，从第 1 天重新开始','danger')}<p class="sheet-lead">切到后台时营业会自动暂停。更换设备不会同步存档。</p>`;
+  body=`<h2>⚙ 游戏设置</h2><p class="sheet-lead">ODDPOT · v0.15.0-alpha.6 · 单机本地存档</p>${b('guide-replay','重看第一轮引导','secondary')}${b('reset','重置存档，从第 1 天重新开始','danger')}<p class="sheet-lead">切到后台时营业会自动暂停。更换设备不会同步存档。</p>`;
  }else if(overlay==='details'){
   const r=game.report;body=r?`<h2>营业账本详情</h2><p class="sheet-lead">本日订单由真实食材库存、工位工作秒数和顾客等待事件计算。</p><div class="book-list">${Object.entries(r.byDish).map(([id,d])=>`<div class="detail-row">${RECIPES[id].emoji} ${RECIPES[id].name}：售出 ${d.count} 份 · 满意 ${Math.round(d.totalSat/d.count)}</div>`).join('')}<div class="detail-row">左厨位占用 ${r.congestion.WOK||0} 秒 / 右厨位 ${r.congestion.POT||0} 秒${r.congestion.CENTER!==undefined?' / 中厨位 '+r.congestion.CENTER+' 秒':''}</div><div class="detail-row">食材耗用估值 ${r.cost} · 宣传 ${r.finance?.marketingCost||0} · 工资 ${r.finance?.wage||0} · 招待支出 ${r.hospitalityCost||0} · 收入 ${r.revenue} · 经营利润 ${r.profit} · 现金净变动 ${r.finance?.cashChange??'旧版无记录'}</div></div>`:'';
  }
@@ -10135,7 +10185,7 @@ function action(act){
  if(act.startsWith('promo:')){note(chooseCampaign(game,act.slice(6))?'揽客方案已选好，将于开门时生效。':'该活动尚未解锁或不能更改。');return}
  if(act.startsWith('duty:')){const [,role,enabled]=act.split(':');note(setCrewDuty(game,role,enabled==='on')?'已调整今晚排班。':'排班未变化。');return}
  if(act.startsWith('promote:')){note(promoteCrew(game,act.slice(8))?'员工成功晋升！新形象立即可见，效率与新工资从下次营业起生效。':'经验不足、资金不足或暂不能晋升。');return}
- if(act.startsWith('hire:')){note(hireCrew(game,act.slice(5))?'伙伴加入食堂！':'金币不足或已经雇佣。');return}
+ if(act.startsWith('hire:')){note(hireCrew(game,act.slice(5))?'伙伴加入食堂！':'需要足够金币；云港第二跑堂需先取得当地首枚星章。');return}
  if(act==='field-bag'){if(game.phase==='field'&&game.field){releaseStick();overlay='field-bag';render()}return}
  if(act==='book'){bookTab='recipes';overlay='book';render();return}
  if(act==='stock'||act==='premium'||act==='settings'||act==='details'||act==='bento'){overlay=act;render();return}
@@ -10207,8 +10257,9 @@ app.addEventListener('click',e=>{
  const route=e.target.closest('[data-route]');if(route){const entered=enterField(game,route.dataset.route);if(entered)startActionField(game);if(entered){message='出发！';flashUntil=0;render()}else note('无法进入路线');return}
  const item=e.target.closest('[data-ingredient]');if(item){const id=item.dataset.ingredient;if(selectedIngredients.includes(id))selectedIngredients=selectedIngredients.filter(i=>i!==id);else if(selectedIngredients.length<3)selectedIngredients=[...selectedIngredients,id];else message='一锅最多放三种食材。';render();return}
  const tab=e.target.closest('[data-book-tab]');if(tab){bookTab=tab.dataset.bookTab==='guests'?'guests':'recipes';render();return}
+ const regionTab=e.target.closest('[data-book-region]');if(regionTab){bookRegion=['current','hearth','cloud','all'].includes(regionTab.dataset.bookRegion)?regionTab.dataset.bookRegion:'current';render();return}
  const typeTab=e.target.closest('[data-recipe-type]');if(typeTab){recipeType=typeTab.dataset.recipeType;render();return}
- const book=e.target.closest('[data-book]');if(book){const r=RECIPES[book.dataset.book];if(!chapterRecipeAvailable(game,book.dataset.book)){note('这道菜只保存在图鉴中；当前世界没有稳定的食材来源。');return}selectedIngredients=[...r.ids];selectedMethod=r.method;overlay='';note(`已选择实验线索：${r.hint}`);return}
+ const book=e.target.closest('[data-book]');if(book){const id=book.dataset.book,r=RECIPES[id],access=recipeResearchAccess(game,id);if(!r)return;if(!access.ready){note(access.reason);return}selectedIngredients=[...r.ids];selectedMethod=r.method;if(beginLiveResearch(game,r.ids,access.type)){overlay='';note('已载入'+r.name+'，请亲自下料并掌握工艺。');}else note('研发条件已变化，请核对当前材料和厨具。');return}
  const special=e.target.closest('[data-premium-set]');if(special){const [id,n]=special.dataset.premiumSet.split(':');const ok=setPremiumMenu(game,id,Number(n));overlay=ok?'':overlay;note(ok?'已准备隐藏菜（只有合资格食客可能点单），真实稀有原料已预留。':'库存不足或菜谱尚未研发。');return}
  const clear=e.target.closest('[data-premium-clear]');if(clear){if(setPremiumMenu(game,null)){overlay='';note('已撤下今晚的隐藏菜。')}return}
  const slot=e.target.closest('[data-edit-slot]');if(slot){overlay=`menu:${slot.dataset.editSlot}`;render();return}

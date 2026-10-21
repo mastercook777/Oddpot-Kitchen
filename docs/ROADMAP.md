@@ -18,6 +18,9 @@
 
 ## 二、现在的开发队列（从上往下推进）
 
+**当前玩家要求的 P0 直接开发单：v0.15-F（分支代码已实现，待 PR CI/合并）**：试玩发现图鉴直达研发失效、两世界炉台彩色立柱干扰视觉、云港缺服务员配置差异。已按 [先行规格](V0.15F_RESEARCH_ATLAS_CLOUD_DUAL_WAITERS_SPEC.md) 补地区/库存快速研发入口、扁平炭架美术减噪、云港星章后第二跑堂（独立招募/排班/成长/并行取盘/资金与订单），分支版本 `0.15.0-alpha.6`。**不得将此条写成 main 已发布或已验收**；仍需审查“已点研发不能二次开锅”、并行送餐不能重复成交、旧云港档与原店 roster 隔离，完成 Node/移动 Chrome/离线/Pages 分项核验。云港整体经济审计和 P3/P4 保持未完成。
+
+
 **P0 特色化切片已完成代码交付（v0.15.0-alpha.5）**：玩家要求蒸笼升级、云港专属经营素材与蒸笼探索武器，现 [v0.15-E](V0.15E_CLOUD_STEAMER_WEAPON_AND_ASSETS_SPEC.md) 和 [PR #88](https://github.com/mastercook777/Oddpot-Kitchen/pull/88) 已合并。STEAM Lv2 云港金币 95／真实厨位每单 -2s、近身云汽双目标脉冲／原地持续控场减速雾域、六角晶石桌及港口帆索吊货／叠层蒸笼单独 Canvas 素材；**528/528 Node 和 16/16 Actions 成功**。**待完成：Pages 本次实际发布独立核验、玩家 iPhone 美术/手感验收、P1 双章经济实证**。此次没有完成云港后续二星/三星、第二门或整体经济平衡。
 
 **即时 P0 Bug 修复已进入 main（v0.15.0-alpha.4）**：iPhone 云港蒸笼复盘把 `seal/vent` 误报为黄色且输出英文，实际 `steam_even` 品质 80 已正确生效。现已修复中文与有效/无效工艺反馈、蒸笼可达品质上限，并同步线上入口缓存键及离线包；[v0.15-C.1 交付](V0.15C1_STEAM_TECHNIQUE_RECAP_FIX.md)、[PR #87](https://github.com/mastercook777/Oddpot-Kitchen/pull/87) 已合并，**520/520 Node 与 16/16 PR CI 成功**。**本次 Pages 线上发布状态尚未独立核对、玩家 iPhone 复测待验收**；主线 P0 云港真机验收/P1 跨章回归与经济审计仍为活跃任务。
