@@ -15,6 +15,9 @@
 
 ## 当前阅读顺序（新代理不要从 v0.12 开始）
 
+**2026-10-21 用户新反馈的直接开发切片（v0.15-F，alpha.6 分支，待 CI/合并）**：图鉴要有本章/原店/云港/全部视图与可用库存一键进入真正料理研发；两个世界的四根彩色竖柱去除并重绘低矮烤架；云港首星后可再花当地金币聘第二跑堂，独立传菜、成长与工资。详见先行规格 [V0.15F](V0.15F_RESEARCH_ATLAS_CLOUD_DUAL_WAITERS_SPEC.md)，当前工作分支 `feature/v015f-cloud-service-recipe-shortcuts` 已提交代码，**尚未合并 main；测试、Pages 和 iPhone 主观验收均待查**。下一轮接手先确认 [PR/提交](https://github.com/mastercook777/Oddpot-Kitchen/branches) 及最新 `package.json`；不能沿用 alpha.5 的 528/528 声称 alpha.6 已通过。
+
+
 **最新特色化已实现（2026-10-21，alpha.5）**：用户要求补蒸笼付费升级、云港独立经营素材和第四探索武器。已按 [v0.15-E](V0.15E_CLOUD_STEAMER_WEAPON_AND_ASSETS_SPEC.md) / [PR #88](https://github.com/mastercook777/Oddpot-Kitchen/pull/88) 合并 `main`：STEAM 95币 Lv2/每单 -2 秒、云汽脉冲+原地减速雾域、独立帆索货吊/晶石六角桌/蒸笼和武器特效。528/528 Node 与16/16 PR Actions 通过；**Pages 发布和玩家 iPhone 视觉、控场手感均未由用户验收**。v0.15-B「蒸笼暂不对应探索武器」已过时；下一步仍是 P0 真机验收及 P1 双章经济审计。
 
 **最新补丁（已合并 main，待 Pages/玩家验收）**：[v0.15-C.1 蒸笼研发复盘反馈修复](V0.15C1_STEAM_TECHNIQUE_RECAP_FIX.md)，[PR #87](https://github.com/mastercook777/Oddpot-Kitchen/pull/87)。截图中 `seal / vent` 被误标黄是复盘漏识别动作，**实际出锅的云汽匀蒸品质 80 一直正确**。现在封笼/排汽中文显示、实际 +8/过早 -7 提示、蒸笼可达满分一致，`0.15.0-alpha.4` 已合并，520/520 Node 与 16/16 PR CI 通过、离线包同步；**Pages 线上实际发布与玩家 iPhone 复测另行确认**。下一任务仍是 P0 云港真机验收与 P1 双章经济审计。
