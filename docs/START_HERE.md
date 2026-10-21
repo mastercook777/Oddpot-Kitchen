@@ -15,6 +15,8 @@
 
 ## 当前阅读顺序（新代理不要从 v0.12 开始）
 
+**最新指令/未发布切片（2026-10-21）**：玩家要求云港蒸笼正式进入升级体系、探索成为与现有三武器区分的控场流派，同时必须有非换色的当地经营素材。先读 [v0.15-E 正式规格](V0.15E_CLOUD_STEAMER_WEAPON_AND_ASSETS_SPEC.md)；分支 `feature/v015e-cloud-steamer-identity` 正在实现 alpha.5，**尚不可把分支代码写成 main 已发布**，CI 和 iPhone 玩家视觉/手感验收待单列。旧版 [v0.15-B](V0.15B_THIRD_STAR_CLOUD_HARBOR_SPEC.md) 中「蒸笼暂不对应探索武器」的判断已被本次用户明确需求取代。
+
 **最新补丁（已合并 main，待 Pages/玩家验收）**：[v0.15-C.1 蒸笼研发复盘反馈修复](V0.15C1_STEAM_TECHNIQUE_RECAP_FIX.md)，[PR #87](https://github.com/mastercook777/Oddpot-Kitchen/pull/87)。截图中 `seal / vent` 被误标黄是复盘漏识别动作，**实际出锅的云汽匀蒸品质 80 一直正确**。现在封笼/排汽中文显示、实际 +8/过早 -7 提示、蒸笼可达满分一致，`0.15.0-alpha.4` 已合并，520/520 Node 与 16/16 PR CI 通过、离线包同步；**Pages 线上实际发布与玩家 iPhone 复测另行确认**。下一任务仍是 P0 云港真机验收与 P1 双章经济审计。
 
 

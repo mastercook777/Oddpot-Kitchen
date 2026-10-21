@@ -1,4 +1,4 @@
-<!doctype html><html lang="zh-CN"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1.0,maximum-scale=1.0,viewport-fit=cover,user-scalable=no"><meta name="apple-mobile-web-app-capable" content="yes"><meta name="theme-color" content="#1b3c2b"><title>怪味食堂 · v0.15.0-alpha.4 离线版</title><style>.ingredient-icon{display:inline-block;width:var(--ingredient-size,24px);height:var(--ingredient-size,24px);max-width:none;object-fit:contain;image-rendering:pixelated;vertical-align:-.24em;flex:none;pointer-events:none;user-select:none}
+<!doctype html><html lang="zh-CN"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1.0,maximum-scale=1.0,viewport-fit=cover,user-scalable=no"><meta name="apple-mobile-web-app-capable" content="yes"><meta name="theme-color" content="#1b3c2b"><title>怪味食堂 · v0.15.0-alpha.5 离线版</title><style>.ingredient-icon{display:inline-block;width:var(--ingredient-size,24px);height:var(--ingredient-size,24px);max-width:none;object-fit:contain;image-rendering:pixelated;vertical-align:-.24em;flex:none;pointer-events:none;user-select:none}
 .stock-line>span .ingredient-icon{margin-right:3px}.target-chip .ingredient-icon{vertical-align:middle}.book-icon .ingredient-icon{display:block}
 .v063-food-icon .ingredient-icon{width:1em;height:1em;vertical-align:top;filter:none}.v063-receipt-line .ingredient-icon{vertical-align:middle}
 .v063-food-picker button>span,.v063-drop>span{line-height:1}.v063-food-picker .ingredient-icon,.v063-drop .ingredient-icon{vertical-align:top}
@@ -4324,10 +4324,10 @@ function buyGrill(s){
  if(!grillAvailable(s)||!transact(s,'grill-fork-bundle','upgrade',{},-GRILL_COST))return false;
  s.kitchen.grillOwned=true;return true;
 }
-const COOKWARE_UPGRADE_COST={WOK:60,POT:75,GRILL:90};
+const COOKWARE_UPGRADE_COST={WOK:60,POT:75,GRILL:90,STEAM:95};
 function cookwareUpgradeCost(s,type){
  const k=ensureKitchen(s);
- return ['WOK','POT','GRILL'].includes(type)&&(type!=='GRILL'||k.grillOwned)&&k.mastery[type]<2?COOKWARE_UPGRADE_COST[type]:null;
+ return ['WOK','POT','GRILL','STEAM'].includes(type)&&(type!=='GRILL'||k.grillOwned)&&(type!=='STEAM'||activeWorld(s)==='cloud'&&k.steamerOwned)&&k.mastery[type]<2?COOKWARE_UPGRADE_COST[type]:null;
 }
 function buyCookwareUpgrade(s,type){
  if(s.phase!=='upgrade')return false;
@@ -4537,7 +4537,7 @@ const ECOLOGY_ZONES={
 // usable as a Lv1 expedition weapon, without changing the kitchen layout.
 function fieldWeaponChoices(s){
  const slots=ensureKitchen(s).slots;
- return ['WOK','POT',...(ensureKitchen(s).grillOwned?['GRILL']:[])].map(type=>{
+ return ['WOK','POT',...(ensureKitchen(s).grillOwned?['GRILL']:[]),...(activeWorld(s)==='cloud'&&ensureKitchen(s).steamerOwned?['STEAM']:[])].map(type=>{
   const installed=slots.map((slot,index)=>({...slot,index}))
    .filter(slot=>slot.type===type)
    .sort((a,b)=>b.level-a.level||a.index-b.index)[0];
@@ -4547,9 +4547,11 @@ function fieldWeaponChoices(s){
 }
 function selectedFieldWeaponType(s){
  if(s.selectedWeaponType==='GRILL'&&ensureKitchen(s).grillOwned)return 'GRILL';
+ if(s.selectedWeaponType==='STEAM'&&activeWorld(s)==='cloud'&&ensureKitchen(s).steamerOwned)return 'STEAM';
  if(s.selectedWeaponType==='WOK'||s.selectedWeaponType==='POT')return s.selectedWeaponType;
  const slot=Math.min(1,Math.max(0,Number(s.selectedWeaponSlot)||0));
- return ensureKitchen(s).slots[slot].type;
+ const type=ensureKitchen(s).slots[slot].type;
+ return type==='STEAM'&&!(activeWorld(s)==='cloud'&&ensureKitchen(s).steamerOwned)?'POT':type;
 }
 function fieldWeaponSnapshot(s){
  // New game UI selects a cookware TYPE, not one of two physical kitchen slots.
@@ -4557,7 +4559,7 @@ function fieldWeaponSnapshot(s){
  const type=selectedFieldWeaponType(s);
  const choice=fieldWeaponChoices(s).find(x=>x.type===type);
  return {slotIndex:choice.slotIndex,type,level:choice.level,source:choice.source,
-  attackId:type==='GRILL'?'fork_thrust':type==='WOK'?'wok_sweep':'pot_onion',skillId:type==='GRILL'?'fork_flame':type==='WOK'?'wok_guard':'pot_pressure'};
+  attackId:type==='STEAM'?'mist_pulse':type==='GRILL'?'fork_thrust':type==='WOK'?'wok_sweep':'pot_onion',skillId:type==='STEAM'?'mist_field':type==='GRILL'?'fork_flame':type==='WOK'?'wok_guard':'pot_pressure'};
 }
 function selectFieldWeapon(s,selection){
  if(s.phase!=='field'||s.field)return false;
@@ -5890,6 +5892,37 @@ function fieldAttackPose(f){
  const snap=Math.exp(-p*6),settle=Math.sin(p*Math.PI)*.25;
  return {x:fx.dx*(snap*2-settle),y:fx.dy*(snap*1.4-settle),angle:(snap-.2)*.9};
 }
+// v0.15-E: Cloud Harbor steamer is the short-radius area CONTROL choice.
+// Pure targeting and field timing are shared by the live engine and tests.
+const STEAM_COMBAT=Object.freeze({
+  pulseRange:[1.60,1.90],pulseCooldown:[.96,.78],pulseSlow:[.90,1.25],pulseTargets:2,
+  mistRadius:[1.90,2.15],mistDuration:[2.8,3.4],mistSlowTick:.24
+});
+const lvIndex=level=>level>1?1:0;
+const steamPulseStats=level=>({
+ range:STEAM_COMBAT.pulseRange[lvIndex(level)],cooldown:STEAM_COMBAT.pulseCooldown[lvIndex(level)],
+ slow:STEAM_COMBAT.pulseSlow[lvIndex(level)],targets:STEAM_COMBAT.pulseTargets
+});
+function steamPulseTargets(f,hasLineOfSight=()=>true){
+ const stats=steamPulseStats(f.weapon?.level),pos=f.pos;
+ return (f.enemies||[]).filter(e=>e.hp>0&&Math.hypot(e.x-pos.x,e.y-pos.y)<stats.range&&hasLineOfSight(pos,e))
+   .sort((a,b)=>Math.hypot(a.x-pos.x,a.y-pos.y)-Math.hypot(b.x-pos.x,b.y-pos.y)||String(a.id).localeCompare(String(b.id)))
+   .slice(0,stats.targets);
+}
+function startSteamMist(f){
+ const i=lvIndex(f.weapon?.level);
+ f.steamMist={x:f.pos.x,y:f.pos.y,radius:STEAM_COMBAT.mistRadius[i],ttl:STEAM_COMBAT.mistDuration[i],
+  duration:STEAM_COMBAT.mistDuration[i],level:f.weapon?.level||1};
+ return f.steamMist;
+}
+function steamMistContains(field,enemy){
+ return !!field&&field.ttl>0&&Math.hypot(enemy.x-field.x,enemy.y-field.y)<=field.radius;
+}
+function stepSteamMist(f,dt){
+ if(!f.steamMist)return;
+ f.steamMist.ttl=Math.max(0,f.steamMist.ttl-Math.max(0,dt));
+ if(!f.steamMist.ttl)f.steamMist=null;
+}
 // v0.4 real-time forest encounter. The underlying kitchen inventory remains
 // governed by engine.settleField; this file only mutates the expedition bag.
 const dist=(a,b)=>Math.hypot(a.x-b.x,a.y-b.y);
@@ -5905,7 +5938,7 @@ function startActionField(s){
  const f=s.field;if(!f||f.action)return false;
  f.action=true;f.pos={...(f.spawn||{x:4.5,y:9.4})};f.x=f.pos.x;f.y=f.pos.y;
  f.elapsed=0;f.harvestProgress=0;f.harvestNode=null;f.attackCd=0;f.skillCd??=0;f.damageCd=0;f.guardTime??=0;f.shieldCharge??=(f.weapon?.type==='WOK');f.shieldCooldown??=0;f.shieldFlash??=0;f.activeEvent=null;
- f.impactFx=[];f.combatJolt=0;f.skillOrigin=null;f.projectiles=[];f.playerProjectiles=[];f.attackFx=null;f.skillFx=0;f.hurtFx=0;f.hitFlash=0;f.hitShake=0;f.hitDir=null;f.popFx=[];f.facing={x:0,y:-1};f.moving=false;f.actionMessage='移动寻找食材。靠近目标会自动采集。';f.actionMessageTTL=4;
+ f.impactFx=[];f.combatJolt=0;f.skillOrigin=null;f.steamMist=null;f.projectiles=[];f.playerProjectiles=[];f.attackFx=null;f.skillFx=0;f.hurtFx=0;f.hitFlash=0;f.hitShake=0;f.hitDir=null;f.popFx=[];f.facing={x:0,y:-1};f.moving=false;f.actionMessage='移动寻找食材。靠近目标会自动采集。';f.actionMessageTTL=4;
  const profile=f.biome||{},mix=profile.enemyMix||[f.region==='spring'?'pepper':'chicken'];
  const risk=/risk/.test(f.route),wave=f.segmentIndex||1;
  // Encounter composition, count and spawn rotate with the run seed and zone,
@@ -6073,6 +6106,13 @@ function gather(f,n){
 }
 function useFieldSkill(s){
  const f=s.field;if(s.phase!=='field'||!f?.action||f.skillCd>0||f.finished||f.segmentStatus==='choice'||f.activeEvent)return false;
+ if(f.weapon?.type==='STEAM'){
+  startSteamMist(f);
+  f.skillCd=6.5;f.skillFx=.42;
+  f.skillOrigin={x:f.steamMist.x,y:f.steamMist.y,type:'STEAM'};
+  pushMsg(f,'☁️ 凝雾结界！在当前位置留下减速雾域，持续 '+f.steamMist.duration+' 秒。');
+  return true;
+ }
  if(f.weapon?.type==='GRILL'){
   const length=Math.hypot(f.facing?.x||0,f.facing?.y||0)||1;
   const facing={x:(f.facing?.x||0)/length,y:(f.facing?.y??-1)/length};
@@ -6118,7 +6158,7 @@ function resolveFieldEvent(s,choice){const f=s.field;if(f?.nodes?.some(n=>n.key=
 function stepActionField(s,axisX,axisY,dt){
  const f=s.field;if(s.phase!=='field'||!f?.action||f.finished||f.settled||f.activeEvent)return null;
  if(f.segmentStatus==='choice')return null;
- dt=clamp(Number(dt)||0,0,.06); f.elapsed+=dt;f.guardTime=Math.max(0,(f.guardTime||0)-dt);
+ dt=clamp(Number(dt)||0,0,.06); f.elapsed+=dt;stepSteamMist(f,dt);f.guardTime=Math.max(0,(f.guardTime||0)-dt);
  f.shieldFlash=Math.max(0,(f.shieldFlash||0)-dt);
  f.combatJolt=Math.max(0,(f.combatJolt||0)-dt);
  f.impactFx=(f.impactFx||[]).filter(x=>(x.ttl-=dt)>0);
@@ -6153,6 +6193,7 @@ function stepActionField(s,axisX,axisY,dt){
   const aiDt=stepFieldHit(f,e,dt,blocked);
   if(e.hp<=0)continue;
   e.cooldown-=dt;e.slowTime=Math.max(0,(e.slowTime||0)-dt);
+  if(steamMistContains(f.steamMist,e))e.slowTime=Math.max(e.slowTime||0,STEAM_COMBAT.mistSlowTick);
   if(aiDt<=0){e.moving=false;continue;}
   if(e.isBoss){stepMiniBoss(f,e,aiDt,{blocked,hurt:(amount,source,attacker)=>hurt(s,amount,source,attacker)});continue;}
   if(e.brainVersion==='0.11-B2'){stepEcologyEnemy(f,e,aiDt,engaged.has(e.id),{blocked,hurt:(amount,source,attacker)=>hurt(s,amount,source,attacker)});continue;}
@@ -6205,13 +6246,25 @@ function stepActionField(s,axisX,axisY,dt){
  for(const p of f.projectiles){p.x+=p.vx*dt;p.y+=p.vy*dt;p.life-=dt;if(dist(f.pos,p)<(p.windSheet?.38:.28)){p.life=0;hurt(s,1,p.source||'pepper',{x:p.ownerX??p.x,y:p.ownerY??p.y});if(p.windSheet){const speed=Math.hypot(p.vx,p.vy)||1,next={x:f.pos.x-p.vy/speed*.26*(p.side||1),y:f.pos.y+p.vx/speed*.26*(p.side||1)};if(!blocked(f,next,.18)){f.pos=next;f.x=next.x;f.y=next.y;}}}}f.projectiles=f.projectiles.filter(p=>p.life>0&&!blocked(f,p,0));
  advancePlayerProjectiles(s,dt);
  if(f.attackCd<=0){
-  const isPot=f.weapon?.type==='POT',isFork=f.weapon?.type==='GRILL',range=isPot?3.5:isFork?(f.weapon?.level>1?2.35:2.1):1.25;
+  const isPot=f.weapon?.type==='POT',isFork=f.weapon?.type==='GRILL',isSteam=f.weapon?.type==='STEAM';
+  const range=isPot?3.5:isFork?(f.weapon?.level>1?2.35:2.1):isSteam?steamPulseStats(f.weapon?.level).range:1.25;
   const target=f.enemies.filter(e=>e.hp>0&&dist(f.pos,e)<range&&clearLineOfFire(f,f.pos,e))
    .sort((a,b)=>dist(f.pos,a)-dist(f.pos,b))[0];
   if(target){
    const distance=Math.max(.001,dist(f.pos,target));
    f.facing={x:(target.x-f.pos.x)/distance,y:(target.y-f.pos.y)/distance};
-   if(isFork){
+   if(isSteam){
+    const stats=steamPulseStats(f.weapon?.level);
+    const victims=steamPulseTargets(f,(from,e)=>clearLineOfFire(f,from,e));
+    f.attackCd=stats.cooldown;
+    f.attackFx={ttl:.34,duration:.34,steamPulse:true,radius:stats.range,x:f.pos.x,y:f.pos.y};
+    // Circular, capped two-target mist damage with no positional knockback;
+    // unlike WOK (arc + guard), POT (projectile) or GRILL (thrust).
+    for(const enemy of victims){
+     damageEnemy(s,enemy,1,'steam_pulse');
+     if(enemy.hp>0)enemy.slowTime=Math.max(enemy.slowTime||0,stats.slow);
+    }
+   }else if(isFork){
     f.attackCd=f.weapon?.level>1?.72:.88;f.attackFx={ttl:.30,duration:.30,dx:f.facing.x,dy:f.facing.y,
      x:f.pos.x,y:f.pos.y,hitX:target.x,hitY:target.y,forkThrust:true};
     damageEnemy(s,target,1,'fork_thrust');
@@ -8328,6 +8381,160 @@ function drawForkFlameFx(c,f){
  }
  c.restore();
 }
+// v0.15-E: pixel-designed steamer silhouette plus smooth non-pixel mist FX.
+const pixel=(c,x,y,w,h,color)=>{c.fillStyle=color;c.fillRect(x,y,w,h);};
+function drawPixelSteamBasket(c,f,{layer='front'}={}){
+ const lv=f.weapon?.level||1;
+ c.save();c.translate(10,-8);
+ if(layer==='back'){
+  pixel(c,0,-5,3,12,'#426b76');pixel(c,3,-7,7,3,'#c5dfdb');
+  pixel(c,6,-12,2,6,'#c5dfdb');
+ }else{
+  pixel(c,-2,0,24,5,'#594930');
+  pixel(c,0,-7,20,10,'#c79a65');
+  pixel(c,1,-7,18,2,'#edcf91');
+  for(let i=3;i<19;i+=4)pixel(c,i,-5,1,6,'#886a49');
+  pixel(c,-2,-11,24,5,'#9c7950');
+  pixel(c,0,-13,20,3,'#ebc991');
+  pixel(c,8,-16,5,4,'#c7e8dc');
+  pixel(c,10,-19,2,4,'#8bbeba');
+  pixel(c,18,-6,7,3,'#6e9da5');
+  if(lv>1){pixel(c,-6,-8,4,13,'#92d7d2');pixel(c,24,-8,4,13,'#92d7d2');
+    pixel(c,5,-17,11,2,'#e8efca');}
+ }
+ c.restore();
+}
+const ring=(c,x,y,r,color,line=0.07)=>{
+ c.beginPath();c.arc(x,y,r,0,Math.PI*2);c.strokeStyle=color;c.lineWidth=line;c.stroke();
+};
+function drawSteamMistField(c,f,t){
+ const mist=f.steamMist;
+ if(!mist||mist.ttl<=0)return;
+ const q=Math.min(1,mist.ttl/.48,(mist.duration-mist.ttl+.12)/.30);
+ c.save();c.globalAlpha=Math.max(0,q)*.55;
+ const fill=c.createRadialGradient(mist.x,mist.y,.1,mist.x,mist.y,mist.radius);
+ fill.addColorStop(0,'rgba(205,247,245,.47)');fill.addColorStop(.58,'rgba(144,221,223,.39)');
+ fill.addColorStop(1,'rgba(100,190,205,0)');
+ c.beginPath();c.arc(mist.x,mist.y,mist.radius,0,Math.PI*2);c.fillStyle=fill;c.fill();
+ ring(c,mist.x,mist.y,mist.radius*.94,'#b5f3ed',.065);
+ for(let i=0;i<8;i++){
+  const a=i*Math.PI/4+t*.42+(mist.level>1?.22:0);
+  const r=mist.radius*(.62+.07*Math.sin(t*1.8+i));
+  c.beginPath();c.ellipse(mist.x+Math.cos(a)*r,mist.y+Math.sin(a)*r,.20,.10,
+   a,0,Math.PI*2);c.fillStyle='#effff9';c.fill();
+ }
+ c.restore();
+}
+function drawSteamPulse(c,f){
+ const fx=f.attackFx;if(!(fx?.steamPulse&&fx.ttl>0))return;
+ const pct=1-fx.ttl/Math.max(.001,fx.duration);
+ const range=fx.radius||1.6;
+ c.save();c.globalAlpha=Math.max(0,.73*(1-pct));
+ ring(c,fx.x??f.pos.x,fx.y??f.pos.y,.35+range*.75*pct,'#c0f5e9',.095*(1-pct)+.015);
+ ring(c,fx.x??f.pos.x,fx.y??f.pos.y,.20+range*pct,'#fff5cf',.045*(1-pct)+.015);
+ c.restore();
+}
+// v0.15-E · unique procedural Cloud Harbor diner props, not a palette swap.
+// All geometry is visual only: the canonical dinerFloor still owns navigation.
+const poly=(c,pts,fill,stroke,width=2)=>{
+ c.beginPath();pts.forEach(([x,y],i)=>i?c.lineTo(x,y):c.moveTo(x,y));c.closePath();
+ c.fillStyle=fill;c.fill();if(stroke){c.strokeStyle=stroke;c.lineWidth=width;c.stroke();}
+};
+const round=(c,x,y,w,h,r,color,stroke)=>{
+ c.beginPath();c.roundRect(x,y,w,h,r);c.fillStyle=color;c.fill();
+ if(stroke){c.strokeStyle=stroke;c.lineWidth=2;c.stroke();}
+};
+const cable=(c,x,y,xx,yy,color='#7e9bad',width=2)=>{
+ c.beginPath();c.moveTo(x,y);c.lineTo(xx,yy);c.strokeStyle=color;c.lineWidth=width;c.stroke();
+};
+// Sailing cloth, pulleys and real port cargo take up upper-wall space;
+// this silhouette belongs only to Cloud, not the Hearth restaurant.
+function drawCloudPortProps(c,t,w,h){
+ const x=n=>n*w,y=n=>n*h;
+ c.save();
+ for(const [a,d,flip] of [[.10,.24,1],[.90,.24,-1]]){
+  cable(c,x(a),y(.005),x(a),y(.23),'#577485',3);
+  cable(c,x(a),y(.07),x(a+flip*.20),y(.115),'#46687b',2);
+  poly(c,[[x(a),y(.045)],[x(a+flip*.20),y(.107)],[x(a),y(.137)]],
+   '#f1deaa','#879fb0',1.8);
+  for(let i=0;i<3;i++)cable(c,x(a+flip*.027*i),y(.054+i*h*.0),x(a+flip*.027*i),y(.15),'#b4c4bc',.7);
+  round(c,x(a)-8,y(.20),16,14,3,'#546a70','#e3cb9b');
+  round(c,x(a)-4,y(.212),8,10,2,'#d8b876');
+ }
+ // Cargo pulley at the upper left; readable as freight equipment instead
+ // of Hearth's plant pots and mushroom lanterns.
+ cable(c,x(.23),y(.012),x(.23),y(.17),'#a0b4b4',3);
+ c.beginPath();c.arc(x(.23),y(.165),11,0,Math.PI*2);c.fillStyle='#536d79';c.fill();
+ c.strokeStyle='#f0d8a2';c.lineWidth=3;c.stroke();
+ cable(c,x(.23),y(.175),x(.23),y(.205),'#f0d8a2',2);
+ const cy=y(.218);
+ round(c,x(.23)-21,cy-7,42,23,3,'#9eaa90','#436475');
+ for(let j=-1;j<=1;j++)cable(c,x(.23)+j*13,cy-7,x(.23)+j*13,cy+16,'#d7b87b',2);
+ // Bundled sky herb packets in recessed cargo racks, not floating UI labels.
+ for(const [px,py] of [[.81,.205],[.82,.245]]){
+  round(c,x(px)-18,y(py)-8,36,19,3,'#5b7b84','#b6d3c6');
+  for(let i=0;i<3;i++){round(c,x(px)-13+i*10,y(py)-3,8,10,3,'#89bba5');}
+ }
+ c.restore();
+}
+function drawCloudCrystalTable(c,X,Y,side,t,index){
+ const half=side/2;
+ c.save();
+ // Suspended docks use hex-cut translucent stone, rope supports and stubby
+ // brass stools in positions compatible with canonical two-person seating.
+ for(const sign of [-1,1]){
+  const sx=X+sign*side*.77;
+  round(c,sx-9,Y-10,18,23,5,'#416876','#a5c6c6');
+  round(c,sx-8,Y-16,16,12,4,'#6ba9b6','#f0d9a7');
+  cable(c,sx,Y+12,sx,Y+19,'#e5ce93',2);
+ }
+ poly(c,[[X,Y-half-11],[X+half+6,Y-half*.52],[X+half+6,Y+half*.45],
+    [X,Y+half+13],[X-half-6,Y+half*.45],[X-half-6,Y-half*.52]],
+    '#3b6e81','#e8d9ad',3);
+ poly(c,[[X,Y-half-6],[X+half,Y-half*.43],[X+half,Y+half*.40],
+    [X,Y+half+6],[X-half,Y+half*.40],[X-half,Y-half*.43]],
+    '#91d0d2','#f7f0cd',2);
+ // A transparent crystal lattice and a moving specular glint are visibly
+ // different from the old square wooden tables.
+ c.globalAlpha=.52;poly(c,[[X,Y-half+1],[X+half*.71,Y],[X,Y+half*.76],[X-half*.7,Y]],
+  '#d8fcf1','#b8e3de',1);
+ c.globalAlpha=1;
+ cable(c,X-half*.7,Y,X+half*.7,Y,'#4b899b',1.2);
+ cable(c,X,Y-half*.55,X,Y+half*.55,'#4b899b',1.2);
+ c.beginPath();c.arc(X,Y,3.3,0,Math.PI*2);
+ c.fillStyle=index%2?'#ffdfa3':'#d5f6ee';c.fill();
+ const shine=X+Math.sin(t*.85+index)*half*.27;
+ c.beginPath();c.moveTo(shine-4,Y-half*.45);c.lineTo(shine,Y-half*.61);
+ c.strokeStyle='#ffffff86';c.lineWidth=2;c.stroke();
+ c.restore();
+}
+// A stacked bamboo steam basket, brass condenser and visible vent piping;
+// no shared Hearth round-pot graphic is reused.
+function drawCloudSteamerStation(c,X,Y,rw,t,busy,level=1){
+ c.save();
+ round(c,X-rw/2,Y-25,rw,51,7,'#3d6475','#e4d5a8');
+ round(c,X-rw*.43,Y-19,rw*.86,40,6,'#648d91','#a9d3c4');
+ const radius=Math.min(19,rw*.34),a=Y-7;
+ round(c,X-radius-3,a-17,2*radius+6,11,4,'#a47845','#ecd8a7');
+ round(c,X-radius-1,a-8,2*radius+2,17,5,'#d8b27b','#77563b');
+ for(let i=-2;i<=2;i++)cable(c,X+i*radius*.37,a-7,X+i*radius*.37,a+9,'#90663f',1.6);
+ // Two visible tiers and distinct vent cap give this cookware silhouette.
+ round(c,X-radius,a-19,radius*2,7,4,'#f0cf96','#96704d');
+ c.beginPath();c.ellipse(X,a-20,radius*.82,5,0,0,Math.PI*2);
+ c.fillStyle='#f5dfae';c.fill();
+ round(c,X-3,a-26,6,7,2,'#accbc9','#517c87');
+ round(c,X+radius-1,a-15,13,4,2,'#8bc7d0','#4c7a8a');
+ if(level>1){round(c,X-radius-7,a-13,5,18,2,'#84d7d1','#e6e6b1');
+  round(c,X+radius+10,a-18,5,16,2,'#84d7d1','#e6e6b1');}
+ if(busy){
+  for(let i=0;i<4;i++){
+   const lift=(t*.65+i*.23)%1;
+   c.beginPath();c.arc(X-11+i*7+Math.sin(t+i)*2,a-25-lift*19,
+    2.2+lift*2.5,0,Math.PI*2);c.fillStyle=`rgba(229,251,244,${.70*(1-lift)})`;c.fill();
+  }
+ }
+ c.restore();
+}
 // Lightweight procedural game graphics: original Canvas shapes, no art pack.
 const color={ink:'#24382a',leaf:'#386b43',soil:'#806044',stone:'#a6b392',cream:'#f4dfb0',gold:'#dfb873'};
 function rect(c,x,y,w,h,fill){c.fillStyle=fill;c.fillRect(x,y,w,h)}
@@ -8523,6 +8730,8 @@ function drawField(canvas,s,clock){const size=setCanvas(canvas);if(!size||!s.fie
  else if(fieldHybridArt)drawHybridFieldGround(c,f);
  else if(herbPixelArt)drawHerbPixelGround(c,f);
  else if(camera.expanded)drawExpandedLandscape(c,f,clock);else drawBiomeLandscape(c,f,clock);
+ // Mist is a real world-space persistent control area, behind actors.
+ if(f.steamMist?.ttl>0)drawSteamMistField(c,f,clock);
  // This faint route follows the REAL passable cells; artwork never fakes a blocked path.
  const goal=f.nodes.find(n=>n.key==='target'&&!n.claimed);
  if(goal&&!fieldSpriteArt){const trail=fieldTilePath(f,f.spawn||f.pos,goal,{avoidHazards:true});
@@ -8604,7 +8813,8 @@ function drawField(canvas,s,clock){const size=setCanvas(canvas);if(!size||!s.fie
  }
  if(smoothFx)for(const e of f.enemies||[])drawFieldDeath(c,e);
  // Attack swipe uses the *same* direction and trigger as combat hit detection.
- if(smoothFx&&f.weapon?.type!=='GRILL')drawFieldSwipe(c,f);
+ if(smoothFx&&!['GRILL','STEAM'].includes(f.weapon?.type))drawFieldSwipe(c,f);
+ if(f.weapon?.type==='STEAM')drawSteamPulse(c,f);
  if(f.weapon?.type==='GRILL')drawForkThrustFx(c,f);
  if(!smoothFx&&f.attackFx?.ttl>0&&!f.attackFx.pot&&f.weapon?.type!=='GRILL'){
   const fx=f.attackFx,progress=1-fx.ttl/fx.duration,angle=Math.atan2(fx.dy,fx.dx);
@@ -8616,24 +8826,26 @@ function drawField(canvas,s,clock){const size=setCanvas(canvas);if(!size||!s.fie
    c.strokeStyle='#fff9e0';c.lineWidth=.07;c.beginPath();c.arc(0,0,1.05,-.65+progress*.65,.30+progress*.65);c.stroke();}
   c.restore();
  }
- if(smoothFx){if(f.weapon?.type==='GRILL')drawForkFlameFx(c,f);else drawFieldSkillWave(c,f);drawFieldHitEffects(c,f);}
+ if(smoothFx){if(f.weapon?.type==='GRILL')drawForkFlameFx(c,f);else if(f.weapon?.type!=='STEAM')drawFieldSkillWave(c,f);drawFieldHitEffects(c,f);}
  if(!smoothFx&&f.weapon?.type==='GRILL')drawForkFlameFx(c,f);
- if(!smoothFx&&f.skillFx>0&&f.weapon?.type!=='GRILL'){c.save();c.strokeStyle=`rgba(255,231,151,${Math.min(.95,f.skillFx*2.4)})`;c.lineWidth=.12;c.beginPath();c.arc(f.pos.x,f.pos.y,(.42-f.skillFx)*3+.35,0,Math.PI*2);c.stroke();c.restore();}
+ if(!smoothFx&&f.skillFx>0&&!['GRILL','STEAM'].includes(f.weapon?.type)){c.save();c.strokeStyle=`rgba(255,231,151,${Math.min(.95,f.skillFx*2.4)})`;c.lineWidth=.12;c.beginPath();c.arc(f.pos.x,f.pos.y,(.42-f.skillFx)*3+.35,0,Math.PI*2);c.stroke();c.restore();}
  for(const e of f.enemies||[]){if(e.hurtFx>0&&e.hp>0&&!e.hitResponse){c.save();c.translate(e.x,e.y);c.scale(1/sc,1/sc);if(smoothFx)drawFieldImpact(c,0,-5,e.hurtFx/.36,8);else pixelImpact(c,0,-5,8);c.restore()}}
  for(const fx of f.popFx||[]){if(smoothFx&&fx.text==='💥'){drawFieldBurst(c,fx);continue;}if(smoothFx&&String(fx.text).startsWith('+'))drawFieldCollection(c,fx);c.save();c.translate(fx.x,fx.y-(.76-fx.ttl)*.5);c.scale(1/sc,1/sc);text(c,fx.text,0,-17,fx.color||'#fff1b1',12);c.restore()}
  c.save();c.translate(f.pos.x,f.pos.y);c.scale(1/sc,1/sc);
  const attackPose=fieldAttackPose(f);c.translate(attackPose.x,attackPose.y);
  const chefFace=(f.facing?.x||0)<-.15?-1:1;
- const isWok=f.weapon?.type==='WOK',isGrill=f.weapon?.type==='GRILL';
+ const isWok=f.weapon?.type==='WOK',isGrill=f.weapon?.type==='GRILL',isSteam=f.weapon?.type==='STEAM';
  const posture=isWok?fieldWokPose(f.facing,f.moving,clock,(f.guardTime||0)>0):null;
- const potPose=!isWok&&!isGrill?fieldPotPose(f.facing,f.moving,clock,!!(f.attackFx?.pot&&f.attackFx?.ttl>0)):null;
+ const potPose=!isWok&&!isGrill&&!isSteam?fieldPotPose(f.facing,f.moving,clock,!!(f.attackFx?.pot&&f.attackFx?.ttl>0)):null;
  if(isWok)drawPixelWok(c,posture,{layer:'back',level:f.weapon?.level});
+ else if(isSteam)drawPixelSteamBasket(c,f,{layer:'back'});
  else if(potPose)drawPixelPot(c,potPose,{layer:'back',level:f.weapon?.level});
  else drawPixelFork(c,f,{layer:'back'});
  // Exploration draws the equipped cookware separately; the generic actor attack
  // used to raise its hand and paint an obsolete utensil over all three weapons.
  chef(c,0,Math.sin(clock*9)*(f.moving?1.5:.35),clock,{scale:1.55,walk:f.moving,face:chefFace,hurt:f.hurtFx});
  if(isGrill)drawPixelFork(c,f,{layer:'front'});
+ if(isSteam)drawPixelSteamBasket(c,f,{layer:'front'});
  if(isWok)drawPixelWok(c,posture,{layer:'front',parry:(f.guardTime||0)>0,level:f.weapon?.level});
  else if(potPose)drawPixelPot(c,potPose,{layer:'front',level:f.weapon?.level});
  if((f.hitFlash||0)>0){
@@ -9095,7 +9307,7 @@ function drawRestaurantV075(c,s,t,w,h){
   if(stroke){c.strokeStyle=stroke;c.lineWidth=2;c.stroke();}
  };
  const cloud=s.activeWorld==='cloud';
- if(cloud)drawCloudRestaurantBackdrop(c,t,w,h);else rect(c,0,0,w,h,'#6f513b');
+ if(cloud){drawCloudRestaurantBackdrop(c,t,w,h);drawCloudPortProps(c,t,w,h);}else rect(c,0,0,w,h,'#6f513b');
  // Rich warm tile floor: one drawable scene rather than HTML furniture overlay.
  for(let row=0;!cloud&&row<Math.ceil(h/28);row++){
   rect(c,0,row*28,w,27,row%2?'#796045':'#72563e');
@@ -9112,7 +9324,9 @@ function drawRestaurantV075(c,s,t,w,h){
   const body=i===2?g.reservedStove:i?g.stoveRight:g.stoveLeft,pt=i===2?g.centre:i?g.right:g.left,slot=v?.kitchenSnapshot?.[i]||s.kitchen?.slots?.[i];
   const type=slot?.type||(i===1?'POT':'WOK'),busy=v?.stations?.[key];
   const X=x(body.x),Y=y(body.y),rw=Math.min(58,w*.168);
-  if(type==='GRILL'){
+  if(type==='STEAM'){
+   drawCloudSteamerStation(c,X,Y,rw,t,!!busy,slot?.level||1);
+  }else if(type==='GRILL'){
    // A top-down charcoal rack, not a round pot: raised legs, ember bed,
    // spaced grates, and two skewers laid crosswise over the coals.
    const gw=rw*.94,gh=24,gy=Y-17;
@@ -9173,6 +9387,8 @@ function drawRestaurantV075(c,s,t,w,h){
  // all correspond to the same canonical room coordinates, even after expansion.
  for(const [i,pt] of g.tables.entries()){
   const X=x(pt.x),Y=y(pt.y),side=Math.min(51,Math.max(39,w*.126)),half=side/2;
+  if(cloud)drawCloudCrystalTable(c,X,Y,side,t,i);
+  else{
   for(const sign of [-1,1]){
    rr(X+sign*side*.77-8,Y-10,16,24,4,'#4e372c','#a87d56');
    rr(X+sign*side*.77-7,Y-14,14,13,3,'#78573b','#bc9366');
@@ -9189,6 +9405,7 @@ function drawRestaurantV075(c,s,t,w,h){
    line(c,lampX,Y-half-28,lampX,Y-half-8,'#756d56',2);
    circle(c,lampX,Y-half-28,8,i===2?'#72a37f':'#86a6aa');
    circle(c,lampX,Y-half-30,3,'#c1e9a9');
+  }
   }
   if(v){
    // Plates remain on the ACTUAL table while visitors eat and review.
@@ -9537,7 +9754,7 @@ function overlayMarkup(){if(!overlay)return '';
    };
    body='<h2>👩‍🍳 食堂伙伴</h2><p class="sheet-lead">每位帮厨按本人实际完成的订单获得经验；增加厨位必须配备人手才能真正出餐。开门前直接选择左、中、右优先站位；已选位置不可重复安排。营业时，空闲帮厨仍会自动走到缺人的炉台支援。</p><div class="staff-roster">'+row('helper')+row('waiter')+(crew.helper2.hired?row('helper2'):'')+'</div>';
  }else if(overlay==='settings'){
-  body=`<h2>⚙ 游戏设置</h2><p class="sheet-lead">ODDPOT · v0.15.0-alpha.4 · 单机本地存档</p>${b('guide-replay','重看第一轮引导','secondary')}${b('reset','重置存档，从第 1 天重新开始','danger')}<p class="sheet-lead">切到后台时营业会自动暂停。更换设备不会同步存档。</p>`;
+  body=`<h2>⚙ 游戏设置</h2><p class="sheet-lead">ODDPOT · v0.15.0-alpha.5 · 单机本地存档</p>${b('guide-replay','重看第一轮引导','secondary')}${b('reset','重置存档，从第 1 天重新开始','danger')}<p class="sheet-lead">切到后台时营业会自动暂停。更换设备不会同步存档。</p>`;
  }else if(overlay==='details'){
   const r=game.report;body=r?`<h2>营业账本详情</h2><p class="sheet-lead">本日订单由真实食材库存、工位工作秒数和顾客等待事件计算。</p><div class="book-list">${Object.entries(r.byDish).map(([id,d])=>`<div class="detail-row">${RECIPES[id].emoji} ${RECIPES[id].name}：售出 ${d.count} 份 · 满意 ${Math.round(d.totalSat/d.count)}</div>`).join('')}<div class="detail-row">左厨位占用 ${r.congestion.WOK||0} 秒 / 右厨位 ${r.congestion.POT||0} 秒${r.congestion.CENTER!==undefined?' / 中厨位 '+r.congestion.CENTER+' 秒':''}</div><div class="detail-row">食材耗用估值 ${r.cost} · 宣传 ${r.finance?.marketingCost||0} · 工资 ${r.finance?.wage||0} · 招待支出 ${r.hospitalityCost||0} · 收入 ${r.revenue} · 经营利润 ${r.profit} · 现金净变动 ${r.finance?.cashChange??'旧版无记录'}</div></div>`:'';
  }
@@ -9556,12 +9773,12 @@ function restaurantView(interactive=false){
    </button>`;
  };
  const st=position=>{const job=v?.stations[position],slot=(v?.kitchenSnapshot||ensureKitchen(game).slots)[['WOK','POT','CENTER'].indexOf(position)],r=job?RECIPES[v.orders.find(o=>o.id===job.orderId)?.recipeId]:null;return `<button class="diner-station" data-station="${position}" ${interactive?'':'disabled'}><span class="station-object">${slot.type==='GRILL'?'🍢':slot.type==='WOK'?'🍳':'🍲'}</span><strong>${cookName(slot.type)} Lv.${slot.level}</strong><small>${r?`${r.emoji} ${job.left}s`:'待命'}</small></button>`};
- return `<div class="diner-world"><canvas id="diner-canvas" class="diner-canvas"></canvas><div class="diner-top"><div class="shop-sign">ODDPOT · 边境小食堂</div><div class="tiny-window">🌙</div></div><div class="diner-kitchen">${st('WOK')}<div class="cook-avatar"><span>👩‍🍳</span><small>主厨</small></div>${st('POT')}</div><div class="service-counter"><i></i>出餐柜台<i></i></div><div class="diner-tables">${table(0)}${table(1)}${v?.tableCount>=3?table(2):''}${v?.tableCount>=4?table(3):''}</div><div class="diner-floor"><span>🪴</span><span class="diner-entry">🚪<small>欢迎光临</small></span><span>🪴</span></div>${v?`<div class="scene-corner">已服务 ${v.orders.filter(o=>o.status==='served').length}/${v.orders.length}</div>`:''}${interactive&&v?.walkable?`<div id="diner-stick" class="diner-float-stick" aria-hidden="true"><div id="diner-stick-knob" class="diner-float-knob"></div></div><button id="diner-special" data-act="hero-special" class="diner-special" type="button" hidden aria-label="主动使用主厨技能"></button>`:''}</div>`;
+ return `<div class="diner-world"><canvas id="diner-canvas" class="diner-canvas"></canvas><div class="diner-top"><div class="shop-sign">ODDPOT · ${activeWorld(game)==='cloud'?'云港浮空食堂':'边境小食堂'}</div><div class="tiny-window">🌙</div></div><div class="diner-kitchen">${st('WOK')}<div class="cook-avatar"><span>👩‍🍳</span><small>主厨</small></div>${st('POT')}</div><div class="service-counter"><i></i>出餐柜台<i></i></div><div class="diner-tables">${table(0)}${table(1)}${v?.tableCount>=3?table(2):''}${v?.tableCount>=4?table(3):''}</div><div class="diner-floor"><span>🪴</span><span class="diner-entry">🚪<small>欢迎光临</small></span><span>🪴</span></div>${v?`<div class="scene-corner">已服务 ${v.orders.filter(o=>o.status==='served').length}/${v.orders.length}</div>`:''}${interactive&&v?.walkable?`<div id="diner-stick" class="diner-float-stick" aria-hidden="true"><div id="diner-stick-knob" class="diner-float-knob"></div></div><button id="diner-special" data-act="hero-special" class="diner-special" type="button" hidden aria-label="主动使用主厨技能"></button>`:''}</div>`;
 }
 function sceneTag(title,sub=''){return `<div class="scene-tag"><strong>${title}</strong>${sub?`<small>${sub}</small>`:''}</div>`}
 function starInvite(){
  const progress=ensureChapterProgress(game);
- if(activeWorld(game)==='cloud')return `<div class="v12-star-invite"><strong>☁ 云港浮岛 · ${game.cloudProgress?.stars?'首枚港口星章':'新章'}</strong><small>当地目标：探索带回食材，再向云港食客真实售出 6 份当地料理 · ${game.cloudProgress?.servedLocal||0}/6${game.cloudProgress?.stars?' ✓':''}。云汽蒸笼需在成长页购入。</small></div>`;
+ if(activeWorld(game)==='cloud')return `<div class="v12-star-invite"><strong>☁ 云港浮岛 · ${game.cloudProgress?.stars?'首枚港口星章':'新章'}</strong><small>当地目标：探索带回食材，再向云港食客真实售出 6 份当地料理 · ${game.cloudProgress?.servedLocal||0}/6${game.cloudProgress?.stars?' ✓':''}。云汽蒸笼可购入并升级，亦可作为探索控场武器。</small></div>`;
  if(progress.stars>=3)return `<div class="v12-star-invite"><strong>✦✦✦ 万味会宴完成</strong><small>云港浮岛已开放。可在预告或成长页进入传送门。</small></div>`;
  if(progress.stars===2){const active=thirdStarRequested(game),ready=thirdStarAvailable(game);
   return `<div class="v12-star-invite"><strong>✦✦ 万味会宴 · 第三星</strong><small>菌帽一家、芽角鹿客、幽灵鉴味师三席真实到店；至少两席满意完成、售出6单且利润不亏。${ready?'今晚可报名':'明天可再申请'}</small>${ready?`<button type="button" data-act="third-star-request" aria-pressed="${active}">${active?'已预约今晚 · 取消评鉴':'申请今晚会宴'}</button>`:''}</div>`;}
@@ -9632,7 +9849,7 @@ function field(){
    <div class="ux-field-label"><strong>探索区域</strong></div>
    <div class="region-tabs" role="group" aria-label="探索区域">${activeWorld(game)==='cloud'?'<button class="current" disabled>云港浮岛</button>':`<button data-region="forest" class="${selectedRegion==='forest'?'current':''}" aria-pressed="${selectedRegion==='forest'}">晨露森林</button><button data-region="spring" class="${selectedRegion==='spring'?'current':''}" aria-pressed="${selectedRegion==='spring'}">热泉峡谷</button>`}</div>
    <div class="ux-field-label"><strong>带一件厨具</strong></div>
-   <div class="v08-weapon-picks">${fieldWeaponChoices(game).map(({type,level,slotIndex,fitted})=>`<button class="v08-weapon-pick ${selectedFieldWeaponType(game)===type?'chosen':''}" data-weapon="${type}" aria-pressed="${selectedFieldWeaponType(game)===type}">${type==='GRILL'?'🍢 烤叉':type==='WOK'?'🛡️ 炒锅剑盾':'🍲 炖锅投弹'} · Lv${level}<small>${fitted?`${slotIndex===0?'左':slotIndex===1?'右':'中'}厨位装配`:'背包备用'} · ${type==='GRILL'?(level>1?'前刺 0.72 秒 · 喷焰 3.0 格':'前刺 0.88 秒 · 喷焰 2.7 格'):type==='WOK'?(level>1?'挥击 0.62 秒 · 格挡 0.70 秒':'挥击 0.70 秒 · 格挡 0.45 秒'):(level>1?'投弹 0.30 秒 · 爆炸半径 0.75 格':'投弹 0.38 秒 · 爆炸半径 0.65 格')}</small></button>`).join('')}</div>
+   <div class="v08-weapon-picks">${fieldWeaponChoices(game).map(({type,level,slotIndex,fitted})=>`<button class="v08-weapon-pick ${selectedFieldWeaponType(game)===type?'chosen':''}" data-weapon="${type}" aria-pressed="${selectedFieldWeaponType(game)===type}">${type==='STEAM'?'♨️ 蒸笼控场':type==='GRILL'?'🍢 烤叉':type==='WOK'?'🛡️ 炒锅剑盾':'🍲 炖锅投弹'} · Lv${level}<small>${fitted?`${slotIndex===0?'左':slotIndex===1?'右':'中'}厨位装配`:'背包备用'} · ${type==='STEAM'?(level>1?'云汽脉冲 1.9 格 · 减速雾域 3.4 秒':'云汽脉冲 1.6 格 · 减速雾域 2.8 秒'):type==='GRILL'?(level>1?'前刺 0.72 秒 · 喷焰 3.0 格':'前刺 0.88 秒 · 喷焰 2.7 格'):type==='WOK'?(level>1?'挥击 0.62 秒 · 格挡 0.70 秒':'挥击 0.70 秒 · 格挡 0.45 秒'):(level>1?'投弹 0.30 秒 · 爆炸半径 0.75 格':'投弹 0.38 秒 · 爆炸半径 0.65 格')}</small></button>`).join('')}</div>
    <div class="ux-field-label"><strong>选择路线出发</strong></div>
    <div class="route-options">${activeRoutes.map(r=>`<button class="route-card ${/risk/.test(r.id)?'route-risk':'route-safe'}" data-route="${r.id}"><span class="route-emoji" aria-hidden="true">${r.emoji}</span><div><strong>${r.name}</strong><small>${r.subtitle}${/risk/.test(r.id)&&activeWorld(game)!=='cloud'?` · 第三段挑战${bossHint(selectedRegion).boss}，为奖励留背包格`:''}</small></div><span class="route-risk-label">${/risk/.test(r.id)?'战斗':'采集'}</span><b aria-hidden="true">›</b></button>`).join('')}</div>
   </div></div>`,
@@ -9857,7 +10074,7 @@ function roomUpgradePanel(){
 }
 function upgrade(){
  const k=ensureKitchen(game);
- return [`<div class="scene-bg diner-bg">${restaurantView(false)}<div class="upgrade-card kitchen-upgrade-card"><h2>🏠 食堂又能长大一点</h2>${roomUpgradePanel()}<div class="v13a-bundle-panel" aria-label="第三厨位与第二帮厨组合扩建"><strong>${k.thirdUnlocked?`✓ 中央厨位与${crewRoleName(game,'helper2')}已到岗`:`🔥 后厨扩编 · 中央厨位＋${crewRoleName(game,'helper2')}`}</strong><small>${k.thirdUnlocked?'中央炉可独立接单；下一次备餐配置锅具、员工餐及两名帮厨的岗位。':`同时增加真实第三炉与帮厨${crewRoleName(game,'helper2')}；首星和第四桌后解锁。`}</small>${k.thirdUnlocked?'<span>已完成扩建</span>':b('third-kitchen-bundle','扩建＋雇佣 · '+THIRD_KITCHEN_BUNDLE_COST+' 金币','primary wide',!thirdKitchenBundleAvailable(game))}</div>${(activeWorld(game)==='cloud'?game.cloudProgress?.stars||0:game.chapterProgress?.stars||0)>=2?`<div class="v014b-grill-unlock"><strong>🍢 双面烤架与烤叉</strong><small>${k.grillOwned?'已拥有 · 备餐时任意厨位可装烤架，探索可选烤叉':'十道精选烤菜 · 任意厨位真实接单 · 探索新增穿刺武器'}</small>${k.grillOwned?'<span>已购入</span>':b('buy-grill','购入组合 · '+GRILL_COST+' 金币','secondary',!grillAvailable(game))}</div>`:''}<div class="upgrade-feature">📊 累计收入 ${(game.history||[]).reduce((n,x)=>n+x.revenue,0)} · 招待 ${(game.history||[]).reduce((n,x)=>n+x.served,0)} 位</div><h3 class="v014-upgrade-label">升级厨具</h3>${['WOK','POT',...(k.grillOwned?['GRILL']:[])].map(type=>{const level=k.mastery[type],cost=cookwareUpgradeCost(game,type),name=type==='WOK'?'炒锅':type==='POT'?'炖锅':'烤架';const gain=type==='WOK'?'挥击 0.70→0.62 秒 · 格挡 0.45→0.70 秒':type==='POT'?'投弹 0.38→0.30 秒 · 爆炸 0.65→0.75 格':'前刺 0.88→0.72 秒 · 喷焰 2.7→3.0 格';return `<div class="kitchen-upgrade-row"><div><strong>${name} · 全店共享 Lv.${level}</strong><small>${level>=2?'✓ 已生效 · 每单 -2 秒 · '+gain:'每单 -2 秒 · '+gain}</small></div>${b(`upgrade-kitchen:${type}`,cost===null?'已满级':`${cost} 金币升级`, 'secondary',cost===null||game.coins<cost)}</div>`}).join('')}<div class="upgrade-feature">🎒 背包 ${game.bagSlots||8}/12 格 · ${bagUpgradePrice(game)===null?'已满级':`扩容 ${bagUpgradePrice(game)} 金币`}</div>${b('upgrade-bag','增加背包 2 格','secondary',bagUpgradePrice(game)===null||game.coins<bagUpgradePrice(game))}<details class="v014-upgrade-notes"><summary>升级规则</summary><p>厨位决定产能，厨具等级全店共享。换装同类厨具不会重复收费。${game.tech?'猛火掌控已解锁':'赢得厨王赛后解锁猛火掌控'}。</p></details></div></div>`,
+ return [`<div class="scene-bg diner-bg">${restaurantView(false)}<div class="upgrade-card kitchen-upgrade-card"><h2>🏠 食堂又能长大一点</h2>${roomUpgradePanel()}<div class="v13a-bundle-panel" aria-label="第三厨位与第二帮厨组合扩建"><strong>${k.thirdUnlocked?`✓ 中央厨位与${crewRoleName(game,'helper2')}已到岗`:`🔥 后厨扩编 · 中央厨位＋${crewRoleName(game,'helper2')}`}</strong><small>${k.thirdUnlocked?'中央炉可独立接单；下一次备餐配置锅具、员工餐及两名帮厨的岗位。':`同时增加真实第三炉与帮厨${crewRoleName(game,'helper2')}；首星和第四桌后解锁。`}</small>${k.thirdUnlocked?'<span>已完成扩建</span>':b('third-kitchen-bundle','扩建＋雇佣 · '+THIRD_KITCHEN_BUNDLE_COST+' 金币','primary wide',!thirdKitchenBundleAvailable(game))}</div>${(activeWorld(game)==='cloud'?game.cloudProgress?.stars||0:game.chapterProgress?.stars||0)>=2?`<div class="v014b-grill-unlock"><strong>🍢 双面烤架与烤叉</strong><small>${k.grillOwned?'已拥有 · 备餐时任意厨位可装烤架，探索可选烤叉':'十道精选烤菜 · 任意厨位真实接单 · 探索新增穿刺武器'}</small>${k.grillOwned?'<span>已购入</span>':b('buy-grill','购入组合 · '+GRILL_COST+' 金币','secondary',!grillAvailable(game))}</div>`:''}<div class="upgrade-feature">📊 累计收入 ${(game.history||[]).reduce((n,x)=>n+x.revenue,0)} · 招待 ${(game.history||[]).reduce((n,x)=>n+x.served,0)} 位</div><h3 class="v014-upgrade-label">升级厨具</h3>${['WOK','POT',...(k.grillOwned?['GRILL']:[]),...(activeWorld(game)==='cloud'&&k.steamerOwned?['STEAM']:[])].map(type=>{const level=k.mastery[type],cost=cookwareUpgradeCost(game,type),name=type==='WOK'?'炒锅':type==='POT'?'炖锅':type==='STEAM'?'云汽蒸笼':'烤架';const gain=type==='WOK'?'挥击 0.70→0.62 秒 · 格挡 0.45→0.70 秒':type==='POT'?'投弹 0.38→0.30 秒 · 爆炸 0.65→0.75 格':type==='STEAM'?'云汽涌流 1.6→1.9 格 · 凝雾结界 2.8→3.4 秒':'前刺 0.88→0.72 秒 · 喷焰 2.7→3.0 格';return `<div class="kitchen-upgrade-row"><div><strong>${name} · 全店共享 Lv.${level}</strong><small>${level>=2?'✓ 已生效 · 每单 -2 秒 · '+gain:'每单 -2 秒 · '+gain}</small></div>${b(`upgrade-kitchen:${type}`,cost===null?'已满级':`${cost} 金币升级`, 'secondary',cost===null||game.coins<cost)}</div>`}).join('')}<div class="upgrade-feature">🎒 背包 ${game.bagSlots||8}/12 格 · ${bagUpgradePrice(game)===null?'已满级':`扩容 ${bagUpgradePrice(game)} 金币`}</div>${b('upgrade-bag','增加背包 2 格','secondary',bagUpgradePrice(game)===null||game.coins<bagUpgradePrice(game))}<details class="v014-upgrade-notes"><summary>升级规则</summary><p>厨位决定产能，厨具等级全店共享。换装同类厨具不会重复收费。${game.tech?'猛火掌控已解锁':'赢得厨王赛后解锁猛火掌控'}。</p></details></div></div>`,
  `<div class="action-row">${b('next-day','开始营业第 '+(totalBusinessDay(game)+1)+' 天','primary wide')}</div>`]
 }
 function render(){
@@ -9872,7 +10089,7 @@ function render(){
  const [stage,dock]=({forecast,field,research,menu,prep,service,report,upgrade}[game.phase])();
  app.innerHTML=shell(stage,dock);
  if(game.phase==='upgrade'&&portalAvailable(game))app.querySelector('.upgrade-card')?.insertAdjacentHTML('afterbegin',portalPanel());
- if(game.phase==='upgrade'&&activeWorld(game)==='cloud')app.querySelector('.upgrade-card')?.insertAdjacentHTML('afterbegin',`<section class="v014b-grill-unlock"><strong>♨️ 云汽蒸笼 · 云港特有厨具</strong><small>${game.cloudProgress?.explored?'使用深锅厨位，但通过封笼与排汽研发独立的蒸制菜谱。':'先完成一次云港探索并带回食材，才能向港口匠人订制。'}</small>${game.kitchen.steamerOwned?'<span>已购入</span>':b('buy-steamer','购入蒸笼 · '+STEAMER_COST+' 金币','secondary',!steamerAvailable(game))}</section>`);
+ if(game.phase==='upgrade'&&activeWorld(game)==='cloud')app.querySelector('.upgrade-card')?.insertAdjacentHTML('afterbegin',`<section class="v014b-grill-unlock"><strong>♨️ 云汽蒸笼 · 云港特有厨具</strong><small>${game.cloudProgress?.explored?'使用深锅厨位，但通过封笼与排汽研发独立的蒸制菜谱。':'先完成一次云港探索并带回食材，才能向港口匠人订制。'}</small>${game.kitchen.steamerOwned?'<span>已购入 · 探索可携带，成长页还可升至 Lv2</span>':b('buy-steamer','购入蒸笼 · '+STEAMER_COST+' 金币','secondary',!steamerAvailable(game))}</section>`);
  if(prevMarketingOpen&&game.phase==='prep')app.querySelector('.v014-marketing')?.setAttribute('open','');
  if(game.phase==='report'){
   const scene=app.querySelector('.report-scene');
@@ -10038,6 +10255,7 @@ function frame(now){const delta=Math.min(.045,(now-(lastFrame||now))/1000);lastF
    const timer=app.querySelector('#field-clock');if(timer)timer.textContent=(f.segmentIndex||1)+'/3 · '+Math.floor(f.elapsed)+'s';const bento=app.querySelector('#v063-bento-effect');if(bento&&f.bento)bento.textContent=f.bento.used?'已触发':'待触发';
    const skill=app.querySelector('[data-act="skill"]');const cooldown=app.querySelector('#skill-cooldown');if(skill){skill.disabled=f.skillCd>0;skill.style.setProperty('--cooldown',(f.skillCd/6.5*100).toFixed(2)+'%');if(cooldown){cooldown.hidden=f.skillCd<=0;cooldown.textContent=f.skillCd>0?Math.ceil(f.skillCd)+'s':'';}}
    const shieldStatus=app.querySelector('#v082-shield-status');if(shieldStatus){
+    shieldStatus.hidden=f.weapon?.type!=='WOK';
     shieldStatus.textContent=f.shieldCharge!==false?'🛡 防御就绪':'🛡 蓄能 '+Math.ceil(f.shieldCooldown||0)+'s';
     shieldStatus.classList.toggle('charging',f.shieldCharge===false);
    }

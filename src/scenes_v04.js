@@ -6,6 +6,8 @@ import {isHybridFieldArt,drawHybridFieldGround,drawHybridFieldObstacle,drawHybri
 import {drawFieldImpact,drawFieldProjectile,drawFieldSwipe,drawFieldSkillWave,drawFieldBurst,drawFieldCollection,drawFieldDeath,drawFieldActorIndicators,drawFieldNodeMarkers} from './field_effects_v011e2.js?v=0.12.0-alpha.1';
 import {fieldWokPose,fieldPotPose} from './field_pose_v083.js?v=0.8.5';
 import {drawPixelWok,drawPixelPot,drawPixelFork,drawForkThrustFx,drawForkFlameFx} from './field_cookware_v014c.js?v=0.14.0-alpha.5';
+import {drawPixelSteamBasket,drawSteamMistField,drawSteamPulse} from './field_steam_visuals_v015e.js?v=0.15.0-alpha.5';
+import {drawCloudPortProps,drawCloudCrystalTable,drawCloudSteamerStation} from './cloud_diner_assets_v015e.js?v=0.15.0-alpha.5';
 import {hazardPhase,fieldTilePath} from './field_rules_v011a.js';
 import {fieldCamera} from './field_camera_v011b1.js';
 import {drawExpandedLandscape,drawExpandedObstacle} from './field_world_render_v011b1.js';
@@ -214,6 +216,8 @@ export function drawField(canvas,s,clock){const size=setCanvas(canvas);if(!size|
  else if(fieldHybridArt)drawHybridFieldGround(c,f);
  else if(herbPixelArt)drawHerbPixelGround(c,f);
  else if(camera.expanded)drawExpandedLandscape(c,f,clock);else drawBiomeLandscape(c,f,clock);
+ // Mist is a real world-space persistent control area, behind actors.
+ if(f.steamMist?.ttl>0)drawSteamMistField(c,f,clock);
  // This faint route follows the REAL passable cells; artwork never fakes a blocked path.
  const goal=f.nodes.find(n=>n.key==='target'&&!n.claimed);
  if(goal&&!fieldSpriteArt){const trail=fieldTilePath(f,f.spawn||f.pos,goal,{avoidHazards:true});
@@ -295,7 +299,8 @@ export function drawField(canvas,s,clock){const size=setCanvas(canvas);if(!size|
  }
  if(smoothFx)for(const e of f.enemies||[])drawFieldDeath(c,e);
  // Attack swipe uses the *same* direction and trigger as combat hit detection.
- if(smoothFx&&f.weapon?.type!=='GRILL')drawFieldSwipe(c,f);
+ if(smoothFx&&!['GRILL','STEAM'].includes(f.weapon?.type))drawFieldSwipe(c,f);
+ if(f.weapon?.type==='STEAM')drawSteamPulse(c,f);
  if(f.weapon?.type==='GRILL')drawForkThrustFx(c,f);
  if(!smoothFx&&f.attackFx?.ttl>0&&!f.attackFx.pot&&f.weapon?.type!=='GRILL'){
   const fx=f.attackFx,progress=1-fx.ttl/fx.duration,angle=Math.atan2(fx.dy,fx.dx);
@@ -307,24 +312,26 @@ export function drawField(canvas,s,clock){const size=setCanvas(canvas);if(!size|
    c.strokeStyle='#fff9e0';c.lineWidth=.07;c.beginPath();c.arc(0,0,1.05,-.65+progress*.65,.30+progress*.65);c.stroke();}
   c.restore();
  }
- if(smoothFx){if(f.weapon?.type==='GRILL')drawForkFlameFx(c,f);else drawFieldSkillWave(c,f);drawFieldHitEffects(c,f);}
+ if(smoothFx){if(f.weapon?.type==='GRILL')drawForkFlameFx(c,f);else if(f.weapon?.type!=='STEAM')drawFieldSkillWave(c,f);drawFieldHitEffects(c,f);}
  if(!smoothFx&&f.weapon?.type==='GRILL')drawForkFlameFx(c,f);
- if(!smoothFx&&f.skillFx>0&&f.weapon?.type!=='GRILL'){c.save();c.strokeStyle=`rgba(255,231,151,${Math.min(.95,f.skillFx*2.4)})`;c.lineWidth=.12;c.beginPath();c.arc(f.pos.x,f.pos.y,(.42-f.skillFx)*3+.35,0,Math.PI*2);c.stroke();c.restore();}
+ if(!smoothFx&&f.skillFx>0&&!['GRILL','STEAM'].includes(f.weapon?.type)){c.save();c.strokeStyle=`rgba(255,231,151,${Math.min(.95,f.skillFx*2.4)})`;c.lineWidth=.12;c.beginPath();c.arc(f.pos.x,f.pos.y,(.42-f.skillFx)*3+.35,0,Math.PI*2);c.stroke();c.restore();}
  for(const e of f.enemies||[]){if(e.hurtFx>0&&e.hp>0&&!e.hitResponse){c.save();c.translate(e.x,e.y);c.scale(1/sc,1/sc);if(smoothFx)drawFieldImpact(c,0,-5,e.hurtFx/.36,8);else pixelImpact(c,0,-5,8);c.restore()}}
  for(const fx of f.popFx||[]){if(smoothFx&&fx.text==='💥'){drawFieldBurst(c,fx);continue;}if(smoothFx&&String(fx.text).startsWith('+'))drawFieldCollection(c,fx);c.save();c.translate(fx.x,fx.y-(.76-fx.ttl)*.5);c.scale(1/sc,1/sc);text(c,fx.text,0,-17,fx.color||'#fff1b1',12);c.restore()}
  c.save();c.translate(f.pos.x,f.pos.y);c.scale(1/sc,1/sc);
  const attackPose=fieldAttackPose(f);c.translate(attackPose.x,attackPose.y);
  const chefFace=(f.facing?.x||0)<-.15?-1:1;
- const isWok=f.weapon?.type==='WOK',isGrill=f.weapon?.type==='GRILL';
+ const isWok=f.weapon?.type==='WOK',isGrill=f.weapon?.type==='GRILL',isSteam=f.weapon?.type==='STEAM';
  const posture=isWok?fieldWokPose(f.facing,f.moving,clock,(f.guardTime||0)>0):null;
- const potPose=!isWok&&!isGrill?fieldPotPose(f.facing,f.moving,clock,!!(f.attackFx?.pot&&f.attackFx?.ttl>0)):null;
+ const potPose=!isWok&&!isGrill&&!isSteam?fieldPotPose(f.facing,f.moving,clock,!!(f.attackFx?.pot&&f.attackFx?.ttl>0)):null;
  if(isWok)drawPixelWok(c,posture,{layer:'back',level:f.weapon?.level});
+ else if(isSteam)drawPixelSteamBasket(c,f,{layer:'back'});
  else if(potPose)drawPixelPot(c,potPose,{layer:'back',level:f.weapon?.level});
  else drawPixelFork(c,f,{layer:'back'});
  // Exploration draws the equipped cookware separately; the generic actor attack
  // used to raise its hand and paint an obsolete utensil over all three weapons.
  chef(c,0,Math.sin(clock*9)*(f.moving?1.5:.35),clock,{scale:1.55,walk:f.moving,face:chefFace,hurt:f.hurtFx});
  if(isGrill)drawPixelFork(c,f,{layer:'front'});
+ if(isSteam)drawPixelSteamBasket(c,f,{layer:'front'});
  if(isWok)drawPixelWok(c,posture,{layer:'front',parry:(f.guardTime||0)>0,level:f.weapon?.level});
  else if(potPose)drawPixelPot(c,potPose,{layer:'front',level:f.weapon?.level});
  if((f.hitFlash||0)>0){
@@ -786,7 +793,7 @@ function drawRestaurantV075(c,s,t,w,h){
   if(stroke){c.strokeStyle=stroke;c.lineWidth=2;c.stroke();}
  };
  const cloud=s.activeWorld==='cloud';
- if(cloud)drawCloudRestaurantBackdrop(c,t,w,h);else rect(c,0,0,w,h,'#6f513b');
+ if(cloud){drawCloudRestaurantBackdrop(c,t,w,h);drawCloudPortProps(c,t,w,h);}else rect(c,0,0,w,h,'#6f513b');
  // Rich warm tile floor: one drawable scene rather than HTML furniture overlay.
  for(let row=0;!cloud&&row<Math.ceil(h/28);row++){
   rect(c,0,row*28,w,27,row%2?'#796045':'#72563e');
@@ -803,7 +810,9 @@ function drawRestaurantV075(c,s,t,w,h){
   const body=i===2?g.reservedStove:i?g.stoveRight:g.stoveLeft,pt=i===2?g.centre:i?g.right:g.left,slot=v?.kitchenSnapshot?.[i]||s.kitchen?.slots?.[i];
   const type=slot?.type||(i===1?'POT':'WOK'),busy=v?.stations?.[key];
   const X=x(body.x),Y=y(body.y),rw=Math.min(58,w*.168);
-  if(type==='GRILL'){
+  if(type==='STEAM'){
+   drawCloudSteamerStation(c,X,Y,rw,t,!!busy,slot?.level||1);
+  }else if(type==='GRILL'){
    // A top-down charcoal rack, not a round pot: raised legs, ember bed,
    // spaced grates, and two skewers laid crosswise over the coals.
    const gw=rw*.94,gh=24,gy=Y-17;
@@ -864,6 +873,8 @@ function drawRestaurantV075(c,s,t,w,h){
  // all correspond to the same canonical room coordinates, even after expansion.
  for(const [i,pt] of g.tables.entries()){
   const X=x(pt.x),Y=y(pt.y),side=Math.min(51,Math.max(39,w*.126)),half=side/2;
+  if(cloud)drawCloudCrystalTable(c,X,Y,side,t,i);
+  else{
   for(const sign of [-1,1]){
    rr(X+sign*side*.77-8,Y-10,16,24,4,'#4e372c','#a87d56');
    rr(X+sign*side*.77-7,Y-14,14,13,3,'#78573b','#bc9366');
@@ -880,6 +891,7 @@ function drawRestaurantV075(c,s,t,w,h){
    line(c,lampX,Y-half-28,lampX,Y-half-8,'#756d56',2);
    circle(c,lampX,Y-half-28,8,i===2?'#72a37f':'#86a6aa');
    circle(c,lampX,Y-half-30,3,'#c1e9a9');
+  }
   }
   if(v){
    // Plates remain on the ACTUAL table while visitors eat and review.

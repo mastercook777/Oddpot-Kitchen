@@ -93,7 +93,8 @@ test('v0.13-B busy helper never abandons an active order, and pre-opening prefer
 test('all owned cookware types share mastery, including GRILL, and crew can roam',()=>{
  const app=readFileSync(new URL('../src/app.js',import.meta.url),'utf8');
  const scene=readFileSync(new URL('../src/scenes_v04.js',import.meta.url),'utf8');
- assert.match(app,/\['WOK','POT',\.\.\.\(k\.grillOwned\?\['GRILL'\]:\[\]\)\]\.map\(type=>/);
+ assert.match(app,/k\.grillOwned\?\['GRILL'\]:\[\]/);
+ assert.match(app,/activeWorld\(game\)==='cloud'&&k\.steamerOwned\?\['STEAM'\]:\[\]/);
  assert.match(app,/全店共享 Lv/);
  assert.doesNotMatch(app,/互换/);
  assert.match(app,/aria-pressed/);

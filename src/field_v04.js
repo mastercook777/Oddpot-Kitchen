@@ -4,9 +4,10 @@ import {stepMiniBoss,stepBossZones} from './field_bosses_v011g.js';
 // v0.4 real-time forest encounter. The underlying kitchen inventory remains
 // governed by engine.settleField; this file only mutates the expedition bag.
 import {ING} from './data.js?v=0.15.0-alpha.3';
+import {steamPulseStats,steamPulseTargets,startSteamMist,steamMistContains,stepSteamMist,STEAM_COMBAT} from './field_steam_v015e.js?v=0.15.0-alpha.5';
 import {fieldHarvestTargetSuffix} from './field_target_v012f.js?v=0.13.0-alpha.9';
 import {meleeProfile,meleeAttackWouldHit} from './field_combat_feedback_v084.js?v=0.8.4';
-import {clamp, rand, settleField,addFieldBag,resolveSpecialFieldEvent} from './engine.js?v=0.15.0-alpha.3';
+import {clamp, rand, settleField,addFieldBag,resolveSpecialFieldEvent} from './engine.js?v=0.15.0-alpha.5';
 import {hazardPhase} from './field_rules_v011a.js';
 import {fieldEnemySpawnCandidates} from './field_world_v011b1.js';
 const dist=(a,b)=>Math.hypot(a.x-b.x,a.y-b.y);
@@ -22,7 +23,7 @@ export function startActionField(s){
  const f=s.field;if(!f||f.action)return false;
  f.action=true;f.pos={...(f.spawn||{x:4.5,y:9.4})};f.x=f.pos.x;f.y=f.pos.y;
  f.elapsed=0;f.harvestProgress=0;f.harvestNode=null;f.attackCd=0;f.skillCd??=0;f.damageCd=0;f.guardTime??=0;f.shieldCharge??=(f.weapon?.type==='WOK');f.shieldCooldown??=0;f.shieldFlash??=0;f.activeEvent=null;
- f.impactFx=[];f.combatJolt=0;f.skillOrigin=null;f.projectiles=[];f.playerProjectiles=[];f.attackFx=null;f.skillFx=0;f.hurtFx=0;f.hitFlash=0;f.hitShake=0;f.hitDir=null;f.popFx=[];f.facing={x:0,y:-1};f.moving=false;f.actionMessage='移动寻找食材。靠近目标会自动采集。';f.actionMessageTTL=4;
+ f.impactFx=[];f.combatJolt=0;f.skillOrigin=null;f.steamMist=null;f.projectiles=[];f.playerProjectiles=[];f.attackFx=null;f.skillFx=0;f.hurtFx=0;f.hitFlash=0;f.hitShake=0;f.hitDir=null;f.popFx=[];f.facing={x:0,y:-1};f.moving=false;f.actionMessage='移动寻找食材。靠近目标会自动采集。';f.actionMessageTTL=4;
  const profile=f.biome||{},mix=profile.enemyMix||[f.region==='spring'?'pepper':'chicken'];
  const risk=/risk/.test(f.route),wave=f.segmentIndex||1;
  // Encounter composition, count and spawn rotate with the run seed and zone,
@@ -190,6 +191,13 @@ function gather(f,n){
 }
 export function useFieldSkill(s){
  const f=s.field;if(s.phase!=='field'||!f?.action||f.skillCd>0||f.finished||f.segmentStatus==='choice'||f.activeEvent)return false;
+ if(f.weapon?.type==='STEAM'){
+  startSteamMist(f);
+  f.skillCd=6.5;f.skillFx=.42;
+  f.skillOrigin={x:f.steamMist.x,y:f.steamMist.y,type:'STEAM'};
+  pushMsg(f,'☁️ 凝雾结界！在当前位置留下减速雾域，持续 '+f.steamMist.duration+' 秒。');
+  return true;
+ }
  if(f.weapon?.type==='GRILL'){
   const length=Math.hypot(f.facing?.x||0,f.facing?.y||0)||1;
   const facing={x:(f.facing?.x||0)/length,y:(f.facing?.y??-1)/length};
@@ -235,7 +243,7 @@ export function resolveFieldEvent(s,choice){const f=s.field;if(f?.nodes?.some(n=
 export function stepActionField(s,axisX,axisY,dt){
  const f=s.field;if(s.phase!=='field'||!f?.action||f.finished||f.settled||f.activeEvent)return null;
  if(f.segmentStatus==='choice')return null;
- dt=clamp(Number(dt)||0,0,.06); f.elapsed+=dt;f.guardTime=Math.max(0,(f.guardTime||0)-dt);
+ dt=clamp(Number(dt)||0,0,.06); f.elapsed+=dt;stepSteamMist(f,dt);f.guardTime=Math.max(0,(f.guardTime||0)-dt);
  f.shieldFlash=Math.max(0,(f.shieldFlash||0)-dt);
  f.combatJolt=Math.max(0,(f.combatJolt||0)-dt);
  f.impactFx=(f.impactFx||[]).filter(x=>(x.ttl-=dt)>0);
@@ -270,6 +278,7 @@ export function stepActionField(s,axisX,axisY,dt){
   const aiDt=stepFieldHit(f,e,dt,blocked);
   if(e.hp<=0)continue;
   e.cooldown-=dt;e.slowTime=Math.max(0,(e.slowTime||0)-dt);
+  if(steamMistContains(f.steamMist,e))e.slowTime=Math.max(e.slowTime||0,STEAM_COMBAT.mistSlowTick);
   if(aiDt<=0){e.moving=false;continue;}
   if(e.isBoss){stepMiniBoss(f,e,aiDt,{blocked,hurt:(amount,source,attacker)=>hurt(s,amount,source,attacker)});continue;}
   if(e.brainVersion==='0.11-B2'){stepEcologyEnemy(f,e,aiDt,engaged.has(e.id),{blocked,hurt:(amount,source,attacker)=>hurt(s,amount,source,attacker)});continue;}
@@ -322,13 +331,25 @@ export function stepActionField(s,axisX,axisY,dt){
  for(const p of f.projectiles){p.x+=p.vx*dt;p.y+=p.vy*dt;p.life-=dt;if(dist(f.pos,p)<(p.windSheet?.38:.28)){p.life=0;hurt(s,1,p.source||'pepper',{x:p.ownerX??p.x,y:p.ownerY??p.y});if(p.windSheet){const speed=Math.hypot(p.vx,p.vy)||1,next={x:f.pos.x-p.vy/speed*.26*(p.side||1),y:f.pos.y+p.vx/speed*.26*(p.side||1)};if(!blocked(f,next,.18)){f.pos=next;f.x=next.x;f.y=next.y;}}}}f.projectiles=f.projectiles.filter(p=>p.life>0&&!blocked(f,p,0));
  advancePlayerProjectiles(s,dt);
  if(f.attackCd<=0){
-  const isPot=f.weapon?.type==='POT',isFork=f.weapon?.type==='GRILL',range=isPot?3.5:isFork?(f.weapon?.level>1?2.35:2.1):1.25;
+  const isPot=f.weapon?.type==='POT',isFork=f.weapon?.type==='GRILL',isSteam=f.weapon?.type==='STEAM';
+  const range=isPot?3.5:isFork?(f.weapon?.level>1?2.35:2.1):isSteam?steamPulseStats(f.weapon?.level).range:1.25;
   const target=f.enemies.filter(e=>e.hp>0&&dist(f.pos,e)<range&&clearLineOfFire(f,f.pos,e))
    .sort((a,b)=>dist(f.pos,a)-dist(f.pos,b))[0];
   if(target){
    const distance=Math.max(.001,dist(f.pos,target));
    f.facing={x:(target.x-f.pos.x)/distance,y:(target.y-f.pos.y)/distance};
-   if(isFork){
+   if(isSteam){
+    const stats=steamPulseStats(f.weapon?.level);
+    const victims=steamPulseTargets(f,(from,e)=>clearLineOfFire(f,from,e));
+    f.attackCd=stats.cooldown;
+    f.attackFx={ttl:.34,duration:.34,steamPulse:true,radius:stats.range,x:f.pos.x,y:f.pos.y};
+    // Circular, capped two-target mist damage with no positional knockback;
+    // unlike WOK (arc + guard), POT (projectile) or GRILL (thrust).
+    for(const enemy of victims){
+     damageEnemy(s,enemy,1,'steam_pulse');
+     if(enemy.hp>0)enemy.slowTime=Math.max(enemy.slowTime||0,stats.slow);
+    }
+   }else if(isFork){
     f.attackCd=f.weapon?.level>1?.72:.88;f.attackFx={ttl:.30,duration:.30,dx:f.facing.x,dy:f.facing.y,
      x:f.pos.x,y:f.pos.y,hitX:target.x,hitY:target.y,forkThrust:true};
     damageEnemy(s,target,1,'fork_thrust');
