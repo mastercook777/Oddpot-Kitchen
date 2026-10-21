@@ -1,4 +1,4 @@
-<!doctype html><html lang="zh-CN"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1.0,maximum-scale=1.0,viewport-fit=cover,user-scalable=no"><meta name="apple-mobile-web-app-capable" content="yes"><meta name="theme-color" content="#1b3c2b"><title>怪味食堂 · v0.15.0-alpha.5 离线版</title><style>.ingredient-icon{display:inline-block;width:var(--ingredient-size,24px);height:var(--ingredient-size,24px);max-width:none;object-fit:contain;image-rendering:pixelated;vertical-align:-.24em;flex:none;pointer-events:none;user-select:none}
+<!doctype html><html lang="zh-CN"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1.0,maximum-scale=1.0,viewport-fit=cover,user-scalable=no"><meta name="apple-mobile-web-app-capable" content="yes"><meta name="theme-color" content="#1b3c2b"><title>怪味食堂 · v0.15.0-alpha.6 离线版</title><style>.ingredient-icon{display:inline-block;width:var(--ingredient-size,24px);height:var(--ingredient-size,24px);max-width:none;object-fit:contain;image-rendering:pixelated;vertical-align:-.24em;flex:none;pointer-events:none;user-select:none}
 .stock-line>span .ingredient-icon{margin-right:3px}.target-chip .ingredient-icon{vertical-align:middle}.book-icon .ingredient-icon{display:block}
 .v063-food-icon .ingredient-icon{width:1em;height:1em;vertical-align:top;filter:none}.v063-receipt-line .ingredient-icon{vertical-align:middle}
 .v063-food-picker button>span,.v063-drop>span{line-height:1}.v063-food-picker .ingredient-icon,.v063-drop .ingredient-icon{vertical-align:top}
@@ -1188,6 +1188,15 @@
 .v015-ferry small{line-height:1.45;color:#e0f0ed}.v015-ferry button{min-height:42px;border:1px solid #d9e5c4;border-radius:7px;background:#d9e5c4;color:#26465d;font-weight:700}.v015-ferry button:disabled{opacity:.45}
 .world-cloud .kitchen-choice{display:flex;flex-wrap:wrap;gap:4px}.world-cloud .kitchen-choice button{flex:1 1 42%;min-height:34px}
 @media(max-width:390px){.portal-picks{padding:5px;gap:3px}.portal-picks button{font-size:10px;min-height:28px!important}.v076-home .v12-star-invite:has(.portal-picks){padding:5px 8px}}
+
+/* v0.15-F: functional, compact atlas action states on 320px phones. */
+.v015-region-tabs{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:4px;margin:5px 0 8px}
+.v015-region-tabs button{min-width:0;padding:7px 2px;font-size:11px;white-space:nowrap}
+.v015-atlas-action{font-size:11px;flex-shrink:0;color:#c4c8c1}
+.v015-atlas-action.ready{font-weight:750;color:#2d8958}
+.v015-atlas-status{display:block;padding:3px 12px 7px;color:#b6bdaf;font-size:11px;line-height:1.35}
+.v015-atlas-status.ready{color:#9bd5ae}
+.v063-book-entry .book-item{min-height:48px}
 
 .v12-star-invite{
  display:flex;flex-direction:column;gap:4px;flex:0 0 auto;
