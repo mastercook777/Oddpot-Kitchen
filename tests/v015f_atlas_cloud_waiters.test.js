@@ -63,7 +63,7 @@ test('waiter2 is independently paid and gains only orders it actually served',()
  assert.equal(grew.earned.waiter,1);assert.equal(grew.earned.waiter2,1);
  assert.equal(s.crew.waiter.xp,1);assert.equal(s.crew.waiter2.xp,1);
  const ledger=[];const result=payroll(s,shift,(state,id,type,items,cost)=>{ledger.push({id,type,cost});state.coins+=cost;return true});
- assert.equal(result.roster.waiter2,11);assert.equal(result.wage,20);
+ assert.equal(result.roster.waiter2,11);assert.equal(result.roster.helper,10);assert.equal(result.wage,30,'existing Cloud helper salary remains payable alongside both runners');
  assert.equal(ledger.length,1);
 });
 test('one real plate is never claimed twice: two couriers parallelize distinct pickups',()=>{
