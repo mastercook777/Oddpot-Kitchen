@@ -11,4 +11,4 @@ export function newServiceHero(){
 }
 export function heroZone(h,s=null){return dinerSpot(h,s)}
 export function walkServiceHero(h,dx,dy,dt,s=null){return dinerWalk(h,dx,dy,dt,s)}
-export function waiterDeliveryPose(s,t){return dinerWaiterRoute(s,t)}
+export function waiterDeliveryPose(s,t,role='waiter'){return dinerWaiterRoute(s,t,role)}
