@@ -7,6 +7,7 @@ function r(c,x,y,w,h,col){c.fillStyle=col;c.fillRect(x|0,y|0,w|0,h|0)}
 export const CREW_APPEARANCES={
  cloud_helper:[{label:'云港见习帮厨',uniform:'风帆白厨帽 · 天青围裙',accent:'#84b6cc'},{label:'风帆厨师',uniform:'双层披肩 · 云纹胸针',accent:'#d7c88d'},{label:'航路掌勺',uniform:'高帆厨帽 · 金色风向徽',accent:'#f1d884'}],
  cloud_waiter:[{label:'云港跑堂',uniform:'轻羽帽 · 浅蓝背心',accent:'#80b3d2'},{label:'航船侍者',uniform:'羽纹肩带 · 银蓝围领',accent:'#a9d5dc'},{label:'港口引路人',uniform:'银羽高帽 · 灯塔胸针',accent:'#f2d883'}],
+ cloud_waiter2:[{label:'云港双线跑堂',uniform:'白帆短帽 · 银青快送披肩',accent:'#69ccc2'},{label:'快帆侍者',uniform:'双羽肩饰 · 青金传菜带',accent:'#b1ead7'},{label:'港口领航员',uniform:'双羽高帽 · 珠贝徽章',accent:'#f6daa0'}],
  cloud_helper2:[{label:'云港后厨',uniform:'浮云短衫 · 帆布袖口',accent:'#739cbc'},{label:'风炉匠人',uniform:'云纹披肩 · 铜色围裙',accent:'#d7b778'},{label:'星帆主厨',uniform:'羽帆高帽 · 天青纹章',accent:'#f0d587'}],
  helper2:[
   {label:'见习后厨',uniform:'炭蓝短衫 · 杏色厨帽',accent:'#527d85'},
@@ -72,7 +73,7 @@ function paintCrewRank(c,kind,level,arm){
  }
 }
 function person(c,kind,walk,attack,level=1){
- const p={chef:['#477a91','#e7d4a7','#7e4f37'],helper:['#d27a46','#f2d69a','#654730'],helper2:['#517d85','#ead2ae','#36595b'],waiter:['#708d62','#dfc18e','#466251'],cloud_helper:['#629fbc','#eff0d6','#4b6d85'],cloud_waiter:['#91b9d2','#f2e2b9','#557a99'],cloud_helper2:['#778fb6','#e7dfbd','#455d80'],adventurer:['#4d8a66','#c59d55','#5d4630'],family:['#d67872','#f0cf79','#8a5747'],regular:['#729aba','#9bc1ce','#6c5440'],critic:['#795777','#bb9abd','#362e48'],stargazer:['#41576e','#c3b67e','#7f5c91'],gardener:['#688947','#b6d27b','#465d37'],cloud_docker:['#66728b','#e1c27e','#46546c'],cloud_weaver:['#8c9cbb','#d7dbea','#5c728e']}[kind]||['#729aba','#9bc1ce','#6c5440'];
+ const p={chef:['#477a91','#e7d4a7','#7e4f37'],helper:['#d27a46','#f2d69a','#654730'],helper2:['#517d85','#ead2ae','#36595b'],waiter:['#708d62','#dfc18e','#466251'],cloud_helper:['#629fbc','#eff0d6','#4b6d85'],cloud_waiter:['#91b9d2','#f2e2b9','#557a99'],cloud_waiter2:['#4baba5','#f4e7c5','#2b7780'],cloud_helper2:['#778fb6','#e7dfbd','#455d80'],adventurer:['#4d8a66','#c59d55','#5d4630'],family:['#d67872','#f0cf79','#8a5747'],regular:['#729aba','#9bc1ce','#6c5440'],critic:['#795777','#bb9abd','#362e48'],stargazer:['#41576e','#c3b67e','#7f5c91'],gardener:['#688947','#b6d27b','#465d37'],cloud_docker:['#66728b','#e1c27e','#46546c'],cloud_weaver:['#8c9cbb','#d7dbea','#5c728e']}[kind]||['#729aba','#9bc1ce','#6c5440'];
  const step=walk?Math.round(Math.sin(walk*13)*2):0,arm=attack? -7:Math.round(Math.sin(walk*13+2)*1);
  // Shoes, alternating leg pixels, outlined torso/arms, expressive large face.
  r(c,3,18+step,5,5,P.outline);r(c,10,18-step,5,5,P.outline);
@@ -85,7 +86,7 @@ function person(c,kind,walk,attack,level=1){
  r(c,5,6,2,2,P.outline);r(c,12,6,2,2,P.outline);r(c,9,9,3,1,'#9d644f');
  if(kind==='chef'||kind==='helper'||kind==='helper2'||kind==='cloud_helper'||kind==='cloud_helper2'){
   r(c,2,1,15,4,P.outline);r(c,3,1,13,3,P.white);r(c,5,-4,9,6,P.outline);r(c,6,-4,7,5,P.white);r(c,8,-6,4,3,P.white);
- }else if(kind==='waiter'||kind==='cloud_waiter'){
+ }else if(kind==='waiter'||kind==='cloud_waiter'||kind==='cloud_waiter2'){
   r(c,2,0,14,3,'#466251');r(c,6,-2,7,3,'#ddc391');r(c,6,13,8,3,'#e9daa7');
  }else if(kind==='adventurer'){
   // Ironhorn dwarf: horned helmet, copper beard and heavy travel pack.
