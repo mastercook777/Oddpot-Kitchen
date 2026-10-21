@@ -1,7 +1,7 @@
 # 《怪味食堂》START_HERE · 新对话 / Codex / 开发接续入口
 
-> **最新核对：2026-10-21｜`main` 版本 `0.15.0-alpha.5`**  
-> **代码状态：v0.15.0-alpha.5 已合并 main；528/528 Node、16/16 PR CI 通过；Pages 线上实时版本无法独立核验，iPhone/Android 云港素材与蒸笼控场手感仍待玩家验收。**  
+> **最新核对：2026-10-21｜`main` 版本 `0.15.0-alpha.6`**  
+> **代码状态：v0.15.0-alpha.6 已合并 main；536/536 Node、16/16 PR CI 通过；Pages 当前实际线上版本无法独立核验，iPhone/Android 图鉴可用性、烤架视觉及云港双跑堂手感仍待玩家验收。**  
 > 仓库：https://github.com/mastercook777/Oddpot-Kitchen · [线上试玩](https://mastercook777.github.io/Oddpot-Kitchen/)  
 > 本文是**入口而非版本流水账**；具体已实装读 [PROJECT_STATE](PROJECT_STATE.md)，下一步优先级读 [ROADMAP](ROADMAP.md)。旧版设计与更新历史可从文档索引、Git 记录回溯。
 
@@ -15,7 +15,7 @@
 
 ## 当前阅读顺序（新代理不要从 v0.12 开始）
 
-**2026-10-21 用户新反馈的直接开发切片（v0.15-F，alpha.6 分支，待 CI/合并）**：图鉴要有本章/原店/云港/全部视图与可用库存一键进入真正料理研发；两个世界的四根彩色竖柱去除并重绘低矮烤架；云港首星后可再花当地金币聘第二跑堂，独立传菜、成长与工资。详见先行规格 [V0.15F](V0.15F_RESEARCH_ATLAS_CLOUD_DUAL_WAITERS_SPEC.md)，当前工作分支 `feature/v015f-cloud-service-recipe-shortcuts` 已提交代码，**尚未合并 main；测试、Pages 和 iPhone 主观验收均待查**。下一轮接手先确认 [PR/提交](https://github.com/mastercook777/Oddpot-Kitchen/branches) 及最新 `package.json`；不能沿用 alpha.5 的 528/528 声称 alpha.6 已通过。
+**最新玩法交付（2026-10-21，alpha.6）**：[v0.15-F 图鉴/烤架/双跑堂](V0.15F_RESEARCH_ATLAS_CLOUD_DUAL_WAITERS_SPEC.md)，[PR #89](https://github.com/mastercook777/Oddpot-Kitchen/pull/89) 已合并 `main`。图鉴按本章库存/厨具判断一键进入真实研发，地区筛选与旧世界图鉴只读边界保留；两世界去掉高彩竖柱并绘制低矮烤架；云港首枚当地星章后可付费聘第二跑堂「小澜」，两人独立传餐和计资历/工资。**536/536 Node、16/16 Actions 成功**，但 Pages 当前线上实时版和玩家真实手机观感/经营节奏**未验收**。下一步是手机验证这三项实际操作与双章经济审计，不能重新回到“只有一名云港跑堂”的旧设计。
 
 
 **最新特色化已实现（2026-10-21，alpha.5）**：用户要求补蒸笼付费升级、云港独立经营素材和第四探索武器。已按 [v0.15-E](V0.15E_CLOUD_STEAMER_WEAPON_AND_ASSETS_SPEC.md) / [PR #88](https://github.com/mastercook777/Oddpot-Kitchen/pull/88) 合并 `main`：STEAM 95币 Lv2/每单 -2 秒、云汽脉冲+原地减速雾域、独立帆索货吊/晶石六角桌/蒸笼和武器特效。528/528 Node 与16/16 PR Actions 通过；**Pages 发布和玩家 iPhone 视觉、控场手感均未由用户验收**。v0.15-B「蒸笼暂不对应探索武器」已过时；下一步仍是 P0 真机验收及 P1 双章经济审计。
@@ -49,6 +49,6 @@
 
 ## 发布基线与历史
 
-- `main`：**0.15.0-alpha.5**，v0.15-E 已合并；历史 v0.15-C 云港返工 [PR #84](https://github.com/mastercook777/Oddpot-Kitchen/pull/84) 和发布确认 [PR #85](https://github.com/mastercook777/Oddpot-Kitchen/pull/85)。这只是**最新核对时**的版本；每次任务重新读取 `package.json` 与提交。
+- `main`：**0.15.0-alpha.6**，v0.15-F 已合并；历史 v0.15-E 已合并；历史 v0.15-C 云港返工 [PR #84](https://github.com/mastercook777/Oddpot-Kitchen/pull/84) 和发布确认 [PR #85](https://github.com/mastercook777/Oddpot-Kitchen/pull/85)。这只是**最新核对时**的版本；每次任务重新读取 `package.json` 与提交。
 - v0.15-B 关于“携带原店员工并共享经验”“旧菜只靠缺料自然淘汰”的叙述**被 v0.15-C 覆盖**；不可重新实现旧规则。
 - 原文以逐版本追加的形式累积到 v0.12/v0.13/v0.14，容易让新对话选择过期方向。现改为短交接入口，原历史仍在 [Git 历史](https://github.com/mastercook777/Oddpot-Kitchen/commits/main/docs/START_HERE.md)，配套设计稿链接见 [ROADMAP 索引](ROADMAP.md#五版本与设计资料索引历史不是活跃待办)。
