@@ -3196,13 +3196,13 @@ function dinerWalk(hero,dx,dy,dt,s=null){
  if(hero.moving)hero.direction=Math.abs(dx)>Math.abs(dy)?dx<0?'left':'right':dy<0?'up':'down';
  return hero.moving;
 }
-function dinerWaiterRoute(s,simTime){
+function dinerWaiterRoute(s,simTime,role='waiter'){
  const v=s?.service,g=dinerFloor(s),home=g.pass;
- const moving=v?.orders?.find(o=>o.status==='delivering'&&Number.isFinite(o.deliveryAt));
+ const moving=v?.orders?.find(o=>o.status==='delivering'&&(o.deliveryRole||'waiter')===role&&Number.isFinite(o.deliveryAt));
  let target=null,progress=0,returning=false,plate=false;
  if(moving){target=moving.tableId;progress=clamp075((simTime-moving.deliveryAt)/3,0,1);plate=true}
  else {
-  const last=(v?.events||[]).slice().reverse().find(e=>e.type==='waiter_return'&&simTime-e.t>=0&&simTime-e.t<2);
+  const last=(v?.events||[]).slice().reverse().find(e=>e.type==='waiter_return'&&(e.role||'waiter')===role&&simTime-e.t>=0&&simTime-e.t<2);
   if(last){target=last.table;progress=1-clamp075((simTime-last.t)/2,0,1);returning=true}
  }
  if(target==null)return {...home,moving:false,plate:false};
