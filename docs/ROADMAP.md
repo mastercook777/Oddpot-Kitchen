@@ -1,6 +1,6 @@
 # 《怪味食堂》ROADMAP · 当前经营与章节开发路线
 
-> **更新：2026-10-20｜已合并代码基线：`main` / `0.15.0-alpha.4`**  
+> **更新：2026-10-21｜已合并代码基线：`main` / `0.15.0-alpha.5`**  
 > 这是**未来开发与待验收**的唯一活动路线图；实际已实现机制请查 [PROJECT_STATE](PROJECT_STATE.md)，新任务从 [START_HERE](START_HERE.md) 进入。历史版本的“待开发/当前版本”只适用于当时，不覆盖本页。  
 > **状态口径**：已实现（代码进入 main）／自动验证通过／待玩家真机验收／候选设计／已确认待实现／开发中／已验收，彼此不得混用。
 
@@ -14,11 +14,11 @@
 | 自动验证与发布 | [PR #84](https://github.com/mastercook777/Oddpot-Kitchen/pull/84) 已合并，[发布记录 #85](https://github.com/mastercook777/Oddpot-Kitchen/pull/85)；最后记录 515 项 Node、16/16 PR CI、Chrome 320/375/390 与离线入口通过，Pages 关键文件 HTTP 200 | **iPhone／Android 真机的浮岛辨识度、中文显示、帧率、触摸与经营感仍待玩家验收**；不能将 CI 绿灯写成用户验收 |
 | 经营经济分析 | [v0.14-F](V0.14F_P1_ECONOMY_RESULTS.md) 已在旧世界 alpha.5 做 9,408 个多日真实营业夜审计 | 审计没有证明真实探索战斗净收获，更**不等于**已量化 v0.15 云港两章供需、委托收益和实际通关时长 |
 
-当前 `package.json` 为 `0.15.0-alpha.4`（本次补丁 Pages 发布须另核）。线上试玩：https://mastercook777.github.io/Oddpot-Kitchen/ 。历史计划 [2026-10-18 经营→三星→传送门](NEXT_DEVELOPMENT_PLAN_2026-10-18.md) 的 P3/P4 已由 v0.15 完成首个可玩版本，不能继续当作活跃待办。
+当前 `package.json` 为 `0.15.0-alpha.5`（本次 Pages 实际线上发布须另核）。线上试玩：https://mastercook777.github.io/Oddpot-Kitchen/ 。历史计划 [2026-10-18 经营→三星→传送门](NEXT_DEVELOPMENT_PLAN_2026-10-18.md) 的 P3/P4 已由 v0.15 完成首个可玩版本，不能继续当作活跃待办。
 
 ## 二、现在的开发队列（从上往下推进）
 
-**新增主动开发切片（2026-10-21，分支待 PR/CI 合并）**：玩家已明确指定蒸笼升级、云港专属经营场景素材和蒸笼探索武器。由 [v0.15-E 规格](V0.15E_CLOUD_STEAMER_WEAPON_AND_ASSETS_SPEC.md) 落地：**95 金币 STEAM Lv2 / 真实蒸笼工位每单 -2 秒 / 局部云汽脉冲 + 原地持续减速雾域 / 云港六角晶石桌与货舱帆索及专用蒸笼**。这是一张优先于更远期 P2 内容的直接用户需求单，不能将它误认作云港整体 P1 经济审计已完成；严格区分分支实装、CI、Pages 和玩家真机视觉验收。
+**P0 特色化切片已完成代码交付（v0.15.0-alpha.5）**：玩家要求蒸笼升级、云港专属经营素材与蒸笼探索武器，现 [v0.15-E](V0.15E_CLOUD_STEAMER_WEAPON_AND_ASSETS_SPEC.md) 和 [PR #88](https://github.com/mastercook777/Oddpot-Kitchen/pull/88) 已合并。STEAM Lv2 云港金币 95／真实厨位每单 -2s、近身云汽双目标脉冲／原地持续控场减速雾域、六角晶石桌及港口帆索吊货／叠层蒸笼单独 Canvas 素材；**528/528 Node 和 16/16 Actions 成功**。**待完成：Pages 本次实际发布独立核验、玩家 iPhone 美术/手感验收、P1 双章经济实证**。此次没有完成云港后续二星/三星、第二门或整体经济平衡。
 
 **即时 P0 Bug 修复已进入 main（v0.15.0-alpha.4）**：iPhone 云港蒸笼复盘把 `seal/vent` 误报为黄色且输出英文，实际 `steam_even` 品质 80 已正确生效。现已修复中文与有效/无效工艺反馈、蒸笼可达品质上限，并同步线上入口缓存键及离线包；[v0.15-C.1 交付](V0.15C1_STEAM_TECHNIQUE_RECAP_FIX.md)、[PR #87](https://github.com/mastercook777/Oddpot-Kitchen/pull/87) 已合并，**520/520 Node 与 16/16 PR CI 成功**。**本次 Pages 线上发布状态尚未独立核对、玩家 iPhone 复测待验收**；主线 P0 云港真机验收/P1 跨章回归与经济审计仍为活跃任务。
 
