@@ -39,6 +39,24 @@ export function chapterRecipeAvailable(s,id){
  const r=RECIPES[id];if(!r)return false;
  return activeWorld(s)==='cloud'?r.ids.some(x=>CLOUD_LOCAL_INGREDIENTS.has(x))&&r.ids.every(x=>CLOUD_PANTRY.has(x)):!r.ids.some(x=>CLOUD_LOCAL_INGREDIENTS.has(x));
 }
+// v0.15-F: the atlas must never promise a research shortcut that the
+// real live-cooking engine would reject (region, station, inventory, phase).
+export function recipeAtlasRegion(id){
+ const r=RECIPES[id];return r&&r.ids.some(x=>CLOUD_LOCAL_INGREDIENTS.has(x))?'cloud':'hearth';
+}
+export function recipeResearchAccess(s,id){
+ const r=RECIPES[id];if(!r)return {ready:false,reason:'未收录的料理',region:null};
+ const region=recipeAtlasRegion(id),type=recipeCookware(r);
+ if(!chapterRecipeAvailable(s,id))return {ready:false,region,type,reason:region==='cloud'?'仅云港地区可研发':'仅边境地区可研发'};
+ if(!cookwareOwned(s,r))return {ready:false,region,type,reason:'尚未购入'+({STEAM:'云汽蒸笼',GRILL:'烤架'}[type]||'对应厨具')};
+ const reserved=premiumReserved(s),needed=countIds(r.ids);
+ const missing=Object.entries(needed).filter(([item,n])=>(s.inventory?.[item]||0)-(reserved[item]||0)<n)
+  .map(([item,n])=>ING[item].name+' ×'+Math.max(1,n-Math.max(0,(s.inventory?.[item]||0)-(reserved[item]||0))));
+ if(missing.length)return {ready:false,region,type,reason:'缺少 '+missing.join('、')};
+ if(s.phase!=='research')return {ready:false,region,type,reason:'请在料理研发阶段使用'};
+ if(s.cook)return {ready:false,region,type,reason:'当前料理完成后再研发'};
+ return {ready:true,region,type,reason:'可立即研发'};
+}
 export function crewRoleName(s,role){return activeWorld(s)==='cloud'?({helper:'阿岚',waiter:'小羽',helper2:'小栖'}[role]||CREW_ROLES[role]?.name):CREW_ROLES[role]?.name}
 export function redeemFerrySupply(s){
  if(activeWorld(s)!=='cloud'||!['forecast','field','research','menu','prep'].includes(s.phase)||s.field&&!s.field.settled||(s.ferryCredits||0)<1||s.ledger?.some(x=>x.id===`ferry-supply-${s.cycle}-${s.day}`))return false;
