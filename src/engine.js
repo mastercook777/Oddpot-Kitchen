@@ -1157,7 +1157,7 @@ export function advanceWalkableInteraction(s,dt){
  }
  return false;
 }
-function stepWalkableShift(s){
+export function stepWalkableShift(s){
  const v=s.service,h=v.hero;
  if(!h||!v.walkable)return;
  const zone=heroZone(h,s);
