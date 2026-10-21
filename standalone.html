@@ -3296,7 +3296,7 @@ function newServiceHero(){
 }
 function heroZone(h,s=null){return dinerSpot(h,s)}
 function walkServiceHero(h,dx,dy,dt,s=null){return dinerWalk(h,dx,dy,dt,s)}
-function waiterDeliveryPose(s,t){return dinerWaiterRoute(s,t)}
+function waiterDeliveryPose(s,t,role='waiter'){return dinerWaiterRoute(s,t,role)}
 // v0.11-A: deterministic field safety/readability rules shared by simulation and Canvas.
 const FIELD_HAZARD_RADIUS = 0.55;
 
