@@ -334,10 +334,10 @@ export function buyGrill(s){
  if(!grillAvailable(s)||!transact(s,'grill-fork-bundle','upgrade',{},-GRILL_COST))return false;
  s.kitchen.grillOwned=true;return true;
 }
-export const COOKWARE_UPGRADE_COST={WOK:60,POT:75,GRILL:90};
+export const COOKWARE_UPGRADE_COST={WOK:60,POT:75,GRILL:90,STEAM:95};
 export function cookwareUpgradeCost(s,type){
  const k=ensureKitchen(s);
- return ['WOK','POT','GRILL'].includes(type)&&(type!=='GRILL'||k.grillOwned)&&k.mastery[type]<2?COOKWARE_UPGRADE_COST[type]:null;
+ return ['WOK','POT','GRILL','STEAM'].includes(type)&&(type!=='GRILL'||k.grillOwned)&&(type!=='STEAM'||activeWorld(s)==='cloud'&&k.steamerOwned)&&k.mastery[type]<2?COOKWARE_UPGRADE_COST[type]:null;
 }
 export function buyCookwareUpgrade(s,type){
  if(s.phase!=='upgrade')return false;
@@ -547,7 +547,7 @@ const ECOLOGY_ZONES={
 // usable as a Lv1 expedition weapon, without changing the kitchen layout.
 export function fieldWeaponChoices(s){
  const slots=ensureKitchen(s).slots;
- return ['WOK','POT',...(ensureKitchen(s).grillOwned?['GRILL']:[])].map(type=>{
+ return ['WOK','POT',...(ensureKitchen(s).grillOwned?['GRILL']:[]),...(activeWorld(s)==='cloud'&&ensureKitchen(s).steamerOwned?['STEAM']:[])].map(type=>{
   const installed=slots.map((slot,index)=>({...slot,index}))
    .filter(slot=>slot.type===type)
    .sort((a,b)=>b.level-a.level||a.index-b.index)[0];
@@ -557,9 +557,11 @@ export function fieldWeaponChoices(s){
 }
 export function selectedFieldWeaponType(s){
  if(s.selectedWeaponType==='GRILL'&&ensureKitchen(s).grillOwned)return 'GRILL';
+ if(s.selectedWeaponType==='STEAM'&&activeWorld(s)==='cloud'&&ensureKitchen(s).steamerOwned)return 'STEAM';
  if(s.selectedWeaponType==='WOK'||s.selectedWeaponType==='POT')return s.selectedWeaponType;
  const slot=Math.min(1,Math.max(0,Number(s.selectedWeaponSlot)||0));
- return ensureKitchen(s).slots[slot].type;
+ const type=ensureKitchen(s).slots[slot].type;
+ return type==='STEAM'&&!(activeWorld(s)==='cloud'&&ensureKitchen(s).steamerOwned)?'POT':type;
 }
 export function fieldWeaponSnapshot(s){
  // New game UI selects a cookware TYPE, not one of two physical kitchen slots.
@@ -567,7 +569,7 @@ export function fieldWeaponSnapshot(s){
  const type=selectedFieldWeaponType(s);
  const choice=fieldWeaponChoices(s).find(x=>x.type===type);
  return {slotIndex:choice.slotIndex,type,level:choice.level,source:choice.source,
-  attackId:type==='GRILL'?'fork_thrust':type==='WOK'?'wok_sweep':'pot_onion',skillId:type==='GRILL'?'fork_flame':type==='WOK'?'wok_guard':'pot_pressure'};
+  attackId:type==='STEAM'?'mist_pulse':type==='GRILL'?'fork_thrust':type==='WOK'?'wok_sweep':'pot_onion',skillId:type==='STEAM'?'mist_field':type==='GRILL'?'fork_flame':type==='WOK'?'wok_guard':'pot_pressure'};
 }
 export function selectFieldWeapon(s,selection){
  if(s.phase!=='field'||s.field)return false;
