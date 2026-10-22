@@ -2,7 +2,7 @@ import {fieldHarvestTargetSuffix} from './field_target_v012f.js?v=0.13.0-alpha.9
 import {craftedPrice} from './recipe_value_v013j.js';
 import {makeSpecialEncounterPlan,previewSpecialEncounter,SPECIAL_ENCOUNTER_KINDS} from './field_encounters_v011c.js';
 import {ING,RECIPES,CUSTOMERS,FORECAST,DEFAULT_INVENTORY,SHOP_STAPLES,MARKET_ROTATION_STAPLES,CLOUD_MARKET_STAPLES} from './data.js?v=0.15.0-alpha.3';
-import {LIVE_ACTIONS,evaluateLiveCook,liveIngredientState,liveIngredientHeatFeedback,legacyVariant,makeLiveVariant,resolveTechnique} from './cooking_v063.js?v=0.15.0-alpha.7';
+import {LIVE_ACTIONS,evaluateLiveCook,liveIngredientState,liveIngredientHeatFeedback,legacyVariant,makeLiveVariant,resolveTechnique,liveRecipeId} from './cooking_v063.js?v=0.15.0-alpha.7';
 import {GRILL_LANES,grillPreview,evaluatePlacedGrill} from './grill_cooking_v014c.js?v=0.15.0-alpha.3';
 import {RECIPE_PROFILES} from './recipe_profiles_v063.js?v=0.13.0-alpha.9';
 import {generateBiomeMap,getFieldBiome} from './field_biomes_v081.js?v=0.13.0-alpha.9';
@@ -32,7 +32,8 @@ export function newGame(seed=20261009){return {version:4,seed,cycle:1,day:1,onbo
 const LOCAL_CHAPTER_FIELDS=['cycle','day','dining','market','phase','coins','reputation','inventory','crew','staffFoodCost','management','kitchen','bagSlots','selectedWeaponSlot','bento','route','field','cook','menu','prep','prepVariants','prepCost','manualCost','service','report','lastCook','researchReceipt','ledger','logs','result','step','history','premiumMenu','bossCleared','encounterProgress','cloudProgress'];
 export function activeWorld(s){return s.activeWorld==='cloud'?'cloud':'hearth'}
 const CLOUD_LOCAL_INGREDIENTS=new Set(['cloud_rice','sky_moss','storm_egg','sour_bell','gale_core']);
-const CLOUD_PANTRY=new Set([...CLOUD_LOCAL_INGREDIENTS,'chicken','onion']);
+const CLOUD_IMPORT_INGREDIENTS=new Set(['chicken','onion','chili','garlic','mushroom','beef','potato']);
+const CLOUD_PANTRY=new Set([...CLOUD_LOCAL_INGREDIENTS,...CLOUD_IMPORT_INGREDIENTS]);
 export function recipeCookware(recipe){return recipe?.method==='steam'?'STEAM':recipe?.station}
 export function cookwareOwned(s,recipe){const type=recipeCookware(recipe),k=ensureKitchen(s);return type==='STEAM'?k.steamerOwned:type==='GRILL'?k.grillOwned:!!type}
 export function chapterRecipeAvailable(s,id){
@@ -58,19 +59,20 @@ export function recipeResearchAccess(s,id){
  return {ready:true,region,type,reason:'可立即研发'};
 }
 export function crewRoleName(s,role){return activeWorld(s)==='cloud'?({helper:'阿岚',waiter:'小羽',helper2:'小栖',waiter2:'小澜'}[role]||CREW_ROLES[role]?.name):CREW_ROLES[role]?.name}
-// v0.15-G: all cargo is local ordinary food (no Boss cores, currency,
-// Hearth materials or phantom exploration reward). Each pack is 8 portions.
+// v0.15-H: a Hearth commission delivers EIGHT ordinary border ingredients.
+// Cloud-native products must still come from local exploration/market; importing
+// makes curated cross-world dishes, not old-world recipes, available.
 export const FERRY_SUPPLY_PACKS=Object.freeze({
- staple:{name:'航路主食箱',desc:'云谷米与酸香配菜',items:{cloud_rice:4,sky_moss:2,sour_bell:2}},
- steamer:{name:'云汽蒸羹箱',desc:'补雷羽蛋与蒸制苔叶',items:{sky_moss:3,storm_egg:3,cloud_rice:2}},
- tangy:{name:'酸铃调味箱',desc:'补酸铃炒菜与蛋料理',items:{sour_bell:4,cloud_rice:2,storm_egg:2}}
+ spice:{name:'边境香辛箱',desc:'火椒云谷饭与蒜香雷羽蒸蛋',items:{chili:4,garlic:2,onion:2}},
+ forest:{name:'林地菌香箱',desc:'浮苔菌香浓汤及云港鸡香料理',items:{mushroom:4,chicken:2,onion:2}},
+ hunt:{name:'荒野野味箱',desc:'酸铃炙牛与云米薯煲',items:{beef:4,potato:2,chicken:2}}
 });
 export function ferrySupplyAvailable(s){
  return activeWorld(s)==='cloud'&&['forecast','field','research','menu','prep'].includes(s.phase)&&
   (!s.field||s.field.settled)&&(s.ferryCredits||0)>=1&&
   !s.ledger?.some(x=>x.id===`ferry-supply-${s.cycle}-${s.day}`);
 }
-export function redeemFerrySupply(s,packId='staple'){
+export function redeemFerrySupply(s,packId='spice'){
  if(!Object.hasOwn(FERRY_SUPPLY_PACKS,packId)||!ferrySupplyAvailable(s))return false;
  const pack=FERRY_SUPPLY_PACKS[packId],id=`ferry-supply-${s.cycle}-${s.day}`;
  // The only purchase/stock mutation uses the existing unique Cloud ledger;
@@ -1513,7 +1515,8 @@ export function chooseRecipeVariant(s,id,variantId){
 export function beginLiveResearch(s,ids,vessel='WOK'){
  if(s.phase!=='research'||s.cook||!['WOK','POT','GRILL','STEAM'].includes(vessel)||vessel==='GRILL'&&!ensureKitchen(s).grillOwned||vessel==='STEAM'&&(activeWorld(s)!=='cloud'||!ensureKitchen(s).steamerOwned)||
   !Array.isArray(ids)||ids.length<2||ids.length>3||new Set(ids).size!==ids.length||
-  ids.some(id=>!ING[id])||!canUse(s,ids))return false;
+  ids.some(id=>!ING[id])||!canUse(s,ids)||
+  (activeWorld(s)==='cloud'&&!chapterRecipeAvailable(s,liveRecipeId(ids,vessel))))return false;
  ensureRecipeVariants(s);
  const txn='live-research-'+s.cycle+'-'+s.day+'-'+s.step++;
  s.cook={mode:vessel==='GRILL'?'v014c-grill':'v063-live',context:'research',vessel,ids:[...ids],
