@@ -9,13 +9,13 @@ import {
 function cloud(seed=157){const s=newGame(seed);s.chapterProgress.stars=3;s.phase='forecast';assert.equal(travelPortal(s,'cloud'),true);return s;}
 const count=pack=>Object.values(pack.items).reduce((n,x)=>n+x,0);
 
-test('three freight choices are real Cloud pantry ingredients, each a larger eight-portion pack',()=>{
- assert.deepEqual(Object.keys(FERRY_SUPPLY_PACKS),['staple','steamer','tangy']);
+test('three freight choices are original-world produce and not Cloud forage',()=>{
+ assert.deepEqual(Object.keys(FERRY_SUPPLY_PACKS),['spice','forest','hunt']);
  for(const pack of Object.values(FERRY_SUPPLY_PACKS)){
   assert.equal(count(pack),8);
   assert.ok(Object.keys(pack.items).length>=3);
   for(const [id,n] of Object.entries(pack.items)){
-   assert.ok(['cloud_rice','sky_moss','storm_egg','sour_bell'].includes(id),'no boss, currency or original shop ingredients');
+   assert.ok(['beef','chicken','chili','garlic','mushroom','cabbage','onion','potato'].includes(id),'only border ordinary produce');
    assert.ok(Number.isInteger(n)&&n>0);
   }
  }
@@ -43,41 +43,41 @@ test('invalid pack, original world, no voucher, unsafe stage or active field can
  assert.equal(redeemFerrySupply(s,'__proto__'),false);
  assert.equal(redeemFerrySupply(s,'nonexistent'),false);
  assert.equal(JSON.stringify(s),before);
- s.phase='service';assert.equal(redeemFerrySupply(s,'staple'),false);
- s.phase='field';s.field={settled:false};assert.equal(redeemFerrySupply(s,'staple'),false);
- s.field={settled:true};assert.equal(redeemFerrySupply(s,'staple'),true);
+ s.phase='service';assert.equal(redeemFerrySupply(s,'spice'),false);
+ s.phase='field';s.field={settled:false};assert.equal(redeemFerrySupply(s,'spice'),false);
+ s.field={settled:true};assert.equal(redeemFerrySupply(s,'spice'),true);
  s.phase='upgrade';assert.equal(travelPortal(s,'hearth'),true);
- assert.equal(redeemFerrySupply(s,'steamer'),false);
+ assert.equal(redeemFerrySupply(s,'forest'),false);
  assert.equal(activeWorld(s),'hearth');
 });
 test('older 3-item redemptions remain spent today, unspent legacy vouchers remain redeemable at new amounts tomorrow',()=>{
  const s=cloud();s.phase='forecast';s.ferryCredits=2;
  s.ledger.push({id:'ferry-supply-1-1',type:'ferry_supply',items:{cloud_rice:2,sky_moss:1},amount:0});
  const before={...s.inventory};
- assert.equal(redeemFerrySupply(s,'steamer'),false);
+ assert.equal(redeemFerrySupply(s,'forest'),false);
  assert.deepEqual(s.inventory,before);assert.equal(s.ferryCredits,2);
  s.phase='upgrade';assert.equal(advanceDay(s),true);
- assert.equal(redeemFerrySupply(s,'steamer'),true);
+ assert.equal(redeemFerrySupply(s,'forest'),true);
  assert.equal(s.ferryCredits,1);
- assert.equal(s.inventory.storm_egg,(before.storm_egg||0)+3);
+ assert.equal(s.inventory.mushroom,(before.mushroom||0)+4);
 });
 test('cross-world journeys and old save serialization never duplicate a voucher or cloud cargo',()=>{
  const s=cloud();s.ferryCredits=2;s.phase='forecast';
- assert.equal(redeemFerrySupply(s,'tangy'),true);
+ assert.equal(redeemFerrySupply(s,'hunt'),true);
  const once=structuredClone(s.inventory);
  s.phase='upgrade';assert.equal(travelPortal(s,'hearth'),true);
  assert.equal(s.ferryCredits,1);
  s.phase='upgrade';assert.equal(travelPortal(s,'cloud'),true);
  assert.deepEqual(s.inventory,once);
- s.phase='forecast';assert.equal(redeemFerrySupply(s,'staple'),false);
+ s.phase='forecast';assert.equal(redeemFerrySupply(s,'spice'),false);
  const storage=globalThis.localStorage,map=new Map();
  globalThis.localStorage={setItem:(k,v)=>map.set(k,v),getItem:k=>map.get(k)};
  try{
   save(s);const restored=load();assert.ok(restored);
   assert.equal(restored.ferryCredits,1);assert.deepEqual(restored.inventory,once);
-  assert.equal(redeemFerrySupply(restored,'staple'),false);
+  assert.equal(redeemFerrySupply(restored,'spice'),false);
   restored.phase='upgrade';assert.equal(advanceDay(restored),true);
-  assert.equal(redeemFerrySupply(restored,'staple'),true);
+  assert.equal(redeemFerrySupply(restored,'spice'),true);
  }finally{globalThis.localStorage=storage;}
 });
 test('one actual sale in old restaurant earns precisely one ticket; no sale cannot mint one',()=>{
@@ -89,8 +89,8 @@ test('one actual sale in old restaurant earns precisely one ticket; no sale cann
  assert.equal(closeService(s),false);
  assert.equal(s.ledger.filter(x=>x.type==='ferry_commission').length,1);
  s.phase='upgrade';assert.equal(travelPortal(s,'cloud'),true);
- s.phase='forecast';assert.equal(redeemFerrySupply(s,'steamer'),true);
- assert.equal(s.inventory.storm_egg>=4,true,'old shop real meal becomes meaningful Cloud-local steam supply');
+ s.phase='forecast';assert.equal(redeemFerrySupply(s,'forest'),true);
+ assert.equal(s.inventory.mushroom>=4,true,'old shop real sale allows original-world import for Cloud cuisine');
 });
 test('four screenshots pillars are NOT grill: remove exact inert wall loop in both worlds and offline mirror',()=>{
  const read=path=>readFileSync(new URL('../'+path,import.meta.url),'utf8');
@@ -103,5 +103,5 @@ test('four screenshots pillars are NOT grill: remove exact inert wall loop in bo
  }
  assert.match(read('src/app.js'),/v015-ferry-packs/);
  assert.match(offline,/const FERRY_SUPPLY_PACKS/);
- assert.match(offline,/function redeemFerrySupply\(s,packId='staple'\)/);
+ assert.match(offline,/function redeemFerrySupply\(s,packId='spice'\)/);
 });

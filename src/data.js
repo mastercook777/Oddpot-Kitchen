@@ -115,6 +115,16 @@ const CLOUD_RECIPES={
  moss_soup:{name:'云苔清汤',emoji:'🥣',ids:['sky_moss','onion'],method:'stew',station:'POT',time:9,price:22,tags:['清爽','温和','轻盈'],cost:6,hint:'浮苔叶与洋葱慢煮'},
  gale_core_steam:{name:'风核云汽珍羹',emoji:'💠',ids:['gale_core','sky_moss','storm_egg'],method:'steam',station:'POT',time:12,price:57,tags:['轻盈','清爽','鲜','浓郁'],cost:27,hint:'风暴晶核与雷羽蛋、浮苔叶加盖蒸透',rare:true}
 };
+// Border produce is exported by the first restaurant. A Cloud fusion dish
+// still needs a native Cloud ingredient, so the original Hearth menu stays read-only.
+const CLOUD_FUSION_RECIPES={
+ cloud_chili_rice:{name:'火椒云谷饭',emoji:'🍳',ids:['chili','cloud_rice'],method:'stir',station:'WOK',time:8,price:29,tags:['辣','饱腹','轻盈'],cost:8,hint:'边境喷火椒为云谷米注入辛香'},
+ cloud_garlic_egg:{name:'蒜香雷羽蒸蛋',emoji:'🥣',ids:['garlic','storm_egg'],method:'steam',station:'POT',time:9,price:36,tags:['香','鲜','浓郁'],cost:9,hint:'边境蒜瓣配雷羽蛋，用云汽蒸笼封笼排汽'},
+ cloud_mushroom_moss:{name:'浮苔菌香浓汤',emoji:'🥣',ids:['mushroom','sky_moss'],method:'stew',station:'POT',time:10,price:28,tags:['菌香','清爽','轻盈'],cost:6,hint:'幽光蘑菇和浮苔叶同锅轻搅'},
+ cloud_beef_sour:{name:'酸铃炙牛',emoji:'🥩',ids:['beef','sour_bell'],method:'stir',station:'WOK',time:11,price:42,tags:['肉','酸','开胃'],cost:13,hint:'边境野牛肉搭配当地酸铃果爆炒'},
+ cloud_potato_rice:{name:'云米薯煲',emoji:'🥔',ids:['potato','cloud_rice'],method:'stew',station:'POT',time:11,price:30,tags:['饱腹','温和','轻盈'],cost:8,hint:'地精土豆与云谷米一起慢火煲熟'}
+};
+Object.assign(CLOUD_RECIPES,CLOUD_FUSION_RECIPES);
 for(const [id,r] of Object.entries(CLOUD_RECIPES)){
  RECIPES[id]=r;
  if(r.method==='steam')RECIPE_INDEX[recipeSignature(r.ids,'STEAM')]=id;
