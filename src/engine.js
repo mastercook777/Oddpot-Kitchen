@@ -847,7 +847,10 @@ export function selectArrivalDish(s,o){
  const eligible=themed.length?themed:options,best=eligible[0];
  // Genuine favorite dishes still dominate. Similar-fit alternatives may be
  // chosen; menu duplicates must not multiply demand. No rerolls on UI refresh.
- const choices=eligible.filter(x=>x.score>=45&&x.score>=(best?.score||0)-28);
+ // Star appraisals and the chef duel must retain their authored scoring
+ // contract. Ordinary evenings receive the varied guest-choice model.
+ const judged=firstChallenge(s)||s.service?.ratingAttempt||s.service?.secondStarStage||!!s.service?.thirdStarJudgeIds?.length;
+ const choices=judged?(best?[best]:[]):eligible.filter(x=>x.score>=45&&x.score>=(best?.score||0)-28);
  const counts={};
  for(const order of s.service?.orders||[])if(order.id!==o.id&&order.orderedAt!=null&&order.recipeId)counts[order.recipeId]=(counts[order.recipeId]||0)+1;
  const key=String(o.id||'')+'|'+String(o.segment||'');
@@ -927,6 +930,10 @@ export function serviceDayPlan(s){
   if(count>=11&&((key>>>15)%3===0))guests[count-3]='gardener';
  }
  if(activeWorld(s)==='cloud'){
+  // Native Harbor residents form the main crowd; a few stargazers and
+  // campaign tourists are visitors, not implausible local mushroom families.
+  for(let i=0;i<count;i++){const roll=(rand((key^Math.imul(i+1,0x9e3779b9))>>>0)>>>8)%10;
+   guests[i]=roll<5?'cloud_weaver':roll<9?'cloud_docker':'stargazer';}
   guests[0]='cloud_weaver';guests[Math.min(3,count-1)]='cloud_docker';
   if(count>=8)guests[count-2]=s.day===3?'cloud_docker':'cloud_weaver';
  }
