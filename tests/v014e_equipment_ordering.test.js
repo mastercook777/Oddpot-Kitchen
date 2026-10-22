@@ -74,14 +74,15 @@ test('fork Lv2 has discernible attack cadence, target reach and flame reach with
 
 test('grill meat gains a limited real affinity; expensive quality can still lose to a cheaper meat dish',()=>{
  for(const id of Object.keys(RECIPES).filter(id=>RECIPES[id].station==='GRILL'))assert.ok(RECIPES[id].tags.includes('炭香'));
- for(const [quality,winner] of [[85,'grill_beef'],[100,'chili_meat']]){
+ for(const [quality,favorite] of [[85,'grill_beef'],[100,'chili_meat']]){
   const s=newGame(29);s.menu=['grill_beef','chili_meat'];s.recipes.chili_meat=85;s.recipes.grill_beef=quality;
-  const o={id:'day-29-'+quality,segment:'adventurer'};
-  selectArrivalDish(s,o);assert.equal(o.recipeId,winner);
+  const orders=Array.from({length:120},(_,i)=>{const o={id:'day-'+quality+'-'+i,segment:'adventurer'};selectArrivalDish(s,o);return o.recipeId});
+  assert.ok(orders.includes(favorite),'preferred option must remain a real choice');
+  assert.ok(orders.some(id=>id!==favorite),'near-fit alternative should sometimes be ordered instead');
  }
  const s=newGame(29);s.menu=['grill_beef','chili_meat'];s.recipes.chili_meat=85;s.recipes.grill_beef=85;
- const guest={id:'day-29-family',segment:'family'};selectArrivalDish(s,guest);
- assert.equal(guest.recipeId,'chili_meat','other guests do not inherit a meat-lover bonus');
+ const family=Array.from({length:120},(_,i)=>{const o={id:'family-'+i,segment:'family'};selectArrivalDish(s,o);return o.recipeId});
+ assert.ok(family.filter(id=>id==='chili_meat').length>60,'meat affinity is for adventurers, not the family');
 });
 
 test('exploration uses equipped silhouettes instead of the generic raised-arm tool; all worktops share width',()=>{

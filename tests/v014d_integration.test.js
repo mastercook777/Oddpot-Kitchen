@@ -17,7 +17,8 @@ test('fixed-seed real arrival plans choose grill recipes for multiple existing g
    if(RECIPES[o.recipeId]?.station==='GRILL')grillGuests.add(segment);
   }
  }
- assert.deepEqual([...grillGuests].sort(),['adventurer','critic','gardener','stargazer']);
+ for(const segment of ['adventurer','critic','gardener','stargazer'])assert.ok(grillGuests.has(segment),segment+' should still order barbecue');
+ assert.ok(grillGuests.size>=4,'weighted guest choice may also attract other groups when acceptable');
 });
 
 test('recipe book and menu use actual GRILL label, not pot; old saves do not auto-learn new dishes',()=>{
