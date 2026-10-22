@@ -1,5 +1,7 @@
 # 《怪味食堂》START_HERE · 新对话 / Codex / 开发接续入口
 
+> **2026-10-22 新插入 P0 · v0.15-H**：玩家纠正原店航运委托的物资来源，云港不该直接领取当地能探索到的食材。已在 [v0.15-H 先行规格](V0.15H_HEARTH_EXPORT_AND_CLOUD_FUSION_SPEC.md) 与 [开发 PR #91](https://github.com/mastercook777/Oddpot-Kitchen/pull/91) 改为边境旧料三箱+五道云港融合菜；保留旧菜跨章只读、唯一券结算。**PR 未合并，main 仍为 alpha.7**；先完成 CI、离线和多端回归，再回 v0.15-D 长期经济审计。
+
 > **最新核对：2026-10-22｜`main` 版本 `0.15.0-alpha.7`**  
 > **代码状态：v0.15.0-alpha.7 已合并 main；545/545 Node、16/16 PR CI 全绿；Pages 当前线上版本无法独立核验，玩家 iPhone/Android 上四根彩柱消失及新航运补给体验仍待验收。**  
 > 仓库：https://github.com/mastercook777/Oddpot-Kitchen · [线上试玩](https://mastercook777.github.io/Oddpot-Kitchen/)  
