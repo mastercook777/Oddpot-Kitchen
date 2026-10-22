@@ -1,4 +1,4 @@
-<!doctype html><html lang="zh-CN"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1.0,maximum-scale=1.0,viewport-fit=cover,user-scalable=no"><meta name="apple-mobile-web-app-capable" content="yes"><meta name="theme-color" content="#1b3c2b"><title>怪味食堂 · v0.15.0-alpha.6 离线版</title><style>.ingredient-icon{display:inline-block;width:var(--ingredient-size,24px);height:var(--ingredient-size,24px);max-width:none;object-fit:contain;image-rendering:pixelated;vertical-align:-.24em;flex:none;pointer-events:none;user-select:none}
+<!doctype html><html lang="zh-CN"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1.0,maximum-scale=1.0,viewport-fit=cover,user-scalable=no"><meta name="apple-mobile-web-app-capable" content="yes"><meta name="theme-color" content="#1b3c2b"><title>怪味食堂 · v0.15.0-alpha.7 离线版</title><style>.ingredient-icon{display:inline-block;width:var(--ingredient-size,24px);height:var(--ingredient-size,24px);max-width:none;object-fit:contain;image-rendering:pixelated;vertical-align:-.24em;flex:none;pointer-events:none;user-select:none}
 .stock-line>span .ingredient-icon{margin-right:3px}.target-chip .ingredient-icon{vertical-align:middle}.book-icon .ingredient-icon{display:block}
 .v063-food-icon .ingredient-icon{width:1em;height:1em;vertical-align:top;filter:none}.v063-receipt-line .ingredient-icon{vertical-align:middle}
 .v063-food-picker button>span,.v063-drop>span{line-height:1}.v063-food-picker .ingredient-icon,.v063-drop .ingredient-icon{vertical-align:top}
@@ -1197,6 +1197,18 @@
 .v015-atlas-status{display:block;padding:3px 12px 7px;color:#b6bdaf;font-size:11px;line-height:1.35}
 .v015-atlas-status.ready{color:#9bd5ae}
 .v063-book-entry .book-item{min-height:48px}
+
+/* v0.15-G: selectable, actual eight-item freight supplies on narrow mobile sheets. */
+.v015-ferry-packs{display:grid;gap:8px;margin-top:6px}
+.v015-ferry-pack{display:grid;grid-template-columns:minmax(0,1fr);gap:7px;padding:10px;border-radius:9px;background:#284d63;border:1px solid #87aabb}
+.v015-ferry-pack b{font-size:13px;color:#fff4cd}
+.v015-ferry-pack small{display:block;font-size:11px;margin-top:3px}
+.v015-ferry-ingredients{display:flex;gap:5px;flex-wrap:wrap;margin-top:6px}
+.v015-ferry-ingredients span{display:flex;align-items:center;gap:3px;border:1px solid #648a9e;border-radius:6px;padding:3px 5px;font-size:11px;background:#1d3c4e}
+.v015-ferry-ingredients em{font-size:10px;color:#a9cecb;font-style:normal}
+.v015-ferry-pack button{min-height:42px;width:100%}
+.v015-ferry-locked{color:#f5deb1!important}
+@media(min-width:620px){.v015-ferry-packs{grid-template-columns:repeat(3,minmax(0,1fr))}}
 
 .v12-star-invite{
  display:flex;flex-direction:column;gap:4px;flex:0 0 auto;
