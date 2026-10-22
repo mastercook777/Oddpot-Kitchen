@@ -9493,14 +9493,13 @@ function drawRestaurantV075(c,s,t,w,h){
    }
   }
  }
- // Natural details, not extra UI: hanging roots, spore lamps and pantry jars.
+ // Natural wall lamps anchor the interior; the 4 inert coloured vertical
+ // pantry sticks at x=.15..315 and y=.185 looked like mysterious controls.
+ // They had no mechanics and are removed in BOTH worlds (v0.15-G).
  for(const [sx,shade] of [[.088,'#76a17f'],[.912,'#8d9b7d']]){
   line(c,x(sx),y(.144),x(sx),y(.187),'#b69c72',2);
   circle(c,x(sx),y(.190),8,shade);
   circle(c,x(sx)-2,y(.187),2,'#e4e3ae');
- }
- for(let i=0;i<4;i++){
-  rr(x(.15+i*.055)-5,y(.185),10,15+(i%2)*4,2,i%2?'#83614b':'#698772','#c5aa75');
  }
  // Outside seen through an actual doorway opening, not a floating status card.
  drawDinerDoorway(c,s,v?.time??t,w,h);
