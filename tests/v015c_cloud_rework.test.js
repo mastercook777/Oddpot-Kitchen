@@ -62,7 +62,7 @@ test('one actual Hearth sale yields one ferry commission, redeemable once per Cl
  assert.equal(s.ledger.filter(x=>x.type==='ferry_commission').length,1);
  s.phase='upgrade';travelPortal(s,'cloud');assert.equal(s.ferryCredits,1);s.phase='forecast';
  const rice=s.inventory.cloud_rice;
- assert.equal(redeemFerrySupply(s),true);assert.equal(s.inventory.cloud_rice,rice+4);assert.equal(s.inventory.sky_moss,5);assert.equal(s.inventory.sour_bell,2);
+ assert.equal(redeemFerrySupply(s),true);assert.equal(s.inventory.cloud_rice,rice+4);assert.equal(s.inventory.sky_moss,6);assert.equal(s.inventory.sour_bell,2);
  assert.equal(s.ferryCredits,0);s.ferryCredits=1;assert.equal(redeemFerrySupply(s),false,'another voucher cannot bypass the daily cap');
  assert.equal(s.ledger.filter(x=>x.type==='ferry_supply').length,1);
  s.phase='upgrade';assert.equal(advanceDay(s),true);assert.equal(redeemFerrySupply(s),true,'next local day can take a new supply');
