@@ -4,7 +4,7 @@ import {readFileSync} from 'node:fs';
 import {RECIPES,CUSTOMERS} from '../src/data.js';
 import {
  newGame,travelPortal,selectArrivalDish,chapterRecipeAvailable,
- createService,CLOUD_SERVICE_EVENTS,CUSTOMER_REVIEW_VOICES,
+ createService,serviceDayPlan,CLOUD_SERVICE_EVENTS,CUSTOMER_REVIEW_VOICES,
  currentServiceEvent,chooseServiceEvent,closeService,setServicePaused,tick,resumeBreak
 } from '../src/engine.js';
 
@@ -71,4 +71,14 @@ test('Cloud Boss hint and online/offline copy avoid forest Boss names for the fl
   assert.match(source,/今日实际点单 \/ 售出/);
  }
  assert.match(app,/三段航路/);
+});
+
+test('Cloud ordinary guests predominantly come from actual local Harbor segments',()=>{
+ let local=0,all=0;
+ for(let seed=1;seed<=30;seed++){
+  const s=newGame(seed);s.chapterProgress.stars=3;s.phase='forecast';travelPortal(s,'cloud');
+  const plan=serviceDayPlan(s);
+  local+=plan.guests.filter(id=>id==='cloud_weaver'||id==='cloud_docker').length;all+=plan.guests.length;
+ }
+ assert.ok(local/all>.7,'Harbor customers need a believable local majority');
 });
