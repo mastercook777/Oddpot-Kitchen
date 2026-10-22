@@ -2,14 +2,14 @@ import {fieldHarvestTargetSuffix} from './field_target_v012f.js?v=0.13.0-alpha.9
 import {craftedPrice} from './recipe_value_v013j.js';
 import {makeSpecialEncounterPlan,previewSpecialEncounter,SPECIAL_ENCOUNTER_KINDS} from './field_encounters_v011c.js';
 import {ING,RECIPES,CUSTOMERS,FORECAST,DEFAULT_INVENTORY,SHOP_STAPLES,MARKET_ROTATION_STAPLES,CLOUD_MARKET_STAPLES} from './data.js?v=0.15.0-alpha.3';
-import {LIVE_ACTIONS,evaluateLiveCook,liveIngredientState,liveIngredientHeatFeedback,legacyVariant,makeLiveVariant,resolveTechnique} from './cooking_v063.js?v=0.15.0-alpha.6';
+import {LIVE_ACTIONS,evaluateLiveCook,liveIngredientState,liveIngredientHeatFeedback,legacyVariant,makeLiveVariant,resolveTechnique} from './cooking_v063.js?v=0.15.0-alpha.7';
 import {GRILL_LANES,grillPreview,evaluatePlacedGrill} from './grill_cooking_v014c.js?v=0.15.0-alpha.3';
 import {RECIPE_PROFILES} from './recipe_profiles_v063.js?v=0.13.0-alpha.9';
 import {generateBiomeMap,getFieldBiome} from './field_biomes_v081.js?v=0.13.0-alpha.9';
 import {makeFieldEncounterPlan,insertPlannedFieldEncounter} from './field_encounter_plan_v011b.js?v=0.13.0-alpha.9';
 import {expandFieldMap} from './field_world_v011b1.js';
-import {newServiceHero,heroZone} from './walkable_restaurant_v07.js?v=0.15.0-alpha.6';
-import {CAMPAIGNS,CREW_GROWTH,CREW_XP_THRESHOLDS,ensureManagement,selectedCampaign,chooseCampaign,crewWage,ensureStaffProgress,setCrewDuty,crewPromotion,applyCrewPromotion,payroll,settleCrewExperience} from './restaurant_management_v012c.js?v=0.15.0-alpha.6';
+import {newServiceHero,heroZone} from './walkable_restaurant_v07.js?v=0.15.0-alpha.7';
+import {CAMPAIGNS,CREW_GROWTH,CREW_XP_THRESHOLDS,ensureManagement,selectedCampaign,chooseCampaign,crewWage,ensureStaffProgress,setCrewDuty,crewPromotion,applyCrewPromotion,payroll,settleCrewExperience} from './restaurant_management_v012c.js?v=0.15.0-alpha.7';
 export {CAMPAIGNS,CREW_GROWTH,CREW_XP_THRESHOLDS,ensureManagement,selectedCampaign,chooseCampaign,crewWage,setCrewDuty,crewPromotion};
 import {naturalStarAttendance,serviceArrivalWave,serviceArrivalSecond,outdoorQueueCount,outdoorQueueExpired,queueServiceReport} from './restaurant_demand_v012e.js';
 export {QUEUE_PATIENCE_SECONDS,NATURAL_STAR_GUEST_CAP,starWordOfMouthBoost,naturalStarAttendance,serviceArrivalWave,serviceArrivalSecond,queueServiceReport} from './restaurant_demand_v012e.js';
@@ -58,9 +58,25 @@ export function recipeResearchAccess(s,id){
  return {ready:true,region,type,reason:'可立即研发'};
 }
 export function crewRoleName(s,role){return activeWorld(s)==='cloud'?({helper:'阿岚',waiter:'小羽',helper2:'小栖',waiter2:'小澜'}[role]||CREW_ROLES[role]?.name):CREW_ROLES[role]?.name}
-export function redeemFerrySupply(s){
- if(activeWorld(s)!=='cloud'||!['forecast','field','research','menu','prep'].includes(s.phase)||s.field&&!s.field.settled||(s.ferryCredits||0)<1||s.ledger?.some(x=>x.id===`ferry-supply-${s.cycle}-${s.day}`))return false;
- if(!transact(s,`ferry-supply-${s.cycle}-${s.day}`,'ferry_supply',{cloud_rice:2,sky_moss:1},0))return false;
+// v0.15-G: all cargo is local ordinary food (no Boss cores, currency,
+// Hearth materials or phantom exploration reward). Each pack is 8 portions.
+export const FERRY_SUPPLY_PACKS=Object.freeze({
+ staple:{name:'航路主食箱',desc:'云谷米与酸香配菜',items:{cloud_rice:4,sky_moss:2,sour_bell:2}},
+ steamer:{name:'云汽蒸羹箱',desc:'补雷羽蛋与蒸制苔叶',items:{sky_moss:3,storm_egg:3,cloud_rice:2}},
+ tangy:{name:'酸铃调味箱',desc:'补酸铃炒菜与蛋料理',items:{sour_bell:4,cloud_rice:2,storm_egg:2}}
+});
+export function ferrySupplyAvailable(s){
+ return activeWorld(s)==='cloud'&&['forecast','field','research','menu','prep'].includes(s.phase)&&
+  (!s.field||s.field.settled)&&(s.ferryCredits||0)>=1&&
+  !s.ledger?.some(x=>x.id===`ferry-supply-${s.cycle}-${s.day}`);
+}
+export function redeemFerrySupply(s,packId='staple'){
+ if(!Object.hasOwn(FERRY_SUPPLY_PACKS,packId)||!ferrySupplyAvailable(s))return false;
+ const pack=FERRY_SUPPLY_PACKS[packId],id=`ferry-supply-${s.cycle}-${s.day}`;
+ // The only purchase/stock mutation uses the existing unique Cloud ledger;
+ // no ticket is removed until the stock transaction succeeds.
+ if(!transact(s,id,'ferry_supply',{...pack.items},0))return false;
+ s.ledger.find(x=>x.id===id).packId=packId;
  s.ferryCredits--;return true;
 }
 function settleCloudRoster(s){

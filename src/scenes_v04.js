@@ -6,20 +6,20 @@ import {isHybridFieldArt,drawHybridFieldGround,drawHybridFieldObstacle,drawHybri
 import {drawFieldImpact,drawFieldProjectile,drawFieldSwipe,drawFieldSkillWave,drawFieldBurst,drawFieldCollection,drawFieldDeath,drawFieldActorIndicators,drawFieldNodeMarkers} from './field_effects_v011e2.js?v=0.12.0-alpha.1';
 import {fieldWokPose,fieldPotPose} from './field_pose_v083.js?v=0.8.5';
 import {drawPixelWok,drawPixelPot,drawPixelFork,drawForkThrustFx,drawForkFlameFx} from './field_cookware_v014c.js?v=0.14.0-alpha.5';
-import {drawPixelSteamBasket,drawSteamMistField,drawSteamPulse} from './field_steam_visuals_v015e.js?v=0.15.0-alpha.6';
-import {drawCloudPortProps,drawCloudCrystalTable,drawCloudSteamerStation} from './cloud_diner_assets_v015e.js?v=0.15.0-alpha.6';
+import {drawPixelSteamBasket,drawSteamMistField,drawSteamPulse} from './field_steam_visuals_v015e.js?v=0.15.0-alpha.7';
+import {drawCloudPortProps,drawCloudCrystalTable,drawCloudSteamerStation} from './cloud_diner_assets_v015e.js?v=0.15.0-alpha.7';
 import {hazardPhase,fieldTilePath} from './field_rules_v011a.js';
 import {fieldCamera} from './field_camera_v011b1.js';
 import {drawExpandedLandscape,drawExpandedObstacle} from './field_world_render_v011b1.js';
 import {isHerbPixelSlice,drawHerbPixelGround,drawHerbPixelObstacle,drawHerbPixelNode,drawHerbPixelHazard,drawHerbPixelEnemy,drawHerbPixelProjectile} from './field_pixel_herb_v011c.js?v=0.13.0-alpha.9';
 import {isHybridMeadow,drawHybridMeadowGround,drawHybridMeadowObstacle,drawHybridMeadowHazard} from './field_hybrid_meadow_v011e.js?v=0.12.0-alpha.1';
 import {meleeProfile,meleeWindupProgress} from './field_combat_feedback_v084.js?v=0.8.4';
-import {pixelActor,pixelEnemy,pixelImpact} from './pixels_v041.js?v=0.15.0-alpha.6';
-import {homeKitchenActors,homeKitchenChatter} from './home_kitchen_v013j.js?v=0.15.0-alpha.6';
+import {pixelActor,pixelEnemy,pixelImpact} from './pixels_v041.js?v=0.15.0-alpha.7';
+import {homeKitchenActors,homeKitchenChatter} from './home_kitchen_v013j.js?v=0.15.0-alpha.7';
 // Lightweight procedural game graphics: original Canvas shapes, no art pack.
 import {ING,RECIPES,CUSTOMERS} from './data.js?v=0.14.0-alpha.5';
-import {heroZone,waiterDeliveryPose,HERO_PASS} from './walkable_restaurant_v07.js?v=0.15.0-alpha.6';
-import {DINER_FLOOR,dinerFloor,dinerGuestRoute,dinerWeather,dinerQueueGuests} from './restaurant_scene_v075.js?v=0.15.0-alpha.6';
+import {heroZone,waiterDeliveryPose,HERO_PASS} from './walkable_restaurant_v07.js?v=0.15.0-alpha.7';
+import {DINER_FLOOR,dinerFloor,dinerGuestRoute,dinerWeather,dinerQueueGuests} from './restaurant_scene_v075.js?v=0.15.0-alpha.7';
 import {selectDiningSpeech,selectStaffSpeech,diningBubbleLines,speechOpacity} from './diner_ambience_v077.js?v=0.15.0-alpha.3';
 import {selectOutdoorQueueSpeech} from './outdoor_queue_speech_v012f.js';
 const color={ink:'#24382a',leaf:'#386b43',soil:'#806044',stone:'#a6b392',cream:'#f4dfb0',gold:'#dfb873'};
@@ -913,14 +913,13 @@ function drawRestaurantV075(c,s,t,w,h){
    }
   }
  }
- // Natural details, not extra UI: hanging roots, spore lamps and pantry jars.
+ // Natural wall lamps anchor the interior; the 4 inert coloured vertical
+ // pantry sticks at x=.15..315 and y=.185 looked like mysterious controls.
+ // They had no mechanics and are removed in BOTH worlds (v0.15-G).
  for(const [sx,shade] of [[.088,'#76a17f'],[.912,'#8d9b7d']]){
   line(c,x(sx),y(.144),x(sx),y(.187),'#b69c72',2);
   circle(c,x(sx),y(.190),8,shade);
   circle(c,x(sx)-2,y(.187),2,'#e4e3ae');
- }
- for(let i=0;i<4;i++){
-  rr(x(.15+i*.055)-5,y(.185),10,15+(i%2)*4,2,i%2?'#83614b':'#698772','#c5aa75');
  }
  // Outside seen through an actual doorway opening, not a floating status card.
  drawDinerDoorway(c,s,v?.time??t,w,h);
