@@ -4060,9 +4060,25 @@ function recipeResearchAccess(s,id){
  return {ready:true,region,type,reason:'可立即研发'};
 }
 function crewRoleName(s,role){return activeWorld(s)==='cloud'?({helper:'阿岚',waiter:'小羽',helper2:'小栖',waiter2:'小澜'}[role]||CREW_ROLES[role]?.name):CREW_ROLES[role]?.name}
-function redeemFerrySupply(s){
- if(activeWorld(s)!=='cloud'||!['forecast','field','research','menu','prep'].includes(s.phase)||s.field&&!s.field.settled||(s.ferryCredits||0)<1||s.ledger?.some(x=>x.id===`ferry-supply-${s.cycle}-${s.day}`))return false;
- if(!transact(s,`ferry-supply-${s.cycle}-${s.day}`,'ferry_supply',{cloud_rice:2,sky_moss:1},0))return false;
+// v0.15-G: all cargo is local ordinary food (no Boss cores, currency,
+// Hearth materials or phantom exploration reward). Each pack is 8 portions.
+const FERRY_SUPPLY_PACKS=Object.freeze({
+ staple:{name:'航路主食箱',desc:'云谷米与酸香配菜',items:{cloud_rice:4,sky_moss:2,sour_bell:2}},
+ steamer:{name:'云汽蒸羹箱',desc:'补雷羽蛋与蒸制苔叶',items:{sky_moss:3,storm_egg:3,cloud_rice:2}},
+ tangy:{name:'酸铃调味箱',desc:'补酸铃炒菜与蛋料理',items:{sour_bell:4,cloud_rice:2,storm_egg:2}}
+});
+function ferrySupplyAvailable(s){
+ return activeWorld(s)==='cloud'&&['forecast','field','research','menu','prep'].includes(s.phase)&&
+  (!s.field||s.field.settled)&&(s.ferryCredits||0)>=1&&
+  !s.ledger?.some(x=>x.id===`ferry-supply-${s.cycle}-${s.day}`);
+}
+function redeemFerrySupply(s,packId='staple'){
+ if(!Object.hasOwn(FERRY_SUPPLY_PACKS,packId)||!ferrySupplyAvailable(s))return false;
+ const pack=FERRY_SUPPLY_PACKS[packId],id=`ferry-supply-${s.cycle}-${s.day}`;
+ // The only purchase/stock mutation uses the existing unique Cloud ledger;
+ // no ticket is removed until the stock transaction succeeds.
+ if(!transact(s,id,'ferry_supply',{...pack.items},0))return false;
+ s.ledger.find(x=>x.id===id).packId=packId;
  s.ferryCredits--;return true;
 }
 function settleCloudRoster(s){
