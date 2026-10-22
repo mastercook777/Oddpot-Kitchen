@@ -124,5 +124,5 @@ test('Cloud assets have their own furniture shapes, station and field FX in main
  assert.match(offline,/function drawCloudCrystalTable/);
  assert.match(offline,/function drawPixelSteamBasket/);
  assert.match(offline,/function steamPulseTargets/);
- assert.match(offline,/v0\.15\.0-alpha\.7 离线版/);
+ assert.match(offline,/v0\.15\.0-alpha\.8 离线版/);
 });
