@@ -1,12 +1,10 @@
 # 《怪味食堂》START_HERE · 新对话 / Codex / 开发接续入口
 
-> **2026-10-25 最新增量**：玩家报告云港顾客超时导致声望迅速下降，以及熟菜做好客人离开直接报废。已按 [v0.15-I.1](V0.15I1_CLOUD_PATIENCE_AND_SALVAGED_MEALS_SPEC.md) 在未合并 [PR #92](https://github.com/mastercook777/Oddpot-Kitchen/pull/92) 的 alpha.9 分支加入同夜成品回收/精确工艺复用、日报，核心559项Node全通过。**main 仍 alpha.8，Pages/真机未验收**。原23/31秒云港客人耐心和派单顺序尚未调数值；完整CI过后再合并，后续进行云港营业好感度/超时多日审计，然后再推进旧世界托管与镜露花园。
-
-> **当前新的玩家反馈（2026-10-22）**：普通经营出现一道菜被反复点；云港存在旧世界文案、当地客群稀薄与只有两类主要探索生态，以及手动八份旧料券供应节奏不足。已确认是 `selectArrivalDish` 的固定最大分决策造成，当前 [v0.15-I / PR #92](https://github.com/mastercook777/Oddpot-Kitchen/pull/92) 先修顾客选择、当地客流/点评/事件与真实点单日报；**仓库托运＋旧店自动经营、镜露花园扩展只在 [规格](V0.15I_DEMAND_CLOUD_COPY_MANAGED_EXPORT_SPEC.md) 内策划，未编码/发布**。main 仍 alpha.8，PR alpha.9 CI/真机待验；不要把草稿设计当作已实现。
+> **最新正式 main · v0.15.0-alpha.9（2026-10-25）**：[PR #92](https://github.com/mastercook777/Oddpot-Kitchen/pull/92) 已 squash 合并，[合并提交 c72b0fc5](https://github.com/mastercook777/Oddpot-Kitchen/commit/c72b0fc529ebd0938d8674a80ffcaabdc8006a10)。原 v0.15-I 顾客不再固定点最高评分单菜，而是口味优先的可复现加权选菜，云港当地客群/运营事件/点评已地域化、日报增加点单与售出对照；原 v0.15-I.1 加入同晚**已出锅但尚未送达的菜可回收进预制池**，相同菜谱及工艺下一位顾客可以复用，成本不双计，日终丢弃并报告。[点单/托管路线图](V0.15I_DEMAND_CLOUD_COPY_MANAGED_EXPORT_SPEC.md) · [成品回收与好感诊断](V0.15I1_CLOUD_PATIENCE_AND_SALVAGED_MEALS_SPEC.md)。GitHub **559/559 Node、16/16 PR CI 成功**（包含手机 Chrome 320/375/390 与单文件离线）；**Pages 线上 alpha.9 实际部署、iPhone/Android 玩家主观体验仍待确认**。云港搬运客23秒耐心/云织旅人31秒耐心与派单优先级仍按旧规则，需要下一轮真实多日审计决定是否调参。
 
 > **2026-10-22 新插入 P0 · v0.15-H**：玩家纠正原店航运委托的物资来源，云港不该直接领取当地能探索到的食材。已在 [v0.15-H 先行规格](V0.15H_HEARTH_EXPORT_AND_CLOUD_FUSION_SPEC.md) 与 [开发 PR #91](https://github.com/mastercook777/Oddpot-Kitchen/pull/91) 改为边境旧料三箱+五道云港融合菜；保留旧菜跨章只读、唯一券结算。**PR #91 已合并，main 为 alpha.8**（合并 SHA `1d8e3871`）；已获 549/549 Node、16/16 PR Actions（Chrome/离线含于其中），后续仍需 Pages alpha.8 核验和玩家 iPhone/Android 体验验收，接续 v0.15-D 长期经济审计。
 
-> **最新核对：2026-10-22｜`main` 版本 `0.15.0-alpha.8`**  
+> **历史基线核对：2026-10-22｜当时 main 版本 `0.15.0-alpha.8`**  
 > **代码状态：v0.15.0-alpha.8 已合并 main（PR #91），549/549 Node 与 16/16 PR Actions 全绿；Pages alpha.8 实际部署、四彩柱消失、旧食材进口/融合料理与 iPhone/Android 经营感仍需独立玩家验收。**  
 > 仓库：https://github.com/mastercook777/Oddpot-Kitchen · [线上试玩](https://mastercook777.github.io/Oddpot-Kitchen/)  
 > 本文是**入口而非版本流水账**；具体已实装读 [PROJECT_STATE](PROJECT_STATE.md)，下一步优先级读 [ROADMAP](ROADMAP.md)。旧版设计与更新历史可从文档索引、Git 记录回溯。
