@@ -306,7 +306,7 @@ export function reassignIdleCooks(v,s=null){
   if(!candidates.length)continue;
   candidates.sort((a,b)=>Number(!!v.stations[b.key])-Number(!!v.stations[a.key])||Math.abs(a.i-current)-Math.abs(b.i-current));
   const next=candidates[0].i;
-  w.moveFrom=current;w.moveTo=next;w.moveStart=v.time;w.moveUntil=v.time+(Math.abs(next-current)===1?2:3);w.lastMoveTime=v.time;
+  w.moveFrom=current;w.moveTo=next;w.moveStart=v.time;w.moveUntil=v.time+(twoBenchCloud?3:Math.abs(next-current)===1?2:3);w.lastMoveTime=v.time;
   v.events?.push({type:'crew_move',role,from:key,to:stationId(next),t:v.time});
  }
 }
