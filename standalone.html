@@ -1,4 +1,4 @@
-<!doctype html><html lang="zh-CN"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1.0,maximum-scale=1.0,viewport-fit=cover,user-scalable=no"><meta name="apple-mobile-web-app-capable" content="yes"><meta name="theme-color" content="#1b3c2b"><title>怪味食堂 · v0.15.0-alpha.10 离线版</title><style>.ingredient-icon{display:inline-block;width:var(--ingredient-size,24px);height:var(--ingredient-size,24px);max-width:none;object-fit:contain;image-rendering:pixelated;vertical-align:-.24em;flex:none;pointer-events:none;user-select:none}
+<!doctype html><html lang="zh-CN"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1.0,maximum-scale=1.0,viewport-fit=cover,user-scalable=no"><meta name="apple-mobile-web-app-capable" content="yes"><meta name="theme-color" content="#1b3c2b"><title>怪味食堂 · v0.15.0-alpha.11 离线版</title><style>.ingredient-icon{display:inline-block;width:var(--ingredient-size,24px);height:var(--ingredient-size,24px);max-width:none;object-fit:contain;image-rendering:pixelated;vertical-align:-.24em;flex:none;pointer-events:none;user-select:none}
 .stock-line>span .ingredient-icon{margin-right:3px}.target-chip .ingredient-icon{vertical-align:middle}.book-icon .ingredient-icon{display:block}
 .v063-food-icon .ingredient-icon{width:1em;height:1em;vertical-align:top;filter:none}.v063-receipt-line .ingredient-icon{vertical-align:middle}
 .v063-food-picker button>span,.v063-drop>span{line-height:1}.v063-food-picker .ingredient-icon,.v063-drop .ingredient-icon{vertical-align:top}
@@ -4091,6 +4091,79 @@ const FERRY_SUPPLY_PACKS=Object.freeze({
  forest:{name:'林地菌香箱',desc:'浮苔菌香浓汤及云港鸡香料理',items:{mushroom:4,chicken:2,onion:2}},
  hunt:{name:'荒野野味箱',desc:'酸铃炙牛与云米薯煲',items:{beef:4,potato:2,chicken:2}}
 });
+// v0.15-J: a Harbor-side shipping contract transfers only goods already in
+// the dormant Hearth warehouse. It never simulates unattended sales or gathering.
+const MANAGED_FREIGHT_FOCUS=Object.freeze({
+ spice:{name:'香辛航线',items:{chili:3,garlic:2,onion:1}},
+ forest:{name:'菌香航线',items:{mushroom:3,chicken:2,onion:1}},
+ hunt:{name:'野味航线',items:{beef:3,potato:2,chicken:1}}
+});
+const MANAGED_FREIGHT_FEE=10;
+const MANAGED_FREIGHT_DAYS=2;
+function managedFreightState(s){
+ s.managedFreight??={enabled:false,focus:'forest',days:0,seq:0,pending:null,lastClosedKey:null};
+ return s.managedFreight;
+}
+function hearthForFreight(s){return activeWorld(s)==='cloud'?s.worlds?.hearth:null}
+function hasHearthKeeper(hearth){return !!['helper','waiter','helper2'].find(role=>hearth?.crew?.[role]?.hired)}
+function managedFreightStatus(s){
+ const f=managedFreightState(s),old=hearthForFreight(s);
+ const canConfigure=activeWorld(s)==='cloud'&&!!old&&hasHearthKeeper(old)&&
+  ['forecast','field','research','menu','prep','upgrade'].includes(s.phase)&&(!s.field||s.field.settled);
+ const open=activeWorld(s)==='cloud'&&['forecast','field','research','menu','prep'].includes(s.phase)&&(!s.field||s.field.settled);
+ return {enabled:!!f.enabled,focus:f.focus,days:Math.min(MANAGED_FREIGHT_DAYS,f.days||0),
+  pending:f.pending?clone(f.pending):null,canConfigure,canClaim:open&&!!f.pending,
+  keeper:hasHearthKeeper(old),oldCoins:old?.coins||0,
+  preview:Object.fromEntries(Object.entries(MANAGED_FREIGHT_FOCUS[f.focus]?.items||{}).map(([id,max])=>[id,Math.min(max,old?.inventory?.[id]||0)])),
+  remainingDays:Math.max(0,MANAGED_FREIGHT_DAYS-(f.days||0)),fee:MANAGED_FREIGHT_FEE};
+}
+function configureManagedFreight(s,focus){
+ if(!Object.hasOwn(MANAGED_FREIGHT_FOCUS,focus)&&focus!=='off')return false;
+ if(!managedFreightStatus(s).canConfigure)return false;
+ const f=managedFreightState(s);
+ if(focus==='off'){
+  if(!f.enabled)return false;f.enabled=false;f.days=0;return true;
+ }
+ // Changing preference never rerolls a cargo already shipped.
+ f.focus=focus;f.enabled=true;return true;
+}
+function advanceManagedFreightOnCloudClose(s){
+ if(activeWorld(s)!=='cloud')return null;
+ const f=managedFreightState(s),dayKey=kitchenDayKey(s);
+ if(f.lastClosedKey===dayKey||!f.enabled)return null;
+ f.lastClosedKey=dayKey;
+ if(f.pending)return null; // one unclaimed shipment at most, no retroactive piles
+ f.days=Math.min(MANAGED_FREIGHT_DAYS,(f.days||0)+1);
+ if(f.days<MANAGED_FREIGHT_DAYS)return null;
+ const old=hearthForFreight(s),plan=MANAGED_FREIGHT_FOCUS[f.focus];
+ if(!old||!hasHearthKeeper(old)||!plan||old.coins<MANAGED_FREIGHT_FEE||!Array.isArray(old.ledger))return null;
+ const items=Object.fromEntries(Object.entries(plan.items)
+  .map(([id,max])=>[id,Math.min(max,Math.max(0,Math.floor(old.inventory?.[id]||0)))])
+  .filter(([,n])=>n>0));
+ const total=Object.values(items).reduce((n,x)=>n+x,0);
+ if(!total)return null; // retain two completed nights; try later without fake stock
+ const seq=(f.seq||0)+1,id='managed-export-out-'+seq;
+ if(old.ledger.some(x=>x.id===id))return null;
+ // All checks precede every mutation; both chapters live in this one save.
+ for(const [ing,n] of Object.entries(items))old.inventory[ing]-=n;
+ old.coins-=MANAGED_FREIGHT_FEE;
+ old.ledger.push({id,type:'managed_export_out',items:Object.fromEntries(Object.entries(items).map(([ing,n])=>[ing,-n])),
+  amount:-MANAGED_FREIGHT_FEE,focus:f.focus,day:old.day,cycle:old.cycle,cloudDay:dayKey});
+ f.seq=seq;f.days=0;f.pending={seq,focus:f.focus,items,total,cloudDay:dayKey,fee:MANAGED_FREIGHT_FEE};
+ return clone(f.pending);
+}
+function claimManagedFreight(s){
+ const status=managedFreightStatus(s),f=managedFreightState(s),box=f.pending;
+ if(!status.canClaim||!box||!Object.hasOwn(MANAGED_FREIGHT_FOCUS,box.focus))return false;
+ const id='managed-export-in-'+box.seq;
+ if(s.ledger.some(x=>x.id===id)){f.pending=null;return false} // stale save, never double-receive
+ if(!box.items||!Object.entries(box.items).length||!Object.entries(box.items).every(([ing,n])=>MANAGED_FREIGHT_FOCUS[box.focus]?.items?.[ing]>=n&&
+  Number.isInteger(n)&&n>0))return false;
+ if(!transact(s,id,'managed_export_in',{...box.items},0))return false;
+ f.pending=null;
+ return true;
+}
+
 function ferrySupplyAvailable(s){
  return activeWorld(s)==='cloud'&&['forecast','field','research','menu','prep'].includes(s.phase)&&
   (!s.field||s.field.settled)&&(s.ferryCredits||0)>=1&&
@@ -5519,6 +5592,7 @@ s.report={salvage:{recovered:salvageStats.recovered||0,reused:salvageStats.reuse
  s.history??=[];s.history.push({day:totalBusinessDay(s),revenue:s.report.revenue,profit:s.report.profit,
    served:s.report.served,arrivals:s.report.totalOrders,unseated:s.report.unseated,
    reputation:s.reputation,tables:v.tableCount,satisfaction:s.report.sat,marketing:v.marketing?.id||'none',payroll:finance.wage,cashDelta:s.report.finance.cashChange});
+ const dispatched=advanceManagedFreightOnCloudClose(s);if(dispatched)s.report.managedFreight=dispatched;
  nextPhase(s,'report');return s.report}
 function advanceDay(s){if(s.phase!=='upgrade')return false;const day=s.day;s.day=day===3?1:day+1;if(day===3)s.cycle++;s.phase='forecast';ensureChapterProgress(s).requestDay=null;ensureSecondAppraisal(s).requestDay=null;ensureThirdAppraisal(s).requestDay=null;s.premiumMenu=null;s.market=null;s.route=null;s.field=null;s.bento=null;s.cook=null;s.report=null;s.lastCook=null;s.researchReceipt=false;s.prep={};s.prepVariants={};s.prepCost=0;s.manualCost=0;s.service=null;s.step++;ensureManagement(s);return true}
 function buyUpgrade(s){return buyKitchenUpgrade(s,0)}
@@ -9875,7 +9949,7 @@ function overlayMarkup(){if(!overlay)return '';
   // Other warehouse inventory is reference only, not a fifth "missing" shop slot.
   const elsewhere=Object.entries(ING).filter(([id])=>!market.goods[id]);
   body=`<h2>食材采购</h2><p class="sheet-lead">每天从 8 种普通食材随机上架 4 种，四种均有当日限额；售罄后次日换货。野外也可获取普通食材。</p>
-  <h3>第 ${totalBusinessDay(game)} 天 · 今日上架 ${offers.length} 种</h3>${activeWorld(game)==='cloud'?`<section class="v015-ferry" aria-label="航运委托三选一"><strong>🪁 航运委托 ×${game.ferryCredits||0}</strong><small>原店真实成交获得 · 每个云港营业日可消耗 1 张，三选一接收 <b>8 份边境进口食材</b>，搭配云港材料研发融合料理。</small><div class="v015-ferry-packs">${Object.entries(FERRY_SUPPLY_PACKS).map(([id,pack])=>`<div class="v015-ferry-pack"><div><b>${esc(pack.name)}</b><small>${esc(pack.desc)}</small><div class="v015-ferry-ingredients">${Object.entries(pack.items).map(([item,n])=>`<span>${ingredientIconHtml(item,19)} ${esc(ING[item]?.name||item)} ×${n}<em>现有${game.inventory[item]||0}</em></span>`).join('')}</div></div><button type="button" data-act="ferry-supply:${id}" ${!ferrySupplyAvailable(game)?'disabled':''}>兑换这批 · 共 8 份</button></div>`).join('')}</div>${!ferrySupplyAvailable(game)?`<small class="v015-ferry-locked">${game.ledger?.some(x=>x.id===`ferry-supply-${game.cycle}-${game.day}`)?'今日已兑换，下一云港营业日可再领取。':(game.ferryCredits||0)<1?'需要先返回边境食堂真正营业，获得委托。':'当前阶段暂不能兑换。'}</small>`:''}</section>`:''}<div class="stock-list" aria-label="今日可采购食材">${offers.map(stockLine).join('')}</div>
+  <h3>第 ${totalBusinessDay(game)} 天 · 今日上架 ${offers.length} 种</h3>${activeWorld(game)==='cloud'?`<section class="v015-ferry" aria-label="航运委托三选一"><strong>🪁 航运委托 ×${game.ferryCredits||0}</strong><small>原店真实成交获得 · 每个云港营业日可消耗 1 张，三选一接收 <b>8 份边境进口食材</b>，搭配云港材料研发融合料理。</small><div class="v015-ferry-packs">${Object.entries(FERRY_SUPPLY_PACKS).map(([id,pack])=>`<div class="v015-ferry-pack"><div><b>${esc(pack.name)}</b><small>${esc(pack.desc)}</small><div class="v015-ferry-ingredients">${Object.entries(pack.items).map(([item,n])=>`<span>${ingredientIconHtml(item,19)} ${esc(ING[item]?.name||item)} ×${n}<em>现有${game.inventory[item]||0}</em></span>`).join('')}</div></div><button type="button" data-act="ferry-supply:${id}" ${!ferrySupplyAvailable(game)?'disabled':''}>兑换这批 · 共 8 份</button></div>`).join('')}</div>${!ferrySupplyAvailable(game)?`<small class="v015-ferry-locked">${game.ledger?.some(x=>x.id===`ferry-supply-${game.cycle}-${game.day}`)?'今日已兑换，下一云港营业日可再领取。':(game.ferryCredits||0)<1?'需要先返回边境食堂真正营业，获得委托。':'当前阶段暂不能兑换。'}</small>`:''}</section>`:''}${managedFreightPanel()}<div class="stock-list" aria-label="今日可采购食材">${offers.map(stockLine).join('')}</div>
   <details class="v013e-warehouse-details"><summary>查看其他仓库库存（非今日商品）</summary><div class="stock-list">${elsewhere.map(([id,ing])=>`<div class="detail-row">${ingredientIconHtml(id,20)} ${ing.name} · 库存 ×${game.inventory[id]||0}</div>`).join('')}</div></details>`;
  }else if(overlay==='premium'){
   const options=premiumMenuOptions(game),active=premiumMenuActive(game)?game.premiumMenu:null;
@@ -9913,7 +9987,7 @@ function overlayMarkup(){if(!overlay)return '';
    };
    body='<h2>👩‍🍳 食堂伙伴</h2><p class="sheet-lead">'+(activeWorld(game)==='cloud'?'云港可在首枚星章后再聘一名跑堂，双跑堂各自认领一盘并行送餐、各计工资与经验；':'')+'每位帮厨按本人实际完成的订单获得经验；增加厨位必须配备人手才能真正出餐。开门前直接选择左、中、右优先站位；已选位置不可重复安排。营业时，空闲帮厨仍会自动走到缺人的炉台支援。</p><div class="staff-roster">'+row('helper')+row('waiter')+(crew.helper2.hired?row('helper2'):'')+(activeWorld(game)==='cloud'?row('waiter2'):'')+'</div>';
  }else if(overlay==='settings'){
-  body=`<h2>⚙ 游戏设置</h2><p class="sheet-lead">ODDPOT · v0.15.0-alpha.10 · 单机本地存档</p>${b('guide-replay','重看第一轮引导','secondary')}${b('reset','重置存档，从第 1 天重新开始','danger')}<p class="sheet-lead">切到后台时营业会自动暂停。更换设备不会同步存档。</p>`;
+  body=`<h2>⚙ 游戏设置</h2><p class="sheet-lead">ODDPOT · v0.15.0-alpha.11 · 单机本地存档</p>${b('guide-replay','重看第一轮引导','secondary')}${b('reset','重置存档，从第 1 天重新开始','danger')}<p class="sheet-lead">切到后台时营业会自动暂停。更换设备不会同步存档。</p>`;
  }else if(overlay==='details'){
   const r=game.report;body=r?`<h2>营业账本详情</h2><p class="sheet-lead">本日订单由真实食材库存、工位工作秒数和顾客等待事件计算。</p><div class="book-list">${Object.entries(r.byDish).map(([id,d])=>`<div class="detail-row">${RECIPES[id].emoji} ${RECIPES[id].name}：售出 ${d.count} 份 · 满意 ${Math.round(d.totalSat/d.count)}</div>`).join('')}<div class="detail-row">左厨位占用 ${r.congestion.WOK||0} 秒 / 右厨位 ${r.congestion.POT||0} 秒${r.congestion.CENTER!==undefined?' / 中厨位 '+r.congestion.CENTER+' 秒':''}</div><div class="detail-row">食材耗用估值 ${r.cost} · 宣传 ${r.finance?.marketingCost||0} · 工资 ${r.finance?.wage||0} · 招待支出 ${r.hospitalityCost||0} · 收入 ${r.revenue} · 经营利润 ${r.profit} · 现金净变动 ${r.finance?.cashChange??'旧版无记录'}</div></div>`:'';
  }
@@ -9959,6 +10033,26 @@ function portalPanel(){
  const cloud=activeWorld(game)==='cloud',selection=game.portalSelection||{},roles=['helper','waiter','helper2'].filter(role=>game.crew?.[role]?.hired);
  const types=['WOK','POT',...(game.kitchen?.grillOwned?['GRILL']:[])];
  return `<section class="v12-star-invite" aria-label="云港传送门"><strong>🌀 ${cloud?'返回边境食堂':'云港浮岛 · 第一扇传送门'}</strong><small>${cloud?'原食堂的真实营业可积累航运委托；当前有 '+(game.ferryCredits||0)+' 张。':'当地伙伴阿岚将值守新店。原店员工继续留守，首次进入可带走一类厨具经验。'}</small>${!cloud&&!game.worlds?.cloud?`<div class="portal-picks"><small>厨具经验：${types.map(type=>`<button data-act="portal-tool:${type}" aria-pressed="${(selection.tool||types.find(t=>game.kitchen.mastery[t]>1)||'WOK')===type}">${cookName(type)} Lv.${game.kitchen.mastery[type]}</button>`).join('')}</small></div>`:''}<button data-act="portal-travel">${cloud?'返回原食堂':'进入云港浮岛'}</button></section>`;
+}
+function managedFreightPanel(){
+ if(activeWorld(game)!=='cloud')return '';
+ const st=managedFreightStatus(game),pending=st.pending;
+ const routes=Object.entries(MANAGED_FREIGHT_FOCUS).map(([id,pack])=>
+  '<div class="v015-ferry-pack"><b>'+esc(pack.name)+(st.enabled&&st.focus===id?' ✓':'')+'</b>'+
+  '<small>'+Object.entries(pack.items).map(([ing,n])=>esc(ING[ing].name)+'×'+n).join(' · ')+'</small>'+
+  '<button data-act="managed-freight:'+id+'" '+(!st.canConfigure?'disabled':'')+'>'+(st.enabled&&st.focus===id?'当前航线':'选择并启用')+'</button></div>').join('');
+ const freight=pending?'<div class="v015-ferry-pack"><strong>📦 第 '+pending.seq+' 批货已抵港</strong><small>'+
+   Object.entries(pending.items).map(([id,n])=>esc(ING[id].name)+'×'+n).join('、')+
+   ' · 合计 '+pending.total+' 份</small><button data-act="managed-freight-claim" '+(!st.canClaim?'disabled':'')+'>领入云港仓库</button></div>':
+   '<small class="v015-ferry-locked">'+(!st.keeper?'请先回原食堂雇佣留守伙伴。':!st.enabled?'请选择一条航线开通托运。':
+   st.days<MANAGED_FREIGHT_DAYS?'下一批还需 '+st.remainingDays+' 晚真实云港营业。':
+   st.oldCoins<st.fee?'旧世界余额不足10金币，无法发车。':'船期已到，需原世界库存中有对应食材才会发车。')+'</small>';
+ return '<section class="v015-ferry" aria-label="旧世界留守航运"><strong>⛵ 旧餐厅留守商船</strong>'+
+ '<small>每完成两晚云港营业自动调拨一批，最多6份，且只积压一批。从旧世界真扣仓库食材与10金币运费，不会自动生成食材或收入。</small>'+
+ '<small>旧店 '+(st.keeper?'有员工留守':'尚无员工')+' · 航期 '+st.days+'/'+MANAGED_FREIGHT_DAYS+
+ ' · 旧店金币 '+st.oldCoins+' · '+(st.enabled?'已启用':'未启用')+'</small>'+
+ '<div class="v015-ferry-packs">'+routes+'</div>'+
+ (st.enabled?'<button data-act="managed-freight:off" '+(!st.canConfigure?'disabled':'')+'>暂停后续发车</button>':'')+freight+'</section>';
 }
 function forecast(){
  const plan=serviceDayPlan(game);
@@ -10205,7 +10299,7 @@ function service(){
   ${goal?'<div class="v075-goal">🎯 '+esc(goal.label)+' · <b id="v075-goal">'+goal.value+'/'+goal.target+'</b></div>':''}
   ${modal}${paused}${end}</div>`,''];
 }
-function report(){const r=game.report;const lead=newRecipeLead(game);if(!r)return ['',''];return [`<div class="report-scene" aria-label="今日营业结算"><h2 class="report-header">${r.secondRating?.passed&&r.secondRating.stage===2?'✦✦ 获得第二枚万味星章！':r.secondRating?.passed?'✦ 二星首夜通过！':r.secondRating?'✦ 二星评鉴未达标':r.rating?.passed?'✦ 获得万味星章！':r.rating?'✦ 评鉴结束，下次再试':r.won?'🏆 击败爆炎厨王！':r.challenge?'🔥 爆炎厨王：挑战结束':'🌙 打烊啦，看看大家怎么说'}</h2><div class="report-stats"><div><small>今晚收入</small><b>🪙 ${r.revenue}</b></div><div><small>贡献利润</small><b>${r.profit}</b></div><div><small>成功上菜</small><b>${r.served}/${r.totalOrders||7}</b></div><div><small>平均满意</small><b>${r.sat}</b></div></div>${reportPromotionBanner()}${r.salvage?.recovered?`<div class="v063-craft-report" aria-label="离席熟菜回收复盘"><strong>♻️ 熟菜回收与再利用</strong><span>回收 ${r.salvage.recovered} 份 · 再次上桌 ${r.salvage.reused} 份 · 打烊丢弃 ${r.salvage.expired} 份</span><small>只回收已出锅且未送到客人的普通料理，沿用原材料成本；不能跨营业日保存。</small></div>`:''}${r.orderedByDish&&Object.keys(r.orderedByDish).length?`<div class="v063-craft-report"><strong>📋 今日实际点单 / 售出</strong>${Object.entries(r.orderedByDish).sort((a,b)=>b[1]-a[1]).map(([id,n])=>`<div class="v063-craft-row"><b>${esc(RECIPES[id]?.name||id)}</b><small>点单 ${n} · 售出 ${r.byDish?.[id]?.count||0}${n>(r.byDish?.[id]?.count||0)?' · 留意缺料、等待或退单':''}</small></div>`).join('')}</div>`:''}${r.ferryEarned?`<div class="v015-ferry"><strong>🪁 获得航运委托 ×1</strong><small>来自原食堂今天的真实上菜；可在云港每日接收一批边境食材，研发跨世界料理。</small></div>`:''}${ratingReceipt(r)}${secondRatingReceipt(r)}${r.finance?`<div class="v12c-finance"><strong>🪙 经营账本 · 真实收支</strong><span>营业收入 ${r.revenue} · 食材估值 ${r.cost} · 宣传 ${r.finance.marketingCost} · 工资 ${r.finance.wage}</span><span>其他营业支出 ${(r.eventExpense||0)+(r.hospitalityCost||0)} · 经营利润 <b>${r.profit}</b></span><span>本日现金净变动（含采购与投资）<b>${r.finance.cashChange>=0?'+':''}${r.finance.cashChange}</b></span><small>${CAMPAIGNS[r.finance.campaignId]?.name||'自然营业'}：新增 ${r.finance.promotionGuests} 客 · 到店 ${r.finance.marketingArrived||0} · 成交 ${r.finance.marketingServed||0} 单 · 销售 ${r.finance.marketingRevenue||0} 金币</small><small>已付工资 ${r.finance.paid} · 结算后欠薪 ${r.finance.debt}</small></div>`:''}${r.kitchen?`<div class="kitchen-report"><strong>厨房复盘</strong>${r.kitchen.slots.map((slot,i)=>`<span>${['左','右','中'][i]} ${cookName(slot.type)} Lv.${slot.level} · ${r.kitchen.stats?.[['WOK','POT','CENTER'][i]]?.count||0} 单 · 节约 ${r.kitchen.stats?.[['WOK','POT','CENTER'][i]]?.secondsSaved||0} 秒</span>`).join('')}</div>`:''}${r.byCraft&&Object.keys(r.byCraft).length?`<div class="v063-craft-report"><strong>🥘 本晚工艺表现（实际销售）</strong>${Object.values(r.byCraft).map(x=>`<div class="v063-craft-row"><b>${esc(RECIPES[x.recipeId]?.name||'料理')} · ${esc(x.styleLabel)}</b><small>售出 ${x.count} 份 · 评价 ${Math.round(x.totalSat/x.count)} · 实收 ${x.revenue} 金币${x.revenue!==x.baseRevenue? '（相比基础 '+(x.revenue-x.baseRevenue>0?'+':'')+(x.revenue-x.baseRevenue)+'）':''}</small></div>`).join('')}</div>` :''}${r.staff?.crew&&(r.staff.crew.helper.hired||r.staff.crew.waiter.hired||r.staff.crew.helper2?.hired)?`<div class="staff-report"><b>员工今日贡献</b>${r.staff.crew.helper.hired?`<span>帮厨：参与 ${r.staff.stats.helperOrders} 单 · 实省 ${r.staff.stats.helperSeconds} 秒</span>`:''}${r.staff.crew.helper2?.hired?`<span>${crewRoleName(game,'helper2')}：参与 ${r.staff.stats.helper2Orders||0} 单 · 实省 ${r.staff.stats.helper2Seconds||0} 秒</span>`:''}${r.staff.crew.waiter.hired?`<span>跑堂：照顾 ${r.staff.stats.waiterOrders} 桌 · 额外耐心 ${r.staff.stats.waiterBonus} 秒 · 延误挽回 ${r.staff.stats.waiterSaved} 单</span>`:''}<small>员工餐食材成本 ${r.staff.foodCost} 金币（计入利润）</small></div>`:''}${r.growth?`<div class="v12c-growth-report"><b>🌟 员工成长</b>${Object.entries(r.growth.earned).map(([role,n])=>`<span>${crewRoleName(game,role)} · 工作经验 +${n} · Lv.${(game.crew?.[role]?.level||r.growth.after[role].level)}（累计 ${r.growth.after[role].xp}）</span>`).join('')}</div>`:''}${r.regularGuests?.length?`<div class="v010-regular-report">👥 今天认识或再见了：${r.regularGuests.slice(0,3).map(g=>esc(g.name)+(g.happyMeals>=2?' · 熟客':'')).join('、')}</div>`:''}${r.premium?.recipeId?`<div class="v010-premium-report"><strong>✨ 隐藏菜 · ${esc(RECIPES[r.premium.recipeId]?.name||'稀有料理')}</strong><span>限量 ${r.premium.limit} 份 · 接单 ${r.premium.ordered} · 完成 ${r.premium.sold} · 实收 ${r.premium.revenue} 金币</span></div>`:''}<div class="daily-goal-result"><b>今日任务：${r.goal?.label||'完成营业'}</b><span>${r.goal?`${r.goal.value}/${r.goal.target} · ${r.goal.success?'达成！口碑 +2':'未达成，下次再试'}`:'常规营业'}</span></div><div class="guest-verdict"><strong>💬 今日食客点评</strong><p>${r.suggested}</p></div>${r.guestReviews?.length?`<div class="guest-feedback-list"><strong>真实食客回访</strong>${r.guestReviews.slice(0,3).map(x=>`<div class="review-line"><span>${RECIPES[x.recipeId]?.name||'今日料理'}</span><span>“${esc(x.text)}” · ${x.sat}分</span></div>`).join('')}</div>`:''}${r.choices?.length?`<div class="v04-choices"><small>店长今日决策</small>${r.choices.map(c=>`<span>${c.type==='menu_swap'?`临时换菜：${RECIPES[c.before].name} → ${RECIPES[c.after].name}`:`第${c.wave}波：${({sign:activeWorld(game)==='cloud'?'码头主食推荐':'辣味招牌',kitchen:'整理后厨',steady:'稳定营业',soup:activeWorld(game)==='cloud'?'云织清润推荐':'温和推荐',assist:'临时帮厨',publicity:'试吃宣传'})[c.choice]||c.choice}`}</span>`).join('')}</div>`:''}${r.challenge?`<div class="boss-mini">厨王赛得分 <b>${r.challenge.score}</b> / 对手 70　${r.won?'🏆 获得猛火掌控':'未达标，下轮仍可挑战'}</div>`:''}${r.queue?`<section class="v12e-queue-report" aria-label="门外真实等位"><strong>🚪 门外等位与接待</strong><span>峰值 ${r.queue.peak} 位 · 等位后入店 ${r.queue.waited} 位 · 等位流失 ${r.queue.abandoned} 位</span><small>平均成功等位 ${r.queue.waited?Math.round(r.queue.waitSeconds/r.queue.waited):0} 秒 · 未入座 ${r.unseated} 位${r.queue.peak===0?' · 今晚没有形成排队':''}</small></section>`:''}<div class="v09-growth-report"><b>🏠 经营成长 · 第 ${r.absoluteDay||totalBusinessDay(game)} 天</b><span>食堂 ${r.tableCount||2} 桌 / ${(r.tableCount||2)*2} 席 · 今日等位高峰 ${r.queuePeak||0} 人 · 未能入座 ${r.unseated||0} 人</span><span>累计营业额 ${game.history.reduce((n,x)=>n+x.revenue,0)} 金币 · 累计招待 ${game.history.reduce((n,x)=>n+x.served,0)} 人</span></div><div class="recipe-lead"><small>🔎 顾客带来的研发灵感</small><strong>${lead?`“${lead.hint}”`:'目前的菜谱已经全部解锁！'}</strong>${lead?`<span>可尝试 ${lead.ingredients.map(id=>ingredientIconHtml(id,22)).join(' + ')}</span>`:''}</div></div>`,
+function report(){const r=game.report;const lead=newRecipeLead(game);if(!r)return ['',''];return [`<div class="report-scene" aria-label="今日营业结算"><h2 class="report-header">${r.secondRating?.passed&&r.secondRating.stage===2?'✦✦ 获得第二枚万味星章！':r.secondRating?.passed?'✦ 二星首夜通过！':r.secondRating?'✦ 二星评鉴未达标':r.rating?.passed?'✦ 获得万味星章！':r.rating?'✦ 评鉴结束，下次再试':r.won?'🏆 击败爆炎厨王！':r.challenge?'🔥 爆炎厨王：挑战结束':'🌙 打烊啦，看看大家怎么说'}</h2><div class="report-stats"><div><small>今晚收入</small><b>🪙 ${r.revenue}</b></div><div><small>贡献利润</small><b>${r.profit}</b></div><div><small>成功上菜</small><b>${r.served}/${r.totalOrders||7}</b></div><div><small>平均满意</small><b>${r.sat}</b></div></div>${reportPromotionBanner()}${r.managedFreight?`<div class="v015-ferry"><strong>⛵ 旧店留守商船出发</strong><small>实际装运 ${r.managedFreight.total} 份边境食材，旧仓和运费已扣除。可在下一次云港采购中签收。</small></div>`:''}${r.salvage?.recovered?`<div class="v063-craft-report" aria-label="离席熟菜回收复盘"><strong>♻️ 熟菜回收与再利用</strong><span>回收 ${r.salvage.recovered} 份 · 再次上桌 ${r.salvage.reused} 份 · 打烊丢弃 ${r.salvage.expired} 份</span><small>只回收已出锅且未送到客人的普通料理，沿用原材料成本；不能跨营业日保存。</small></div>`:''}${r.orderedByDish&&Object.keys(r.orderedByDish).length?`<div class="v063-craft-report"><strong>📋 今日实际点单 / 售出</strong>${Object.entries(r.orderedByDish).sort((a,b)=>b[1]-a[1]).map(([id,n])=>`<div class="v063-craft-row"><b>${esc(RECIPES[id]?.name||id)}</b><small>点单 ${n} · 售出 ${r.byDish?.[id]?.count||0}${n>(r.byDish?.[id]?.count||0)?' · 留意缺料、等待或退单':''}</small></div>`).join('')}</div>`:''}${r.ferryEarned?`<div class="v015-ferry"><strong>🪁 获得航运委托 ×1</strong><small>来自原食堂今天的真实上菜；可在云港每日接收一批边境食材，研发跨世界料理。</small></div>`:''}${ratingReceipt(r)}${secondRatingReceipt(r)}${r.finance?`<div class="v12c-finance"><strong>🪙 经营账本 · 真实收支</strong><span>营业收入 ${r.revenue} · 食材估值 ${r.cost} · 宣传 ${r.finance.marketingCost} · 工资 ${r.finance.wage}</span><span>其他营业支出 ${(r.eventExpense||0)+(r.hospitalityCost||0)} · 经营利润 <b>${r.profit}</b></span><span>本日现金净变动（含采购与投资）<b>${r.finance.cashChange>=0?'+':''}${r.finance.cashChange}</b></span><small>${CAMPAIGNS[r.finance.campaignId]?.name||'自然营业'}：新增 ${r.finance.promotionGuests} 客 · 到店 ${r.finance.marketingArrived||0} · 成交 ${r.finance.marketingServed||0} 单 · 销售 ${r.finance.marketingRevenue||0} 金币</small><small>已付工资 ${r.finance.paid} · 结算后欠薪 ${r.finance.debt}</small></div>`:''}${r.kitchen?`<div class="kitchen-report"><strong>厨房复盘</strong>${r.kitchen.slots.map((slot,i)=>`<span>${['左','右','中'][i]} ${cookName(slot.type)} Lv.${slot.level} · ${r.kitchen.stats?.[['WOK','POT','CENTER'][i]]?.count||0} 单 · 节约 ${r.kitchen.stats?.[['WOK','POT','CENTER'][i]]?.secondsSaved||0} 秒</span>`).join('')}</div>`:''}${r.byCraft&&Object.keys(r.byCraft).length?`<div class="v063-craft-report"><strong>🥘 本晚工艺表现（实际销售）</strong>${Object.values(r.byCraft).map(x=>`<div class="v063-craft-row"><b>${esc(RECIPES[x.recipeId]?.name||'料理')} · ${esc(x.styleLabel)}</b><small>售出 ${x.count} 份 · 评价 ${Math.round(x.totalSat/x.count)} · 实收 ${x.revenue} 金币${x.revenue!==x.baseRevenue? '（相比基础 '+(x.revenue-x.baseRevenue>0?'+':'')+(x.revenue-x.baseRevenue)+'）':''}</small></div>`).join('')}</div>` :''}${r.staff?.crew&&(r.staff.crew.helper.hired||r.staff.crew.waiter.hired||r.staff.crew.helper2?.hired)?`<div class="staff-report"><b>员工今日贡献</b>${r.staff.crew.helper.hired?`<span>帮厨：参与 ${r.staff.stats.helperOrders} 单 · 实省 ${r.staff.stats.helperSeconds} 秒</span>`:''}${r.staff.crew.helper2?.hired?`<span>${crewRoleName(game,'helper2')}：参与 ${r.staff.stats.helper2Orders||0} 单 · 实省 ${r.staff.stats.helper2Seconds||0} 秒</span>`:''}${r.staff.crew.waiter.hired?`<span>跑堂：照顾 ${r.staff.stats.waiterOrders} 桌 · 额外耐心 ${r.staff.stats.waiterBonus} 秒 · 延误挽回 ${r.staff.stats.waiterSaved} 单</span>`:''}<small>员工餐食材成本 ${r.staff.foodCost} 金币（计入利润）</small></div>`:''}${r.growth?`<div class="v12c-growth-report"><b>🌟 员工成长</b>${Object.entries(r.growth.earned).map(([role,n])=>`<span>${crewRoleName(game,role)} · 工作经验 +${n} · Lv.${(game.crew?.[role]?.level||r.growth.after[role].level)}（累计 ${r.growth.after[role].xp}）</span>`).join('')}</div>`:''}${r.regularGuests?.length?`<div class="v010-regular-report">👥 今天认识或再见了：${r.regularGuests.slice(0,3).map(g=>esc(g.name)+(g.happyMeals>=2?' · 熟客':'')).join('、')}</div>`:''}${r.premium?.recipeId?`<div class="v010-premium-report"><strong>✨ 隐藏菜 · ${esc(RECIPES[r.premium.recipeId]?.name||'稀有料理')}</strong><span>限量 ${r.premium.limit} 份 · 接单 ${r.premium.ordered} · 完成 ${r.premium.sold} · 实收 ${r.premium.revenue} 金币</span></div>`:''}<div class="daily-goal-result"><b>今日任务：${r.goal?.label||'完成营业'}</b><span>${r.goal?`${r.goal.value}/${r.goal.target} · ${r.goal.success?'达成！口碑 +2':'未达成，下次再试'}`:'常规营业'}</span></div><div class="guest-verdict"><strong>💬 今日食客点评</strong><p>${r.suggested}</p></div>${r.guestReviews?.length?`<div class="guest-feedback-list"><strong>真实食客回访</strong>${r.guestReviews.slice(0,3).map(x=>`<div class="review-line"><span>${RECIPES[x.recipeId]?.name||'今日料理'}</span><span>“${esc(x.text)}” · ${x.sat}分</span></div>`).join('')}</div>`:''}${r.choices?.length?`<div class="v04-choices"><small>店长今日决策</small>${r.choices.map(c=>`<span>${c.type==='menu_swap'?`临时换菜：${RECIPES[c.before].name} → ${RECIPES[c.after].name}`:`第${c.wave}波：${({sign:activeWorld(game)==='cloud'?'码头主食推荐':'辣味招牌',kitchen:'整理后厨',steady:'稳定营业',soup:activeWorld(game)==='cloud'?'云织清润推荐':'温和推荐',assist:'临时帮厨',publicity:'试吃宣传'})[c.choice]||c.choice}`}</span>`).join('')}</div>`:''}${r.challenge?`<div class="boss-mini">厨王赛得分 <b>${r.challenge.score}</b> / 对手 70　${r.won?'🏆 获得猛火掌控':'未达标，下轮仍可挑战'}</div>`:''}${r.queue?`<section class="v12e-queue-report" aria-label="门外真实等位"><strong>🚪 门外等位与接待</strong><span>峰值 ${r.queue.peak} 位 · 等位后入店 ${r.queue.waited} 位 · 等位流失 ${r.queue.abandoned} 位</span><small>平均成功等位 ${r.queue.waited?Math.round(r.queue.waitSeconds/r.queue.waited):0} 秒 · 未入座 ${r.unseated} 位${r.queue.peak===0?' · 今晚没有形成排队':''}</small></section>`:''}<div class="v09-growth-report"><b>🏠 经营成长 · 第 ${r.absoluteDay||totalBusinessDay(game)} 天</b><span>食堂 ${r.tableCount||2} 桌 / ${(r.tableCount||2)*2} 席 · 今日等位高峰 ${r.queuePeak||0} 人 · 未能入座 ${r.unseated||0} 人</span><span>累计营业额 ${game.history.reduce((n,x)=>n+x.revenue,0)} 金币 · 累计招待 ${game.history.reduce((n,x)=>n+x.served,0)} 人</span></div><div class="recipe-lead"><small>🔎 顾客带来的研发灵感</small><strong>${lead?`“${lead.hint}”`:'目前的菜谱已经全部解锁！'}</strong>${lead?`<span>可尝试 ${lead.ingredients.map(id=>ingredientIconHtml(id,22)).join(' + ')}</span>`:''}</div></div>`,
  `<div class="action-row">${b('details','📊 账本','secondary')}${b('to-upgrade','🌅 结束本日 →','primary wide')}</div>`]}
 function secondRatingReceipt(r){
  const q=r?.secondRating;if(!q)return '';
@@ -10301,6 +10395,8 @@ function action(act){
  if(act==='field-bag'){if(game.phase==='field'&&game.field){releaseStick();overlay='field-bag';render()}return}
  if(act==='book'){bookTab='recipes';overlay='book';render();return}
  if(act==='stock'||act==='premium'||act==='settings'||act==='details'||act==='bento'){overlay=act;render();return}
+ if(act==='managed-freight-claim'){const st=managedFreightStatus(game),box=st.pending;note(claimManagedFreight(game)?'到港物资入库：'+Object.entries(box.items).map(([id,n])=>ING[id].name+'×'+n).join('、'):'当前无待收货物，或尚不可签收。');return}
+ if(act.startsWith('managed-freight:')){const id=act.slice('managed-freight:'.length);note(configureManagedFreight(game,id)?(id==='off'?'后续发车暂停；已出货物仍可领取。':'已开通 '+MANAGED_FREIGHT_FOCUS[id].name+'，两晚云港营业后尝试真实旧仓调拨。'):'需要在云港、安全营业阶段且旧店已有真实雇员。');return}
  if(act==='ferry-supply'||act.startsWith('ferry-supply:')){const id=act.split(':')[1]||'staple',pack=Object.hasOwn(FERRY_SUPPLY_PACKS,id)?FERRY_SUPPLY_PACKS[id]:null;note(redeemFerrySupply(game,id)?'已兑 '+pack.name+'：'+Object.entries(pack.items).map(([item,n])=>ING[item].name+'×'+n).join('、')+'，合计8份入云港仓库。':'今天已兑换、委托不足或当前阶段不可领取。');return}
  if(act==='reset'){if(confirm('清空本设备的 v0.4 试玩存档？')){localStorage.removeItem('oddpot-prototype-v04');game=newGame();selectedIngredients=['chicken','chili'];overlay='';note('新旅程开始，祝你研究出奇味料理！')}return}
  if(act.startsWith('buy:')){const [,id,n]=act.split(':'),count=n?Number(n):1;

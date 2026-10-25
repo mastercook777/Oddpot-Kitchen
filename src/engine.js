@@ -2,7 +2,7 @@ import {fieldHarvestTargetSuffix} from './field_target_v012f.js?v=0.13.0-alpha.9
 import {craftedPrice} from './recipe_value_v013j.js';
 import {makeSpecialEncounterPlan,previewSpecialEncounter,SPECIAL_ENCOUNTER_KINDS} from './field_encounters_v011c.js';
 import {ING,RECIPES,CUSTOMERS,FORECAST,DEFAULT_INVENTORY,SHOP_STAPLES,MARKET_ROTATION_STAPLES,CLOUD_MARKET_STAPLES} from './data.js?v=0.15.0-alpha.8';
-import {LIVE_ACTIONS,evaluateLiveCook,liveIngredientState,liveIngredientHeatFeedback,legacyVariant,makeLiveVariant,resolveTechnique,liveRecipeId} from './cooking_v063.js?v=0.15.0-alpha.10';
+import {LIVE_ACTIONS,evaluateLiveCook,liveIngredientState,liveIngredientHeatFeedback,legacyVariant,makeLiveVariant,resolveTechnique,liveRecipeId} from './cooking_v063.js?v=0.15.0-alpha.11';
 import {GRILL_LANES,grillPreview,evaluatePlacedGrill} from './grill_cooking_v014c.js?v=0.15.0-alpha.3';
 import {RECIPE_PROFILES} from './recipe_profiles_v063.js?v=0.13.0-alpha.9';
 import {generateBiomeMap,getFieldBiome} from './field_biomes_v081.js?v=0.13.0-alpha.9';
@@ -67,6 +67,79 @@ export const FERRY_SUPPLY_PACKS=Object.freeze({
  forest:{name:'林地菌香箱',desc:'浮苔菌香浓汤及云港鸡香料理',items:{mushroom:4,chicken:2,onion:2}},
  hunt:{name:'荒野野味箱',desc:'酸铃炙牛与云米薯煲',items:{beef:4,potato:2,chicken:2}}
 });
+// v0.15-J: a Harbor-side shipping contract transfers only goods already in
+// the dormant Hearth warehouse. It never simulates unattended sales or gathering.
+export const MANAGED_FREIGHT_FOCUS=Object.freeze({
+ spice:{name:'香辛航线',items:{chili:3,garlic:2,onion:1}},
+ forest:{name:'菌香航线',items:{mushroom:3,chicken:2,onion:1}},
+ hunt:{name:'野味航线',items:{beef:3,potato:2,chicken:1}}
+});
+export const MANAGED_FREIGHT_FEE=10;
+export const MANAGED_FREIGHT_DAYS=2;
+function managedFreightState(s){
+ s.managedFreight??={enabled:false,focus:'forest',days:0,seq:0,pending:null,lastClosedKey:null};
+ return s.managedFreight;
+}
+function hearthForFreight(s){return activeWorld(s)==='cloud'?s.worlds?.hearth:null}
+function hasHearthKeeper(hearth){return !!['helper','waiter','helper2'].find(role=>hearth?.crew?.[role]?.hired)}
+export function managedFreightStatus(s){
+ const f=managedFreightState(s),old=hearthForFreight(s);
+ const canConfigure=activeWorld(s)==='cloud'&&!!old&&hasHearthKeeper(old)&&
+  ['forecast','field','research','menu','prep','upgrade'].includes(s.phase)&&(!s.field||s.field.settled);
+ const open=activeWorld(s)==='cloud'&&['forecast','field','research','menu','prep'].includes(s.phase)&&(!s.field||s.field.settled);
+ return {enabled:!!f.enabled,focus:f.focus,days:Math.min(MANAGED_FREIGHT_DAYS,f.days||0),
+  pending:f.pending?clone(f.pending):null,canConfigure,canClaim:open&&!!f.pending,
+  keeper:hasHearthKeeper(old),oldCoins:old?.coins||0,
+  preview:Object.fromEntries(Object.entries(MANAGED_FREIGHT_FOCUS[f.focus]?.items||{}).map(([id,max])=>[id,Math.min(max,old?.inventory?.[id]||0)])),
+  remainingDays:Math.max(0,MANAGED_FREIGHT_DAYS-(f.days||0)),fee:MANAGED_FREIGHT_FEE};
+}
+export function configureManagedFreight(s,focus){
+ if(!Object.hasOwn(MANAGED_FREIGHT_FOCUS,focus)&&focus!=='off')return false;
+ if(!managedFreightStatus(s).canConfigure)return false;
+ const f=managedFreightState(s);
+ if(focus==='off'){
+  if(!f.enabled)return false;f.enabled=false;f.days=0;return true;
+ }
+ // Changing preference never rerolls a cargo already shipped.
+ f.focus=focus;f.enabled=true;return true;
+}
+function advanceManagedFreightOnCloudClose(s){
+ if(activeWorld(s)!=='cloud')return null;
+ const f=managedFreightState(s),dayKey=kitchenDayKey(s);
+ if(f.lastClosedKey===dayKey||!f.enabled)return null;
+ f.lastClosedKey=dayKey;
+ if(f.pending)return null; // one unclaimed shipment at most, no retroactive piles
+ f.days=Math.min(MANAGED_FREIGHT_DAYS,(f.days||0)+1);
+ if(f.days<MANAGED_FREIGHT_DAYS)return null;
+ const old=hearthForFreight(s),plan=MANAGED_FREIGHT_FOCUS[f.focus];
+ if(!old||!hasHearthKeeper(old)||!plan||old.coins<MANAGED_FREIGHT_FEE||!Array.isArray(old.ledger))return null;
+ const items=Object.fromEntries(Object.entries(plan.items)
+  .map(([id,max])=>[id,Math.min(max,Math.max(0,Math.floor(old.inventory?.[id]||0)))])
+  .filter(([,n])=>n>0));
+ const total=Object.values(items).reduce((n,x)=>n+x,0);
+ if(!total)return null; // retain two completed nights; try later without fake stock
+ const seq=(f.seq||0)+1,id='managed-export-out-'+seq;
+ if(old.ledger.some(x=>x.id===id))return null;
+ // All checks precede every mutation; both chapters live in this one save.
+ for(const [ing,n] of Object.entries(items))old.inventory[ing]-=n;
+ old.coins-=MANAGED_FREIGHT_FEE;
+ old.ledger.push({id,type:'managed_export_out',items:Object.fromEntries(Object.entries(items).map(([ing,n])=>[ing,-n])),
+  amount:-MANAGED_FREIGHT_FEE,focus:f.focus,day:old.day,cycle:old.cycle,cloudDay:dayKey});
+ f.seq=seq;f.days=0;f.pending={seq,focus:f.focus,items,total,cloudDay:dayKey,fee:MANAGED_FREIGHT_FEE};
+ return clone(f.pending);
+}
+export function claimManagedFreight(s){
+ const status=managedFreightStatus(s),f=managedFreightState(s),box=f.pending;
+ if(!status.canClaim||!box||!Object.hasOwn(MANAGED_FREIGHT_FOCUS,box.focus))return false;
+ const id='managed-export-in-'+box.seq;
+ if(s.ledger.some(x=>x.id===id)){f.pending=null;return false} // stale save, never double-receive
+ if(!box.items||!Object.entries(box.items).length||!Object.entries(box.items).every(([ing,n])=>MANAGED_FREIGHT_FOCUS[box.focus]?.items?.[ing]>=n&&
+  Number.isInteger(n)&&n>0))return false;
+ if(!transact(s,id,'managed_export_in',{...box.items},0))return false;
+ f.pending=null;
+ return true;
+}
+
 export function ferrySupplyAvailable(s){
  return activeWorld(s)==='cloud'&&['forecast','field','research','menu','prep'].includes(s.phase)&&
   (!s.field||s.field.settled)&&(s.ferryCredits||0)>=1&&
@@ -1495,6 +1568,7 @@ s.report={salvage:{recovered:salvageStats.recovered||0,reused:salvageStats.reuse
  s.history??=[];s.history.push({day:totalBusinessDay(s),revenue:s.report.revenue,profit:s.report.profit,
    served:s.report.served,arrivals:s.report.totalOrders,unseated:s.report.unseated,
    reputation:s.reputation,tables:v.tableCount,satisfaction:s.report.sat,marketing:v.marketing?.id||'none',payroll:finance.wage,cashDelta:s.report.finance.cashChange});
+ const dispatched=advanceManagedFreightOnCloudClose(s);if(dispatched)s.report.managedFreight=dispatched;
  nextPhase(s,'report');return s.report}
 export function advanceDay(s){if(s.phase!=='upgrade')return false;const day=s.day;s.day=day===3?1:day+1;if(day===3)s.cycle++;s.phase='forecast';ensureChapterProgress(s).requestDay=null;ensureSecondAppraisal(s).requestDay=null;ensureThirdAppraisal(s).requestDay=null;s.premiumMenu=null;s.market=null;s.route=null;s.field=null;s.bento=null;s.cook=null;s.report=null;s.lastCook=null;s.researchReceipt=false;s.prep={};s.prepVariants={};s.prepCost=0;s.manualCost=0;s.service=null;s.step++;ensureManagement(s);return true}
 export function buyUpgrade(s){return buyKitchenUpgrade(s,0)}
