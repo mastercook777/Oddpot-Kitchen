@@ -42,6 +42,7 @@ function kitchen(s,mode){
   tick(s,1);
  }
  assert.equal(v.done,true,'real service must reach end or 100s timeout');
+ const ledgerBefore=s.ledger.filter(e=>e.type==='sale').length;
  const statuses=v.orders.map(o=>({
   id:o.id,segment:o.segment,status:o.status,recipe:o.recipeId,
   reason:o.leftReason||o.rejectReason||null,
@@ -57,7 +58,7 @@ function kitchen(s,mode){
   type==='cooking'&&x.started!=null&&events.some(ev=>ev.type==='plate_ready'&&ev.order===x.id)===false ||
   ['pickup','delivering','carried'].includes(type)&&events.some(ev=>ev.type==='plate_ready'&&ev.order===x.id)).length]));
  const ledgerSales=s.ledger.filter(e=>e.type==='sale').length;
- assert.equal(ledgerSales,report.served,'one real ledger sale per served guest');
+ assert.equal(ledgerSales-ledgerBefore,report.served,'exactly one new real ledger sale per served guest this night');
  return {seed:s.seed,served:report.served,orders:report.totalOrders,late:timedOut.length,
   queueAbandoned:report.queue.abandoned,missing:statuses.filter(x=>x.reason==='食材不足').length,
   menuMismatch:statuses.filter(x=>x.reason==='菜单不匹配').length,
