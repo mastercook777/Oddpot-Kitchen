@@ -1,3 +1,15 @@
+# 《怪味食堂》最新进展 · v0.15.0-alpha.11（2026-10-25）
+
+> **当前 main 已合并**：[PR #94 · 旧餐厅留守航运](https://github.com/mastercook777/Oddpot-Kitchen/pull/94)（[commit 3772240d](https://github.com/mastercook777/Oddpot-Kitchen/commit/3772240dd14cdcfaaf6de9cef40200615b90da4d)）。云港可选择香辛、菌香、野味航线；每完成两个真实云港营业日，旧餐厅留守员工调拨最多6份**已有边境库存**、旧世界金币支付10枚运费；云港采购阶段亲自领取，运单最多积压一批，存档/世界往返防重入账。此前主动返回旧店营业赚取的**八份航运委托**继续存在，互不冲突。
+>
+> **边界**：这是旧仓真实调拨，不是旧店无人时自动营业生产物资或金币。自动经营与工资采买模型后置；云港第二生态镜露花园亦未上线。**570/570 Node、16/16 GitHub Actions 通过**，但 Pages alpha.11 实际部署和 iPhone/Android 玩家体验仍需核验。
+>
+> 开发入口：[START_HERE](docs/START_HERE.md) · [PROJECT_STATE](docs/PROJECT_STATE.md) · [ROADMAP](docs/ROADMAP.md) · [v0.15-J 设计与结果](docs/V0.15J_MANAGED_HEARTH_FREIGHT_SPEC.md) · [在线试玩](https://mastercook777.github.io/Oddpot-Kitchen/)。
+>
+> 下方 v0.11、v0.10 等为历史记录，所写“当前”只适用于对应旧版本，不覆盖此处的正式 main 版本。
+
+---
+
 > **当前 alpha.4 · Hybrid 探索美术正式推广**：八生态/十四现有地区采用 E.1 同源精细 Canvas 环境，像素角色与食材保留；攻击、弹道、受击与交互效果改为平滑 Canvas。完整试玩仍为 GitHub Pages 主入口，快速八生态验证为 [art-preview.html](art-preview.html)。用户已授权正式推广；353项回归通过，手机体验仍以实际反馈为准。见 [实现交接](docs/V0.11_HYBRID_MAINLINE_ROLLOUT.md)。B2/C玩法仍未开发。
 
 # 下一阶段设计已入仓 · v0.11 探索系统 2.0（尚未开发）
