@@ -58,11 +58,13 @@ test('two actual Cloud evenings dispatch 6 actual Hearth units; collection has t
  assert.equal(s.inventory.mushroom||0,cloudBefore.mushroom||0);
  assert.equal(claimManagedFreight(s),false,'report cannot collect before the morning');
  morning(s);
+ const beforeReceipt=copy(s.inventory);
  assert.equal(claimManagedFreight(s),true);
  assert.equal(claimManagedFreight(s),false);
  assert.equal(s.ledger.filter(x=>x.id==='managed-export-in-1').length,1);
- assert.equal(s.inventory.mushroom,3);
- assert.equal(s.inventory.chicken,cloudBefore.chicken+2-(r1.byDish?.cloud_rice_chicken?.count||0)-(r2.byDish?.cloud_rice_chicken?.count||0) + (r1.salvage?.recovered||0)*0, 'new Cloud stock must be added to actual current inventory');
+ assert.equal(s.inventory.mushroom,(beforeReceipt.mushroom||0)+3);
+ assert.equal(s.inventory.chicken,(beforeReceipt.chicken||0)+2);
+ assert.equal(s.inventory.onion,(beforeReceipt.onion||0)+1);
 });
 test('only what the old warehouse owns can ship, and a pending cargo blocks additional shipping until claimed',()=>{
  const s=enterCloud(702,true),old=s.worlds.hearth;
