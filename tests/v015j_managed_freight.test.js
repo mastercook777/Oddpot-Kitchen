@@ -55,6 +55,8 @@ test('two actual Cloud evenings dispatch 6 actual Hearth units; collection has t
  assert.equal(s.worlds.hearth.inventory.chicken,before.chicken-2);
  assert.equal(s.worlds.hearth.inventory.onion,before.onion-1);
  assert.equal(s.worlds.hearth.ledger.filter(x=>x.id==='managed-export-out-1').length,1);
+ assert.equal(s.worlds.hearth.ledger.find(x=>x.id==='managed-export-out-1').day,old.day,'old warehouse ledger must keep Hearth-local business day');
+ assert.equal(s.worlds.hearth.ledger.find(x=>x.id==='managed-export-out-1').cloudDay,'1-2','scheduled ship day must remain Cloud-local');
  assert.equal(s.inventory.mushroom||0,cloudBefore.mushroom||0);
  assert.equal(claimManagedFreight(s),false,'report cannot collect before the morning');
  morning(s);
