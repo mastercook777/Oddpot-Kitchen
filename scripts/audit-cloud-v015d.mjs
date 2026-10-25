@@ -28,6 +28,7 @@ function cloud(seed,{stocked=false,waiter=false,waiter2=false}={}){
  return s;
 }
 function kitchen(s,mode){
+ const firstRep=s.reputation;
  s.phase='service';assert.equal(createService(s,{walkable:mode!=='auto'}),true);
  const v=s.service;
  if(v.walkable)Object.assign(v.hero,mode==='left'?DINER_FLOOR.left:mode==='pass'?DINER_FLOOR.pass:DINER_FLOOR.right);
@@ -49,7 +50,7 @@ function kitchen(s,mode){
   started:o.started,ordered:o.orderedAt,landed:o.landedAt,
   arrival:o.arrival,patience:o.patience,fit:o.fit,sat:o.sat,quality:o.quality
  }));
- const events=v.events.map(e=>({...e})),firstRep=s.reputation;
+ const events=v.events.map(e=>({...e}));
  const report=closeService(s);assert.ok(report);
  const abandoned=statuses.filter(x=>x.status==='left'),completed=statuses.filter(x=>x.status==='served');
  const timedOut=abandoned.filter(x=>x.reason==='等待超时');
