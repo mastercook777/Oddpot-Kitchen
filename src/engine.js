@@ -1122,6 +1122,23 @@ function materialCost(ids){return ids.reduce((sum,id)=>sum+ING[id].cost,0)}
 // Order money, guest happiness and final service counters are committed after
 // the projectile lands and the guest has visibly tasted and reviewed it.
 export const DINER_TIMING={enter:2,order:1,flight:2,eat:3,review:2,exit:2.2};
+// A meal is reusable only if it actually finished cooking and never reached a
+// customer. It remains a same-night, same-recipe/variant physical portion.
+function salvageFinishedMeal(s,o,quality,source){
+ const v=s.service;
+ if(!v||!o||o.premium||o.salvageRecorded||!o.recipeId||!RECIPES[o.recipeId]||
+    !(Number.isFinite(quality)&&quality>0)||o.leftReason==='制作失败')return false;
+ const craft=o.craft||recipeCraftSnapshot(s,o.recipeId);
+ if(!craft?.variantId)return false;
+ s.prep??={};s.prepVariants??={};
+ s.prep[o.recipeId]=(s.prep[o.recipeId]||0)+1;
+ (s.prepVariants[o.recipeId]??=[]).push({...clone(craft),salvaged:true,cookedQuality:quality,sourceOrderId:o.id});
+ o.salvageRecorded=true;
+ v.salvageStats??={recovered:0,reused:0};
+ v.salvageStats.recovered++;
+ record(s,{type:'salvaged_ready',order:o.id,recipeId:o.recipeId,quality,source});
+ return true;
+}
 function finishOrder(s,o,quality){
  const v=s.service;
  if(o.status==='left'||o.status==='rejected')return;
@@ -1373,10 +1390,13 @@ for(const st of Object.keys(v.stations)){const job=v.stations[st];if(job){v.cong
  job.left-=rate;
  if(job.left<=0){v.stations[st]=null;const o=v.orders.find(x=>x.id===job.orderId);
   if(o?.status==='cooking'){finishOrder(s,o,job.quality);if(role)record(s,{type:'helper_finished',role,order:job.orderId,station:st});}
+  else if(o?.status==='left'&&o.leftReason==='等待超时'&&salvageFinishedMeal(s,o,job.quality,'finished_after_departure')){}
   else record(s,{type:'waste',order:job.orderId});
  }
 }}
-for(const o of v.orders){if((o.status==='queued'||o.status==='cooking'||(v.walkable&&['pickup','carried','delivering'].includes(o.status)))&&v.time-o.arrival>o.patience){if(v.walkable&&o.status==='delivering'){const role=o.deliveryRole||'waiter';v.waiterBusyUntilByRole??={waiter:v.waiterBusyUntil||0,waiter2:0};v.waiterBusyUntilByRole[role]=v.time+2;if(role==='waiter')v.waiterBusyUntil=v.time+2;record(s,{type:'waiter_return',role,order:o.id,table:o.tableId});}o.status='left';o.leftReason='等待超时';o.leftAt=v.time;if(v.hero?.carryOrderId===o.id)v.hero.carryOrderId=null;s.reputation=Math.max(-20,s.reputation-1);v.queued=v.queued.filter(id=>id!==o.id);record(s,{type:'left',order:o.id,reason:'等待超时'});}}
+for(const o of v.orders){if((o.status==='queued'||o.status==='cooking'||(v.walkable&&['pickup','carried','delivering'].includes(o.status)))&&v.time-o.arrival>o.patience){if(v.walkable&&o.status==='delivering'){const role=o.deliveryRole||'waiter';v.waiterBusyUntilByRole??={waiter:v.waiterBusyUntil||0,waiter2:0};v.waiterBusyUntilByRole[role]=v.time+2;if(role==='waiter')v.waiterBusyUntil=v.time+2;record(s,{type:'waiter_return',role,order:o.id,table:o.tableId});}if(['pickup','carried','delivering'].includes(o.status))
+  salvageFinishedMeal(s,o,o.quality,'plate_not_served');
+  o.status='left';o.leftReason='等待超时';o.leftAt=v.time;if(v.hero?.carryOrderId===o.id)v.hero.carryOrderId=null;s.reputation=Math.max(-20,s.reputation-1);v.queued=v.queued.filter(id=>id!==o.id);record(s,{type:'left',order:o.id,reason:'等待超时'});}}
 for(const st of Object.keys(v.stations)){if(v.stations[st])continue;
  const ix=stationIdx(st),slot=v.kitchenSnapshot?.[ix];if(!slot)continue;
  // A new hearth without its employee or the player physically present does not steal work.
@@ -1390,8 +1410,13 @@ const prepared=s.prepVariants?.[o.recipeId]||[];
 const match=prepared.findIndex(x=>x.variantId===(o.craft?.variantId||''));
 if((s.prep[o.recipeId]||0)>0&&(match>=0||!prepared.length)){
  s.prep[o.recipeId]--;const cooked=match>=0?prepared.splice(match,1)[0]:null;
- if(cooked)o.craft=clone(cooked);
- finishOrder(s,o,o.craft?.quality||s.recipes[o.recipeId]);continue;
+ if(cooked?.salvaged){
+  // Do not grant a previous guest's craft price to a new one.
+  v.salvageStats??={recovered:0,reused:0};
+  v.salvageStats.reused++;
+  record(s,{type:'salvage_used',order:o.id,recipeId:o.recipeId,sourceOrderId:cooked.sourceOrderId});
+ }else if(cooked)o.craft=clone(cooked);
+ finishOrder(s,o,cooked?.salvaged?cooked.cookedQuality:(o.craft?.quality||s.recipes[o.recipeId]));continue;
 }
 const materialIds=o.craft?.ingredientIds||r.ids;
 if(!canUse(s,materialIds,!!o.premium)){o.status='rejected';o.rejectReason='食材不足';o.leftAt=v.time;const shortage=materialIds.filter(x=>(s.inventory[x]||0)<materialIds.filter(y=>y===x).length);o.missingIngredients=[...new Set(shortage)];record(s,{type:'rejected',order:id,reason:'食材不足',recipeId:o.recipeId,missing:o.missingIngredients});continue;}
@@ -1455,7 +1480,9 @@ const goal=serviceGoalResult(v);if(goal?.success&&uniqueAdd(s.ledger,`goal-${s.c
 const premiumOrders=v.orders.filter(o=>o.premium),premiumSales=premiumOrders.filter(o=>o.status==='served');
 const premiumReport={recipeId:v.premiumOffered?.recipeId||null,limit:v.premiumOffered?.limit||0,ordered:premiumOrders.length,sold:premiumSales.length,revenue:premiumSales.reduce((sum,o)=>sum+(o.craft?.price||0),0),qualifiedVisitors:v.orders.filter(o=>o.segment==='critic'||premiumGuestEligible(s,o)).length,regularVisits:v.events.filter(e=>e.type==='regular_visit').length};
 const regularGuests=v.events.filter(e=>e.type==='regular_visit').map(e=>({guestId:e.guestId,name:s.guestRelationships?.[e.guestId]?.name||'熟客',happyMeals:e.happyMeals,sat:e.sat}));
-s.report={ferryEarned,rating,secondRating,premium:premiumReport,regularGuests,day:s.day,absoluteDay:totalBusinessDay(s),tableCount:v.tableCount,unseated:v.orders.filter(o=>o.tableId==null).length,queuePeak:v.queuePeak||0,queue:queueServiceReport(v),goal,scenario:v.scenario||'常规晚餐',totalOrders:v.orders.length,revenue,cost,profit:revenue-cost-hospitalityCost-eventExpense-finance.wage-(v.marketing?.cost||0),finance:{...finance,marketingCost:v.marketing?.cost||0,campaignId:v.marketing?.id||'none',promotionGuests:v.marketing?.guests||0,marketingArrived:v.orders.filter(o=>o.promotionGuest&&o.arrival<=v.time).length,marketingSeated:v.orders.filter(o=>o.promotionGuest&&o.doorAt!==undefined).length,marketingServed:served.filter(o=>o.promotionGuest).length,marketingRevenue:served.filter(o=>o.promotionGuest).reduce((n,o)=>n+(o.craft?.price??RECIPES[o.recipeId]?.price??0),0),cashChange:s.coins-ensureManagement(s).openingCoins},growth,hospitalityCost,eventExpense,choices:v.events.filter(e=>e.type==='management_choice'||e.type==='menu_swap'),served:served.length,left:left.length,rejected:rej.length,sat:Math.round(served.reduce((a,o)=>a+o.sat,0)/Math.max(1,served.length)),byDish,byCraft,orderedByDish,guestReviews:v.events.filter(e=>e.type==='reviewed').map(e=>({recipeId:e.recipeId,sat:e.sat,text:e.text,reason:e.reason})),congestion:v.congestion,kitchen:{slots:clone(v.kitchenSnapshot||ensureKitchen(s).slots),stats:clone(v.stationStats||{})},staff:{crew:clone(v.crew||{}),stats:clone(v.staffStats||{}),foodCost:staffFoodCost},synergy:synergyFor(s.menu),suggested,challenge,won};s.result=won?'win':challenge?'loss':null;
+const salvageStats=v.salvageStats||{recovered:0,reused:0};
+ const salvageExpired=Object.values(s.prepVariants||{}).flat().filter(x=>x?.salvaged).length;
+s.report={salvage:{recovered:salvageStats.recovered||0,reused:salvageStats.reused||0,expired:salvageExpired},ferryEarned,rating,secondRating,premium:premiumReport,regularGuests,day:s.day,absoluteDay:totalBusinessDay(s),tableCount:v.tableCount,unseated:v.orders.filter(o=>o.tableId==null).length,queuePeak:v.queuePeak||0,queue:queueServiceReport(v),goal,scenario:v.scenario||'常规晚餐',totalOrders:v.orders.length,revenue,cost,profit:revenue-cost-hospitalityCost-eventExpense-finance.wage-(v.marketing?.cost||0),finance:{...finance,marketingCost:v.marketing?.cost||0,campaignId:v.marketing?.id||'none',promotionGuests:v.marketing?.guests||0,marketingArrived:v.orders.filter(o=>o.promotionGuest&&o.arrival<=v.time).length,marketingSeated:v.orders.filter(o=>o.promotionGuest&&o.doorAt!==undefined).length,marketingServed:served.filter(o=>o.promotionGuest).length,marketingRevenue:served.filter(o=>o.promotionGuest).reduce((n,o)=>n+(o.craft?.price??RECIPES[o.recipeId]?.price??0),0),cashChange:s.coins-ensureManagement(s).openingCoins},growth,hospitalityCost,eventExpense,choices:v.events.filter(e=>e.type==='management_choice'||e.type==='menu_swap'),served:served.length,left:left.length,rejected:rej.length,sat:Math.round(served.reduce((a,o)=>a+o.sat,0)/Math.max(1,served.length)),byDish,byCraft,orderedByDish,guestReviews:v.events.filter(e=>e.type==='reviewed').map(e=>({recipeId:e.recipeId,sat:e.sat,text:e.text,reason:e.reason})),congestion:v.congestion,kitchen:{slots:clone(v.kitchenSnapshot||ensureKitchen(s).slots),stats:clone(v.stationStats||{})},staff:{crew:clone(v.crew||{}),stats:clone(v.staffStats||{}),foodCost:staffFoodCost},synergy:synergyFor(s.menu),suggested,challenge,won};s.result=won?'win':challenge?'loss':null;
  s.report.thirdRating=thirdRating;
  s.history??=[];s.history.push({day:totalBusinessDay(s),revenue:s.report.revenue,profit:s.report.profit,
    served:s.report.served,arrivals:s.report.totalOrders,unseated:s.report.unseated,
