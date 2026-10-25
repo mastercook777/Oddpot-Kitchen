@@ -29,6 +29,7 @@ function cloud(seed,{stocked=false,waiter=false,waiter2=false}={}){
 }
 function kitchen(s,mode){
  const firstRep=s.reputation;
+ const ledgerBefore=s.ledger.filter(e=>e.type==='sale').length;
  s.phase='service';assert.equal(createService(s,{walkable:mode!=='auto'}),true);
  const v=s.service;
  if(v.walkable)Object.assign(v.hero,mode==='left'?DINER_FLOOR.left:mode==='pass'?DINER_FLOOR.pass:DINER_FLOOR.right);
@@ -43,7 +44,6 @@ function kitchen(s,mode){
   tick(s,1);
  }
  assert.equal(v.done,true,'real service must reach end or 100s timeout');
- const ledgerBefore=s.ledger.filter(e=>e.type==='sale').length;
  const statuses=v.orders.map(o=>({
   id:o.id,segment:o.segment,status:o.status,recipe:o.recipeId,
   reason:o.leftReason||o.rejectReason||null,
