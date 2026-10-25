@@ -163,7 +163,7 @@ function economy(runs,days){
 export function runAudit({runs=24,days=18}={}){
  assert.ok(Number.isInteger(runs)&&runs>=3&&runs<=100);
  assert.ok(Number.isInteger(days)&&days>=6&&days<=30);
- return {type:'v0.15-D cloud shipped-engine order/capacity audit',version:'0.15.0-alpha.9',
+ return {type:'v0.15-D cloud shipped-engine order/capacity audit',version:'0.15.0-alpha.10',
   protocol:{runs,days,menu:MENU,menuQuality:84,
    panel:'stocked externally with 100 units per relevant ingredient; same seeds, no field and no earned currency. Different worker/hero positions are controlled interventions.',
    economy:'actual market stock, purchase transactions, sale and wage ledger, starting Cloud coins set to 300, research unlocks granted to isolate supply. No simulated field combat or free infinite daily loot.',
