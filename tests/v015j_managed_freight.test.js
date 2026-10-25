@@ -106,15 +106,15 @@ test('save/restore, chapter travel, non-Cloud days, old voucher and duplicate pe
   assert.equal(claimManagedFreight(reload),false);
   assert.equal(reload.ledger.filter(x=>x.type==='managed_export_in').length,1);
   assert.deepEqual(reload.worlds.hearth.inventory,oldStock);
-  assert.equal(reload.inventory.mushroom,cloudStock.mushroom+3);
+  assert.equal(reload.inventory.mushroom,(cloudStock.mushroom||0)+3);
   reload.managedFreight.pending={seq:1,focus:'forest',items:{mushroom:3},total:3};
   assert.equal(claimManagedFreight(reload),false);
   assert.equal(reload.managedFreight.pending,null);
-  assert.equal(reload.inventory.mushroom,cloudStock.mushroom+3);
+  assert.equal(reload.inventory.mushroom,(cloudStock.mushroom||0)+3);
   reload.phase='upgrade';assert.equal(travelPortal(reload,'hearth'),true);
   assert.equal(configureManagedFreight(reload,'spice'),false);
   assert.equal(reload.managedFreight.pending,null);
-  assert.equal(reload.worlds.cloud.inventory.mushroom,cloudStock.mushroom+3);
+  assert.equal(reload.worlds.cloud.inventory.mushroom,(cloudStock.mushroom||0)+3);
   assert.equal(reload.ferryCredits||0,0,'no extra real Hearth dinner has been credited');
  }finally{globalThis.localStorage=originalStorage;}
 });
