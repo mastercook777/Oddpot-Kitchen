@@ -128,3 +128,26 @@ test('freight is ordinary border cargo only, keeps original world recipe limits 
  assert.equal(s.ferryCredits||0,0);
  assert.equal(redeemFerrySupply(s,'forest'),false);
 });
+
+test('next shipment requires two more actual Cloud nights after receipt; pausing stops new escrow but preserves shipped parcel',()=>{
+ const s=enterCloud(706,true),old=s.worlds.hearth;
+ old.coins=80;old.inventory.mushroom=9;old.inventory.chicken=6;old.inventory.onion=4;
+ assert.equal(configureManagedFreight(s,'forest'),true);
+ cloudNight(s);morning(s);const first=cloudNight(s);
+ assert.equal(first.managedFreight.seq,1);assert.equal(old.coins,70);
+ morning(s);assert.equal(claimManagedFreight(s),true);
+ // A single new closing after receipt cannot send a second batch.
+ cloudNight(s);assert.equal(s.managedFreight.pending,null);
+ morning(s);const next=cloudNight(s);
+ assert.equal(next.managedFreight.seq,2);
+ assert.equal(old.coins,60);
+ assert.equal(old.ledger.filter(x=>x.type==='managed_export_out').length,2);
+ assert.equal(configureManagedFreight(s,'off'),false,'must not change dispatch settings during report');
+ morning(s);assert.equal(configureManagedFreight(s,'off'),true);
+ const priorShipments=old.ledger.filter(x=>x.type==='managed_export_out').length;
+ cloudNight(s);morning(s);cloudNight(s);
+ assert.equal(old.ledger.filter(x=>x.type==='managed_export_out').length,priorShipments);
+ morning(s);assert.equal(claimManagedFreight(s),true,'already shipped cargo remains collectible while suspended');
+ assert.equal(s.ledger.filter(x=>x.type==='managed_export_in').length,2);
+ assert.equal(s.managedFreight.pending,null);
+});
