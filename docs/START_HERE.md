@@ -1,6 +1,6 @@
 # 《怪味食堂》START_HERE · 新对话 / Codex / 开发接续入口
 
-> **最新工作 · v0.15-J 旧店留守货运（2026-10-25）**：已在 [PR #94](https://github.com/mastercook777/Oddpot-Kitchen/pull/94) 开发 alpha.11，尚未合并 `main`（当前正式代码 alpha.10）。[先行规格与测试](V0.15J_MANAGED_HEARTH_FREIGHT_SPEC.md) 明确从旧世界 dormant 仓和旧店金币真实扣除，云港两晚营业发一船、每批最多6份、旧金币10运费、到云港市场手动签收、积压上限1批、原8份主动航运委托保持；航线在云港市场配置。**核心569/569 Node通过，其他CI/Pages/真机待核**。本版不模拟旧食堂自动营业/工资/采买或材料再生；无库存必须回原店补仓，下一阶段另行设计真实经营托管与镜露花园内容。
+> **最新工作 · v0.15-J 旧店留守货运（2026-10-25）**：已经 [PR #94](https://github.com/mastercook777/Oddpot-Kitchen/pull/94) 合并正式 main alpha.11（[3772240d](https://github.com/mastercook777/Oddpot-Kitchen/commit/3772240dd14cdcfaaf6de9cef40200615b90da4d)）。[先行规格与测试](V0.15J_MANAGED_HEARTH_FREIGHT_SPEC.md) 明确从旧世界 dormant 仓和旧店金币真实扣除，云港两晚营业发一船、每批最多6份、旧金币10运费、到云港市场手动签收、积压上限1批、原8份主动航运委托保持；航线在云港市场配置。**570/570 Node、16/16 PR GitHub Actions 全通过；Pages 是否部署 alpha.11 与玩家真机体验待核**。本版不模拟旧食堂自动营业/工资/采买或材料再生；无库存必须回原店补仓，下一阶段另行设计真实经营托管与镜露花园内容。
 
 > **最新已合并 main · v0.15-D 量化审计 + D.1 云港双厨位修复（2026-10-25）**：[PR #93](https://github.com/mastercook777/Oddpot-Kitchen/pull/93) **已合并为正式代码 alpha.10**。[审计结果](V0.15D_CLOUD_OPERATIONS_RESULTS.md)确认云港不是单纯食材少让好感下降，关键是两厨位初期仅本地帮厨固定左锅，玩家如果也在左侧，右锅会整晚无生产速率。12配对种子中该配置1.33上菜/6.25超时；[小范围修复](V0.15D1_TWO_STATION_SUPPORT_SPEC.md)使空闲帮厨经过3秒真实移动支援无人的另一炉，不复制劳力、不改原世界，改善到5.17上菜/2.42超时；无缺位时正常右锅5.50不变。游戏提交 `6e02f463` 已通过 563/563 Node + 16/16 PR Actions（含移动 Chrome / 离线），**后续版本/文档 CI、Pages alpha.10 与真实手机仍待独立核对**。顾客原耐心未变。18天市场无探索供应组每天约2.69单缺料，下一轮应推进 **v0.15-J 旧食堂真实库存定期托运**，之后独立镜露花园新食材/料理，不要误写成已实装。
 
