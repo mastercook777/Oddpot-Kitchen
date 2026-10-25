@@ -67,10 +67,10 @@ test('Pages entry and offline bundle both contain the corrected steam recap',()=
  const html=readFileSync(new URL('../standalone.html',import.meta.url),'utf8');
  const app=readFileSync(new URL('../src/app.js',import.meta.url),'utf8');
  const engine=readFileSync(new URL('../src/engine.js',import.meta.url),'utf8');
- assert.match(index,/src\/app\.js\?v=0\.15\.0-alpha\.10/);
- assert.match(app,/cooking_v063\.js\?v=0\.15\.0-alpha\.10/);
- assert.match(engine,/cooking_v063\.js\?v=0\.15\.0-alpha\.10/);
- assert.match(html,/v0\.15\.0-alpha\.10 离线版/);
+ assert.match(index,/src\/app\.js\?v=0\.15\.0-alpha\.11/);
+ assert.match(app,/cooking_v063\.js\?v=0\.15\.0-alpha\.11/);
+ assert.match(engine,/cooking_v063\.js\?v=0\.15\.0-alpha\.11/);
+ assert.match(html,/v0\.15\.0-alpha\.11 离线版/);
  assert.match(html,/封笼形成保温云汽/);
  assert.match(html,/云汽匀蒸 · 品质 \+8/);
 });
