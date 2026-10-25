@@ -4148,7 +4148,7 @@ function advanceManagedFreightOnCloudClose(s){
  for(const [ing,n] of Object.entries(items))old.inventory[ing]-=n;
  old.coins-=MANAGED_FREIGHT_FEE;
  old.ledger.push({id,type:'managed_export_out',items:Object.fromEntries(Object.entries(items).map(([ing,n])=>[ing,-n])),
-  amount:-MANAGED_FREIGHT_FEE,focus:f.focus,day:s.day,cycle:s.cycle,cloudDay:dayKey});
+  amount:-MANAGED_FREIGHT_FEE,focus:f.focus,day:old.day,cycle:old.cycle,cloudDay:dayKey});
  f.seq=seq;f.days=0;f.pending={seq,focus:f.focus,items,total,cloudDay:dayKey,fee:MANAGED_FREIGHT_FEE};
  return clone(f.pending);
 }
