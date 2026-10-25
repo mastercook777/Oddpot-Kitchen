@@ -2,7 +2,7 @@ import {fieldHarvestTargetSuffix} from './field_target_v012f.js?v=0.13.0-alpha.9
 import {craftedPrice} from './recipe_value_v013j.js';
 import {makeSpecialEncounterPlan,previewSpecialEncounter,SPECIAL_ENCOUNTER_KINDS} from './field_encounters_v011c.js';
 import {ING,RECIPES,CUSTOMERS,FORECAST,DEFAULT_INVENTORY,SHOP_STAPLES,MARKET_ROTATION_STAPLES,CLOUD_MARKET_STAPLES} from './data.js?v=0.15.0-alpha.8';
-import {LIVE_ACTIONS,evaluateLiveCook,liveIngredientState,liveIngredientHeatFeedback,legacyVariant,makeLiveVariant,resolveTechnique,liveRecipeId} from './cooking_v063.js?v=0.15.0-alpha.9';
+import {LIVE_ACTIONS,evaluateLiveCook,liveIngredientState,liveIngredientHeatFeedback,legacyVariant,makeLiveVariant,resolveTechnique,liveRecipeId} from './cooking_v063.js?v=0.15.0-alpha.10';
 import {GRILL_LANES,grillPreview,evaluatePlacedGrill} from './grill_cooking_v014c.js?v=0.15.0-alpha.3';
 import {RECIPE_PROFILES} from './recipe_profiles_v063.js?v=0.13.0-alpha.9';
 import {generateBiomeMap,getFieldBiome} from './field_biomes_v081.js?v=0.13.0-alpha.9';
@@ -282,8 +282,13 @@ const helperRoles=['helper','helper2'];
 const helperPosition=h=>h?.currentStation??h?.station;
 const shiftHelperAt=(crew,index)=>helperRoles.find(role=>crew?.[role]?.hired&&!(crew[role].moveUntil>0)&&helperPosition(crew[role])===index)||null;
 function stationTaken(v,i,excluded){return helperRoles.some(role=>role!==excluded&&v.crew?.[role]?.hired&&(v.crew[role].moveTo===i||(!(v.crew[role].moveUntil>0)&&helperPosition(v.crew[role])===i)));}
-export function reassignIdleCooks(v){
- if(!v?.walkable||!v.crewDispatch||!v.crew||!v.stations||v.kitchenSnapshot?.length<3)return;
+export function reassignIdleCooks(v,s=null){
+ // The Cloud starter has two real benches but only one hired helper. In that
+ // chapter alone, an idle helper can walk to an uncovered second bench.
+ // No phantom labour: moving takes 3s and removes help from the old bench.
+ const twoBenchCloud=!!s&&activeWorld(s)==='cloud'&&v?.kitchenSnapshot?.length===2;
+ if(!v?.walkable||(!v.crewDispatch&&!twoBenchCloud)||!v.crew||!v.stations||
+    (v.kitchenSnapshot?.length<3&&!twoBenchCloud))return;
  for(const role of helperRoles){
   const w=v.crew[role];if(!w?.hired)continue;
   w.currentStation??=w.station;
@@ -294,11 +299,14 @@ export function reassignIdleCooks(v){
   if(w.autoSupport===false||v.time-(w.lastMoveTime??-999)<4)continue;
   const current=helperPosition(w),key=stationId(current),type=v.kitchenSnapshot?.[current]?.type;
   if(v.stations[key]||v.queued.some(id=>{const o=v.orders.find(x=>x.id===id);return o&&recipeCookware(RECIPES[o.recipeId])===type}))continue;
-  const candidates=v.kitchenSnapshot.map((slot,i)=>({i,key:stationId(i),slot})).filter(c=>c.i!==current&&!stationTaken(v,c.i,role)&&(v.stations[c.key]||v.queued.some(id=>{const o=v.orders.find(x=>x.id===id);return o&&recipeCookware(RECIPES[o.recipeId])===c.slot.type})));
+  const heroAt=twoBenchCloud?heroZone(v.hero,s):null;
+  const candidates=v.kitchenSnapshot.map((slot,i)=>({i,key:stationId(i),slot})).filter(c=>c.i!==current&&!stationTaken(v,c.i,role)&&
+   (!twoBenchCloud||c.key!==heroAt)&&
+   (v.stations[c.key]||v.queued.some(id=>{const o=v.orders.find(x=>x.id===id);return o&&recipeCookware(RECIPES[o.recipeId])===c.slot.type})));
   if(!candidates.length)continue;
   candidates.sort((a,b)=>Number(!!v.stations[b.key])-Number(!!v.stations[a.key])||Math.abs(a.i-current)-Math.abs(b.i-current));
   const next=candidates[0].i;
-  w.moveFrom=current;w.moveTo=next;w.moveStart=v.time;w.moveUntil=v.time+(Math.abs(next-current)===1?2:3);w.lastMoveTime=v.time;
+  w.moveFrom=current;w.moveTo=next;w.moveStart=v.time;w.moveUntil=v.time+(twoBenchCloud?3:Math.abs(next-current)===1?2:3);w.lastMoveTime=v.time;
   v.events?.push({type:'crew_move',role,from:key,to:stationId(next),t:v.time});
  }
 }
@@ -1383,7 +1391,7 @@ v.queuePeak=Math.max(v.queuePeak||0,outdoorQueueCount(v.orders,v.time));
 advanceGuestOrders(s);
 advanceGuestMeals(s);
 if(v.walkable)stepWalkableShift(s);
-reassignIdleCooks(v);
+reassignIdleCooks(v,s);
 for(const st of Object.keys(v.stations)){const job=v.stations[st];if(job){v.congestion[st]=(v.congestion[st]||0)+1;
  const role=shiftHelperAt(v.crew,stationIdx(st)),hero=v.walkable&&v.hero&&!v.hero.carryOrderId&&heroZone(v.hero,s)===st;
  const rate=v.walkable?(Number(!!role)+Number(!!hero)):1;

@@ -1,4 +1,4 @@
-<!doctype html><html lang="zh-CN"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1.0,maximum-scale=1.0,viewport-fit=cover,user-scalable=no"><meta name="apple-mobile-web-app-capable" content="yes"><meta name="theme-color" content="#1b3c2b"><title>怪味食堂 · v0.15.0-alpha.9 离线版</title><style>.ingredient-icon{display:inline-block;width:var(--ingredient-size,24px);height:var(--ingredient-size,24px);max-width:none;object-fit:contain;image-rendering:pixelated;vertical-align:-.24em;flex:none;pointer-events:none;user-select:none}
+<!doctype html><html lang="zh-CN"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1.0,maximum-scale=1.0,viewport-fit=cover,user-scalable=no"><meta name="apple-mobile-web-app-capable" content="yes"><meta name="theme-color" content="#1b3c2b"><title>怪味食堂 · v0.15.0-alpha.10 离线版</title><style>.ingredient-icon{display:inline-block;width:var(--ingredient-size,24px);height:var(--ingredient-size,24px);max-width:none;object-fit:contain;image-rendering:pixelated;vertical-align:-.24em;flex:none;pointer-events:none;user-select:none}
 .stock-line>span .ingredient-icon{margin-right:3px}.target-chip .ingredient-icon{vertical-align:middle}.book-icon .ingredient-icon{display:block}
 .v063-food-icon .ingredient-icon{width:1em;height:1em;vertical-align:top;filter:none}.v063-receipt-line .ingredient-icon{vertical-align:middle}
 .v063-food-picker button>span,.v063-drop>span{line-height:1}.v063-food-picker .ingredient-icon,.v063-drop .ingredient-icon{vertical-align:top}
@@ -4306,8 +4306,13 @@ const helperRoles=['helper','helper2'];
 const helperPosition=h=>h?.currentStation??h?.station;
 const shiftHelperAt=(crew,index)=>helperRoles.find(role=>crew?.[role]?.hired&&!(crew[role].moveUntil>0)&&helperPosition(crew[role])===index)||null;
 function stationTaken(v,i,excluded){return helperRoles.some(role=>role!==excluded&&v.crew?.[role]?.hired&&(v.crew[role].moveTo===i||(!(v.crew[role].moveUntil>0)&&helperPosition(v.crew[role])===i)));}
-function reassignIdleCooks(v){
- if(!v?.walkable||!v.crewDispatch||!v.crew||!v.stations||v.kitchenSnapshot?.length<3)return;
+function reassignIdleCooks(v,s=null){
+ // The Cloud starter has two real benches but only one hired helper. In that
+ // chapter alone, an idle helper can walk to an uncovered second bench.
+ // No phantom labour: moving takes 3s and removes help from the old bench.
+ const twoBenchCloud=!!s&&activeWorld(s)==='cloud'&&v?.kitchenSnapshot?.length===2;
+ if(!v?.walkable||(!v.crewDispatch&&!twoBenchCloud)||!v.crew||!v.stations||
+    (v.kitchenSnapshot?.length<3&&!twoBenchCloud))return;
  for(const role of helperRoles){
   const w=v.crew[role];if(!w?.hired)continue;
   w.currentStation??=w.station;
@@ -4318,11 +4323,14 @@ function reassignIdleCooks(v){
   if(w.autoSupport===false||v.time-(w.lastMoveTime??-999)<4)continue;
   const current=helperPosition(w),key=stationId(current),type=v.kitchenSnapshot?.[current]?.type;
   if(v.stations[key]||v.queued.some(id=>{const o=v.orders.find(x=>x.id===id);return o&&recipeCookware(RECIPES[o.recipeId])===type}))continue;
-  const candidates=v.kitchenSnapshot.map((slot,i)=>({i,key:stationId(i),slot})).filter(c=>c.i!==current&&!stationTaken(v,c.i,role)&&(v.stations[c.key]||v.queued.some(id=>{const o=v.orders.find(x=>x.id===id);return o&&recipeCookware(RECIPES[o.recipeId])===c.slot.type})));
+  const heroAt=twoBenchCloud?heroZone(v.hero,s):null;
+  const candidates=v.kitchenSnapshot.map((slot,i)=>({i,key:stationId(i),slot})).filter(c=>c.i!==current&&!stationTaken(v,c.i,role)&&
+   (!twoBenchCloud||c.key!==heroAt)&&
+   (v.stations[c.key]||v.queued.some(id=>{const o=v.orders.find(x=>x.id===id);return o&&recipeCookware(RECIPES[o.recipeId])===c.slot.type})));
   if(!candidates.length)continue;
   candidates.sort((a,b)=>Number(!!v.stations[b.key])-Number(!!v.stations[a.key])||Math.abs(a.i-current)-Math.abs(b.i-current));
   const next=candidates[0].i;
-  w.moveFrom=current;w.moveTo=next;w.moveStart=v.time;w.moveUntil=v.time+(Math.abs(next-current)===1?2:3);w.lastMoveTime=v.time;
+  w.moveFrom=current;w.moveTo=next;w.moveStart=v.time;w.moveUntil=v.time+(twoBenchCloud?3:Math.abs(next-current)===1?2:3);w.lastMoveTime=v.time;
   v.events?.push({type:'crew_move',role,from:key,to:stationId(next),t:v.time});
  }
 }
@@ -5407,7 +5415,7 @@ v.queuePeak=Math.max(v.queuePeak||0,outdoorQueueCount(v.orders,v.time));
 advanceGuestOrders(s);
 advanceGuestMeals(s);
 if(v.walkable)stepWalkableShift(s);
-reassignIdleCooks(v);
+reassignIdleCooks(v,s);
 for(const st of Object.keys(v.stations)){const job=v.stations[st];if(job){v.congestion[st]=(v.congestion[st]||0)+1;
  const role=shiftHelperAt(v.crew,stationIdx(st)),hero=v.walkable&&v.hero&&!v.hero.carryOrderId&&heroZone(v.hero,s)===st;
  const rate=v.walkable?(Number(!!role)+Number(!!hero)):1;
@@ -9905,7 +9913,7 @@ function overlayMarkup(){if(!overlay)return '';
    };
    body='<h2>👩‍🍳 食堂伙伴</h2><p class="sheet-lead">'+(activeWorld(game)==='cloud'?'云港可在首枚星章后再聘一名跑堂，双跑堂各自认领一盘并行送餐、各计工资与经验；':'')+'每位帮厨按本人实际完成的订单获得经验；增加厨位必须配备人手才能真正出餐。开门前直接选择左、中、右优先站位；已选位置不可重复安排。营业时，空闲帮厨仍会自动走到缺人的炉台支援。</p><div class="staff-roster">'+row('helper')+row('waiter')+(crew.helper2.hired?row('helper2'):'')+(activeWorld(game)==='cloud'?row('waiter2'):'')+'</div>';
  }else if(overlay==='settings'){
-  body=`<h2>⚙ 游戏设置</h2><p class="sheet-lead">ODDPOT · v0.15.0-alpha.9 · 单机本地存档</p>${b('guide-replay','重看第一轮引导','secondary')}${b('reset','重置存档，从第 1 天重新开始','danger')}<p class="sheet-lead">切到后台时营业会自动暂停。更换设备不会同步存档。</p>`;
+  body=`<h2>⚙ 游戏设置</h2><p class="sheet-lead">ODDPOT · v0.15.0-alpha.10 · 单机本地存档</p>${b('guide-replay','重看第一轮引导','secondary')}${b('reset','重置存档，从第 1 天重新开始','danger')}<p class="sheet-lead">切到后台时营业会自动暂停。更换设备不会同步存档。</p>`;
  }else if(overlay==='details'){
   const r=game.report;body=r?`<h2>营业账本详情</h2><p class="sheet-lead">本日订单由真实食材库存、工位工作秒数和顾客等待事件计算。</p><div class="book-list">${Object.entries(r.byDish).map(([id,d])=>`<div class="detail-row">${RECIPES[id].emoji} ${RECIPES[id].name}：售出 ${d.count} 份 · 满意 ${Math.round(d.totalSat/d.count)}</div>`).join('')}<div class="detail-row">左厨位占用 ${r.congestion.WOK||0} 秒 / 右厨位 ${r.congestion.POT||0} 秒${r.congestion.CENTER!==undefined?' / 中厨位 '+r.congestion.CENTER+' 秒':''}</div><div class="detail-row">食材耗用估值 ${r.cost} · 宣传 ${r.finance?.marketingCost||0} · 工资 ${r.finance?.wage||0} · 招待支出 ${r.hospitalityCost||0} · 收入 ${r.revenue} · 经营利润 ${r.profit} · 现金净变动 ${r.finance?.cashChange??'旧版无记录'}</div></div>`:'';
  }
