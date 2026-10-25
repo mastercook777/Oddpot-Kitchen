@@ -130,10 +130,10 @@ function advanceManagedFreightOnCloudClose(s){
 }
 export function claimManagedFreight(s){
  const status=managedFreightStatus(s),f=managedFreightState(s),box=f.pending;
- if(!status.canClaim||!box||!Object.values(MANAGED_FREIGHT_FOCUS).some(p=>p===MANAGED_FREIGHT_FOCUS[box.focus]))return false;
+ if(!status.canClaim||!box||!Object.hasOwn(MANAGED_FREIGHT_FOCUS,box.focus))return false;
  const id='managed-export-in-'+box.seq;
  if(s.ledger.some(x=>x.id===id)){f.pending=null;return false} // stale save, never double-receive
- if(!Object.entries(box.items).every(([ing,n])=>MANAGED_FREIGHT_FOCUS[box.focus]?.items?.[ing]>=n&&
+ if(!box.items||!Object.entries(box.items).length||!Object.entries(box.items).every(([ing,n])=>MANAGED_FREIGHT_FOCUS[box.focus]?.items?.[ing]>=n&&
   Number.isInteger(n)&&n>0))return false;
  if(!transact(s,id,'managed_export_in',{...box.items},0))return false;
  f.pending=null;
