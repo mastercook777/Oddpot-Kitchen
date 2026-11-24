@@ -86,25 +86,33 @@ function createForest(T){
   else if(id==='cabbage'||id==='sky_moss'){for(let i=0;i<6;i++){const a=i*1.05,o=ball(p,i%2?green:moss,Math.cos(a)*.12,.17,Math.sin(a)*.12,.19,.14,.15);o.rotation.z=Math.sin(a)*.45;}ball(p,green,0,.25,0,.16,.13,.16);}
   else if(id==='chili'||id==='ember_pepper'){const o=ball(p,red,0,.19,0,.12,.25,.11);o.rotation.z=.54;branch(p,[-.1,.35,0],[-.16,.43,0],.025,.035,green);}
   else if(id==='onion'||id==='potato'){for(let i=0;i<3;i++)ball(p,id==='onion'?cream:barkLight,(i-1)*.15,.15,i%2*.12,.14,.14,.13);if(id==='onion')for(let i=0;i<3;i++)ball(p,green,(i-1)*.05,.34,0,.036,.17,.035);}
-  else if(['chicken','beef'].includes(id)){ball(p,red,0,.18,0,.26,.13,.18);ball(p,cream,.20,.18,0,.12,.06,.08);ball(p,cream,-.16,.20,.06,.09,.05,.09);}
+  else if(id==='chicken'){
+   const leg=group(p);leg.rotation.z=-.55;ball(leg,barkLight,-.09,.22,0,.24,.17,.17);ball(leg,cream,-.10,.30,.03,.20,.08,.15);
+   cyl(leg,cream,.19,.20,0,.055,.055,.26).rotation.z=Math.PI/2;for(const z of [-.05,.05])ball(leg,cream,.32,.20,z,.075,.075,.075);
+  }else if(id==='beef'){
+   const steak=group(p);steak.rotation.y=.45;const sh=new T.Shape();sh.moveTo(-.31,-.12);sh.bezierCurveTo(-.35,-.28,.06,-.30,.24,-.15);sh.bezierCurveTo(.41,.02,.26,.26,.02,.22);sh.bezierCurveTo(-.18,.26,-.35,.13,-.31,-.12);
+   const g=new T.ExtrudeGeometry(sh,{depth:.095,bevelEnabled:true,bevelSize:.035,bevelThickness:.025,bevelSegments:2,curveSegments:12});g.rotateX(-Math.PI/2);
+   mesh(steak,g,red,0,.09,0);mesh(steak,g,cream,0,.07,0).scale.set(1.10,.65,1.10);
+   for(let j=0;j<3;j++){const m=box(steak,cream,-.12+j*.12,.218,.02,.035,.014,.16);m.rotation.y=.45+j*.18;}
+  }
   else{ball(p,gold,0,.20,0,.23,.18,.22);ball(p,green,0,.36,0,.07,.06,.12);}
   const v=pickupVisual(n,0),m=new T.MeshBasicMaterial({color:v.color,transparent:true,opacity:v.opacity,depthWrite:false,side:T.DoubleSide}),m2=m.clone();m2.opacity=.20;
   const ring=mesh(root,pickupGeo,m,0,.025,0,false),outer=mesh(root,pickupInner,m2,0,.026,0,false);ring.scale.setScalar(v.radius);outer.scale.setScalar(v.radius*1.23);
   root.userData={item:p,ring,outer,ownedMats:[m,m2]};return root;
  }
- function enemy(e){const p=group(actors),body=group(p),kind=e.kind;
+ function enemy(e){const p=group(actors),body=group(p),kind=e.kind,limbs=[],wings=[];let skull=null;
   if(e.isBoss){ball(body,purple,0,.46,0,.56,.46,.47);cyl(body,cream,0,.60,0,.21,.24,.60);ball(body,barkLight,0,.87,0,.73,.12,.66);ball(body,red,0,.99,0,.76,.27,.69);ball(body,purple,0,1.18,-.07,.34,.10,.30);for(let i=0;i<7;i++){let a=i*.90;ball(body,cream,Math.cos(a)*.49,1.15,Math.sin(a)*.45,.09,.025,.09);}for(const k of [-1,1]){ball(body,red,k*.57,.43,0,.18,.28,.20);ball(body,ink,k*.14,.70,.39,.06,.065,.035);}}
-  else if(kind==='chicken'){ball(body,cream,0,.27,0,.27,.24,.24);ball(body,cream,0,.53,.16,.18,.17,.17);for(let j=0;j<3;j++)ball(body,red,0,.68+j*.025,.10+j*.07,.045,.075,.045);for(let j=0;j<3;j++){const tail=ball(body,cream,(j-1)*.07,.40,-.26,.07,.20,.16);tail.rotation.x=-.6;}ball(body,gold,0,.50,.32,.10,.055,.08);for(const k of [-1,1]){ball(body,cream,k*.24,.30,0,.11,.15,.19);ball(body,ink,k*.08,.56,.29,.025,.028,.018);}}
+  else if(kind==='chicken'){ball(body,cream,0,.27,0,.27,.24,.24);ball(body,cream,0,.53,.16,.18,.17,.17);for(let j=0;j<3;j++)ball(body,red,0,.68+j*.025,.10+j*.07,.045,.075,.045);for(let j=0;j<3;j++){const tail=ball(body,cream,(j-1)*.07,.40,-.26,.07,.20,.16);tail.rotation.x=-.6;}ball(body,gold,0,.50,.32,.10,.055,.08);for(const k of [-1,1]){const wing=group(body,k*.24,.30,0);ball(wing,cream,0,0,0,.11,.15,.19);wings.push(wing);ball(body,ink,k*.08,.56,.29,.025,.028,.018);}}
   else if(kind==='boar'){
    // The internal legacy id is boar; the GDD/data identify Ironhorn Bison.
    ball(body,bark,0,.44,-.08,.37,.35,.52);ball(body,bark,0,.55,.14,.40,.43,.34);
-   ball(body,barkLight,0,.48,.40,.26,.27,.29);ball(body,stone2,0,.35,.61,.24,.135,.16);
+   skull=group(body,0,.49,.38);ball(skull,barkLight,0,-.01,.02,.26,.27,.29);ball(skull,stone2,0,-.14,.23,.24,.135,.16);
    for(const k of [-1,1]){
-    ball(body,bark,k*.27,.64,.35,.15,.09,.08);
-    branch(body,[k*.17,.67,.40],[k*.33,.81,.40],.067,.095,stone2);
-    branch(body,[k*.33,.81,.40],[k*.40,.98,.44],.012,.067,cream);
-    ball(body,ink,k*.13,.53,.60,.035,.035,.025);ball(body,ink,k*.095,.35,.74,.042,.025,.018);
-    for(const zz of [-.37,.26]){cyl(body,bark,k*.24,.18,zz,.09,.10,.30);box(body,ink,k*.24,.055,zz+.025,.19,.11,.22);}
+    ball(skull,bark,k*.27,.15,-.03,.15,.09,.08);
+    branch(skull,[k*.17,.18,.02],[k*.33,.32,.02],.067,.095,stone2);
+    branch(skull,[k*.33,.32,.02],[k*.40,.49,.06],.012,.067,cream);
+    ball(skull,ink,k*.13,.04,.22,.035,.035,.025);ball(skull,ink,k*.095,-.14,.36,.042,.025,.018);
+    for(const zz of [-.37,.26]){const leg=group(body,k*.24,.33,zz);cyl(leg,bark,0,-.15,0,.09,.10,.30);box(leg,ink,0,-.275,.025,.19,.11,.22);limbs.push(leg);}
    }
    branch(body,[0,.47,-.56],[.08,.31,-.79],.035,.045,bark);ball(body,ink,.08,.26,-.81,.065,.10,.06);
    for(let j=0;j<3;j++)ball(body,moss,(j-1)*.13,.85,-.03+j*.08,.12,.045,.15);
@@ -112,7 +120,7 @@ function createForest(T){
   else if(kind==='pepper'){ball(body,red,0,.35,0,.23,.35,.22);branch(body,[0,.61,0],[.11,.76,0],.05,.065,green);for(const k of [-1,1])ball(body,ink,k*.08,.42,.20,.036,.045,.02);}
   else {ball(body,cream,0,.23,0,.22,.24,.20);ball(body,kind==='sporeling'?purple:blue,0,.49,0,.36,.17,.31);for(const k of [-1,1])ball(body,ink,k*.075,.29,.19,.03,.035,.018);}
   for(const k of [-1,1])if(!['pepper','sporeling','boar'].includes(kind)&&!e.isBoss)for(let j=0;j<(kind==='boar'?2:1);j++)ball(body,bark,k*.14,.075,j*.26-.08,.07,.08,.10);
-  p.userData.body=body;const own=new Map();body.traverse(o=>{if(o.isMesh&&o.material?.emissive){if(!own.has(o.material))own.set(o.material,o.material.clone());o.material=own.get(o.material);}});p.userData.flashMats=[...own.values()];return p;
+  p.userData.body=body;p.userData.limbs=limbs;p.userData.wings=wings;p.userData.skull=skull;const own=new Map();body.traverse(o=>{if(o.isMesh&&o.material?.emissive){if(!own.has(o.material))own.set(o.material,o.material.clone());o.material=own.get(o.material);}});p.userData.flashMats=[...own.values()];return p;
  }
  function sync(pool,items,build,fn){const live=new Set();for(const v of items){const k=v.key??v.id;live.add(k);let p=pool.get(k);if(!p){p=build(v);pool.set(k,p);}p.visible=true;fn(p,v);}for(const [k,p] of pool)if(!live.has(k))p.visible=false;}
  let lastW=0,lastH=0;
@@ -123,8 +131,8 @@ function createForest(T){
   const v=y3CameraFrame(cam,w,h,sx,sy),center=y3Ground(v.x,v.y);camera.left=-v.halfW;camera.right=v.halfW;camera.top=v.halfH;camera.bottom=-v.halfH;camera.position.set(center.x,SINE*20,center.z+COS*20);camera.lookAt(center.x,0,center.z);camera.updateProjectionMatrix();
   for(const q of treeCrowns){q.crown.visible=!(f.pos.y<q.y&&q.y-f.pos.y<1.20&&Math.abs(f.pos.x-q.x)<.74);}
   sync(nodePool,(f.nodes||[]).filter(n=>!n.claimed),node,(p,n)=>{place(p,n.x,n.y);const v=pickupVisual(n,t),u=p.userData;u.item.position.y=v.bob;u.ring.material.opacity=v.opacity;u.outer.material.opacity=v.opacity*.30;u.outer.scale.setScalar(v.radius*(1.20+.06*Math.sin(t*3+n.x)));});
-  sync(enemyPool,(f.enemies||[]).filter(e=>e.hp>0||e.deathFx>0),enemy,(p,e)=>{place(p,e.x,e.y);const body=p.userData.body,v=enemyHitVisual(e);p.rotation.y=Math.atan2(f.pos.x-e.x,(f.pos.y-e.y)/SINE);body.position.y=e.moving?Math.abs(Math.sin(t*10+e.x))*.035:0;body.scale.set(v.sx,v.sy,v.sz);body.rotation.z=v.tilt*(e.hitResponse?.dx||1);body.rotation.x=-v.tilt*(e.hitResponse?.dy||0);for(const m of p.userData.flashMats){m.emissive.set('#fff1c7');m.emissiveIntensity=v.flash*.85;}});
-  place(hero.root,f.pos.x,f.pos.y);const facing=y3Facing(f.facing);hero.update(t,{facing,moving:!!f.moving,working:false,carrying:false});weaponRig.update(f);
+  sync(enemyPool,(f.enemies||[]).filter(e=>e.hp>0||e.deathFx>0),enemy,(p,e)=>{place(p,e.x,e.y);const body=p.userData.body,v=enemyHitVisual(e);p.rotation.y=Math.atan2(f.pos.x-e.x,(f.pos.y-e.y)/SINE);body.position.y=e.moving?Math.abs(Math.sin(t*10+e.x))*.035:0;body.scale.set(v.sx,v.sy,v.sz);body.rotation.z=v.tilt*(e.hitResponse?.dx||1);const wind=e.warning>0?Math.max(0,Math.min(1,1-e.warning/(e.windupTotal||1))):0,rush=!!(e.ecologyRush||e.rush),stride=e.moving?Math.sin(t*(rush?19:9)+e.x):0;body.rotation.x=-v.tilt*(e.hitResponse?.dy||0)+(rush?.19:wind*.14);body.scale.y*=1-wind*.13;for(const [i,l] of p.userData.limbs.entries())l.rotation.x=stride*(i%3===0?1:-1)*(rush?.62:.33);for(const [i,l] of p.userData.wings.entries())l.rotation.z=(i===0?-1:1)*(e.moving?.25+Math.abs(stride)*.60:wind*.70);if(p.userData.skull)p.userData.skull.rotation.x=rush?.34:wind*.34;if(e.kind==='chicken')body.position.y+=Math.abs(stride)*.055+wind*.08;if(e.kind==='sporeling'||e.kind==='pepper')body.scale.x*=1+wind*.12;for(const m of p.userData.flashMats){m.emissive.set('#fff1c7');m.emissiveIntensity=v.flash*.85;}});
+  place(hero.root,f.pos.x,f.pos.y);const facing=y3Facing(f.facing);hero.update(t,{facing,moving:!!f.moving,working:false,carrying:false});const aim=f.attackFx?.ttl>0&&Number.isFinite(f.attackFx.dx)?{x:f.attackFx.dx,y:f.attackFx.dy}:f.facing;if(aim&&Math.hypot(aim.x,aim.y)>.01)hero.root.rotation.y=Math.atan2(aim.x,aim.y/SINE);weaponRig.update(f);
   if(ambient){const dummy=new T.Object3D();for(let i=0;i<32;i++){dummy.position.set(random(i*31)*f.worldW+Math.sin(t*.5+i)*.13,.22+random(i*23)*1.9+Math.sin(t*.7+i)*.08,(random(i*53)*f.worldH)/SINE+Math.cos(t*.4+i)*.14);dummy.updateMatrix();ambient.setMatrixAt(i,dummy.matrix);}ambient.instanceMatrix.needsUpdate=true;}
   renderer.render(scene,camera);document.documentElement.dataset.oddpotForest3d='active';
  },dispose(){disposed=true;element.remove();const geometries=new Set(),materials=new Set();scene.traverse(o=>{if(o.geometry)geometries.add(o.geometry);if(o.material)for(const m of Array.isArray(o.material)?o.material:[o.material])materials.add(m);});for(const g of geometries)g.dispose();for(const m of materials)m.dispose();for(const g of boxCache.values())g.dispose();for(const g of cylinderCache.values())g.dispose();for(const g of uniqueTerrain)g.dispose();renderer.dispose();renderer.forceContextLoss();}};

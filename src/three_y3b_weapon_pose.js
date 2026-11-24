@@ -1,14 +1,16 @@
 // Y3b: grip-bound cookware, driven exclusively by existing attack timelines.
 const clamp=x=>Math.min(1,Math.max(0,x));
+// Deliberate windup, contact and recovery: contact is immediate in the existing sim.
 export function weaponPose(f){
  const type=f.weapon?.type||'WOK',fx=f.attackFx;
- const p=fx?.ttl>0?clamp(1-fx.ttl/(fx.duration||.3)):1;
- const strike=fx?.ttl>0?Math.sin(Math.PI*Math.pow(p,.48)):0;
+ const active=fx?.ttl>0,p=active?clamp(1-fx.ttl/(fx.duration||.3)):1;
+ const strike=active?Math.pow(1-p,1.7):0,follow=active?Math.sin(p*Math.PI):0;
  const guard=f.guardTime>0||f.shieldFlash>0;
- if(type==='WOK')return {type,left:[guard?-1.45:-.96,0,-.36],right:[-.52-strike*.84,-strike*.75,.46-strike*.88],lean:.05+strike*.09,strike};
- if(type==='POT')return {type,left:[-.53,0,-.36],right:[-.76-strike*1.05,-.22,.35-strike*.45],lean:.06+strike*.12,strike};
- if(type==='GRILL')return {type,left:[-1.10-strike*.34,.12,-.30],right:[-1.04-strike*.42,-.15,.32],lean:.09+strike*.20,strike};
- return {type:'STEAM',left:[-1.0-strike*.38,.12,-.25],right:[-1.0-strike*.38,-.12,.25],lean:.03+strike*.10,strike};
+ // Negative X arm is anatomical right; negative Z rotation opens it outwards.
+ if(type==='WOK')return {type,left:[guard?-1.25:-.32,0,guard?.34:.76],right:[-.18-strike*.88,-strike*.70,-.93+strike*.52],lean:.06+strike*.17,twist:-strike*.43+follow*.12,strike};
+ if(type==='POT')return {type,left:[-.10,0,.70],right:[.20-strike*1.60,-strike*.25,-.86+strike*.30],lean:.05+strike*.19,twist:-strike*.32,strike};
+ if(type==='GRILL')return {type,left:[-.53-strike*.40,0,.28],right:[-.72-strike*.62,0,-.49],lean:.13+strike*.22,twist:-strike*.14,strike};
+ return {type:'STEAM',left:[-.40-strike*.54,0,.35],right:[-.40-strike*.54,0,-.35],lean:.05+strike*.13,twist:0,strike};
 }
 export function createWeaponRig(T,hero,rounded){
  const {arms,grips,body}=hero.rig;
@@ -21,8 +23,8 @@ export function createWeaponRig(T,hero,rounded){
  const sets={};for(const k of ['WOK','POT','GRILL','STEAM'])sets[k]=[group(grips[0]),group(grips[1])];
  // Facing +Z: negative X is the chef's anatomical right. Put spatula in that hand.
  const [spatula,shield]=sets.WOK;
- box(spatula,wood,0,-.13,0,.075,.34,.075);box(spatula,iron,0,-.40,0,.20,.25,.055);box(spatula,edge,0,-.52,0,.19,.035,.06);
- const lid=group(shield);lid.position.set(0,-.12,.09);lid.rotation.x=Math.PI/2;
+ box(spatula,wood,0,-.19,0,.075,.46,.075);box(spatula,iron,0,-.53,0,.24,.29,.055);box(spatula,edge,0,-.67,0,.22,.035,.06);
+ const lid=group(shield);lid.position.set(0,-.05,.13);lid.rotation.x=Math.PI/2;
  cylinder(lid,iron,0,0,0,.30,.32,.055);cylinder(lid,edge,0,.035,0,.31,.31,.028);cylinder(lid,copper,0,.075,0,.22,.25,.065);box(lid,wood,0,.13,0,.15,.065,.08);
  const [ladle,pot]=sets.POT;box(ladle,wood,0,-.15,0,.065,.38,.065);const spoon=mesh(ladle,new T.SphereGeometry(1,16,10),iron,0,-.39,0);spoon.scale.set(.13,.10,.055);
  const potBody=group(pot);potBody.position.set(0,-.30,0);
@@ -30,14 +32,14 @@ export function createWeaponRig(T,hero,rounded){
  const handle=mesh(potBody,new T.TorusGeometry(.23,.025,8,24,Math.PI),wood,0,.15,0);handle.rotation.z=0;
  const [fork,guide]=sets.GRILL;box(fork,wood,0,-.27,0,.065,.82,.065);box(fork,iron,0,-.68,0,.25,.075,.075);for(const x of [-.10,.10])box(fork,edge,x,-.85,0,.047,.30,.047);
  // Both hands support a single basket; second hand has no duplicated object.
- const [basket,support]=sets.STEAM;basket.position.set(.21,0,.10);
+ const [basket,support]=sets.STEAM;basket.position.set(.29,-.09,.10);
  for(let i=0;i<2;i++){cylinder(basket,bamboo,0,i*.115,0,.25,.25,.115);cylinder(basket,wood,0,i*.115-.052,0,.26,.26,.025);}
  cylinder(basket,bamboo,0,.18,0,.25,.25,.045);box(basket,wood,0,.22,0,.12,.045,.05);
  return {update(f){const p=weaponPose(f);for(const [k,pair] of Object.entries(sets))for(const g of pair)g.visible=k===p.type;
   // Pose indices are anatomical left/right; negative-X arm is right.
-  arms[0].rotation.set(...p.right);arms[1].rotation.set(...p.left);body.rotation.x=p.lean;
-  shield.rotation.x=-arms[1].rotation.x+(f.guardTime>0?-.16:.12);shield.rotation.z=-arms[1].rotation.z;spatula.rotation.z=-p.strike*.45;
+  arms[0].rotation.set(...p.right);arms[1].rotation.set(...p.left);body.rotation.x=p.lean;body.rotation.y=p.twist;
+  shield.rotation.x=-arms[1].rotation.x+(f.guardTime>0?-.16:.12);shield.rotation.z=-arms[1].rotation.z;spatula.rotation.z=-.22-p.strike*.30;spatula.rotation.x=.18-p.strike*.34;
   pot.rotation.x=-arms[1].rotation.x;pot.rotation.z=-arms[1].rotation.z;
-  fork.rotation.x=-.25-p.strike*.25;basket.rotation.x=-arms[0].rotation.x;basket.rotation.z=-arms[0].rotation.z;
+  fork.rotation.x=-Math.PI/2-arms[0].rotation.x;fork.rotation.z=-arms[0].rotation.z;basket.rotation.x=-arms[0].rotation.x;basket.rotation.z=-arms[0].rotation.z;
  }};
 }
