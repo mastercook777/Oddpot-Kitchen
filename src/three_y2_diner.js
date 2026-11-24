@@ -1,5 +1,5 @@
 // Y2a read-only 3D renderer. Original game remains the only simulation.
-import {dinerFloor} from './restaurant_scene_v075.js';
+import {dinerFloor,dinerQueueGuests} from './restaurant_scene_v075.js';
 import {RECIPES,CUSTOMERS} from './data.js';
 import {selectDiningSpeech,selectStaffSpeech} from './diner_ambience_v077.js';
 import {homeKitchenChatter} from './home_kitchen_v013j.js';
@@ -13,29 +13,33 @@ export function y2Layout(s){
  const n=v?v.kitchenSnapshot?.length||2:s.kitchen?.thirdUnlocked?3:2;
  return {tables:g.tables.map((p,i)=>({id:i,x:p.x,z:p.y})),stoves:[g.stoveLeft,g.stoveRight,g.reservedStove].map((p,i)=>({id:['WOK','POT','CENTER'][i],x:p.x,z:p.y,unlocked:i<n,type:slots[i]?.type||(i===1?'POT':'WOK'),level:slots[i]?.level||1})),floor:g};
 }
-const wx=x=>x*10,wz=z=>z*12;
+export const dinerWorldX=x=>x*10;
+export const dinerWorldZ=z=>z<=.428?z*12:.428*12+(z-.428)*16;
+const wx=dinerWorldX,wz=dinerWorldZ;
+export function dinerVisibleActors(s,t,actors){const v=s.service;if(!v)return actors;const queued=dinerQueueGuests(s,v.time),outside=queued.slice(0,10).map((o,i)=>({id:o.id,kind:o.segment,x:.18+(i%5)*.16,y:1.015+Math.floor(i/5)*.065,order:o,waiting:true,walk:false}));return [...actors,...outside];}
 const clamp=(x,a,b)=>Math.min(b,Math.max(a,x));
 const activeOrders=new Set(['queued','cooking','pickup','carried','delivering','flying','ordering']);
-let disabled=false,instance=null,pending=null;
+let disabled=false,instance=null,pending=null,lib=null;
 const y2bHotspots=['stock','book','bento','crew','door'];
 export function y2bHotspotPosition(x,y,w,h){return {x:clamp(x,Math.min(36,w/2),Math.max(w-36,w/2)),y:clamp(y,Math.min(24,h/2),Math.max(h-24,h/2))};}
 function resetHotspots(){for(const k of y2bHotspots)for(const el of document.querySelectorAll('.v016-'+k+'[data-y2b-anchor]')){el.style.removeProperty('left');el.style.removeProperty('top');el.style.removeProperty('bottom');el.style.removeProperty('transform');delete el.dataset.y2bAnchor;}}
-function fail(error){disabled=true;resetHotspots();instance?.element.remove();instance=null;console.warn('Oddpot 3D fallback',error);document.documentElement.dataset.oddpot3d='fallback';}
+function leave(){if(!instance)return;const old=instance;instance=null;old.dispose();resetHotspots();}
+function fail(error){disabled=true;leave();resetHotspots();console.warn('Oddpot 3D fallback',error);document.documentElement.dataset.oddpot3d='fallback';}
 export function enableY2(){
  document.documentElement.dataset.oddpot3d='loading';
- globalThis.__oddpotY2Renderer={draw(canvas,s,t,w,h,actorsFn){
-  if(!y2Eligible(s)||disabled){resetHotspots();instance?.element.remove();return false;}
-  if(!instance){if(!pending)pending=import('https://cdn.jsdelivr.net/npm/three@0.170.0/build/three.module.js').then(T=>{instance=createDiner(T);document.documentElement.dataset.oddpot3d='ready';}).catch(fail);return false;}
-  try{instance.draw(canvas,s,t,w,h,actorsFn(s,t));return true;}catch(e){fail(e);return false;}
+ globalThis.__oddpotY2Renderer={leave,draw(canvas,s,t,w,h,actorsFn){
+  if(!y2Eligible(s)||disabled){leave();resetHotspots();return false;}
+  if(!lib){if(!pending)pending=import('https://cdn.jsdelivr.net/npm/three@0.170.0/build/three.module.js').then(T=>{lib=T;document.documentElement.dataset.oddpot3d='ready';}).catch(fail);return false;}
+  try{if(!instance)instance=createDiner(lib);instance.draw(canvas,s,t,w,h,dinerVisibleActors(s,t,actorsFn(s,t)));return true;}catch(e){fail(e);return false;}
  }};
 }
 function createDiner(T){
  const renderer=new T.WebGLRenderer({antialias:true,alpha:false,powerPreference:'high-performance'});
  const element=renderer.domElement;Object.assign(element.style,{position:'absolute',inset:'0',width:'100%',height:'100%',zIndex:'0',pointerEvents:'none'});
- element.setAttribute('aria-hidden','true');element.addEventListener('webglcontextlost',e=>{e.preventDefault();fail(new Error('WebGL context lost'));});
+ let disposed=false;element.setAttribute('aria-hidden','true');element.addEventListener('webglcontextlost',e=>{e.preventDefault();if(!disposed)fail(new Error('WebGL context lost'));});
  renderer.shadowMap.enabled=true;renderer.shadowMap.type=T.PCFSoftShadowMap;renderer.outputColorSpace=T.SRGBColorSpace;renderer.toneMapping=T.ACESFilmicToneMapping;renderer.toneMappingExposure=1.15;
  const scene=new T.Scene();scene.background=new T.Color('#343b36');
- const camera=new T.OrthographicCamera(-6,6,7,-7,.1,60);camera.position.set(5,17,22);camera.lookAt(5,0,6.5);
+ const camera=new T.OrthographicCamera(-6,6,7,-7,.1,60);camera.position.set(5,23,25);camera.lookAt(5,0,8.7);
  const rounded=roundedFactory(T),mat=(color,roughness=.85,metalness=0)=>new T.MeshStandardMaterial({color,roughness,metalness});
  const wood=mat('#9a6846'),top=mat('#c99a65'),dark=mat('#59402f'),mortar=mat('#625951'),stone=mat('#898477'),brass=mat('#c6a16a',.45,.4),iron=mat('#485c58',.5,.4),cream=mat('#eddbb6'),teal=mat('#557b70'),red=mat('#b55e4d'),green=mat('#728e57'),blue=mat('#628a9b'),violet=mat('#ad92c2');
  const sphere=new T.SphereGeometry(1,16,12),boxCache=new Map(),cylCache=new Map();
@@ -54,13 +58,13 @@ function createDiner(T){
   o.userData.setDish=(recipeId,portion=1)=>{const s=dishStyle(RECIPES[recipeId]);for(const [k,g] of Object.entries(sets))g.visible=k===s.kind;base.visible=s.kind!=='soup';broth.visible=portion>0;const protein=s.protein==='beef'?red:s.protein==='chicken'?brass:green;for(const [j,m] of [...soupBits,...skewerBits,...steamBits,...stirBits].entries()){m.material=j%3===0?(s.spicy?red:s.greens?green:cream):protein;m.visible=(j%4)/4<portion;}};
   o.userData.setDish(null);return o;}
  // Real 10x12 floor: same x/z normalization for all furniture and actors.
- box(scene,5,-.22,6.5,10.45,.44,10.8,mortar,.1);
+ box(scene,5,-.22,7.90,10.45,.44,13.6,mortar,.1);
  const woods=['#a67650','#b18157','#9b6c47','#b68a60'].map(c=>mat(c));
- for(let j=0;j<18;j++)for(let i=0;i<7;i++){const a=Math.max(0,i*1.6-(j%2)*.8),b=Math.min(10,i*1.6-(j%2)*.8+1.6);if(b>a+.025)box(scene,(a+b)/2,.02,1.35+j*.58,b-a-.018,.035,.56,woods[(i+j*3)%4]);}
+ for(let j=0;j<23;j++)for(let i=0;i<7;i++){const a=Math.max(0,i*1.6-(j%2)*.8),b=Math.min(10,i*1.6-(j%2)*.8+1.6);if(b>a+.025)box(scene,(a+b)/2,.02,1.35+j*.58,b-a-.018,.035,.56,woods[(i+j*3)%4]);}
  for(let j=0;j<5;j++)for(let i=0;i<14;i++)box(scene,i*.714+.357,.05,1.6+j*.66,.69,.04,.64,stone);
  box(scene,5,1.52,1.20,10.35,3.04,.35,mortar);
  for(let j=0;j<7;j++)for(let i=0;i<15;i++){let x=i*.67+.33;if(x<4.12||x>5.9||j<2||j>5)box(scene,x,j*.43+.21,1.40,.64,.40,.14,stone);}
- for(const x of [0,10]){box(scene,x,1.52,1.4,.25,3.04,.45,dark,.03);box(scene,x,.19,6.6,.28,.38,10.35,stone,.04);}
+ for(const x of [0,10]){box(scene,x,1.52,1.4,.25,3.04,.45,dark,.03);box(scene,x,.19,7.95,.28,.38,13.1,stone,.04);}
  box(scene,5,3.05,1.30,10.45,.22,.44,wood,.04);
  box(scene,5,1.78,1.48,1.78,1.48,.10,mat('#8ab7b5'));for(const x of [4.09,5,5.91])box(scene,x,1.78,1.56,.11,1.60,.14,dark,.02);for(const y of [1.0,1.78,2.56])box(scene,5,y,1.56,1.9,.13,.17,dark,.025);box(scene,5,.92,1.62,2,.12,.42,top,.03);
  for(const x of [3.4,6.6]){box(scene,x,1.53,1.48,.15,2.95,.28,wood,.03);}
@@ -71,8 +75,12 @@ function createDiner(T){
  const lunch=group(scene,2.45,1.02,wz(.408));box(lunch,0,.10,0,.58,.20,.37,wood,.035);box(lunch,0,.23,0,.62,.085,.41,top,.025);box(lunch,0,.16,0,.08,.26,.43,red,.015);
  const roster=group(scene,7.55,1.0,wz(.408));box(roster,0,.17,0,.47,.34,.13,dark,.025);box(roster,0,.17,.076,.40,.27,.025,cream,.015);for(let i=0;i<3;i++)box(roster,0,.24-i*.075,.095,.27,.018,.015,wood);
  const pass=group(scene,5,0,wz(.397));box(pass,0,.39,0,1.13,.78,.35,wood,.04);box(pass,0,.83,0,1.22,.14,.42,top,.04);const passPlates=[-1,0,1].map(i=>plate(pass,i*.32,.94,0));
- box(scene,5,.045,10.65,1.7,.035,1.45,cream,.02);box(scene,5,.067,10.65,1.55,.02,1.30,teal,.02);
- for(const x of [.85,9.15]){cyl(scene,x,.26,10.36,.22,.16,.48,wood);for(let i=0;i<5;i++)ball(scene,x+Math.cos(i*2.4)*.15,.62+Math.sin(i)*.07,10.36+Math.sin(i*2.4)*.12,.15,.25,.13,green);}
+ box(scene,5,.045,wz(.93),1.7,.035,1.45,cream,.02);box(scene,5,.067,wz(.93),1.55,.02,1.30,teal,.02);
+ const porch=group(scene);const porchZ=wz(1.055);box(porch,5,-.18,porchZ,10.45,.35,3.2,stone,.06);for(let j=0;j<4;j++)for(let i=0;i<10;i++)box(porch,i+0.5,.025,porchZ-1.2+j*.76,.96,.05,.72,(i+j)%2?stone:mortar,.015);for(const x of [0.35,9.65]){box(porch,x,.65,wz(.985),.22,1.30,.24,wood,.025);box(porch,x,1.35,wz(.985),.37,.12,.37,brass,.025);ball(porch,x,1.48,wz(.985),.14,.17,.14,cream);}
+ for(const x of [1.8,8.2]){box(porch,x,.35,porchZ+1.0,2.65,.17,.40,wood,.03);for(const dx of [-.95,.95])box(porch,x+dx,.16,porchZ+1.0,.14,.32,.22,dark,.02);}
+ box(porch,5,.075,wz(.975),2.1,.11,.50,top,.03);
+ for(const x of [.85,9.15]){cyl(scene,x,.26,wz(.885),.22,.16,.48,wood);for(let i=0;i<5;i++)ball(scene,x+Math.cos(i*2.4)*.15,.62+Math.sin(i)*.07,wz(.885)+Math.sin(i*2.4)*.12,.15,.25,.13,green);}
+ const alcoves=[.255,.745].map(x=>{const p=group(scene,wx(x),0,wz(.555));box(p,0,.04,0,2.65,.045,1.72,teal,.04);for(const dx of [-1.25,1.25])box(p,dx,.055,0,.035,.025,1.70,brass,.008);return p;});
  const tables=[];
  for(let i=0;i<4;i++){const p=group(scene);for(const x of [-.57,.57])for(const z of [-.37,.37])box(p,x,.34,z,.14,.68,.14,dark,.025);box(p,0,.76,0,1.65,.16,1.12,top,.045);box(p,0,.85,0,.36,.025,1.14,teal,.009);
   for(const x of [-1.02,1.02]){for(const dx of [-.16,.16])for(const dz of [-.16,.16])box(p,x+dx,.18,dz,.075,.36,.075,dark,.015);box(p,x,.39,0,.49,.12,.49,wood,.035);box(p,x,.465,0,.44,.08,.43,teal,.025);}
@@ -109,21 +117,21 @@ function createDiner(T){
   const hands=[],elbows=[],utensils=[];if(!['regular','critic'].includes(kind))for(const k of [-1,1]){const arm=group(body,k*.25,.57,.04);ball(arm,m,0,-.055,0,.08,.095,.08);const elbow=group(arm,0,-.11,0);ball(elbow,m,0,-.035,0,.065,.075,.065);ball(elbow,cream,0,-.10,.02,.07,.07,.07);const utensil=group(elbow,0,-.10,.02);box(utensil,brass,0,0,.085,.025,.025,.18,.006);ball(utensil,cream,0,0,.17,.037,.022,.048);hands.push(arm);elbows.push(elbow);utensils.push(utensil);}return {root,update(t,s){for(let i=0;i<legs.length;i++)legs[i].rotation.x=s.seated?-1.15:s.moving?Math.sin(t*10+i*Math.PI)*.36:0;for(let i=0;i<hands.length;i++){const bite=(1+Math.sin(t*3.4+i*1.5))/2;hands[i].rotation.x=s.eating?-.65-bite*.52:s.seated?-.25:s.moving?Math.sin(t*10+i*Math.PI)*.23:0;elbows[i].rotation.x=s.eating?-.40-bite*.85:0;utensils[i].visible=s.eating&&i===0;}body.position.y=kind==='critic'?.10+Math.sin(t*2.4)*.04:s.moving?Math.abs(Math.sin(t*10))*.025:0;body.rotation.x=s.eating?.07+Math.sin(t*4)*.04:s.review?Math.sin(t*4)*.04:0;if(kind==='regular'){body.scale.y=1+(s.eating?.10:s.moving?.10:.035)*Math.sin(t*(s.eating?4:s.moving?8:2));body.scale.x=1-(body.scale.y-1)*.45;}root.rotation.y={front:0,right:Math.PI/2,back:Math.PI,left:-Math.PI/2}[s.facing]||0;}};
  }
  const pool=new Map(),byId=new Map();
- function actor(kind,id){let a=byId.get(id);if(a&&a.kind===kind)return a;if(a){a.root.visible=false;byId.delete(id);}let list=pool.get(kind);if(!list)pool.set(kind,list=[]);a=list.find(o=>!o.used&&!byId.has(o.id));if(!a){const staff=['chef','helper','helper2','waiter','waiter2'].includes(kind),m=staff?makeChefY2(T,rounded,kind==='chef'):makeGuest(kind);scene.add(m.root);m.root.scale.setScalar(kind==='chef'?.84:staff?.70:.76);a={...m,kind};if(staff&&kind!=='chef'){m.root.traverse(o=>{if(o.isMesh&&o.material?.color?.getHexString()==='417b91'){o.material=o.material.clone();o.material.color.set(kind==='waiter'?'#708d62':kind==='helper'?'#d27a46':'#517d85');}});}a.dish=plate(staff?m.rig.body:m.root,0,.59,.30);if(staff)a.serviceRig=createServiceRig(T,m,rounded);list.push(a);}a.id=id;byId.set(id,a);return a;}
+ function actor(kind,id){let a=byId.get(id);if(a&&a.kind===kind)return a;if(a){a.root.visible=false;byId.delete(id);}let list=pool.get(kind);if(!list)pool.set(kind,list=[]);a=list.find(o=>!o.used&&!byId.has(o.id));if(!a){const staff=['chef','helper','helper2','waiter','waiter2'].includes(kind),m=staff?makeChefY2(T,rounded,kind==='chef'):makeGuest(kind);scene.add(m.root);m.root.scale.setScalar(kind==='chef'?.84:staff?.78:1.05);a={...m,kind};if(staff&&kind!=='chef'){m.root.traverse(o=>{if(o.isMesh&&o.material?.color?.getHexString()==='417b91'){o.material=o.material.clone();o.material.color.set(kind==='waiter'?'#708d62':kind==='helper'?'#d27a46':'#517d85');}});}a.dish=plate(staff?m.rig.body:m.root,0,.59,.30);if(staff)a.serviceRig=createServiceRig(T,m,rounded);list.push(a);}a.id=id;byId.set(id,a);return a;}
  const tmp=new T.Vector3();let lastW=0,lastH=0;
  function project(x,z,y,w,h){tmp.set(wx(x),y,wz(z)).project(camera);return {x:(tmp.x+1)*w/2,y:(1-tmp.y)*h/2};}
  function label(c,p,txt,w,h){if(!txt)return;c.font='bold 11px system-ui';const width=Math.min(w-12,c.measureText(txt).width+12),x=clamp(p.x-width/2,6,w-width-6),y=clamp(p.y-16,5,h-23);c.fillStyle='#2d3029e8';c.beginPath();c.roundRect(x,y,width,19,5);c.fill();c.fillStyle='#fff0ce';c.textAlign='center';c.textBaseline='middle';c.fillText(txt,x+width/2,y+9.5,width-8);}
  return {element,draw(canvas,s,t,w,h,actors){
   const parent=canvas.parentElement;if(!parent)return;if(element.parentElement!==parent)parent.insertBefore(element,canvas);
   const dpr=Math.min(devicePixelRatio||1,1.5),rw=Math.round(w*dpr),rh=Math.round(h*dpr);
-  if(rw!==lastW||rh!==lastH){renderer.setSize(rw,rh,false);const aspect=w/h,half=Math.max(5.5/aspect,5.9);camera.left=-half*aspect;camera.right=half*aspect;camera.top=half;camera.bottom=-half;camera.updateProjectionMatrix();lastW=rw;lastH=rh;}
-  const layout=y2Layout(s),v=s.service;
+  if(rw!==lastW||rh!==lastH){renderer.setSize(rw,rh,false);const aspect=w/h,half=Math.max(5.65/aspect,8.35);camera.left=-half*aspect;camera.right=half*aspect;camera.top=half;camera.bottom=-half;camera.updateProjectionMatrix();lastW=rw;lastH=rh;}
+  const layout=y2Layout(s),v=s.service;alcoves.forEach((a,i)=>a.visible=layout.tables.length>=i+3);
   for(let i=0;i<tables.length;i++){const item=tables[i],p=layout.tables[i];item.p.visible=!!p;if(p){item.p.position.set(wx(p.x),0,wz(p.z));for(let j=0;j<2;j++){const order=v?.orders?.find(o=>o.tableId===i&&(o.seatId??0)===j&&['eating','review'].includes(o.status));item.meals[j].visible=!!order;if(order)item.meals[j].userData.setDish(order.recipeId,order.status==='review'?0:1);}}}
   for(let i=0;i<3;i++){const item=stoves[i],p=layout.stoves[i],busy=v?.stations?.[p.id];item.p.position.set(wx(p.x),0,wz(p.z));const type=p.unlocked?(item.vessels[p.type]?p.type:'WOK'):'LOCKED';for(const [k,g] of Object.entries(item.vessels))g.visible=k===type;item.flames.forEach((f,j)=>{f.visible=p.unlocked&&(!v||!!busy);f.scale.y=.07+.035*Math.sin(t*8+j);});item.wisps.forEach((o,j)=>{const q=(t*.55+j*.25)%1;o.visible=p.unlocked&&!!busy;o.position.set(Math.sin(q*5+j)*.14,1.18+q*.75,Math.cos(q*4+j)*.09);o.scale.set(.08+q*.11,.12+q*.15,.08+q*.11);});}
   const ready=v?.orders?.filter(o=>o.status==='pickup')||[];passPlates.forEach((p,i)=>{p.visible=!!ready[i];if(ready[i])p.userData.setDish(ready[i].recipeId);});
   const ids=new Set(actors.map(a=>a.id));for(const [id,a] of byId)if(!ids.has(id)){a.root.visible=false;byId.delete(id);}
   for(const list of pool.values())for(const a of list)a.used=false;
-  for(const a of actors){const m=actor(a.kind,a.id);m.used=true;m.root.visible=true;let direction=a.direction==='up'?'back':a.direction==='down'?'front':a.direction;if(!direction&&m.last){const dx=a.x-m.last.x,dz=a.y-m.last.y;if(Math.hypot(dx,dz)>.0004)direction=Math.abs(dx)>Math.abs(dz)?dx<0?'left':'right':dz<0?'back':'front';}if(a.seat&&a.order)direction=(a.order.seatId??0)===0?'right':'left';m.facing=direction||m.facing||'front';m.last={x:a.x,y:a.y};m.root.position.set(wx(a.x),a.seat?.19:0,wz(a.y));const action=dinerAction(a,layout,v);m.dish.visible=action.mode==='carry';if(a.plate)m.dish.userData.setDish(a.plateRecipeId);m.update(t,{facing:m.facing,moving:!!a.walk,working:action.mode==='cook',carrying:action.mode==='carry',seated:!!a.seat,eating:a.order?.status==='eating',review:a.order?.status==='review'});if(action.mode==='cook'){const st=action.station,dx=wx(st.x-a.x),dz=wz(st.z-a.y);m.root.rotation.y=Math.atan2(dx,dz);}m.serviceRig?.update(action,t,!!a.walk,m.dish);}
+  for(const a of actors){const m=actor(a.kind,a.id);m.used=true;m.root.visible=true;let direction=a.direction==='up'?'back':a.direction==='down'?'front':a.direction;if(!direction&&m.last){const dx=a.x-m.last.x,dz=a.y-m.last.y;if(Math.hypot(dx,dz)>.0004)direction=Math.abs(dx)>Math.abs(dz)?dx<0?'left':'right':dz<0?'back':'front';}if(a.seat&&a.order)direction=(a.order.seatId??0)===0?'right':'left';m.facing=direction||m.facing||'front';m.last={x:a.x,y:a.y};m.root.position.set(wx(a.x),a.seat?.43:0,wz(a.y));if(a.order&&a.order.status==='entering'&&t-(a.order.doorAt??t)<.55){const q=clamp((t-(a.order.doorAt??t))/.55,0,1);m.root.position.z+=(1-q)*1.1;}const action=dinerAction(a,layout,v);m.dish.visible=action.mode==='carry';if(a.plate)m.dish.userData.setDish(a.plateRecipeId);m.update(t,{facing:m.facing,moving:!!a.walk,working:action.mode==='cook',carrying:action.mode==='carry',seated:!!a.seat,eating:a.order?.status==='eating',review:a.order?.status==='review'});if(action.mode==='cook'){const st=action.station,dx=wx(st.x-a.x),dz=wz(st.z-a.y);m.root.rotation.y=Math.atan2(dx,dz);}m.serviceRig?.update(action,t,!!a.walk,m.dish);}
   hemi.intensity=v?1.05:1.9;sun.intensity=v?1.65:3.1;renderer.render(scene,camera);
   const c=canvas.getContext('2d');c.clearRect(0,0,w,h);
   if(!v){const section=parent.closest('.v016-scene');if(section){
@@ -131,10 +139,11 @@ function createDiner(T){
    for(const [key,[x,z,y]] of Object.entries(anchors)){const el=section.querySelector('.v016-'+key);if(!el)continue;const pt=project(x,z,y,w,h),q=y2bHotspotPosition(pt.x,pt.y,w,h);el.style.left=q.x+'px';el.style.top=q.y+'px';el.style.bottom='auto';el.style.transform='translate(-50%,-50%)';el.dataset.y2bAnchor='1';}
   }}else resetHotspots();
   const guestCues=selectDiningSpeech(v?.orders||[],t,2),staffCue=selectStaffSpeech(s,t,guestCues),home=!v?homeKitchenChatter(s,t,globalThis.matchMedia?.('(prefers-reduced-motion: reduce)').matches||false):null;
-  for(const a of actors){const p=project(a.x,a.y,1.45,w,h),cue=guestCues.find(q=>q.id===a.id),o=a.order;const txt=cue?.text||(staffCue?.staffRole===a.id?staffCue.text:null)||(home?.actor===a.id?home.text:null)||(o&&activeOrders.has(o.status)?RECIPES[o.recipeId]?.emoji||'🍽':o?.status==='review'?o.sat>=70?'💚':'💬':a.working?'🍳':a.plate?'🍽':null);if(txt)label(c,p,txt,w,h);
+  for(const a of actors){const p=project(a.x,a.y,a.seat?1.86:1.45,w,h),cue=guestCues.find(q=>q.id===a.id),o=a.order;const txt=cue?.text||(staffCue?.staffRole===a.id?staffCue.text:null)||(home?.actor===a.id?home.text:null)||(o&&activeOrders.has(o.status)?RECIPES[o.recipeId]?.emoji||'🍽':o?.status==='review'?o.sat>=70?'💚':'💬':a.working?'🍳':a.plate?'🍽':null);if(txt)label(c,p,txt,w,h);
    if(a.id==='hero'){const base=project(a.x,a.y,.05,w,h),hero=v?.hero;c.strokeStyle='#f1d59b';c.lineWidth=2;c.beginPath();c.ellipse(base.x,base.y,9,4,0,0,Math.PI*2);c.stroke();if(hero?.dwellZone&&hero.dwell>0){c.beginPath();c.arc(base.x,base.y,11,-Math.PI/2,-Math.PI/2+Math.PI*2*Math.min(1,hero.dwell/(hero.dwellZone.startsWith('serve:')?.48:.36)));c.stroke();}}
   }
   for(const p of layout.stoves){const job=v?.stations?.[p.id];if(job)label(c,project(p.x,p.z,1.6,w,h),Math.ceil(job.left)+'s',w,h);}
+  const waiting=dinerQueueGuests(s,v?.time||0).length;label(c,project(.5,1.115,.35,w,h),'等位 '+waiting,w,h);element.dataset.guestCount=String(actors.filter(a=>a.order&&!a.waiting).length);element.dataset.visibleGuestCount=String(actors.filter(a=>{if(!a.order||a.waiting)return false;const m=byId.get(a.id);if(!m?.root.visible)return false;const pt=tmp.set(m.root.position.x,m.root.position.y+.65,m.root.position.z).project(camera);return Math.abs(pt.x)<1&&Math.abs(pt.y)<1&&Math.abs(pt.z)<1;}).length);element.dataset.queueCount=String(waiting);element.dataset.tableCount=String(layout.tables.length);
   document.documentElement.dataset.oddpot3d='active';
- }};
+ },dispose(){disposed=true;element.remove();const gs=new Set(),ms=new Set();scene.traverse(o=>{if(o.geometry)gs.add(o.geometry);if(o.material)for(const m of Array.isArray(o.material)?o.material:[o.material])ms.add(m);});for(const g of gs)g.dispose();for(const m of ms)m.dispose();renderer.dispose();renderer.forceContextLoss();}};
 }
