@@ -1,0 +1,24 @@
+name: Visual lab smoke
+on:
+  pull_request:
+    paths: ['visual-lab.html','visual-lab.js','scripts/check-visual-lab.mjs','.github/workflows/visual-lab.yml']
+  push:
+    branches: [main]
+    paths: ['visual-lab.html','visual-lab.js','scripts/check-visual-lab.mjs','.github/workflows/visual-lab.yml']
+jobs:
+  smoke:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - run: node --check visual-lab.js
+      - run: npm install --no-save --package-lock=false playwright@1.56.1
+      - run: npx playwright install chromium
+      - run: node scripts/check-visual-lab.mjs
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: visual-lab-screens
+          path: docs/screenshots/visual-lab/
