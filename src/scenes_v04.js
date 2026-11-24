@@ -251,7 +251,7 @@ export function drawField(canvas,s,clock){const size=setCanvas(canvas);if(!size|
    }
    c.restore();
   }
-  for(const [i,o] of f.obstacles.entries()){if(fieldSpriteArt){if(o.y+.5<=f.pos.y){if(herbHybridArt)drawHybridMeadowObstacle(c,o,i);else if(fieldHybridArt)drawHybridFieldObstacle(c,o,f.biome.style,i);else drawHerbPixelObstacle(c,o,i);}continue;}if(camera.expanded){drawExpandedObstacle(c,o,f.biome?.style,clock);continue;}c.save();c.translate(o.x+.5,o.y+.5);c.scale(1/sc,1/sc);if(f.biome?.style==='glow'){
+  for(const [i,o] of f.obstacles.entries()){if(fieldSpriteArt){if(o.y+.5<=f.pos.y){if(herbHybridArt){if(!f.artPreviewMode)a20HerbObstacle(c,o,i);else drawHybridMeadowObstacle(c,o,i);}else if(fieldHybridArt)drawHybridFieldObstacle(c,o,f.biome.style,i);else drawHerbPixelObstacle(c,o,i);}continue;}if(camera.expanded){drawExpandedObstacle(c,o,f.biome?.style,clock);continue;}c.save();c.translate(o.x+.5,o.y+.5);c.scale(1/sc,1/sc);if(f.biome?.style==='glow'){
   circle(c,0,4,14,'#263d48');circle(c,0,-6,17,'#6ebaaa');circle(c,-7,-9,8,'#c5e8d1');
  }else if(f.biome?.style==='roots'){
   circle(c,0,5,17,'#242430');circle(c,0,-5,19,'#75505f');
@@ -346,7 +346,7 @@ export function drawField(canvas,s,clock){const size=setCanvas(canvas);if(!size|
  // Foreground tree canopies overlap actors only when their foot is farther
  // down screen. Physical obstacles/AI remain completely unchanged.
  if(fieldSpriteArt)for(const [i,o] of f.obstacles.entries()){
-  if(o.y+.5>f.pos.y){if(herbHybridArt)drawHybridMeadowObstacle(c,o,i);else if(fieldHybridArt)drawHybridFieldObstacle(c,o,f.biome.style,i);else drawHerbPixelObstacle(c,o,i);}
+  if(o.y+.5>f.pos.y){if(herbHybridArt){if(!f.artPreviewMode)a20HerbObstacle(c,o,i);else drawHybridMeadowObstacle(c,o,i);}else if(fieldHybridArt)drawHybridFieldObstacle(c,o,f.biome.style,i);else drawHerbPixelObstacle(c,o,i);}
  }
  if(smoothFx)for(const n of f.nodes)drawFieldNodeMarkers(c,n,clock,sc);
  if(f.harvestNode){const n=f.nodes.find(n=>n.key===f.harvestNode);if(n){capsule(c,n.x-.40,n.y-.49,.8,.10,'#304d39');capsule(c,n.x-.40,n.y-.49,.8*(f.harvestProgress/.82),.10,'#f3dd7e')}}
@@ -786,6 +786,81 @@ export function drawDinerDoorway(c,s,t,w,h){
 
 // v0.7.5 official restaurant. One world; furniture, actors, services and
 // collision share DINER_FLOOR. The old DOM kitchen is NOT drawn here.
+// A2.0 art study: authored shapes, shared light/material language, unchanged ground anchors.
+const A20_MATERIAL=Object.freeze({ink:'#302b26',woodShade:'#785039',wood:'#ad8052',woodLight:'#e0b77a',leafShade:'#294b3d',leaf:'#527952',leafLight:'#a0b57a',stone:'#66766d'});
+function a20Poly(c,pts,fill,stroke=null,lw=1){
+ c.beginPath();c.moveTo(...pts[0]);for(const p of pts.slice(1))c.lineTo(...p);c.closePath();c.fillStyle=fill;c.fill();
+ if(stroke){c.strokeStyle=stroke;c.lineWidth=lw;c.stroke();}
+}
+function a20Ellipse(c,x,y,rx,ry,fill){
+ c.beginPath();c.ellipse(x,y,rx,ry,0,0,Math.PI*2);c.fillStyle=fill;c.fill();
+}
+function a20Wood(c,x,y,w,h){
+ rect(c,x,y,w,h,A20_MATERIAL.wood);rect(c,x,y,w,Math.min(2,h*.12),A20_MATERIAL.woodLight);
+ for(let j=1;j<4;j++){let py=y+h*j/4;line(c,x+2,py,x+w-2,py,'#69442c80',1);line(c,x+3,py+1,x+w-3,py+1,'#e6bc7938',1);}
+}
+function a20Table(c,X,Y,side,i){
+ c.save();const p=side/2,d=side*.19;
+ // Seats retain the original centre and chair lip drawn by the shared actor renderer.
+ for(const sign of [-1,1]){
+  const cx=X+sign*side*.77;
+  a20Ellipse(c,cx+2,Y+12,9,5,'#382b2280');rect(c,cx-6,Y+2,3,13,'#4b3227');rect(c,cx+3,Y+2,3,13,'#4b3227');
+  a20Poly(c,[[cx-8,Y-9],[cx+8,Y-9],[cx+8,Y+1],[cx-8,Y+1]],'#72523a','#493126');
+  a20Wood(c,cx-7,Y-12,14,11);rect(c,cx-5,Y-10,10,7,i>=2?'#627b59':'#935b43');
+ }
+ a20Ellipse(c,X+5,Y+p+9,p+8,10,'#392b2366');
+ for(const xx of [X-p+5,X+p-8]){rect(c,xx,Y+p-4,5,12,'#513629');rect(c,xx,Y+p-4,1,11,'#b18053')}
+ a20Poly(c,[[X-p,Y-p+6],[X+p,Y-p+6],[X+p,Y+p],[X-p,Y+p]],A20_MATERIAL.woodShade,'#422e25');
+ a20Poly(c,[[X-p,Y-p],[X+p-3,Y-p],[X+p,Y-p+3],[X+p,Y+p-d],[X-p,Y+p-d]],'#ba8a55','#533728');
+ a20Wood(c,X-p+3,Y-p+3,side-6,side-d-6);
+ rect(c,X-p+3,Y+p-d+1,side-6,2,'#d1a56b');
+ // A woven runner and tiny ceramic vase, off the real plate positions.
+ rect(c,X-5,Y-p+3,10,side*.31,'#74564a');rect(c,X-4,Y-p+4,8,side*.28,'#a37d5d');
+ a20Ellipse(c,X,Y-p+7,4,3,'#ddd2ad');a20Ellipse(c,X,Y-p+6,2.5,1.7,'#6d7e54');
+ c.restore();
+}
+function a20Range(c,X,Y,rw,type,busy,t){
+ c.save();let p=rw/2;
+ a20Ellipse(c,X+4,Y+26,p+5,9,'#36271f66');
+ a20Poly(c,[[X-p,Y-16],[X+p,Y-16],[X+p,Y+26],[X-p,Y+26]],'#76563e','#402d25');
+ rect(c,X-p+2,Y-3,rw-4,25,'#8b6749');
+ for(let j=0;j<3;j++)line(c,X-p+4,Y+4+j*7,X+p-4,Y+4+j*7,'#624936',1);
+ a20Poly(c,[[X-p-2,Y-22],[X+p-2,Y-22],[X+p+2,Y-17],[X+p+2,Y+5],[X-p-2,Y+5]],'#b6a087','#514238');
+ rect(c,X-p,Y+3,rw,4,'#6d5b4c');
+ c.beginPath();c.roundRect(X-9,Y+10,18,12,2);c.fillStyle='#3b322b';c.fill();c.strokeStyle='#c29963';c.stroke();
+ if(busy){a20Ellipse(c,X,Y+18,7,3,'#bc5b35');a20Ellipse(c,X-2,Y+17,3,3,'#f3c16b')}
+ if(type==='WOK'){
+  a20Ellipse(c,X,Y-9,p*.69,12,'#282e2c');a20Ellipse(c,X,Y-12,p*.68,10,'#b7b6a0');a20Ellipse(c,X,Y-12,p*.60,8,'#3c4843');a20Ellipse(c,X-4,Y-14,p*.36,3,'#61716a');
+  line(c,X+p*.52,Y-8,X+p*.9,Y-19,'#3e3128',5);line(c,X+p*.55,Y-9,X+p*.86,Y-19,'#c49b64',2);
+ }else{
+  rect(c,X-p*.52,Y-22,p*1.04,15,'#5e7973');a20Ellipse(c,X,Y-7,p*.52,5,'#405a54');a20Ellipse(c,X,Y-22,p*.57,5,'#a1b3a5');a20Ellipse(c,X,Y-23,p*.46,4,'#69847a');rect(c,X-3,Y-29,6,5,'#c3a16c');
+  line(c,X-p*.55,Y-16,X-p*.8,Y-16,'#4d4134',4);line(c,X+p*.55,Y-16,X+p*.8,Y-16,'#4d4134',4);
+ }
+ if(busy)for(let k=0;k<3;k++)a20Ellipse(c,X-7+k*7,Y-30-((t*9+k*4)%11),2,3,'#f5e8d08a');
+ c.restore();
+}
+// Forest specimen: original tree silhouette with faceted leaf clusters and anchored roots.
+function a20HerbObstacle(c,o,i){
+ if(i%5===2){drawHybridMeadowObstacle(c,o,i);return;}
+ c.save();c.translate(o.x+.5,o.y+.5);const variant=[.91,1,1.07][i%3];c.scale(variant,variant);
+ const m=A20_MATERIAL;
+ a20Ellipse(c,.22,.23,.68,.29,'#243b3155');a20Ellipse(c,.04,.19,.32,.15,'#28372f80');
+ a20Poly(c,[[-.27,.25],[-.14,.05],[-.13,-.71],[.15,-.78],[.19,.01],[.31,.21],[.12,.15],[.03,.30],[-.04,.15]],m.woodShade);
+ a20Poly(c,[[-.14,.08],[-.12,-.63],[-.03,-.69],[-.02,.08],[-.12,.21]],m.wood);
+ line(c,.08,-.45,.09,.10,'#4e392c',.045);line(c,-.07,-.36,-.04,.04,'#e0b77a77',.035);
+ line(c,-.08,-.56,-.41,-.83,m.woodShade,.13);line(c,.08,-.52,.47,-.91,m.woodShade,.13);
+ const lobes=[[-.43,-.73,.55,.43],[.43,-.76,.56,.42],[-.55,-1.05,.48,.40],[.43,-1.14,.55,.44],[0,-1.42,.63,.44],[0,-.98,.57,.43]];
+ for(let j=0;j<lobes.length;j++){
+  const [x,y,rx,ry]=lobes[j];
+  const pts=Array.from({length:14},(_,k)=>{const a=k*Math.PI/7,r=1+(k%2?.07:-.035);return [x+Math.cos(a)*rx*r,y+Math.sin(a)*ry*r]});
+  a20Poly(c,pts,j<2?m.leafShade:'#365d47');
+  const lit=pts.map(([xx,yy])=>[x+(xx-x)*.81-.035,y+(yy-y)*.77-.065]);
+  a20Poly(c,lit,j<2?'#42664b':m.leaf);
+  for(let k=0;k<3;k++){let dx=x-rx*.45+k*rx*.36,dy=y-ry*.44+(k%2)*.045; a20Poly(c,[[dx-.08,dy+.045],[dx-.035,dy-.035],[dx+.085,dy-.04],[dx+.035,dy+.04]],j<2?'#718e60':m.leafLight);}
+ }
+ c.restore();
+}
+
 // A1: decorative backdrop only. No hitboxes, inventory, or simulation effects.
 function drawLivingHearthA1(c,w,h){
  c.save();
@@ -812,6 +887,15 @@ function drawLivingHearthA1(c,w,h){
  // Framed wall and three physical objects associated with the home actions.
  block(0,.135,1,.022,'#543925');block(0,.135,1,.006,'#d1a16a');
  block(.02,0,.025,.15,'#4a3328');block(.955,0,.025,.15,'#4a3328');
+ // Recessed plaster panels, stone skirting, beam faces and pegged joints.
+ for(let j=0;j<8;j++){
+  const xx=.027+j*.12;
+  block(xx,.144,.116,.017,j%2?'#7b7868':'#8a8976');
+  block(xx,.144,.116,.003,'#b6af91');
+ }
+ block(.02,.004,.96,.012,'#4b362b');block(.02,.014,.96,.005,'#8d6644');
+ for(const xx of [.028,.96]){block(xx,.02,.008,.115,'#b18155');for(const yy of [.035,.12])block(xx,.01+yy,.006,.006,'#352a24');}
+
  // Pantry cupboard (left). Shelf silhouettes: jars, baskets, roots.
  block(.055,.018,.25,.117,'#422d25');block(.066,.024,.228,.105,'#9a6d43');
  for(let k=0;k<2;k++){
@@ -827,6 +911,11 @@ function drawLivingHearthA1(c,w,h){
  // Wall recipe ledger; actual button opens existing recipe book.
  block(.715,.023,.22,.107,'#493126');block(.73,.033,.19,.087,'#ceaf79');
  for(let i=0;i<4;i++)block(.75,.047+i*.015,.145-(i%2)*.035,.003,'#77583a');
+ // Framed recipe folio: paper sheets, leather tabs, brass fastening.
+ block(.736,.039,.176,.005,'#e8cd91');block(.737,.041,.004,.077,'#775037');
+ for(let j=0;j<3;j++){block(.89,.051+j*.021,.021,.009,['#935b43','#697d50','#8f6b43'][j]);}
+ block(.807,.028,.018,.009,'#cfa56b');
+
  // Canvas gradients create sunlight without laying a tint over real actors.
  c.save();c.beginPath();c.moveTo(X(.38),Y(.15));c.lineTo(X(.61),Y(.15));c.lineTo(X(.89),Y(.83));c.lineTo(X(.48),Y(.83));c.closePath();c.clip();
  const sun=c.createLinearGradient(0,Y(.15),0,Y(.83));sun.addColorStop(0,'#ffe6a345');sun.addColorStop(1,'#ffe6a300');c.fillStyle=sun;c.fillRect(0,0,w,h);c.restore();
@@ -880,6 +969,8 @@ function drawRestaurantV075(c,s,t,w,h){
     }
    }
    if(busy)for(let j=0;j<3;j++)circle(c,X-12+j*12,gy-5-Math.sin(t*4+j)*2,1.7,'#e8d8b599');
+  }else if(!cloud&&s.phase==='forecast'&&!v){
+   a20Range(c,X,Y,rw,type,!!busy,t);
   }else{
    rr(X-rw/2,Y-24,rw,51,7,cloud?'#476b80':'#513c30',cloud?'#e5d6ad':'#b99765');
    rr(X-rw*.43,Y-20,rw*.86,39,5,cloud?'#9dbabd':'#916d49',cloud?'#e8dcba':'#d8ae74');
@@ -910,6 +1001,12 @@ function drawRestaurantV075(c,s,t,w,h){
  for(const [from,to] of [[.075,.390],[.610,.925]]){
   rr(x(from),y(g.geometry.counterTop),x(to-from),h*.039,4,cloud?'#5c8395':'#5b3e2e',cloud?'#eee2bd':'#cda575');
   rect(c,x(from),y(g.geometry.counterTop),x(to-from),4,cloud?'#d9e5d6':'#c39965');
+  if(!cloud&&s.phase==='forecast'&&!v){
+   const px=x(from),py=y(g.geometry.counterTop),pw=x(to-from),ph=h*.039;
+   rect(c,px+2,py+4,pw-4,Math.max(3,ph-4),'#875b3c');
+   for(let k=1;k<4;k++){const q=px+pw*k/4;line(c,q,py+5,q,py+ph-2,'#503728',1);rect(c,q-5,py+ph*.55,3,2,'#e0b77a');}
+   line(c,px,py+ph,px+pw,py+ph,'#4b3429',2);
+  }
  }
  rr(x(.441),y(.389),x(.118),h*.025,4,cloud?'#a2bdba':'#9e805d',cloud?'#f0e1bd':'#caaa77');
  const pending=v?.orders?.filter(o=>o.status==='pickup')||[];
@@ -921,6 +1018,7 @@ function drawRestaurantV075(c,s,t,w,h){
  for(const [i,pt] of g.tables.entries()){
   const X=x(pt.x),Y=y(pt.y),side=Math.min(51,Math.max(39,w*.126)),half=side/2;
   if(cloud)drawCloudCrystalTable(c,X,Y,side,t,i);
+  else if(s.phase==='forecast'&&!v)a20Table(c,X,Y,side,i);
   else{
   for(const sign of [-1,1]){
    rr(X+sign*side*.77-8,Y-10,16,24,4,'#4e372c','#a87d56');
