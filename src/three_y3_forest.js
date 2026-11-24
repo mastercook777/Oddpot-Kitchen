@@ -8,7 +8,7 @@ export function y3CameraFrame(camera,w,h,sx=0,sy=0){const k=camera.scale;return 
 export function y3Facing(facing){const x=facing?.x||0,y=facing?.y||0;return Math.abs(x)>Math.abs(y)?x<0?'left':'right':y<0?'back':'front';}
 let instance=null,loading=null,disabled=false,lib=null,epoch=0;
 function fail(e){disabled=true;leave();console.warn('Oddpot forest 3D fallback',e);document.documentElement.dataset.oddpotForest3d='fallback';}
-function leave(){epoch++;if(instance){const old=instance;instance=null;old.dispose();}if(!disabled)document.documentElement.dataset.oddpotForest3d='idle';}
+function leave(){if(!instance)return;epoch++;const old=instance;instance=null;old.dispose();if(!disabled)document.documentElement.dataset.oddpotForest3d='idle';}
 export function enableY3(){
  globalThis.__oddpotY3Renderer={leave,draw(canvas,s,t,w,h,camera,sx,sy){
   if(!y3Eligible(s)||disabled){if(instance)leave();return false;}
@@ -39,7 +39,7 @@ function createForest(T){
  function place(p,x,y,height=0){p.position.set(x,height,y/SINE);}
  function random(i){return ((Math.imul(i+1729,1664525)+1013904223)>>>0)%10007/10007;}
  function branch(p,a,b,r1,r2,m){const u=new T.Vector3(...a),v=new T.Vector3(...b),d=v.clone().sub(u),q=u.clone().add(v).multiplyScalar(.5),o=cyl(p,m,q.x,q.y,q.z,r1,r2,d.length(),9);o.quaternion.setFromUnitVectors(new T.Vector3(0,1,0),d.normalize());return o;}
- let terrain=null,mapKey='',treeCrowns=[],nodePool=new Map(),enemyPool=new Map();
+ let terrain=null,mapKey='',treeCrowns=[],nodePool=new Map(),enemyPool=new Map(),uniqueTerrain=[];
  const actors=group(scene),hero=makeChefY2(T,rounded,true);actors.add(hero.root);hero.root.scale.setScalar(.72);
  // Weapon is visibly equipped independently from the signature back skillet.
  const weapons={};for(const k of ['WOK','POT','GRILL','STEAM'])weapons[k]=group(hero.root,.35,.66,.26);
@@ -54,16 +54,16 @@ function createForest(T){
   const crown=group(p,.05,h,0);for(let j=0;j<7;j++){const a=j*2.4,r=j===0?0:.31+random(i+j*31)*.15;ball(crown,leaves[(i+j)%4],Math.cos(a)*r,.20+random(i*53+j)*.24,Math.sin(a)*r,.40+random(j*11+i)*.09,.37,.42);}
   ball(crown,leaves[3],-.10,.55,-.09,.43,.33,.40);treeCrowns.push({crown,x:o.x+.5,y:o.y+.5});
  }
- function rebuild(f,key){if(terrain)scene.remove(terrain);terrain=group(scene);treeCrowns=[];mapKey=key;
-  const mw=f.worldW,mh=f.worldH;const ground=mesh(terrain,new T.PlaneGeometry(mw+4,(mh+4)/SINE),material('#809768'),mw/2,-.025,mh/2/SINE,false);ground.rotation.x=-Math.PI/2;
+ function rebuild(f,key){if(terrain)scene.remove(terrain);for(const r of uniqueTerrain)r.dispose();uniqueTerrain=[];terrain=group(scene);treeCrowns=[];mapKey=key;
+  const mw=f.worldW,mh=f.worldH;const groundGeo=new T.PlaneGeometry(mw+4,(mh+4)/SINE),groundMat=material('#809768');uniqueTerrain.push(groundGeo,groundMat);const ground=mesh(terrain,groundGeo,groundMat,mw/2,-.025,mh/2/SINE,false);ground.rotation.x=-Math.PI/2;
   // Broad subtle organic patches, not tiled checkerboards. Vertex colors follow deterministic positions.
   const geo=new T.PlaneGeometry(mw,mh/SINE,Math.ceil(mw*2),Math.ceil(mh*2));geo.rotateX(-Math.PI/2);const pos=geo.attributes.position,colors=[],c=new T.Color();
   for(let i=0;i<pos.count;i++){let x=pos.getX(i),z=pos.getZ(i);let q=.5+.22*Math.sin(x*.63+z*.39)+.14*Math.cos(z*.93-x*.48)+.08*Math.sin(x*2.5+z*1.4);c.setHSL(.245+q*.022,.27+q*.09,.37+q*.12);colors.push(c.r,c.g,c.b);}
-  geo.setAttribute('color',new T.Float32BufferAttribute(colors,3));mesh(terrain,geo,new T.MeshStandardMaterial({vertexColors:true,roughness:1}),mw/2,0,mh/2/SINE,false);
+  geo.setAttribute('color',new T.Float32BufferAttribute(colors,3));const terrainMat=new T.MeshStandardMaterial({vertexColors:true,roughness:1});uniqueTerrain.push(geo,terrainMat);mesh(terrain,geo,terrainMat,mw/2,0,mh/2/SINE,false);
   (f.obstacles||[]).forEach((o,i)=>tree(terrain,o,i));
   // Decorative scenery is sourced from existing non-collision scenery cells.
   const props=f.scenery||[],matrix=new T.Matrix4(),dummy=new T.Object3D();
-  for(let variant=0;variant<3;variant++){const pts=props.filter((p,i)=>i%3===variant);if(!pts.length)continue;const g=new T.InstancedMesh(new T.ConeGeometry(.095,.26,5),grasses[variant],pts.length*3);let j=0;for(const p of pts){for(let k=0;k<3;k++){dummy.position.set(p.x+(k-1)*.08,.12,p.y/SINE+(k%2)*.08);dummy.rotation.set(.12*(k-1),random(j)*6.28,(k-1)*.18);dummy.scale.setScalar((p.scale||1)*.7);dummy.updateMatrix();g.setMatrixAt(j++,dummy.matrix);}}g.receiveShadow=true;terrain.add(g);}
+  for(let variant=0;variant<3;variant++){const pts=props.filter((p,i)=>i%3===variant);if(!pts.length)continue;const grassGeo=new T.ConeGeometry(.095,.26,5),g=new T.InstancedMesh(grassGeo,grasses[variant],pts.length*3);uniqueTerrain.push(grassGeo,g);let j=0;for(const p of pts){for(let k=0;k<3;k++){dummy.position.set(p.x+(k-1)*.08,.12,p.y/SINE+(k%2)*.08);dummy.rotation.set(.12*(k-1),random(j)*6.28,(k-1)*.18);dummy.scale.setScalar((p.scale||1)*.7);dummy.updateMatrix();g.setMatrixAt(j++,dummy.matrix);}}g.receiveShadow=true;terrain.add(g);}
   for(const [i,p] of props.entries())if(i%9===0){const flower=group(terrain);place(flower,p.x,p.y);cyl(flower,green,0,.12,0,.018,.024,.24,7);for(let j=0;j<5;j++)ball(flower,i%2?cream:purple,Math.cos(j*1.26)*.064,.24,Math.sin(j*1.26)*.064,.048,.026,.048,false);ball(flower,gold,0,.26,0,.035,.024,.035,false);}
   // No stale nodes or enemies survive a segment change.
   for(const pool of [nodePool,enemyPool])for(const item of pool.values())actors.remove(item);nodePool.clear();enemyPool.clear();
@@ -101,5 +101,5 @@ function createForest(T){
   place(hero.root,f.pos.x,f.pos.y);const attacking=!!(f.attackFx?.ttl>0),facing=y3Facing(f.facing);hero.update(t,{facing,moving:!!f.moving,working:attacking,carrying:false});
   const type=f.weapon?.type||'WOK';for(const [k,p] of Object.entries(weapons)){p.visible=k===type;p.rotation.y=attacking?Math.sin((1-f.attackFx.ttl/(f.attackFx.duration||.3))*Math.PI)*1.1:0;p.rotation.x=f.guardTime>0?-.65:attacking?-.3:0;}
   renderer.render(scene,camera);document.documentElement.dataset.oddpotForest3d='active';
- },dispose(){disposed=true;element.remove();const geometries=new Set(),materials=new Set();scene.traverse(o=>{if(o.geometry)geometries.add(o.geometry);if(o.material)for(const m of Array.isArray(o.material)?o.material:[o.material])materials.add(m);});for(const g of geometries)g.dispose();for(const m of materials)m.dispose();renderer.dispose();renderer.forceContextLoss();}};
+ },dispose(){disposed=true;element.remove();const geometries=new Set(),materials=new Set();scene.traverse(o=>{if(o.geometry)geometries.add(o.geometry);if(o.material)for(const m of Array.isArray(o.material)?o.material:[o.material])materials.add(m);});for(const g of geometries)g.dispose();for(const m of materials)m.dispose();for(const g of boxCache.values())g.dispose();for(const g of cylinderCache.values())g.dispose();for(const g of uniqueTerrain)g.dispose();renderer.dispose();renderer.forceContextLoss();}};
 }
