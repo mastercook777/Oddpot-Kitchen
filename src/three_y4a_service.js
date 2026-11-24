@@ -43,7 +43,7 @@ export function createServiceRig(T,model,rounded){
   body.rotation.y=0;const pose=servicePose(action,t,moving);if(!pose)return;
   body.rotation.x=pose.lean;body.rotation.z=0;
   applyArm(T,model.rig,0,pose.right,[-1,-.3,0],pose.direction||null);applyArm(T,model.rig,1,pose.left,[1,-.3,0]);
-  if(action.mode==='carry'){tray.position.set(...pose.tray);head.rotation.x=.06;}
+  if(action.mode==='carry'){tray.position.set(...pose.tray);tray.quaternion.copy(body.quaternion).invert();head.rotation.x=.06;}
   else{(tools[action.type]||tools.WOK).visible=true;head.rotation.x=.17;}
  }};
 }

@@ -46,12 +46,12 @@ function createDiner(T){
  function ball(p,x,y,z,a,b,c,m){const o=mesh(p,sphere,m,x,y,z);o.scale.set(a,b,c);return o;}
  function plate(p,x,y,z){const o=group(p,x,y,z),base=cyl(o,0,0,0,.22,.20,.055,cream),food=group(o),sets={};
   for(const kind of ['soup','skewer','steam','stir'])sets[kind]=group(food);
-  const soup=sets.soup;cyl(soup,0,.065,0,.19,.135,.13,cream);cyl(soup,0,.135,0,.167,.167,.015,brass);const soupBits=[];
+  const soup=sets.soup;cyl(soup,0,.065,0,.19,.135,.13,cream);const broth=cyl(soup,0,.135,0,.167,.167,.015,brass);const soupBits=[];
   for(let i=0;i<4;i++)soupBits.push(ball(soup,Math.cos(i*1.57)*.075,.15,Math.sin(i*1.57)*.075,.037,.024,.04,green));
   const skewer=sets.skewer,skewerBits=[];for(const x of [-.075,.075]){box(skewer,x,.045,0,.022,.025,.35,dark,.008);for(let j=0;j<4;j++)skewerBits.push(box(skewer,x,.086,-.11+j*.065,.09,.07,.062,red,.018));}
   const steam=sets.steam,steamBits=[];for(let j=0;j<5;j++)steamBits.push(ball(steam,Math.cos(j*2.4)*.085,.09,Math.sin(j*2.4)*.085,.065,.055,.065,cream));
   const stir=sets.stir,stirBits=[];for(let j=0;j<6;j++)stirBits.push(box(stir,Math.cos(j*2.4)*.10,.075,Math.sin(j*2.4)*.10,.085,.065,.07,green,.018));
-  o.userData.setDish=(recipeId,portion=1)=>{const s=dishStyle(RECIPES[recipeId]);for(const [k,g] of Object.entries(sets))g.visible=k===s.kind;base.visible=s.kind!=='soup';const protein=s.protein==='beef'?red:s.protein==='chicken'?brass:green;for(const [j,m] of [...soupBits,...skewerBits,...steamBits,...stirBits].entries()){m.material=j%3===0?(s.spicy?red:s.greens?green:cream):protein;m.visible=(j%4)/4<portion;}};
+  o.userData.setDish=(recipeId,portion=1)=>{const s=dishStyle(RECIPES[recipeId]);for(const [k,g] of Object.entries(sets))g.visible=k===s.kind;base.visible=s.kind!=='soup';broth.visible=portion>0;const protein=s.protein==='beef'?red:s.protein==='chicken'?brass:green;for(const [j,m] of [...soupBits,...skewerBits,...steamBits,...stirBits].entries()){m.material=j%3===0?(s.spicy?red:s.greens?green:cream):protein;m.visible=(j%4)/4<portion;}};
   o.userData.setDish(null);return o;}
  // Real 10x12 floor: same x/z normalization for all furniture and actors.
  box(scene,5,-.22,6.5,10.45,.44,10.8,mortar,.1);
