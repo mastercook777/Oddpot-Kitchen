@@ -1479,6 +1479,9 @@
 .v016-milestone{flex:none;padding:6px 10px;display:grid;gap:6px;background:#302b23}
 .v016-milestone .v12-star-invite{margin:0}
 @media(max-height:575px){.v016-home .v016-scene{min-height:225px}.v016-home .v016-world-actions .v016-door{bottom:4px}.v016-notice span{font-size:11px}}
+
+/* Milestone actions must remain reachable on small phones without covering the room. */
+.v016-home.has-milestone .v016-scene{flex:1 1 0;min-height:200px}
 </style></head><body><div id="app"></div><script>// v0.6.3-A: curated recipe × technique metadata. Curated benefits now resolved per recipe/technique in v0.6.3-B.
 // The engine applies these per-recipe overrides at order snapshot, never as universal style buffs.
 const RECIPE_PROFILES = {
@@ -10137,7 +10140,7 @@ function forecast(){
  if(activeWorld(game)!=='cloud'){
   const milestone=starInvite()+portalPanel();
   return [`
-   <div class="v076-home v016-home">
+   <div class="v076-home v016-home${milestone?' has-milestone':''}">
     <section class="v016-notice" aria-label="今日营业目标">
      <div><strong>${esc(title)}</strong><span> · ${esc(plan.goal.label)}</span></div>
      <small>预计 ${plan.count} 位客人 · 食材 ${stock} 份</small>

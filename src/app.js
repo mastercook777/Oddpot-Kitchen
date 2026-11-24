@@ -216,7 +216,7 @@ function forecast(){
  if(activeWorld(game)!=='cloud'){
   const milestone=starInvite()+portalPanel();
   return [`
-   <div class="v076-home v016-home">
+   <div class="v076-home v016-home${milestone?' has-milestone':''}">
     <section class="v016-notice" aria-label="今日营业目标">
      <div><strong>${esc(title)}</strong><span> · ${esc(plan.goal.label)}</span></div>
      <small>预计 ${plan.count} 位客人 · 食材 ${stock} 份</small>
