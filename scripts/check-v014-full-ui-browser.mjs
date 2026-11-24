@@ -45,6 +45,9 @@ try{
     const rect=await scene.boundingBox();
     assert.ok(rect.height>=layout.stageHeight*.60,'scene occupies at least 60% of stage');
     assert.equal(await scene.locator('canvas').count(),1);
+    await page.waitForFunction(async()=>{const art=await import('/src/hearth_assets_v016a21.js?v=0.16-a21');return art.a21AtlasReady();});
+    assert.ok(await page.evaluate(async()=>{const a=await import('/src/hearth_assets_v016a21.js?v=0.16-a21');const c=document.createElement('canvas');c.width=44;c.height=36;const ctx=c.getContext('2d');if(!a.a21Sprite(ctx,'table',0,0,44,36))return false;const pixels=ctx.getImageData(0,0,44,36).data;return pixels.some((v,i)=>i%4===3&&v===255)&&pixels.some((v,i)=>i%4===3&&v===0);}), 'transparent table sprite actually decodes and draws');
+
     for(const act of ['stock','book','bento','crew']){
      await scene.locator('[data-act="'+act+'"]').click();
      assert.ok(await page.locator('.sheet').isVisible(),act+' uses the existing sheet');
