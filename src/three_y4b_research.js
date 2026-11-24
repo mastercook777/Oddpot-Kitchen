@@ -85,15 +85,15 @@ function makeWorkbench(T){
   else if(id==='cloud_rice'){for(let i=0;i<7;i++)ball(root,base,Math.cos(i*2.4)*.11,.08+(i%2)*.035,Math.sin(i*2.4)*.12,.045,.035,.085);}
   else{ball(root,base,0,.115,0,.17,.13,.15);if(id==='onion')ball(root,base,0,.24,0,.055,.075,.055);}
   const v={root,base,raw};foodPool.set(id,v);return v;}
- const warm=new T.Color('#a76b35'),burn=new T.Color('#3d2d26');let host=null,hostStyle=null,lastW=0,lastH=0,lastAt=-Infinity,lastReceipt=null,revealAt=0;
- function detach(){if(host){host.style.position=hostStyle.position;host.style.minHeight=hostStyle.minHeight;host.style.color=hostStyle.color;host.removeAttribute('data-y4b-active');}canvas.remove();host=null;}
- function attach(next,receipt){if(host===next)return;detach();host=next;hostStyle={position:host.style.position,minHeight:host.style.minHeight,color:host.style.color};host.style.position='relative';if(receipt){host.style.minHeight='92px';host.style.color='transparent';}host.append(canvas);}
+ const warm=new T.Color('#a76b35'),burn=new T.Color('#3d2d26');let host=null,hostStyle=null,hint=null,lastW=0,lastH=0,lastAt=-Infinity,lastReceipt=null,revealAt=0;
+ function detach(){if(host){host.style.position=hostStyle.position;host.style.minHeight=hostStyle.minHeight;host.style.color=hostStyle.color;host.removeAttribute('data-y4b-active');}hint?.remove();hint=null;canvas.remove();host=null;}
+ function attach(next,receipt){if(host===next)return;detach();host=next;hostStyle={position:host.style.position,minHeight:host.style.minHeight,color:host.style.color};host.style.position='relative';if(receipt){host.style.minHeight='92px';}host.append(canvas);if(!receipt){hint=document.createElement('span');hint.setAttribute('aria-hidden','true');Object.assign(hint.style,{position:'absolute',bottom:'8px',left:'0',right:'0',textAlign:'center',font:'600 12px system-ui',color:'#fff0cf',textShadow:'0 1px 3px #000',zIndex:'10',pointerEvents:'none'});host.append(hint);}}
  return {draw(next,f,r,receiptKey,now){
   const changed=host!==next;attach(next,!!r);if(!changed&&now-lastAt<30)return;lastAt=now;
   const w=next.clientWidth,h=next.clientHeight;if(w<5||h<5)return;if(w!==lastW||h!==lastH){renderer.setSize(w,h,false);lastW=w;lastH=h;}
   const aspect=w/h,half=Math.max(r?.98:2.0,(r?1.68:3.05)/aspect);camera.left=-half*aspect;camera.right=half*aspect;camera.top=half;camera.bottom=-half;camera.lookAt(0,r?.32:.62,0);camera.updateProjectionMatrix();
-  work.visible=!!f;plateRoot.visible=!!r;reveal.visible=false;for(const x of foodPool.values())x.root.visible=false;
-  if(f){for(const [k,g] of Object.entries(vessels))g.visible=k===f.type;fire.visible=f.lit;cook.rotation.z=f.tilt;stick.visible=f.type==='GRILL';stick.position.set(0,.58,f.lane?({edge:.62,middle:0,flame:-.62}[f.lane]||0):.94);stick.rotation.x=f.turn;soup.position.y=.36+.17*f.reduction;
+  work.visible=!!f;plateRoot.visible=!!r;reveal.visible=false;if(hint){hint.textContent=f?.items.length?'':f?.type==='GRILL'?'轻点食材，依次穿串':'轻点下方食材下锅';}for(const x of foodPool.values())x.root.visible=false;
+  if(f){for(const [k,g] of Object.entries(vessels))g.visible=k===f.type;fire.visible=f.lit;cook.rotation.z=f.tilt;stick.visible=f.type==='GRILL';stick.position.set(0,f.lane?.58:.60,f.lane?({edge:.62,middle:0,flame:-.62}[f.lane]||0):.94);stick.rotation.x=f.turn;soup.position.y=.36+.17*f.reduction;
    lid.visible=f.sealed||f.action==='seal'||f.action==='vent';lid.position.set(0,.64+(f.action==='seal'?(1-f.p)*.75:f.action==='vent'?f.p*.75:0),0);lid.rotation.z=f.action==='vent'?f.p*.34:0;
    tool.visible=['flip','gentle','brush','reduce'].includes(f.action);toolHead.visible=f.action==='flip';ladle.visible=['gentle','reduce'].includes(f.action);brush.visible=f.action==='brush';tool.position.set(Math.sin(f.p*Math.PI*2)*.62,.72+f.beat*.12,.30);tool.rotation.set(-.72,0,Math.sin(f.p*6.28)*.4);
    for(const [i,o] of vapor.entries()){const q=(f.t*.66+i/12)%1,a=i*2.4;o.visible=f.lit&&(f.type!=='STEAM'||!f.sealed||f.vent>0||i<3);o.position.set(Math.cos(a)*(.15+q*.40),.65+q*(.8+f.vent*.6),Math.sin(a)*(.12+q*.29));o.scale.set(.09+q*.12,.13+q*.15,.09+q*.12);}
@@ -101,9 +101,9 @@ function makeWorkbench(T){
   }
   if(r){if(lastReceipt!==receiptKey){lastReceipt=receiptKey;revealAt=now;}const q=clamp((now-revealAt)/850);plateRoot.scale.setScalar(.88+.12*Math.sin(q*Math.PI/2));plateRoot.rotation.y=(1-q)*-.35;reveal.visible=r.discovery&&q<1;reveal.rotation.y=q*1.6;resultSoup.visible=r.type==='POT';resultStick.visible=r.type==='GRILL';}
   for(const [i,v] of (f?.items||r?.items||[]).entries()){const o=food(v.id);o.root.visible=true;const parent=r?plateRoot:f.type==='GRILL'?stick:foodRoot;if(o.root.parent!==parent)parent.add(o.root);
-   const height=r?.24:f.type==='POT'?.53:f.type==='STEAM'?.56:f.type==='GRILL'?.06:.14;
+   const height=r?.24:f.type==='POT'?.36+.17*f.reduction:f.type==='STEAM'?.56:f.type==='GRILL'?.06:.14;
    o.root.position.set(f?.type==='GRILL'?v.x:r?.type==='GRILL'?(i-((r.items.length-1)/2))*.62:v.x,height+v.y,f?.type==='GRILL'||r?.type==='GRILL'?0:v.z);
    o.root.rotation.set(v.rot||0,0,0);o.base.color.copy(o.raw).lerp(v.tone==='bad'?burn:warm,v.tone==='bad'?.86:v.tone==='good'?.26:v.tone==='warning'?.53:0);}
-  renderer.render(scene,camera);host.dataset.y4bActive='1';
+  renderer.render(scene,camera);if(r)host.style.color='transparent';host.dataset.y4bActive='1';
  },dispose(){disposed=true;detach();for(const g of geos)g.dispose();for(const m of mats)m.dispose();renderer.dispose();renderer.forceContextLoss();}};
 }
