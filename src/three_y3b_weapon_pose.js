@@ -36,7 +36,7 @@ export function createWeaponRig(T,hero,rounded){
  return {update(f){const p=weaponPose(f);for(const [k,pair] of Object.entries(sets))for(const g of pair)g.visible=k===p.type;
   // Pose indices are anatomical left/right; negative-X arm is right.
   arms[0].rotation.set(...p.right);arms[1].rotation.set(...p.left);body.rotation.x=p.lean;
-  shield.rotation.x=f.guardTime>0?-.35:.10;spatula.rotation.z=-p.strike*.45;
+  shield.rotation.x=-arms[1].rotation.x+(f.guardTime>0?-.16:.12);shield.rotation.z=-arms[1].rotation.z;spatula.rotation.z=-p.strike*.45;
   pot.rotation.x=-arms[1].rotation.x;pot.rotation.z=-arms[1].rotation.z;
   fork.rotation.x=-.25-p.strike*.25;basket.rotation.x=-arms[0].rotation.x;basket.rotation.z=-arms[0].rotation.z;
  }};
