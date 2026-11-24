@@ -16,6 +16,17 @@ for(const [width,height] of [[320,568],[375,667],[390,844]]){
  const carry=structuredClone(s);const order=carry.service.orders.find(o=>o.id===ready.id);order.status='carried';carry.service.hero.carryOrderId=order.id;await load(carry);await page.waitForFunction(()=>document.querySelector('canvas[data-guide="serve"]'),null,{timeout:20000});assert.match(await page.locator('#v4d-guide-title').textContent(),new RegExp('送至 '+(order.tableId+1)+' 号桌'));await page.screenshot({path:out+'/serve-'+width+'.png'});
  const c=newGame(15742);c.onboarding.enabled=false;c.phase='research';assert.ok(beginLiveResearch(c,['mushroom','garlic'],'WOK'));assert.ok(dropLiveIngredient(c,'mushroom'));await load(c);await page.waitForFunction(()=>document.documentElement.dataset.oddpotResearch3d==='active',null,{timeout:20000});assert.ok(await page.locator('canvas[data-oddpot-research="3d"]').count());assert.ok(await page.locator('[data-live-drop="garlic"]').isEnabled());await page.locator('[data-live-drop="garlic"]').click();await page.waitForFunction(()=>document.querySelector('[data-live-drop="garlic"]')?.disabled);await page.screenshot({path:out+'/research-'+width+'.png'});
  for(const zoneId of width===375?['herb_path','glow_mushroom','old_tree_edge','forest_garden']:['herb_path']){const f=newGame(15742);f.onboarding.enabled=false;f.phase='field';assert.ok(enterField(f,'safe'));if(zoneId!=='herb_path')Object.assign(f.field,buildFieldMap({...f,fieldZoneId:zoneId},'safe','mushroom'),{zoneId});startActionField(f);await load(f);await page.waitForFunction(()=>document.documentElement.dataset.oddpotForest3d==='active',null,{timeout:20000});assert.equal(await page.locator('canvas[data-oddpot-forest="3d"]').getAttribute('data-biome'),zoneId);await page.screenshot({path:out+'/'+zoneId+'-'+width+'.png'});}
+ // Y5a: all hot spring zones on the middle viewport; both real route starts on narrow/wide.
+ for(const zoneId of width===375?['hot_spring_shallows','steam_crack','ember_edge','steam_lake','spring_market','ember_gate','ember_side']:['hot_spring_shallows','ember_edge']){
+  const f=newGame(15742);f.onboarding.enabled=false;f.phase='field';const risk=['ember_edge','ember_gate','ember_side'].includes(zoneId),route=risk?'spring_risk':'spring_safe';
+  assert.ok(enterField(f,route));Object.assign(f.field,buildFieldMap({...f,fieldZoneId:zoneId},route,risk?'chili':'potato'),{zoneId});
+  if(['ember_gate','ember_side'].includes(zoneId)){f.field.segmentIndex=3;f.field.dangerCommitment=true;}
+  assert.ok(startActionField(f));assert.equal(f.field.region,'spring');if(f.field.segmentIndex===3&&f.field.dangerCommitment)assert.ok(f.field.enemies.some(e=>e.kind==='boss_ember'));
+  await load(f);await page.waitForFunction(()=>document.documentElement.dataset.oddpotForest3d==='active'||document.documentElement.dataset.oddpotForest3d==='fallback',null,{timeout:20000});
+  await page.screenshot({path:out+'/'+zoneId+'-'+width+'.png'});const spring=page.locator('canvas[data-oddpot-forest="3d"]');
+  assert.equal(await page.evaluate(()=>document.documentElement.dataset.oddpotForest3d),'active');assert.equal(await spring.getAttribute('data-biome'),zoneId);assert.equal(await spring.getAttribute('data-region'),'spring');
+  assert.match(await page.locator('#oddpot-build-label').textContent(),/v0\.16-Y\.5a/);
+ }
  assert.deepEqual(errors,[]);await page.close();
 }
 }finally{await browser?.close();server.kill();}
