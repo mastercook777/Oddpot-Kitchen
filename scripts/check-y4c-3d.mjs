@@ -22,10 +22,13 @@ for(const [width,height] of [[320,568],[375,667],[390,844]]){
   assert.ok(enterField(f,route));Object.assign(f.field,buildFieldMap({...f,fieldZoneId:zoneId},route,risk?'chili':'potato'),{zoneId});
   if(['ember_gate','ember_side'].includes(zoneId)){f.field.segmentIndex=3;f.field.dangerCommitment=true;}
   assert.ok(startActionField(f));assert.equal(f.field.region,'spring');if(f.field.segmentIndex===3&&f.field.dangerCommitment)assert.ok(f.field.enemies.some(e=>e.kind==='boss_ember'));
+  // Seed a real hazard warning phase; renderer must expose at least one native telegraph.
+  const hz=f.field.hazards[0];if(hz)f.field.elapsed=(2.95-(hz.x%2)*1.7+4.2)%4.2;
   await load(f);await page.waitForFunction(()=>document.documentElement.dataset.oddpotForest3d==='active'||document.documentElement.dataset.oddpotForest3d==='fallback',null,{timeout:20000});
+  if(hz)await page.waitForFunction(()=>Number(document.querySelector('canvas[data-oddpot-forest="3d"]')?.dataset.telegraphCount)>0,null,{timeout:10000});
   await page.screenshot({path:out+'/'+zoneId+'-'+width+'.png'});const spring=page.locator('canvas[data-oddpot-forest="3d"]');
   assert.equal(await page.evaluate(()=>document.documentElement.dataset.oddpotForest3d),'active');assert.equal(await spring.getAttribute('data-biome'),zoneId);assert.equal(await spring.getAttribute('data-region'),'spring');
-  assert.match(await page.locator('#oddpot-build-label').textContent(),/v0\.16-Y\.5a/);
+  assert.match(await page.locator('#oddpot-build-label').textContent(),/v0\.16-Y\.5b/);
  }
  assert.deepEqual(errors,[]);await page.close();
 }
