@@ -20,7 +20,7 @@ test('Y2 defaults to no renderer for unsupported scenes and locked kitchen is re
 });
 test('3D is opt-in and offline has no CDN bootstrap',()=>{
  const read=p=>readFileSync(new URL('../'+p,import.meta.url),'utf8');
- assert.match(read('index.html'),/get\("render"\)==="3d"/);
+ assert.match(read('index.html'),/get\(['"]render['"]\)\s*===\s*['"]3d['"]/);
  assert.doesNotMatch(read('standalone.html'),/cdn\.jsdelivr\.net\/npm\/three/);
  assert.match(read('src/scenes_v04.js'),/restaurantActorsV075\(s,t\)/);
 });
