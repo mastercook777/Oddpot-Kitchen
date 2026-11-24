@@ -11,7 +11,7 @@ try{
  for(const width of [320,375,390]){
   const p=await browser.newPage({viewport:{width,height:844},isMobile:true,hasTouch:true});
   const errors=[];p.on('pageerror',e=>errors.push(e.message));
-  await p.goto('http://127.0.0.1:5179/visual-lab.html');
+  await p.goto('http://127.0.0.1:5179/visual-lab.html?mode=hd');
   await p.waitForTimeout(500);
   const canvas=p.locator('#art');
   assert.ok(await canvas.isVisible());
