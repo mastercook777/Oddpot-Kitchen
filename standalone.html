@@ -10077,7 +10077,11 @@ function drawRestaurantV075(c,s,t,w,h){
 function drawDiner(canvas,s,clock,simTime=s.service?.time??clock){
  const size=setCanvas(canvas);if(!size)return;
  const {c,w,h}=size,v=s.service,t=v?simTime:clock;
- if(v?.walkable||!v){drawRestaurantV075(c,s,t,w,h);return;}
+ if(v?.walkable||!v){
+  const y2=globalThis.__oddpotY2Renderer;
+  if(y2&&y2.draw(canvas,s,t,w,h,restaurantActorsV075))return;
+  drawRestaurantV075(c,s,t,w,h);return;
+ }
  rect(c,0,0,w,h,'#66523e');
  for(let y=0;y<h;y+=24){rect(c,0,y,w,22,y%48===0?'#765d46':'#71563f');line(c,0,y,w,y,'#674b34',1)}
  // A little wider than v0.5B, but without stretching character proportions.
