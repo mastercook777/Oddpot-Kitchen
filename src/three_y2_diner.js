@@ -16,7 +16,7 @@ export function y2Layout(s){
 export const dinerWorldX=x=>x*10;
 export const dinerWorldZ=z=>z<=.428?z*12:.428*12+(z-.428)*16;
 const wx=dinerWorldX,wz=dinerWorldZ;
-export function dinerVisibleActors(s,t,actors){const v=s.service;if(!v)return actors;const queued=dinerQueueGuests(s,v.time),outside=queued.map((o,i)=>({id:o.id,kind:o.segment,x:.18+(i%5)*.16,y:1.015+Math.floor(i/5)*.065,order:o,waiting:true,walk:false}));return [...actors,...outside];}
+export function dinerVisibleActors(s,t,actors){const v=s.service;if(!v)return actors;const queued=dinerQueueGuests(s,v.time),outside=queued.slice(0,10).map((o,i)=>({id:o.id,kind:o.segment,x:.18+(i%5)*.16,y:1.015+Math.floor(i/5)*.065,order:o,waiting:true,walk:false}));return [...actors,...outside];}
 const clamp=(x,a,b)=>Math.min(b,Math.max(a,x));
 const activeOrders=new Set(['queued','cooking','pickup','carried','delivering','flying','ordering']);
 let disabled=false,instance=null,pending=null,lib=null;
@@ -80,6 +80,7 @@ function createDiner(T){
  for(const x of [1.8,8.2]){box(porch,x,.35,porchZ+1.0,2.65,.17,.40,wood,.03);for(const dx of [-.95,.95])box(porch,x+dx,.16,porchZ+1.0,.14,.32,.22,dark,.02);}
  box(porch,5,.075,wz(.975),2.1,.11,.50,top,.03);
  for(const x of [.85,9.15]){cyl(scene,x,.26,wz(.885),.22,.16,.48,wood);for(let i=0;i<5;i++)ball(scene,x+Math.cos(i*2.4)*.15,.62+Math.sin(i)*.07,wz(.885)+Math.sin(i*2.4)*.12,.15,.25,.13,green);}
+ const alcoves=[.255,.745].map(x=>{const p=group(scene,wx(x),0,wz(.555));box(p,0,.04,0,2.65,.045,1.72,teal,.04);for(const dx of [-1.25,1.25])box(p,dx,.055,0,.035,.025,1.70,brass,.008);return p;});
  const tables=[];
  for(let i=0;i<4;i++){const p=group(scene);for(const x of [-.57,.57])for(const z of [-.37,.37])box(p,x,.34,z,.14,.68,.14,dark,.025);box(p,0,.76,0,1.65,.16,1.12,top,.045);box(p,0,.85,0,.36,.025,1.14,teal,.009);
   for(const x of [-1.02,1.02]){for(const dx of [-.16,.16])for(const dz of [-.16,.16])box(p,x+dx,.18,dz,.075,.36,.075,dark,.015);box(p,x,.39,0,.49,.12,.49,wood,.035);box(p,x,.465,0,.44,.08,.43,teal,.025);}
@@ -124,7 +125,7 @@ function createDiner(T){
   const parent=canvas.parentElement;if(!parent)return;if(element.parentElement!==parent)parent.insertBefore(element,canvas);
   const dpr=Math.min(devicePixelRatio||1,1.5),rw=Math.round(w*dpr),rh=Math.round(h*dpr);
   if(rw!==lastW||rh!==lastH){renderer.setSize(rw,rh,false);const aspect=w/h,half=Math.max(5.65/aspect,8.35);camera.left=-half*aspect;camera.right=half*aspect;camera.top=half;camera.bottom=-half;camera.updateProjectionMatrix();lastW=rw;lastH=rh;}
-  const layout=y2Layout(s),v=s.service;
+  const layout=y2Layout(s),v=s.service;alcoves.forEach((a,i)=>a.visible=layout.tables.length>=i+3);
   for(let i=0;i<tables.length;i++){const item=tables[i],p=layout.tables[i];item.p.visible=!!p;if(p){item.p.position.set(wx(p.x),0,wz(p.z));for(let j=0;j<2;j++){const order=v?.orders?.find(o=>o.tableId===i&&(o.seatId??0)===j&&['eating','review'].includes(o.status));item.meals[j].visible=!!order;if(order)item.meals[j].userData.setDish(order.recipeId,order.status==='review'?0:1);}}}
   for(let i=0;i<3;i++){const item=stoves[i],p=layout.stoves[i],busy=v?.stations?.[p.id];item.p.position.set(wx(p.x),0,wz(p.z));const type=p.unlocked?(item.vessels[p.type]?p.type:'WOK'):'LOCKED';for(const [k,g] of Object.entries(item.vessels))g.visible=k===type;item.flames.forEach((f,j)=>{f.visible=p.unlocked&&(!v||!!busy);f.scale.y=.07+.035*Math.sin(t*8+j);});item.wisps.forEach((o,j)=>{const q=(t*.55+j*.25)%1;o.visible=p.unlocked&&!!busy;o.position.set(Math.sin(q*5+j)*.14,1.18+q*.75,Math.cos(q*4+j)*.09);o.scale.set(.08+q*.11,.12+q*.15,.08+q*.11);});}
   const ready=v?.orders?.filter(o=>o.status==='pickup')||[];passPlates.forEach((p,i)=>{p.visible=!!ready[i];if(ready[i])p.userData.setDish(ready[i].recipeId);});
@@ -142,7 +143,7 @@ function createDiner(T){
    if(a.id==='hero'){const base=project(a.x,a.y,.05,w,h),hero=v?.hero;c.strokeStyle='#f1d59b';c.lineWidth=2;c.beginPath();c.ellipse(base.x,base.y,9,4,0,0,Math.PI*2);c.stroke();if(hero?.dwellZone&&hero.dwell>0){c.beginPath();c.arc(base.x,base.y,11,-Math.PI/2,-Math.PI/2+Math.PI*2*Math.min(1,hero.dwell/(hero.dwellZone.startsWith('serve:')?.48:.36)));c.stroke();}}
   }
   for(const p of layout.stoves){const job=v?.stations?.[p.id];if(job)label(c,project(p.x,p.z,1.6,w,h),Math.ceil(job.left)+'s',w,h);}
-  const waiting=actors.filter(a=>a.waiting).length;label(c,project(.5,1.115,.35,w,h),'等位 '+waiting,w,h);element.dataset.guestCount=String(actors.filter(a=>a.order&&!a.waiting).length);element.dataset.queueCount=String(waiting);element.dataset.tableCount=String(layout.tables.length);
+  const waiting=dinerQueueGuests(s,v?.time||0).length;label(c,project(.5,1.115,.35,w,h),'等位 '+waiting,w,h);element.dataset.guestCount=String(actors.filter(a=>a.order&&!a.waiting).length);element.dataset.queueCount=String(waiting);element.dataset.tableCount=String(layout.tables.length);
   document.documentElement.dataset.oddpot3d='active';
  },dispose(){disposed=true;element.remove();const gs=new Set(),ms=new Set();scene.traverse(o=>{if(o.geometry)gs.add(o.geometry);if(o.material)for(const m of Array.isArray(o.material)?o.material:[o.material])ms.add(m);});for(const g of gs)g.dispose();for(const m of ms)m.dispose();renderer.dispose();renderer.forceContextLoss();}};
 }

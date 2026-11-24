@@ -7,7 +7,10 @@ import {enemyHitVisual,pickupVisual} from './three_y3b_feedback.js';
 import {makeFieldFx3D} from './three_y3c_fx.js?v=y3d';
 import {fieldTilePath} from './field_rules_v011a.js';
 const ANGLE=Math.PI*55/180, SINE=Math.sin(ANGLE), COS=Math.cos(ANGLE);
-export function y3Eligible(s){const f=s?.field;return s?.phase==='field'&&!!f?.action&&f.worldVersion==='0.11-B1'&&f.biome?.zoneId==='herb_path'&&s.activeWorld!=='cloud';}
+export const FOREST_ZONES=Object.freeze({herb_path:'meadow',glow_mushroom:'glow',old_tree_edge:'roots',forest_garden:'garden',forest_secret:'glow',spore_gate:'roots',spore_roots:'roots'});
+const THEMES={meadow:{floor:'#809768',hue:.245,soil:'#a79a72',sky:'#536f58',light:'#ffe3ab',leaf:['#3e674a','#527b4b','#67894e','#83a45f'],grass:['#7e9b5a','#96ab6a','#607e4e']},glow:{floor:'#426b68',hue:.47,soil:'#6d8c82',sky:'#294d56',light:'#b9ebe0',leaf:['#2d625c','#387a70','#599184','#73aaa0'],grass:['#599184','#74b4a0','#3a7774']},roots:{floor:'#65605e',hue:.76,soil:'#9c8676',sky:'#434453',light:'#e6c4c9',leaf:['#494854','#5a5361','#706277','#88748b'],grass:['#7e747f','#a297a1','#5d5968']},garden:{floor:'#8b9d61',hue:.20,soil:'#b59b69',sky:'#657c55',light:'#fff0b6',leaf:['#557b39','#689345','#80a452','#a0b868'],grass:['#99af63','#b4bc75','#75944d']}};
+export function forestTheme(f){return FOREST_ZONES[f?.biome?.zoneId]||null;}
+export function y3Eligible(s){const f=s?.field;return s?.phase==='field'&&!!f?.action&&f.worldVersion==='0.11-B1'&&!!forestTheme(f)&&s.activeWorld!=='cloud';}
 export function y3Ground(x,y){return {x,z:y/SINE};}
 export function y3CameraFrame(camera,w,h,sx=0,sy=0){const k=camera.scale;return {x:(w/2-camera.offsetX-sx)/k,y:(h/2-camera.offsetY-sy)/k,halfW:w/k/2,halfH:h/k/2};}
 export function y3Facing(facing){const x=facing?.x||0,y=facing?.y||0;return Math.abs(x)>Math.abs(y)?x<0?'left':'right':y<0?'back':'front';}
@@ -44,11 +47,14 @@ function createForest(T){
  function place(p,x,y,height=0){p.position.set(x,height,y/SINE);}
  function random(i){return ((Math.imul(i+1729,1664525)+1013904223)>>>0)%10007/10007;}
  function branch(p,a,b,r1,r2,m){const u=new T.Vector3(...a),v=new T.Vector3(...b),d=v.clone().sub(u),q=u.clone().add(v).multiplyScalar(.5),o=cyl(p,m,q.x,q.y,q.z,r1,r2,d.length(),9);o.quaternion.setFromUnitVectors(new T.Vector3(0,1,0),d.normalize());return o;}
- let terrain=null,mapKey='',treeCrowns=[],nodePool=new Map(),enemyPool=new Map(),uniqueTerrain=[],ambient=null;
+ let terrain=null,mapKey='',treeCrowns=[],nodePool=new Map(),enemyPool=new Map(),uniqueTerrain=[],ambient=null,theme=THEMES.meadow,style='meadow',zone='herb_path';const glow=material('#85e2cc');glow.emissive.set('#4ebda8');glow.emissiveIntensity=.85;const cap=material('#8881bd'),oldBark=material('#685349'),hazardMat=material('#b69ac1');
  const pickupGeo=new T.RingGeometry(.80,1,40);pickupGeo.rotateX(-Math.PI/2);const pickupInner=new T.RingGeometry(.94,1,40);pickupInner.rotateX(-Math.PI/2);
  const actors=group(scene),hero=makeChefY2(T,rounded,true);actors.add(hero.root);hero.root.scale.setScalar(.72);
  const weaponRig=createWeaponRig(T,hero,rounded),combatFx=makeFieldFx3D(T,scene,SINE),bladeTrail=makeBladeTrail(T,scene);
  function tree(parent,o,i){const p=group(parent);place(p,o.x+.5,o.y+.5);
+  if(style==='glow'&&(i%3!==1)){for(let j=0;j<3;j++){const x=(j-1)*.25,z=(j%2)*.22,h=.45+random(i*19+j)*.78;cyl(p,cream,x,h*.45,z,.075,.13,h*.9);ball(p,cap,x,h,z,.30+h*.12,.15,.34);ball(p,glow,x,h-.08,z,.23,.07,.25);}return;}
+  if(style==='roots'&&i%3!==2){const h=1.3+random(i*13)*.8;branch(p,[0,0,0],[.14,h,0],.20,.32,oldBark);for(let j=0;j<5;j++){const a=j*1.256;branch(p,[0,.32,0],[Math.cos(a)*.47,.025,Math.sin(a)*.47],.075,.15,oldBark);}for(const k of [-1,1])branch(p,[.09,h*.6,0],[k*.42,h+.23,.15],.045,.12,oldBark);ball(p,cap,.23,.28,.24,.22,.09,.19);return;}
+  if(style==='garden'&&i%3===0){for(let j=0;j<4;j++){const a=j*1.57;ball(p,leaves[j],Math.cos(a)*.24,.27,Math.sin(a)*.24,.30,.25,.30);ball(p,gold,Math.cos(a)*.27,.40,Math.sin(a)*.27,.065,.065,.065,false);}return;}
   if(i%5===2){for(let j=0;j<3;j++){const a=mesh(p,rock,j===0?stone:stone2,(j-1)*.22,.22+j*.025,(j%2)*.16);a.scale.set(.36-j*.06,.27+j*.06,.34-j*.05);a.rotation.y=i*.73+j;}ball(p,moss,-.10,.36,.05,.27,.07,.20);return;}
   const h=1.0+random(i*7)*.38;branch(p,[0,0,0],[.08,h,0],.13,.20,bark);for(let j=0;j<5;j++){const a=j*Math.PI*2/5;branch(p,[0,.20,0],[Math.cos(a)*.38,.015,Math.sin(a)*.38],.045,.095,bark);}
   for(const k of [-1,1])branch(p,[.03,h*.62,0],[k*.29,h+.18,.07],.07,.10,barkLight);
@@ -56,17 +62,24 @@ function createForest(T){
   ball(crown,leaves[3],-.10,.55,-.09,.43,.33,.40);treeCrowns.push({crown,x:o.x+.5,y:o.y+.5});
  }
  function rebuild(f,key){if(terrain)scene.remove(terrain);for(const r of uniqueTerrain)r.dispose();uniqueTerrain=[];terrain=group(scene);treeCrowns=[];mapKey=key;
-  const mw=f.worldW,mh=f.worldH;const groundGeo=new T.PlaneGeometry(mw+4,(mh+4)/SINE),groundMat=material('#809768');uniqueTerrain.push(groundGeo,groundMat);const ground=mesh(terrain,groundGeo,groundMat,mw/2,-.025,mh/2/SINE,false);ground.rotation.x=-Math.PI/2;
+  style=forestTheme(f)||'meadow';theme=THEMES[style];zone=f.biome?.zoneId||'herb_path';scene.background.set(theme.sky);sun.color.set(theme.light);hemi.color.set(style==='glow'?'#c7f2eb':'#f0ead1');leaves.forEach((m,i)=>m.color.set(theme.leaf[i]));grasses.forEach((m,i)=>m.color.set(theme.grass[i]));element.dataset.biome=zone;element.dataset.theme=style;
+  const mw=f.worldW,mh=f.worldH;const groundGeo=new T.PlaneGeometry(mw+4,(mh+4)/SINE),groundMat=material(theme.floor);uniqueTerrain.push(groundGeo,groundMat);const ground=mesh(terrain,groundGeo,groundMat,mw/2,-.025,mh/2/SINE,false);ground.rotation.x=-Math.PI/2;
   // Broad subtle organic patches, not tiled checkerboards. Vertex colors follow deterministic positions.
   const geo=new T.PlaneGeometry(mw,mh/SINE,Math.ceil(mw*2),Math.ceil(mh*2));geo.rotateX(-Math.PI/2);const pos=geo.attributes.position,colors=[],c=new T.Color();
-  for(let i=0;i<pos.count;i++){let x=pos.getX(i),z=pos.getZ(i);let q=.5+.22*Math.sin(x*.63+z*.39)+.14*Math.cos(z*.93-x*.48)+.08*Math.sin(x*2.5+z*1.4);c.setHSL(.245+q*.022,.27+q*.09,.37+q*.12);colors.push(c.r,c.g,c.b);}
+  for(let i=0;i<pos.count;i++){let x=pos.getX(i),z=pos.getZ(i);let q=.5+.22*Math.sin(x*.63+z*.39)+.14*Math.cos(z*.93-x*.48)+.08*Math.sin(x*2.5+z*1.4);c.setHSL(theme.hue+q*.022,style==='roots'?.13+q*.07:.27+q*.09,(style==='glow'?.27:style==='roots'?.28:.37)+q*.12);colors.push(c.r,c.g,c.b);}
   geo.setAttribute('color',new T.Float32BufferAttribute(colors,3));const terrainMat=new T.MeshStandardMaterial({vertexColors:true,roughness:1});uniqueTerrain.push(geo,terrainMat);mesh(terrain,geo,terrainMat,mw/2,0,mh/2/SINE,false);
   const goal=(f.nodes||[]).find(n=>n.key==='target');const route=goal?fieldTilePath(f,f.spawn||f.pos,goal,{avoidHazards:true}):[];
-  if(route.length>1){const pathGeo=new T.CircleGeometry(.5,14),pathMat=material('#a79a72');uniqueTerrain.push(pathGeo,pathMat);const pathMesh=new T.InstancedMesh(pathGeo,pathMat,route.length*2);uniqueTerrain.push(pathMesh);const d=new T.Object3D();let j=0;
+  if(route.length>1){const pathGeo=new T.CircleGeometry(.5,14),pathMat=material(theme.soil);uniqueTerrain.push(pathGeo,pathMat);const pathMesh=new T.InstancedMesh(pathGeo,pathMat,route.length*2);uniqueTerrain.push(pathMesh);const d=new T.Object3D();let j=0;
    for(const [i,q] of route.entries()){d.position.set(q.x,.008,q.y/SINE);d.rotation.set(-Math.PI/2,0,random(i*57)*.25);d.scale.set(.86+random(i*71)*.19,1.40/SINE,1);d.updateMatrix();pathMesh.setMatrixAt(j++,d.matrix);d.position.set(q.x+(i%2?.22:-.22),.009,q.y/SINE+.12);d.scale.set(.35,.42,1);d.updateMatrix();pathMesh.setMatrixAt(j++,d.matrix);}pathMesh.receiveShadow=true;terrain.add(pathMesh);
   }
   for(let i=0;i<22;i++){const side=i%2,x=side?mw+.40:-.40,z=(Math.floor(i/2)+.5)*mh/11/SINE;ball(terrain,leaves[(i+1)%4],x,-.13,z,.60,.43+random(i*13)*.30,.83,false);if(i%3===0){const o=mesh(terrain,rock,stone2,x,.13,z,false);o.scale.set(.36,.28,.40);}}
   (f.obstacles||[]).forEach((o,i)=>tree(terrain,o,i));
+  // Only existing hazard cells: never introduce collision or an extra damage tile.
+  for(const hz of f.hazards||[]){const p=group(terrain);place(p,hz.x+.5,hz.y+.5);for(let j=0;j<6;j++){const a=j*1.047;ball(p,hazardMat,Math.cos(a)*.30,.035,Math.sin(a)*.30,.13,.03,.11,false);}ball(p,cap,0,.025,0,.39,.025,.39,false);}
+  // Distinct landmark silhouettes at the real map edge, out of walkable bounds.
+  if(style==='glow'){for(let j=0;j<5;j++){const p=group(terrain,-.45,0,(j+1)*mh/6/SINE);const h=.8+j%3*.4;cyl(p,cream,0,h*.45,0,.12,.19,h*.9);ball(p,cap,0,h,0,.53,.22,.52);ball(p,glow,0,h-.10,0,.40,.07,.40);}}
+  if(style==='roots'){const p=group(terrain,mw*.5,0,-.35);branch(p,[-1.8,.04,0],[-.55,1.9,0],.30,.46,oldBark);branch(p,[1.8,.04,0],[.55,1.9,0],.30,.46,oldBark);branch(p,[-.55,1.9,0],[.55,1.9,0],.33,.33,oldBark);for(let j=0;j<5;j++)ball(p,cap,-1+j*.5,1.90,0,.23,.12,.19);}
+  if(style==='garden'){for(let i=0;i<8;i++){const p=group(terrain,mw+.24,0,(i+1)*mh/9/SINE);box(p,bark,0,.13,0,.40,.26,.64);for(let j=0;j<3;j++)ball(p,leaves[(i+j)%4],0,.34,-.20+j*.20,.17,.17,.16);}}
   // Decorative scenery is sourced from existing non-collision scenery cells.
   const props=f.scenery||[],matrix=new T.Matrix4(),dummy=new T.Object3D();
   for(let variant=0;variant<3;variant++){const pts=props.filter((p,i)=>i%3===variant);if(!pts.length)continue;const grassGeo=new T.ConeGeometry(.095,.26,5),g=new T.InstancedMesh(grassGeo,grasses[variant],pts.length*3);uniqueTerrain.push(grassGeo,g);let j=0;for(const p of pts){for(let k=0;k<3;k++){dummy.position.set(p.x+(k-1)*.08,.12,p.y/SINE+(k%2)*.08);dummy.rotation.set(.12*(k-1),random(j)*6.28,(k-1)*.18);dummy.scale.setScalar((p.scale||1)*.7);dummy.updateMatrix();g.setMatrixAt(j++,dummy.matrix);}}g.receiveShadow=true;terrain.add(g);}
@@ -131,17 +144,17 @@ function createForest(T){
   p.userData.body=body;p.userData.limbs=limbs;p.userData.wings=wings;p.userData.skull=skull;const own=new Map();body.traverse(o=>{if(o.isMesh&&o.material?.emissive){if(!own.has(o.material))own.set(o.material,o.material.clone());o.material=own.get(o.material);}});p.userData.flashMats=[...own.values()];return p;
  }
  function sync(pool,items,build,fn){const live=new Set();for(const v of items){const k=v.key??v.id;live.add(k);let p=pool.get(k);if(!p){p=build(v);pool.set(k,p);}p.visible=true;fn(p,v);}for(const [k,p] of pool)if(!live.has(k))p.visible=false;}
- let lastW=0,lastH=0;
+ const ambientDummy=new T.Object3D();let lastW=0,lastH=0;
  return {element,draw(canvas,f,t,w,h,cam,sx,sy){
   if(element.parentElement!==canvas.parentElement)canvas.parentElement.insertBefore(element,canvas);
   const rw=Math.max(1,Math.round(w*Math.min(devicePixelRatio||1,1.35))),rh=Math.max(1,Math.round(h*Math.min(devicePixelRatio||1,1.35)));if(rw!==lastW||rh!==lastH){renderer.setSize(rw,rh,false);lastW=rw;lastH=rh;}
-  const key=[f.worldW,f.worldH,f.biome?.encounterSeed,f.segmentIndex,(f.obstacles||[]).map(o=>o.x+','+o.y).join(';')].join('|');if(key!==mapKey)rebuild(f,key);
+  const key=[f.worldW,f.worldH,f.biome?.zoneId,f.biome?.encounterSeed,f.segmentIndex,(f.obstacles||[]).map(o=>o.x+','+o.y).join(';')].join('|');if(key!==mapKey)rebuild(f,key);
   const v=y3CameraFrame(cam,w,h,sx,sy),center=y3Ground(v.x,v.y);camera.left=-v.halfW;camera.right=v.halfW;camera.top=v.halfH;camera.bottom=-v.halfH;camera.position.set(center.x,SINE*20,center.z+COS*20);camera.lookAt(center.x,0,center.z);camera.updateProjectionMatrix();
-  for(const q of treeCrowns){q.crown.visible=!(f.pos.y<q.y&&q.y-f.pos.y<1.20&&Math.abs(f.pos.x-q.x)<.74);}
+  for(const [i,q] of treeCrowns.entries()){q.crown.visible=!(f.pos.y<q.y&&q.y-f.pos.y<1.20&&Math.abs(f.pos.x-q.x)<.74);q.crown.rotation.z=Math.sin(t*.65+i*.73)*.025;}
   sync(nodePool,(f.nodes||[]).filter(n=>!n.claimed),node,(p,n)=>{place(p,n.x,n.y);const v=pickupVisual(n,t),u=p.userData;u.item.position.y=v.bob;u.ring.material.opacity=v.opacity;u.outer.material.opacity=v.opacity*.30;u.outer.scale.setScalar(v.radius*(1.20+.06*Math.sin(t*3+n.x)));});
   sync(enemyPool,(f.enemies||[]).filter(e=>e.hp>0||e.deathFx>0),enemy,(p,e)=>{place(p,e.x,e.y);const body=p.userData.body,v=enemyHitVisual(e);p.rotation.y=Math.atan2(f.pos.x-e.x,(f.pos.y-e.y)/SINE);body.position.y=e.moving?Math.abs(Math.sin(t*10+e.x))*.035:0;body.scale.set(v.sx,v.sy,v.sz);body.rotation.z=v.tilt*(e.hitResponse?.dx||1);const wind=e.warning>0?Math.max(0,Math.min(1,1-e.warning/(e.windupTotal||1))):0,rush=!!(e.ecologyRush||e.rush),stride=e.moving?Math.sin(t*(rush?19:9)+e.x):0;body.rotation.x=-v.tilt*(e.hitResponse?.dy||0)+(rush?.19:wind*.14);body.scale.y*=1-wind*.13;for(const [i,l] of p.userData.limbs.entries())l.rotation.x=stride*(i%3===0?1:-1)*(rush?.62:.33);for(const [i,l] of p.userData.wings.entries())l.rotation.z=(i===0?-1:1)*(e.moving?.25+Math.abs(stride)*.60:wind*.70);if(p.userData.skull)p.userData.skull.rotation.x=rush?.34:wind*.34;if(e.kind==='chicken')body.position.y+=Math.abs(stride)*.055+wind*.08;if(e.kind==='sporeling'||e.kind==='pepper')body.scale.x*=1+wind*.12;for(const m of p.userData.flashMats){m.emissive.set('#fff1c7');m.emissiveIntensity=v.flash*.85;}});
   place(hero.root,f.pos.x,f.pos.y);const facing=y3Facing(f.facing);hero.update(t,{facing,moving:!!f.moving,working:false,carrying:false});const aim=f.attackFx?.ttl>0&&Number.isFinite(f.attackFx.dx)?{x:f.attackFx.dx,y:f.attackFx.dy}:f.facing;if(aim&&Math.hypot(aim.x,aim.y)>.01)hero.root.rotation.y=Math.atan2(aim.x,aim.y/SINE);weaponRig.update(f,t);const nativeBlade=bladeTrail.draw(f,weaponRig);
-  if(ambient){const dummy=new T.Object3D();for(let i=0;i<32;i++){dummy.position.set(random(i*31)*f.worldW+Math.sin(t*.5+i)*.13,.22+random(i*23)*1.9+Math.sin(t*.7+i)*.08,(random(i*53)*f.worldH)/SINE+Math.cos(t*.4+i)*.14);dummy.updateMatrix();ambient.setMatrixAt(i,dummy.matrix);}ambient.instanceMatrix.needsUpdate=true;}
+  if(ambient){const dummy=ambientDummy;for(let i=0;i<32;i++){dummy.position.set(random(i*31)*f.worldW+Math.sin(t*.5+i)*.13,.22+random(i*23)*1.9+Math.sin(t*.7+i)*.08,(random(i*53)*f.worldH)/SINE+Math.cos(t*.4+i)*.14);dummy.updateMatrix();ambient.setMatrixAt(i,dummy.matrix);}ambient.instanceMatrix.needsUpdate=true;}
   combatFx.draw(f,t,nativeBlade);renderer.render(scene,camera);document.documentElement.dataset.oddpotForest3d='active';
  },dispose(){disposed=true;element.remove();bladeTrail.dispose();combatFx.dispose();const geometries=new Set(),materials=new Set();scene.traverse(o=>{if(o.geometry)geometries.add(o.geometry);if(o.material)for(const m of Array.isArray(o.material)?o.material:[o.material])materials.add(m);});for(const g of geometries)g.dispose();for(const m of materials)m.dispose();for(const g of boxCache.values())g.dispose();for(const g of cylinderCache.values())g.dispose();for(const g of uniqueTerrain)g.dispose();renderer.dispose();renderer.forceContextLoss();}};
 }
