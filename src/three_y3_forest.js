@@ -61,8 +61,8 @@ function createForest(T){
   for(let i=0;i<pos.count;i++){let x=pos.getX(i),z=pos.getZ(i);let q=.5+.22*Math.sin(x*.63+z*.39)+.14*Math.cos(z*.93-x*.48)+.08*Math.sin(x*2.5+z*1.4);c.setHSL(.245+q*.022,.27+q*.09,.37+q*.12);colors.push(c.r,c.g,c.b);}
   geo.setAttribute('color',new T.Float32BufferAttribute(colors,3));const terrainMat=new T.MeshStandardMaterial({vertexColors:true,roughness:1});uniqueTerrain.push(geo,terrainMat);mesh(terrain,geo,terrainMat,mw/2,0,mh/2/SINE,false);
   const goal=(f.nodes||[]).find(n=>n.key==='target');const route=goal?fieldTilePath(f,f.spawn||f.pos,goal,{avoidHazards:true}):[];
-  if(route.length>1){const pathGeo=new T.PlaneGeometry(1,1),pathMat=material('#a79a72');uniqueTerrain.push(pathGeo,pathMat);const pathMesh=new T.InstancedMesh(pathGeo,pathMat,route.length*2);uniqueTerrain.push(pathMesh);const d=new T.Object3D();let j=0;
-   for(const [i,q] of route.entries()){d.position.set(q.x,.008,q.y/SINE);d.rotation.set(-Math.PI/2,0,random(i*57)*.25);d.scale.set(.72+random(i*71)*.19,.84/SINE,1);d.updateMatrix();pathMesh.setMatrixAt(j++,d.matrix);d.position.set(q.x+(i%2?.22:-.22),.009,q.y/SINE+.12);d.scale.set(.35,.42,1);d.updateMatrix();pathMesh.setMatrixAt(j++,d.matrix);}pathMesh.receiveShadow=true;terrain.add(pathMesh);
+  if(route.length>1){const pathGeo=new T.CircleGeometry(.5,14),pathMat=material('#a79a72');uniqueTerrain.push(pathGeo,pathMat);const pathMesh=new T.InstancedMesh(pathGeo,pathMat,route.length*2);uniqueTerrain.push(pathMesh);const d=new T.Object3D();let j=0;
+   for(const [i,q] of route.entries()){d.position.set(q.x,.008,q.y/SINE);d.rotation.set(-Math.PI/2,0,random(i*57)*.25);d.scale.set(.86+random(i*71)*.19,1.40/SINE,1);d.updateMatrix();pathMesh.setMatrixAt(j++,d.matrix);d.position.set(q.x+(i%2?.22:-.22),.009,q.y/SINE+.12);d.scale.set(.35,.42,1);d.updateMatrix();pathMesh.setMatrixAt(j++,d.matrix);}pathMesh.receiveShadow=true;terrain.add(pathMesh);
   }
   for(let i=0;i<22;i++){const side=i%2,x=side?mw+.40:-.40,z=(Math.floor(i/2)+.5)*mh/11/SINE;ball(terrain,leaves[(i+1)%4],x,-.13,z,.60,.43+random(i*13)*.30,.83,false);if(i%3===0){const o=mesh(terrain,rock,stone2,x,.13,z,false);o.scale.set(.36,.28,.40);}}
   (f.obstacles||[]).forEach((o,i)=>tree(terrain,o,i));
@@ -84,9 +84,9 @@ function createForest(T){
   terrain.add(leafMesh,pebbles);
   const dustGeo=new T.SphereGeometry(.018,6,4),dustMat=new T.MeshBasicMaterial({color:'#fff2bc',transparent:true,opacity:.52,depthWrite:false});ambient=new T.InstancedMesh(dustGeo,dustMat,32);uniqueTerrain.push(dustGeo,dustMat,ambient);terrain.add(ambient);
   // No stale nodes or enemies survive a segment change.
-  for(const pool of [nodePool,enemyPool])for(const item of pool.values()){actors.remove(item);for(const m of [...(item.userData.flashMats||[]),...(item.userData.ownedMats||[])])m.dispose();}nodePool.clear();enemyPool.clear();
+  for(const pool of [nodePool,enemyPool])for(const item of pool.values()){actors.remove(item);for(const m of [...(item.userData.flashMats||[]),...(item.userData.ownedMats||[])])m.dispose();for(const g of item.userData.ownedGeos||[])g.dispose();}nodePool.clear();enemyPool.clear();
  }
- function node(n){const root=group(actors),p=group(root);const id=n.id||'mushroom';
+ function node(n){const root=group(actors),p=group(root);const id=n.id||'mushroom',ownedGeos=[];
   if(n.type==='event'){if(n.kind==='ecology'){for(let i=0;i<5;i++)ball(p,i%2?gold:purple,Math.cos(i*1.26)*.18,.32,Math.sin(i*1.26)*.18,.13,.18,.11);cyl(p,green,0,.18,0,.07,.11,.34);}
    else{ball(p,blue,0,.31,0,.25,.29,.18);ball(p,cream,0,.64,.02,.22,.21,.20);ball(p,bark,0,.79,0,.31,.10,.27);box(p,barkLight,0,.32,-.20,.34,.40,.16);}}
   else if(id.includes('mushroom')){for(let i=0;i<3;i++){const x=(i-1)*.18,z=(i%2)*.09;cyl(p,cream,x,.17,z,.055,.07,.28);ball(p,id==='mushroom_heart'?purple:red,x,.33,z,.17,.115,.16);ball(p,cream,x-.06,.40,z,.04,.018,.04);}}
@@ -98,14 +98,14 @@ function createForest(T){
    cyl(leg,cream,.19,.20,0,.055,.055,.26).rotation.z=Math.PI/2;for(const z of [-.05,.05])ball(leg,cream,.32,.20,z,.075,.075,.075);
   }else if(id==='beef'){
    const steak=group(p);steak.rotation.y=.45;const sh=new T.Shape();sh.moveTo(-.31,-.12);sh.bezierCurveTo(-.35,-.28,.06,-.30,.24,-.15);sh.bezierCurveTo(.41,.02,.26,.26,.02,.22);sh.bezierCurveTo(-.18,.26,-.35,.13,-.31,-.12);
-   const g=new T.ExtrudeGeometry(sh,{depth:.095,bevelEnabled:true,bevelSize:.035,bevelThickness:.025,bevelSegments:2,curveSegments:12});g.rotateX(-Math.PI/2);
+   const g=new T.ExtrudeGeometry(sh,{depth:.095,bevelEnabled:true,bevelSize:.035,bevelThickness:.025,bevelSegments:2,curveSegments:12});g.rotateX(-Math.PI/2);ownedGeos.push(g);
    mesh(steak,g,red,0,.09,0);mesh(steak,g,cream,0,.07,0).scale.set(1.10,.65,1.10);
    for(let j=0;j<3;j++){const m=box(steak,cream,-.12+j*.12,.218,.02,.035,.014,.16);m.rotation.y=.45+j*.18;}
   }
   else{ball(p,gold,0,.20,0,.23,.18,.22);ball(p,green,0,.36,0,.07,.06,.12);}
   const v=pickupVisual(n,0),m=new T.MeshBasicMaterial({color:v.color,transparent:true,opacity:v.opacity,depthWrite:false,side:T.DoubleSide}),m2=m.clone();m2.opacity=.20;
   const ring=mesh(root,pickupGeo,m,0,.025,0,false),outer=mesh(root,pickupInner,m2,0,.026,0,false);ring.scale.setScalar(v.radius);outer.scale.setScalar(v.radius*1.23);
-  root.userData={item:p,ring,outer,ownedMats:[m,m2]};return root;
+  root.userData={item:p,ring,outer,ownedMats:[m,m2],ownedGeos};return root;
  }
  function enemy(e){const p=group(actors),body=group(p),kind=e.kind,limbs=[],wings=[];let skull=null;
   if(e.isBoss){ball(body,purple,0,.46,0,.56,.46,.47);cyl(body,cream,0,.60,0,.21,.24,.60);ball(body,barkLight,0,.87,0,.73,.12,.66);ball(body,red,0,.99,0,.76,.27,.69);ball(body,purple,0,1.18,-.07,.34,.10,.30);for(let i=0;i<7;i++){let a=i*.90;ball(body,cream,Math.cos(a)*.49,1.15,Math.sin(a)*.45,.09,.025,.09);}for(const k of [-1,1]){ball(body,red,k*.57,.43,0,.18,.28,.20);ball(body,ink,k*.14,.70,.39,.06,.065,.035);}}
