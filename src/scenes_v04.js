@@ -220,7 +220,7 @@ export function drawField(canvas,s,clock){const size=setCanvas(canvas);if(!size|
  else if(herbPixelArt)drawHerbPixelGround(c,f);
  else if(camera.expanded)drawExpandedLandscape(c,f,clock);else drawBiomeLandscape(c,f,clock);}
  // Mist is a real world-space persistent control area, behind actors.
- if(f.steamMist?.ttl>0)drawSteamMistField(c,f,clock);
+ if(!three&&f.steamMist?.ttl>0)drawSteamMistField(c,f,clock);
  // This faint route follows the REAL passable cells; artwork never fakes a blocked path.
  const goal=f.nodes.find(n=>n.key==='target'&&!n.claimed);
  if(goal&&!fieldSpriteArt){const trail=fieldTilePath(f,f.spawn||f.pos,goal,{avoidHazards:true});
@@ -277,8 +277,8 @@ export function drawField(canvas,s,clock){const size=setCanvas(canvas);if(!size|
    }else{c.save();c.translate(n.x,n.y);c.scale(1/sc,1/sc);plant(c,{...n,x:0,y:0},clock);c.restore();}
   }
   if(!three)drawHybridFieldAtmosphere(c,f,clock);
-  for(const p of f.projectiles||[]){if(smoothFx)drawFieldProjectile(c,p);else if(herbPixelArt)drawHerbPixelProjectile(c,p);else {circle(c,p.x,p.y,.12,'#ef9c4e');circle(c,p.x,p.y,.05,'#ffe5a3')}}
- for(const p of f.playerProjectiles||[]){
+  if(!three)for(const p of f.projectiles||[]){if(smoothFx)drawFieldProjectile(c,p);else if(herbPixelArt)drawHerbPixelProjectile(c,p);else {circle(c,p.x,p.y,.12,'#ef9c4e');circle(c,p.x,p.y,.05,'#ffe5a3')}}
+ if(!three)for(const p of f.playerProjectiles||[]){
   const arc=Math.sin(Math.PI*Math.min(1,p.time/p.duration))*.37;
   if(smoothFx){drawFieldProjectile(c,p,'player');continue;}
   if(herbPixelArt){drawHerbPixelProjectile(c,{x:p.x,y:p.y-arc},'player');continue;}
@@ -301,7 +301,8 @@ export function drawField(canvas,s,clock){const size=setCanvas(canvas);if(!size|
   else {c.save();c.translate(e.x,e.y);c.scale(1/sc,1/sc);monster(c,{...actor,x:0,y:0},clock);c.restore();}
   c.restore();if(smoothFx||e.isBoss)drawFieldActorIndicators(c,e,sc);
  }
- if(smoothFx)for(const e of f.enemies||[])drawFieldDeath(c,e);
+ if(!three&&smoothFx)for(const e of f.enemies||[])drawFieldDeath(c,e);
+ if(!three){
  // Attack swipe uses the *same* direction and trigger as combat hit detection.
  if(smoothFx&&!['GRILL','STEAM'].includes(f.weapon?.type))drawFieldSwipe(c,f);
  if(f.weapon?.type==='STEAM')drawSteamPulse(c,f);
@@ -320,6 +321,7 @@ export function drawField(canvas,s,clock){const size=setCanvas(canvas);if(!size|
  if(!smoothFx&&f.weapon?.type==='GRILL')drawForkFlameFx(c,f);
  if(!smoothFx&&f.skillFx>0&&!['GRILL','STEAM'].includes(f.weapon?.type)){c.save();c.strokeStyle=`rgba(255,231,151,${Math.min(.95,f.skillFx*2.4)})`;c.lineWidth=.12;c.beginPath();c.arc(f.pos.x,f.pos.y,(.42-f.skillFx)*3+.35,0,Math.PI*2);c.stroke();c.restore();}
  for(const e of f.enemies||[]){if(e.hurtFx>0&&e.hp>0&&!e.hitResponse){c.save();c.translate(e.x,e.y);c.scale(1/sc,1/sc);if(smoothFx)drawFieldImpact(c,0,-5,e.hurtFx/.36,8);else pixelImpact(c,0,-5,8);c.restore()}}
+ }
  for(const fx of f.popFx||[]){if(smoothFx&&fx.text==='💥'){drawFieldBurst(c,fx);continue;}if(smoothFx&&String(fx.text).startsWith('+'))drawFieldCollection(c,fx);c.save();c.translate(fx.x,fx.y-(.76-fx.ttl)*.5);c.scale(1/sc,1/sc);text(c,fx.text,0,-17,fx.color||'#fff1b1',12);c.restore()}
  c.save();c.translate(f.pos.x,f.pos.y);c.scale(1/sc,1/sc);
  const attackPose=fieldAttackPose(f);c.translate(attackPose.x,attackPose.y);
