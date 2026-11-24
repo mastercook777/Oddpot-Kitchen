@@ -25,22 +25,24 @@ export function receiptFrame(result){
  if(!result?.events)return null;
  return {type:result.vessel||'WOK',success:!!result.sellable,discovery:!!(result.sellable&&result.firstDiscovery),items:result.events.map((e,i)=>({id:e.id,x:Math.cos(i*2.4)*.52,z:Math.sin(i*2.4)*.44,y:0,rot:0,tone:result.doneness?.find(d=>d.id===e.id)?.label==='焦糊'?'bad':result.doneness?.find(d=>d.id===e.id)?.label==='熟透'?'good':'warming'}))};
 }
-let lib=null,loading=null,instance=null,disabled=false;
+let lib=null,loading=null,instance=null,disabled=false,lastAt=-Infinity,lastCook=null,lastHost=null;
 function fail(e){disabled=true;leave();console.warn('Oddpot research 3D fallback',e);document.documentElement.dataset.oddpotResearch3d='fallback';}
-function leave(){if(instance){const old=instance;instance=null;old.dispose();}if(!disabled)document.documentElement.dataset.oddpotResearch3d='idle';}
+function leave(){lastCook=null;lastHost=null;lastAt=-Infinity;if(instance){const old=instance;instance=null;old.dispose();}if(!disabled)document.documentElement.dataset.oddpotResearch3d='idle';}
 export function enableY4b(){
  loading=import('https://cdn.jsdelivr.net/npm/three@0.170.0/build/three.module.js').then(T=>{lib=T;}).catch(fail);
  globalThis.__oddpotY4bRenderer={draw(app,s,preview,now){
   if(disabled||s.phase!=='research'){if(instance)leave();return;}
-  const frame=researchFrame(s.cook,preview),receipt=!s.cook&&s.researchReceipt?receiptFrame(s.lastCook):null;
-  const host=frame?app.querySelector(frame.type==='GRILL'&&s.cook.mode==='v014c-grill'?'.v014c-hearth':'.v063-live-pan'):receipt?app.querySelector('.v063-receipt-head>span'):null;
+  const cook=s.cook,live=['v063-live','v014c-grill'].includes(cook?.mode),result=!cook&&s.researchReceipt?s.lastCook:null;
+  const host=live?app.querySelector(cook.mode==='v014c-grill'?'.v014c-hearth':'.v063-live-pan'):result?app.querySelector('.v063-receipt-head>span'):null;
   if(!host){if(instance)leave();return;}if(!lib)return;
+  const identity=cook||result,changed=lastCook!==identity||lastHost!==host;if(!changed&&now-lastAt<33)return;lastAt=now;lastCook=identity;lastHost=host;
+  const frame=live?researchFrame(cook,preview):null,receipt=result?receiptFrame(result):null;if(!frame&&!receipt)return;
   try{if(!instance)instance=makeWorkbench(lib);instance.draw(host,frame,receipt,s.lastCook,now);document.documentElement.dataset.oddpotResearch3d='active';}catch(e){fail(e);}
  }};
 }
 function makeWorkbench(T){
  const renderer=new T.WebGLRenderer({antialias:true,alpha:false,powerPreference:'low-power'}),canvas=renderer.domElement;
- renderer.setPixelRatio(Math.min(globalThis.devicePixelRatio||1,1.5));renderer.outputColorSpace=T.SRGBColorSpace;renderer.toneMapping=T.ACESFilmicToneMapping;renderer.toneMappingExposure=1.12;
+ renderer.setPixelRatio(Math.min(globalThis.devicePixelRatio||1,1.15));renderer.outputColorSpace=T.SRGBColorSpace;renderer.toneMapping=T.ACESFilmicToneMapping;renderer.toneMappingExposure=1.12;
  Object.assign(canvas.style,{position:'absolute',inset:'0',width:'100%',height:'100%',pointerEvents:'none',zIndex:'9'});canvas.setAttribute('aria-hidden','true');canvas.dataset.oddpotResearch='3d';
  let disposed=false;canvas.addEventListener('webglcontextlost',e=>{e.preventDefault();if(!disposed)fail(new Error('research WebGL context lost'));});
  const scene=new T.Scene();scene.background=new T.Color('#3e4d3b');const camera=new T.OrthographicCamera(-3,3,2,-2,.1,35);camera.position.set(3.1,5.6,6.4);camera.lookAt(0,.8,0);
@@ -89,7 +91,7 @@ function makeWorkbench(T){
  function detach(){if(host){host.style.position=hostStyle.position;host.style.minHeight=hostStyle.minHeight;host.style.color=hostStyle.color;host.removeAttribute('data-y4b-active');}hint?.remove();hint=null;canvas.remove();host=null;}
  function attach(next,receipt){if(host===next)return;detach();host=next;hostStyle={position:host.style.position,minHeight:host.style.minHeight,color:host.style.color};host.style.position='relative';if(receipt){host.style.minHeight='92px';}host.append(canvas);if(!receipt){hint=document.createElement('span');hint.setAttribute('aria-hidden','true');Object.assign(hint.style,{position:'absolute',bottom:'8px',left:'0',right:'0',textAlign:'center',font:'600 12px system-ui',color:'#fff0cf',textShadow:'0 1px 3px #000',zIndex:'10',pointerEvents:'none'});host.append(hint);}}
  return {draw(next,f,r,receiptKey,now){
-  const changed=host!==next;attach(next,!!r);if(!changed&&now-lastAt<30)return;lastAt=now;
+  const changed=host!==next;attach(next,!!r);if(!changed&&now-lastAt<30)return;if(!changed&&r&&lastReceipt===receiptKey&&now-revealAt>900&&lastAt-revealAt>850&&next.clientWidth===lastW&&next.clientHeight===lastH)return;lastAt=now;
   const w=next.clientWidth,h=next.clientHeight;if(w<5||h<5)return;if(w!==lastW||h!==lastH){renderer.setSize(w,h,false);lastW=w;lastH=h;}
   const aspect=w/h,half=Math.max(r?.98:2.0,(r?1.68:3.05)/aspect);camera.left=-half*aspect;camera.right=half*aspect;camera.top=half;camera.bottom=-half;camera.lookAt(0,r?.32:.62,0);camera.updateProjectionMatrix();
   work.visible=!!f;plateRoot.visible=!!r;reveal.visible=false;if(hint){hint.textContent=f?.items.length?'':f?.type==='GRILL'?'轻点食材，依次穿串':'轻点下方食材下锅';}for(const x of foodPool.values())x.root.visible=false;
