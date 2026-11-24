@@ -992,6 +992,70 @@ function a21DrawRange(c,X,Y,rw,type){
  }
 }
 
+export function restaurantActorsV075(s,t){
+ const g=dinerFloor(s),v=s.service,pending=v?.orders?.filter(o=>o.status==='pickup')||[];
+ // Actors are sorted by floor position. Same real sprite scale for everyone.
+ const actors=[];
+ if(v){
+  for(const o of v.orders){
+   if(o.tableId==null)continue;
+   const eligible=['entering','ordering','queued','cooking','pickup','carried','delivering','flying','eating','review'].includes(o.status)
+       ||(o.status==='served'&&t-(o.reviewedAt??o.served??t)<2.3)
+       ||(['left','rejected'].includes(o.status)&&Number.isFinite(o.leftAt)&&t-o.leftAt<2.6);
+   if(!eligible)continue;
+   const route=dinerGuestRoute(o.tableId,o.seatId??0,s);
+   const age=t-(o.doorAt??o.arrival);
+   const leaving=o.status==='served'&&t-(o.reviewedAt??o.served??t)>.65||(['left','rejected'].includes(o.status)&&Number.isFinite(o.leftAt));
+   const progress=leaving?Math.max(0,1-(t-(o.status==='served'?(o.reviewedAt??o.served??t)+.65:o.leftAt))/2.2):
+       Math.max(0,Math.min(1,age/2.4));
+   if(leaving&&progress<=0)continue;
+   const loc=routePoint(route,progress);
+   actors.push({id:o.id,x:loc.x,y:loc.y,kind:o.segment,walk:progress>0&&progress<1,seat:progress>=.999&&!leaving,order:o});
+  }
+  const crew=v.crew||s.crew;
+  // The worker visibly walks between stations; the kitchen rules only credit
+  // them AFTER travel time has elapsed (never a magical production teleport).
+  for(const role of ['helper','helper2']){
+   const person=crew?.[role];if(!person?.hired)continue;
+   const station=person.currentStation??person.station??(role==='helper2'?2:0);
+   const start=person.moveStart,until=person.moveUntil;
+   const moving=until>0&&Number.isFinite(start)&&t<until;
+   let pt=g.helper[station]||g.helper[0];
+   if(moving){
+    const from=g.helper[person.moveFrom]||pt,to=g.helper[person.moveTo]||pt;
+    const alpha=Math.max(0,Math.min(1,(t-start)/Math.max(.1,until-start)));
+    pt={x:from.x+(to.x-from.x)*alpha,y:from.y+(to.y-from.y)*alpha};
+   }
+   actors.push({id:role,x:pt.x,y:pt.y,kind:s.activeWorld==='cloud'?'cloud_'+role:role,level:person.level||1,
+    walk:moving?t*2:false,working:!moving&&!!v.stations[['WOK','POT','CENTER'][station]]});
+  }
+  for(const role of ['waiter',...(s.activeWorld==='cloud'?['waiter2']:[])]){
+   const person=crew?.[role];if(!person?.hired)continue;
+   const pos=waiterDeliveryPose(s,t,role);
+   const delivery=pos.plate?v.orders.find(o=>o.status==='delivering'&&(o.deliveryRole||'waiter')===role&&Number.isFinite(o.deliveryAt)):null;
+   // Two idle couriers stand apart rather than stacking on the exact pass point;
+   // moving paths remain driven by the actual role-locked order.
+   const idleOffset=!pos.moving&&s.activeWorld==='cloud'&&crew?.waiter?.hired&&crew?.waiter2?.hired?(role==='waiter'?-0.045:0.045):0;
+   actors.push({id:role,x:pos.x+idleOffset,y:pos.y,kind:s.activeWorld==='cloud'?'cloud_'+role:role,level:person.level||1,walk:pos.moving,plate:pos.plate,plateRecipeId:delivery?.recipeId});
+  }
+  if(v.hero){
+   const hero=v.hero,zone=heroZone(hero,s);
+   const carried=v.orders.find(o=>o.id===hero.carryOrderId&&o.status==='carried');
+   actors.push({id:'hero',x:hero.x,y:hero.y,kind:'chef',walk:hero.moving,plate:!!carried,plateRecipeId:carried?.recipeId,
+     working:!carried&&['WOK','POT','CENTER'].includes(zone)&&!!v.stations[zone],direction:hero.direction,
+     stateIcon:carried?'🍽️':zone==='PASS'&&pending.length?'🍽️':
+      zone?.startsWith('TABLE')&&v.orders.some(o=>o.tableId===Number(zone.slice(5))&&['queued','cooking','pickup','delivering'].includes(o.status))?'💛':null});
+  }
+ }
+ else {
+  const reduced=globalThis.matchMedia?.('(prefers-reduced-motion: reduce)').matches||false;
+  for(const person of homeKitchenActors(s,t,reduced))actors.push(s.activeWorld==='cloud'&&['helper','helper2','waiter','waiter2'].includes(person.kind)?{...person,kind:'cloud_'+person.kind}:person);
+
+ }
+ actors.sort((a,b)=>a.y-b.y);
+ return actors;
+}
+
 function drawRestaurantV075(c,s,t,w,h){
  const g=dinerFloor(s),v=s.service,x=f=>f*w,y=f=>f*h;
  const rr=(X,Y,W,H,R,color,stroke)=>{
@@ -1142,69 +1206,15 @@ function drawRestaurantV075(c,s,t,w,h){
  drawDinerDoorway(c,s,v?.time??t,w,h);
  // Subtle planters on the INSIDE flanking the glass view.
  for(const px of [.09,.91]){rr(x(px)-6,y(.860),12,18,3,'#6f4b32');circle(c,x(px),y(.855),9,'#62916c')}
- // Actors are sorted by floor position. Same real sprite scale for everyone.
- const actors=[];
- if(v){
-  for(const o of v.orders){
-   if(o.tableId==null)continue;
-   const eligible=['entering','ordering','queued','cooking','pickup','carried','delivering','flying','eating','review'].includes(o.status)
-       ||(o.status==='served'&&t-(o.reviewedAt??o.served??t)<2.3)
-       ||(['left','rejected'].includes(o.status)&&Number.isFinite(o.leftAt)&&t-o.leftAt<2.6);
-   if(!eligible)continue;
-   const route=dinerGuestRoute(o.tableId,o.seatId??0,s);
-   const age=t-(o.doorAt??o.arrival);
-   const leaving=o.status==='served'&&t-(o.reviewedAt??o.served??t)>.65||(['left','rejected'].includes(o.status)&&Number.isFinite(o.leftAt));
-   const progress=leaving?Math.max(0,1-(t-(o.status==='served'?(o.reviewedAt??o.served??t)+.65:o.leftAt))/2.2):
-       Math.max(0,Math.min(1,age/2.4));
-   if(leaving&&progress<=0)continue;
-   const loc=routePoint(route,progress);
-   actors.push({id:o.id,x:loc.x,y:loc.y,kind:o.segment,walk:progress>0&&progress<1,seat:progress>=.999&&!leaving,order:o});
-  }
-  const crew=v.crew||s.crew;
-  // The worker visibly walks between stations; the kitchen rules only credit
-  // them AFTER travel time has elapsed (never a magical production teleport).
-  for(const role of ['helper','helper2']){
-   const person=crew?.[role];if(!person?.hired)continue;
-   const station=person.currentStation??person.station??(role==='helper2'?2:0);
-   const start=person.moveStart,until=person.moveUntil;
-   const moving=until>0&&Number.isFinite(start)&&t<until;
-   let pt=g.helper[station]||g.helper[0];
-   if(moving){
-    const from=g.helper[person.moveFrom]||pt,to=g.helper[person.moveTo]||pt;
-    const alpha=Math.max(0,Math.min(1,(t-start)/Math.max(.1,until-start)));
-    pt={x:from.x+(to.x-from.x)*alpha,y:from.y+(to.y-from.y)*alpha};
-   }
-   actors.push({id:role,x:pt.x,y:pt.y,kind:s.activeWorld==='cloud'?'cloud_'+role:role,level:person.level||1,
-    walk:moving?t*2:false,working:!moving&&!!v.stations[['WOK','POT','CENTER'][station]]});
-  }
-  for(const role of ['waiter',...(s.activeWorld==='cloud'?['waiter2']:[])]){
-   const person=crew?.[role];if(!person?.hired)continue;
-   const pos=waiterDeliveryPose(s,t,role);
-   const delivery=pos.plate?v.orders.find(o=>o.status==='delivering'&&(o.deliveryRole||'waiter')===role&&Number.isFinite(o.deliveryAt)):null;
-   // Two idle couriers stand apart rather than stacking on the exact pass point;
-   // moving paths remain driven by the actual role-locked order.
-   const idleOffset=!pos.moving&&s.activeWorld==='cloud'&&crew?.waiter?.hired&&crew?.waiter2?.hired?(role==='waiter'?-0.045:0.045):0;
-   actors.push({id:role,x:pos.x+idleOffset,y:pos.y,kind:s.activeWorld==='cloud'?'cloud_'+role:role,level:person.level||1,walk:pos.moving,plate:pos.plate,plateRecipeId:delivery?.recipeId});
-  }
-  if(v.hero){
-   const hero=v.hero,zone=heroZone(hero,s);
-   const carried=v.orders.find(o=>o.id===hero.carryOrderId&&o.status==='carried');
-   actors.push({id:'hero',x:hero.x,y:hero.y,kind:'chef',walk:hero.moving,plate:!!carried,plateRecipeId:carried?.recipeId,
-     working:!carried&&['WOK','POT','CENTER'].includes(zone)&&!!v.stations[zone],direction:hero.direction,
-     stateIcon:carried?'🍽️':zone==='PASS'&&pending.length?'🍽️':
-      zone?.startsWith('TABLE')&&v.orders.some(o=>o.tableId===Number(zone.slice(5))&&['queued','cooking','pickup','delivering'].includes(o.status))?'💛':null});
-  }
- }
- else {
+ const actors=restaurantActorsV075(s,t);
+ if(!v){
   const reduced=globalThis.matchMedia?.('(prefers-reduced-motion: reduce)').matches||false;
-  for(const person of homeKitchenActors(s,t,reduced))actors.push(s.activeWorld==='cloud'&&['helper','helper2','waiter','waiter2'].includes(person.kind)?{...person,kind:'cloud_'+person.kind}:person);
   // The idle room has no active orders. This is a small visual cue only.
   for(const stove of reduced?[]:[g.stoveLeft,g.stoveRight,...(s.kitchen?.thirdUnlocked?[g.reservedStove]:[])]){
    const X=x(stove.x),Y=y(stove.y);
    for(let i=0;i<2;i++)circle(c,X+(i?5:-4),Y-23-((t*8+i*7)%14),2.1,'#eee0b286');
   }
  }
- actors.sort((a,b)=>a.y-b.y);
  // The dialogue slots attach to actual seated actors. Only high-signal
  // transient phrases survive, with one bubble per table and no stick overlays.
  const speechCues=selectDiningSpeech(v?.orders||[],t,2);
@@ -1273,7 +1283,11 @@ function drawRestaurantV075(c,s,t,w,h){
 export function drawDiner(canvas,s,clock,simTime=s.service?.time??clock){
  const size=setCanvas(canvas);if(!size)return;
  const {c,w,h}=size,v=s.service,t=v?simTime:clock;
- if(v?.walkable||!v){drawRestaurantV075(c,s,t,w,h);return;}
+ if(v?.walkable||!v){
+  const y2=globalThis.__oddpotY2Renderer;
+  if(y2&&y2.draw(canvas,s,t,w,h,restaurantActorsV075))return;
+  drawRestaurantV075(c,s,t,w,h);return;
+ }
  rect(c,0,0,w,h,'#66523e');
  for(let y=0;y<h;y+=24){rect(c,0,y,w,22,y%48===0?'#765d46':'#71563f');line(c,0,y,w,y,'#674b34',1)}
  // A little wider than v0.5B, but without stretching character proportions.
