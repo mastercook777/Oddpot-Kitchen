@@ -1471,13 +1471,14 @@
 .v016-home .v016-world-actions button:active{transform:translate(-50%,-50%) scale(.96);background:#2b1c1366}
 .v016-stock{left:17.5%;top:12%}.v016-book{left:82.5%;top:12%}
 .v016-bento{left:23%;top:43.5%}.v016-crew{left:77%;top:43.5%}
-.v016-home .v016-world-actions .v016-door{left:50%;top:94%;border:1px solid #d4b37b;border-radius:4px;background:#392b22e8;color:#ffe2a3;font-size:14px;min-width:118px;box-shadow:0 2px #241b16}
+.v016-home .v016-world-actions .v016-door{left:50%;top:auto;bottom:6px;transform:translateX(-50%);border:1px solid #d4b37b;border-radius:4px;background:#392b22e8;color:#ffe2a3;font-size:14px;min-width:118px;box-shadow:0 2px #241b16}
 .v016-home .v016-world-actions .v016-door::after{display:none}
+.v016-home .v016-world-actions .v016-door:active{transform:translateX(-50%) scale(.96)}
 .v016-home .v016-door span{font-size:13px;margin:0}
 .v016-foot{flex:none;display:flex;justify-content:space-between;gap:6px;padding:6px 10px calc(6px + env(safe-area-inset-bottom));font-size:10px;color:#cbb99a;background:#302b23}
 .v016-milestone{flex:none;padding:6px 10px;display:grid;gap:6px;background:#302b23}
 .v016-milestone .v12-star-invite{margin:0}
-@media(max-height:575px){.v016-home .v016-scene{min-height:225px}.v016-home .v016-world-actions .v016-door{top:90%}.v016-notice span{font-size:11px}}
+@media(max-height:575px){.v016-home .v016-scene{min-height:225px}.v016-home .v016-world-actions .v016-door{bottom:4px}.v016-notice span{font-size:11px}}
 </style></head><body><div id="app"></div><script>// v0.6.3-A: curated recipe × technique metadata. Curated benefits now resolved per recipe/technique in v0.6.3-B.
 // The engine applies these per-recipe overrides at order snapshot, never as universal style buffs.
 const RECIPE_PROFILES = {
