@@ -207,16 +207,18 @@ function drawMeleeWarnings(c,f){
  }
 }
 export function drawField(canvas,s,clock){const size=setCanvas(canvas);if(!size||!s.field?.action)return;const {c,w,h}=size,f=s.field;const springs=f.region==='spring';const camera=fieldCamera(f,w,h),sc=camera.scale,left=camera.offsetX,top=camera.offsetY;
- c.fillStyle=isHybridMeadow(f)?'#75896f':isHerbPixelSlice(f)?'#485e4c':springs?'#9c674c':'#305a40';c.fillRect(0,0,w,h);
  const jolt=(f.combatJolt||0)/.09;
  const shake=(f.hitShake||0)/.24,shakeX=(shake?Math.sin(f.elapsed*151)*4*shake:0)+Math.sin(f.elapsed*137)*1.6*jolt;
  const shakeY=(shake?Math.cos(f.elapsed*117)*2.4*shake:0)+Math.cos(f.elapsed*103)*.8*jolt;
+ const y3=globalThis.__oddpotY3Renderer;
+ const three=!!y3?.draw(canvas,s,clock,w,h,camera,shakeX,shakeY);
+ if(!three){c.fillStyle=isHybridMeadow(f)?'#75896f':isHerbPixelSlice(f)?'#485e4c':springs?'#9c674c':'#305a40';c.fillRect(0,0,w,h);}
  c.save();c.translate(left+shakeX,top+shakeY);c.scale(sc,sc);
  const herbPixelArt=isHerbPixelSlice(f),herbHybridArt=isHybridMeadow(f),fieldHybridArt=isHybridFieldArt(f),fieldSpriteArt=herbPixelArt||fieldHybridArt,smoothFx=!['pixel','legacy'].includes(f.artPreviewMode);
- if(herbHybridArt)drawHybridMeadowGround(c,f);
+ if(!three){if(herbHybridArt)drawHybridMeadowGround(c,f);
  else if(fieldHybridArt)drawHybridFieldGround(c,f);
  else if(herbPixelArt)drawHerbPixelGround(c,f);
- else if(camera.expanded)drawExpandedLandscape(c,f,clock);else drawBiomeLandscape(c,f,clock);
+ else if(camera.expanded)drawExpandedLandscape(c,f,clock);else drawBiomeLandscape(c,f,clock);}
  // Mist is a real world-space persistent control area, behind actors.
  if(f.steamMist?.ttl>0)drawSteamMistField(c,f,clock);
  // This faint route follows the REAL passable cells; artwork never fakes a blocked path.
@@ -252,7 +254,7 @@ export function drawField(canvas,s,clock){const size=setCanvas(canvas);if(!size|
    }
    c.restore();
   }
-  for(const [i,o] of f.obstacles.entries()){if(fieldSpriteArt){if(o.y+.5<=f.pos.y){if(herbHybridArt){if(!f.artPreviewMode)a20HerbObstacle(c,o,i);else drawHybridMeadowObstacle(c,o,i);}else if(fieldHybridArt)drawHybridFieldObstacle(c,o,f.biome.style,i);else drawHerbPixelObstacle(c,o,i);}continue;}if(camera.expanded){drawExpandedObstacle(c,o,f.biome?.style,clock);continue;}c.save();c.translate(o.x+.5,o.y+.5);c.scale(1/sc,1/sc);if(f.biome?.style==='glow'){
+  if(!three)for(const [i,o] of f.obstacles.entries()){if(fieldSpriteArt){if(o.y+.5<=f.pos.y){if(herbHybridArt){if(!f.artPreviewMode)a20HerbObstacle(c,o,i);else drawHybridMeadowObstacle(c,o,i);}else if(fieldHybridArt)drawHybridFieldObstacle(c,o,f.biome.style,i);else drawHerbPixelObstacle(c,o,i);}continue;}if(camera.expanded){drawExpandedObstacle(c,o,f.biome?.style,clock);continue;}c.save();c.translate(o.x+.5,o.y+.5);c.scale(1/sc,1/sc);if(f.biome?.style==='glow'){
   circle(c,0,4,14,'#263d48');circle(c,0,-6,17,'#6ebaaa');circle(c,-7,-9,8,'#c5e8d1');
  }else if(f.biome?.style==='roots'){
   circle(c,0,5,17,'#242430');circle(c,0,-5,19,'#75505f');
@@ -262,7 +264,7 @@ export function drawField(canvas,s,clock){const size=setCanvas(canvas);if(!size|
   line(c,-5,-10,1,4,'#df7546',4);
  }else if(springs){circle(c,0,3,15,'#8c5940');circle(c,-5,-4,14,'#625d59');circle(c,5,-6,9,'#817875');rect(c,-4,-18,8,3,'#be9a78')}
  else tree(c,0,0);c.restore()}
- for(const n of f.nodes){if(n.claimed)continue;
+ if(!three)for(const n of f.nodes){if(n.claimed)continue;
    if(n.type==='event'&&n.offer){drawHerbPixelNode(c,n,clock,false,sc);continue;}
    if(fieldSpriteArt){if(smoothFx)drawHerbPixelNode(c,n,clock,false,sc);else drawHerbPixelNode(c,n,clock);continue;}
    if(n.type==='event'){
@@ -274,7 +276,7 @@ export function drawField(canvas,s,clock){const size=setCanvas(canvas);if(!size|
     text(c,'?',13,-28,'#ffe9b1',12);c.restore();
    }else{c.save();c.translate(n.x,n.y);c.scale(1/sc,1/sc);plant(c,{...n,x:0,y:0},clock);c.restore();}
   }
-  drawHybridFieldAtmosphere(c,f,clock);
+  if(!three)drawHybridFieldAtmosphere(c,f,clock);
   for(const p of f.projectiles||[]){if(smoothFx)drawFieldProjectile(c,p);else if(herbPixelArt)drawHerbPixelProjectile(c,p);else {circle(c,p.x,p.y,.12,'#ef9c4e');circle(c,p.x,p.y,.05,'#ffe5a3')}}
  for(const p of f.playerProjectiles||[]){
   const arc=Math.sin(Math.PI*Math.min(1,p.time/p.duration))*.37;
@@ -290,6 +292,7 @@ export function drawField(canvas,s,clock){const size=setCanvas(canvas);if(!size|
  drawBossZones(c,f);
  for(const e of f.enemies||[]){
   if(e.hp<=0&&!(e.deathFx>0))continue;
+  if(three){drawFieldActorIndicators(c,e,sc);continue;}
   const pose=fieldHitPose(e),actor=e.hitResponse?{...e,hurtFx:0}:e;
   c.save();c.translate(e.x+pose.x/sc,e.y+pose.y/sc);c.scale(pose.sx,pose.sy);c.translate(-e.x,-e.y);
   if(e.hitResponse&&e.hitResponse.ttl/e.hitResponse.total>.68)c.filter='brightness(1.7)';
@@ -320,6 +323,7 @@ export function drawField(canvas,s,clock){const size=setCanvas(canvas);if(!size|
  for(const fx of f.popFx||[]){if(smoothFx&&fx.text==='💥'){drawFieldBurst(c,fx);continue;}if(smoothFx&&String(fx.text).startsWith('+'))drawFieldCollection(c,fx);c.save();c.translate(fx.x,fx.y-(.76-fx.ttl)*.5);c.scale(1/sc,1/sc);text(c,fx.text,0,-17,fx.color||'#fff1b1',12);c.restore()}
  c.save();c.translate(f.pos.x,f.pos.y);c.scale(1/sc,1/sc);
  const attackPose=fieldAttackPose(f);c.translate(attackPose.x,attackPose.y);
+ if(!three){
  const chefFace=(f.facing?.x||0)<-.15?-1:1;
  const isWok=f.weapon?.type==='WOK',isGrill=f.weapon?.type==='GRILL',isSteam=f.weapon?.type==='STEAM';
  const posture=isWok?fieldWokPose(f.facing,f.moving,clock,(f.guardTime||0)>0):null;
@@ -335,6 +339,7 @@ export function drawField(canvas,s,clock){const size=setCanvas(canvas);if(!size|
  if(isSteam)drawPixelSteamBasket(c,f,{layer:'front'});
  if(isWok)drawPixelWok(c,posture,{layer:'front',parry:(f.guardTime||0)>0,level:f.weapon?.level});
  else if(potPose)drawPixelPot(c,potPose,{layer:'front',level:f.weapon?.level});
+ }
  if((f.hitFlash||0)>0){
   const ratio=Math.min(1,f.hitFlash/.52);
   c.save();c.globalAlpha=ratio;
@@ -346,7 +351,7 @@ export function drawField(canvas,s,clock){const size=setCanvas(canvas);if(!size|
  c.restore();
  // Foreground tree canopies overlap actors only when their foot is farther
  // down screen. Physical obstacles/AI remain completely unchanged.
- if(fieldSpriteArt)for(const [i,o] of f.obstacles.entries()){
+ if(!three&&fieldSpriteArt)for(const [i,o] of f.obstacles.entries()){
   if(o.y+.5>f.pos.y){if(herbHybridArt){if(!f.artPreviewMode)a20HerbObstacle(c,o,i);else drawHybridMeadowObstacle(c,o,i);}else if(fieldHybridArt)drawHybridFieldObstacle(c,o,f.biome.style,i);else drawHerbPixelObstacle(c,o,i);}
  }
  if(smoothFx)for(const n of f.nodes)drawFieldNodeMarkers(c,n,clock,sc);
