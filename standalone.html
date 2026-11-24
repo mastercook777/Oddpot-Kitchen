@@ -1457,6 +1457,27 @@
 @media(max-width:390px){.v014c-grill-scene{padding:7px 9px 18px}.v014c-hearth{height:139px}.v014c-hearth:before{box-shadow:0 90px #6d625c}.v014c-hearth:after{box-shadow:0 75px #a39582}.v014c-skewer{min-width:90%}.v014c-bead{width:39px;height:39px}.v014c-gauges{margin:11px 0 5px}.v014c-grill-head strong{font-size:19px}}
 @media(max-height:600px){.v014c-hearth{height:115px}.v014c-gauges{margin:7px 0 4px}.v014c-gauge{min-height:31px;padding:2px 6px}.v014c-tray button{min-height:46px}.v014c-grill-head{margin-bottom:6px}}
 @media(prefers-reduced-motion:reduce){.v014c-hearth *, .v014c-hearth *:before{animation:none!important;transition:none!important}}
+
+/* v0.16-A1 · Border Hearth scene-first experiment. Only the forecast scene opts in. */
+.v076-home.v016-home{gap:0;padding:0;background:#302b23;overflow-y:auto;overscroll-behavior:contain}
+.v016-home .v016-notice{flex:none;padding:7px 12px;background:#302f26;border-bottom:1px solid #a98a59;color:#f7e1b5;line-height:1.35;font-size:12px}
+.v016-notice strong{font-size:13px;color:#ffe2a3}
+.v016-notice small{display:block;color:#d3c4a6;font-size:10px;margin-top:2px}
+.v016-home .v016-scene{flex:1 0 60%;min-height:245px;position:relative;border:0;border-radius:0;box-shadow:none;background:#78583c}
+.v016-home .v016-world-actions{display:block;position:absolute;inset:0;pointer-events:none}
+.v016-home .v016-world-actions button{position:absolute;transform:translate(-50%,-50%);pointer-events:auto;min-height:44px;min-width:64px;width:auto;padding:0 9px;border:0;border-radius:3px;background:transparent;color:#fff1c9;font-size:12px;box-shadow:none;text-shadow:0 2px 2px #23170f,1px 0 #23170f,-1px 0 #23170f;white-space:nowrap}
+.v016-home .v016-world-actions button::after{content:'';display:block;width:4px;height:4px;position:absolute;bottom:4px;left:calc(50% - 2px);background:#f9d58d;transform:rotate(45deg);box-shadow:0 0 5px #fff0a5}
+.v016-home .v016-world-actions button:focus-visible{outline:2px solid #ffe29e;outline-offset:-2px}
+.v016-home .v016-world-actions button:active{transform:translate(-50%,-50%) scale(.96);background:#2b1c1366}
+.v016-stock{left:17.5%;top:12%}.v016-book{left:82.5%;top:12%}
+.v016-bento{left:23%;top:43.5%}.v016-crew{left:77%;top:43.5%}
+.v016-home .v016-world-actions .v016-door{left:50%;top:94%;border:1px solid #d4b37b;border-radius:4px;background:#392b22e8;color:#ffe2a3;font-size:14px;min-width:118px;box-shadow:0 2px #241b16}
+.v016-home .v016-world-actions .v016-door::after{display:none}
+.v016-home .v016-door span{font-size:13px;margin:0}
+.v016-foot{flex:none;display:flex;justify-content:space-between;gap:6px;padding:6px 10px calc(6px + env(safe-area-inset-bottom));font-size:10px;color:#cbb99a;background:#302b23}
+.v016-milestone{flex:none;padding:6px 10px;display:grid;gap:6px;background:#302b23}
+.v016-milestone .v12-star-invite{margin:0}
+@media(max-height:575px){.v016-home .v016-scene{min-height:225px}.v016-home .v016-world-actions .v016-door{top:90%}.v016-notice span{font-size:11px}}
 </style></head><body><div id="app"></div><script>// v0.6.3-A: curated recipe × technique metadata. Curated benefits now resolved per recipe/technique in v0.6.3-B.
 // The engine applies these per-recipe overrides at order snapshot, never as universal style buffs.
 const RECIPE_PROFILES = {
@@ -9534,6 +9555,57 @@ function drawDinerDoorway(c,s,t,w,h){
 
 // v0.7.5 official restaurant. One world; furniture, actors, services and
 // collision share DINER_FLOOR. The old DOM kitchen is NOT drawn here.
+// A1: decorative backdrop only. No hitboxes, inventory, or simulation effects.
+function drawLivingHearthA1(c,w,h){
+ c.save();
+ const X=n=>n*w,Y=n=>n*h;
+ const block=(x,y,a,b,color)=>{c.fillStyle=color;c.fillRect(X(x),Y(y),X(a),Y(b))};
+ const wall=c.createLinearGradient(0,0,0,Y(.18));wall.addColorStop(0,'#263c35');wall.addColorStop(1,'#53644a');
+ c.fillStyle=wall;c.fillRect(0,0,w,Y(.18));
+ const floor=c.createLinearGradient(0,Y(.15),0,h);floor.addColorStop(0,'#956e47');floor.addColorStop(.48,'#b0875a');floor.addColorStop(1,'#6b4d37');
+ c.fillStyle=floor;c.fillRect(0,Y(.15),w,h-Y(.15));
+ // Long staggered planks and restrained grain; fixed coordinates, no random flicker.
+ for(let j=0;j<11;j++){
+  const px=j*w/11;
+  c.fillStyle=j%2?'#e7b87b12':'#392a2010';c.fillRect(px,Y(.15),w/11,h-Y(.15));
+  c.strokeStyle='#4d352b78';c.lineWidth=1;c.beginPath();c.moveTo(px,Y(.15));c.lineTo(px,h);c.stroke();
+  for(let k=0;k<3;k++){
+   const py=Y(.2+((j*7+k*11)%21)*.031);
+   c.fillStyle='#f5c78924';c.fillRect(px+3,py,1,Y(.06));
+  }
+  for(let k=0;k<3;k++){
+   const py=Y(.27+k*.25+(j%3)*.075);
+   c.fillStyle='#4b352953';c.fillRect(px,py,w/11,1);
+  }
+ }
+ // Framed wall and three physical objects associated with the home actions.
+ block(0,.135,1,.022,'#543925');block(0,.135,1,.006,'#d1a16a');
+ block(.02,0,.025,.15,'#4a3328');block(.955,0,.025,.15,'#4a3328');
+ // Pantry cupboard (left). Shelf silhouettes: jars, baskets, roots.
+ block(.055,.018,.25,.117,'#422d25');block(.066,.024,.228,.105,'#9a6d43');
+ for(let k=0;k<2;k++){
+  const yy=.028+k*.048;block(.074,yy,.212,.041,'#503c2c');
+  for(let j=0;j<4;j++){const px=.084+j*.051;block(px,yy+.011,.032,.027,['#ac7047','#c5a16a','#83925f','#aa8751'][j]);block(px-.003,yy+.006,.038,.007,'#e0c797');}
+  block(.07,yy+.038,.22,.007,'#d3a06a');
+ }
+ // Open window with hills, trees and mullions.
+ block(.35,.012,.30,.116,'#4b3327');block(.366,.023,.268,.095,'#d5e3bd');
+ block(.366,.075,.268,.043,'#7a9a72');
+ for(let i=0;i<6;i++){const px=.37+i*.045;c.fillStyle=i%2?'#486a51':'#628660';c.beginPath();c.moveTo(X(px),Y(.104));c.lineTo(X(px+.021),Y(.046+(i%3)*.008));c.lineTo(X(px+.043),Y(.104));c.fill();}
+ block(.493,.023,.012,.095,'#68452e');block(.366,.062,.268,.009,'#68452e');block(.34,.119,.32,.011,'#d1a16a');
+ // Wall recipe ledger; actual button opens existing recipe book.
+ block(.715,.023,.22,.107,'#493126');block(.73,.033,.19,.087,'#ceaf79');
+ for(let i=0;i<4;i++)block(.75,.047+i*.015,.145-(i%2)*.035,.003,'#77583a');
+ // Canvas gradients create sunlight without laying a tint over real actors.
+ c.save();c.beginPath();c.moveTo(X(.38),Y(.15));c.lineTo(X(.61),Y(.15));c.lineTo(X(.89),Y(.83));c.lineTo(X(.48),Y(.83));c.closePath();c.clip();
+ const sun=c.createLinearGradient(0,Y(.15),0,Y(.83));sun.addColorStop(0,'#ffe6a345');sun.addColorStop(1,'#ffe6a300');c.fillStyle=sun;c.fillRect(0,0,w,h);c.restore();
+ // Border shadows and a woven entry runner, outside furniture collision geometry.
+ block(0,.16,.026,.84,'#3c2d27a0');block(.974,.16,.026,.84,'#3c2d27a0');
+ block(.413,.795,.174,.057,'#55473a');block(.422,.799,.156,.049,'#8b5140');
+ for(let k=0;k<5;k++)block(.432+k*.028,.801,.008,.045,'#c6a16a');
+ c.restore();
+}
+
 function drawRestaurantV075(c,s,t,w,h){
  const g=dinerFloor(s),v=s.service,x=f=>f*w,y=f=>f*h;
  const rr=(X,Y,W,H,R,color,stroke)=>{
@@ -9541,16 +9613,16 @@ function drawRestaurantV075(c,s,t,w,h){
   if(stroke){c.strokeStyle=stroke;c.lineWidth=2;c.stroke();}
  };
  const cloud=s.activeWorld==='cloud';
- if(cloud){drawCloudRestaurantBackdrop(c,t,w,h);drawCloudPortProps(c,t,w,h);}else rect(c,0,0,w,h,'#6f513b');
+ if(cloud){drawCloudRestaurantBackdrop(c,t,w,h);drawCloudPortProps(c,t,w,h);}else if(s.phase==='forecast'&&!v){drawLivingHearthA1(c,w,h);}else rect(c,0,0,w,h,'#6f513b');
  // Rich warm tile floor: one drawable scene rather than HTML furniture overlay.
- for(let row=0;!cloud&&row<Math.ceil(h/28);row++){
+ for(let row=0;!cloud&&!(s.phase==='forecast'&&!v)&&row<Math.ceil(h/28);row++){
   rect(c,0,row*28,w,27,row%2?'#796045':'#72563e');
   line(c,0,row*28,w,row*28,'#4b382ca0',1);
   for(let column=0;column<Math.ceil(w/36);column++)
     line(c,column*36+(row%2)*18,row*28,column*36+(row%2)*18,row*28+27,'#9d775022',1);
  }
  // Shrink the redundant upper wall; the game HUD already displays the name.
- if(!cloud)rect(c,0,0,w,h*.145,'#304f3e');rect(c,0,h*.145-7,w,8,cloud?'#e2d6aa':'#b88c5c');
+ if(!cloud&&!(s.phase==='forecast'&&!v))rect(c,0,0,w,h*.145,'#304f3e');if(cloud||s.phase!=='forecast'||v)rect(c,0,h*.145-7,w,8,cloud?'#e2d6aa':'#b88c5c');
  // v0.15-F: obsolete saturated wall posts were mistaken for controls; remove them from both chapters.
  // The two active stoves are deliberately compact; the centre is reserved for
  // a later third production slot. No area names are printed on screen.
@@ -10061,6 +10133,28 @@ function forecast(){
  const bentoReady=game.bento?.day===game.cycle+'-'+game.day;
  const title=firstChallenge(game)?'爆炎厨王踢馆':plan.pressure;
  const brief=firstChallenge(game)?'评委会关注辛辣与爆香。':'达成目标，积累食堂口碑。';
+ if(activeWorld(game)!=='cloud'){
+  const milestone=starInvite()+portalPanel();
+  return [`
+   <div class="v076-home v016-home">
+    <section class="v016-notice" aria-label="今日营业目标">
+     <div><strong>${esc(title)}</strong><span> · ${esc(plan.goal.label)}</span></div>
+     <small>预计 ${plan.count} 位客人 · 食材 ${stock} 份</small>
+    </section>
+    <section class="v076-preview v016-scene" aria-label="边境食堂 · 点击场景中的物件">
+     ${restaurantView(false)}
+     <div class="v076-home-shortcuts v016-world-actions" aria-label="场景互动">
+      <button type="button" class="v016-stock" data-act="stock" aria-label="打开食材柜和采购">食材柜</button>
+      <button type="button" class="v016-book" data-act="book" aria-label="翻开料理图鉴">料理笔记</button>
+      <button type="button" class="v016-bento" data-act="bento">便当${bentoReady?' ✓':''}</button>
+      <button type="button" class="v016-crew" data-act="crew">伙伴</button>
+      <button type="button" class="v076-home-primary v016-door" data-act="to-field">出门取材 <span aria-hidden="true">↗</span></button>
+     </div>
+    </section>
+    ${milestone?'<div class="v016-milestone">'+milestone+'</div>':''}
+    <div class="v016-foot"><span>边境食堂 · 开店前</span><span>点击场景物件互动</span></div>
+   </div>`,'' ];
+ }
  return [`
  <div class="v076-home">
   <section class="v076-mission" aria-label="今日营业目标">
