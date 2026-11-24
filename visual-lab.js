@@ -1,6 +1,8 @@
+import {paintChefV3,VARIANTS} from './src/chef_v3_lab.js?v=x3';
 import {pixelActor} from './src/pixels_v041.js';
 const view=document.querySelector('#view'),canvas=document.querySelector('#art'),ctx=canvas.getContext('2d'),msg=document.querySelector('#message'),fps=document.querySelector('#fps');
-const S={night:false,mode:'hd',hero:{x:5,z:6.1},target:{x:5,z:6.1},moving:false,hd2:true,newHero:true,facing:'front'};
+const initialChef=new URLSearchParams(location.search).get('character');
+const S={night:false,mode:'hd',hero:{x:5,z:6.1},target:{x:5,z:6.1},moving:false,hd2:true,newHero:true,facing:'front',chefV3:Object.hasOwn(VARIANTS,initialChef)?initialChef:null};
 const room={tables:[{x:2.65,z:7.6},{x:7.35,z:7.6}],stoves:[{x:2.8,z:2.05,type:'wok'},{x:7.2,z:2.05,type:'pot'}],counter:[{x:2.5,z:4.1},{x:7.5,z:4.1}],shelf:{x:1.15,z:.75}};
 const clamp=(n,l,h)=>Math.max(l,Math.min(h,n));
 let last=0,frames=0,stat=0,renderer=null,loading=null,revision=0;
@@ -128,6 +130,7 @@ function drawChefSprite(t){
  sr(6,6,20,5,'hatMid');sr(8,4,6,6,'hat');sr(12,2,8,8,'hat');sr(21,4,4,6,'hat');sr(7,7,17,3,'hat');sr(8,5,3,3,'shine');sr(13,3,4,4,'shine');sr(18,6,2,4,'hatMid');sr(23,6,2,3,'hatMid');sr(7,10,18,3,'hatMid');sr(8,10,16,1,'shine');sr(8,12,16,1,'hatDark');
 }
 function actor(c,t){let {x,z}=S.hero,px=X(x),py=Y(z);shadow(c,x,z,19,7);
+ if(S.chefV3){paintChefV3(c,S.chefV3,S.facing,S.moving?'walk':'idle',Math.floor(t*(S.moving?9:2)),px,py,1.85);return;}
  if(!S.newHero){pixelActor(c,'chef',px,py-19,1.65,{face:S.facing==='left'?-1:1,walk:S.moving?t:0});return;}
  drawChefSprite(t);
  c.save();c.imageSmoothingEnabled=false;const sc=1.5;c.translate(Math.round(px),Math.round(py));if(S.facing==='left')c.scale(-1,1);c.drawImage(heroCanvas,-16*sc,-43*sc,32*sc,44*sc);c.restore();
@@ -177,8 +180,9 @@ async function switchMode(mode){const token=++revision;S.mode=mode;document.quer
 document.querySelector('#hd-options').hidden=mode!=='hd';if(mode==='hd')return;try{if(!renderer){msg.textContent='加载 Three.js…';loading??=createThree();renderer=await loading;}if(token!==revision){renderer.element.hidden=S.mode==='hd';return;}renderer.element.hidden=false;msg.textContent='';}catch(e){loading=null;if(token===revision){await switchMode('hd');msg.textContent='3D 加载失败，已回到 Canvas HD：'+e.message;}}}
 document.querySelectorAll('[data-mode]').forEach(b=>b.addEventListener('click',()=>switchMode(b.dataset.mode)));
 document.querySelector('#hd-version').addEventListener('click',e=>{S.hd2=!S.hd2;e.currentTarget.textContent=S.hd2?'环境 V2':'环境 V1';e.currentTarget.setAttribute('aria-pressed',String(S.hd2));});
-document.querySelector('#sprite-version').addEventListener('click',e=>{S.newHero=!S.newHero;e.currentTarget.textContent=S.newHero?'角色 V2':'原版角色';e.currentTarget.setAttribute('aria-pressed',String(S.newHero));});
+document.querySelector('#sprite-version').addEventListener('click',e=>{if(S.chefV3){S.chefV3=null;S.newHero=true;}else S.newHero=!S.newHero;e.currentTarget.textContent=S.newHero?'角色 V2':'原版角色';e.currentTarget.setAttribute('aria-pressed',String(S.newHero));});
 document.querySelector('#night').addEventListener('click',e=>{S.night=!S.night;e.currentTarget.textContent=S.night?'☾ 夜晚':'☀ 白天';e.currentTarget.setAttribute('aria-pressed',String(S.night));});
 canvas.addEventListener('pointerdown',e=>{const b=canvas.getBoundingClientRect();setTarget(((e.clientX-b.left)/b.width*W-A)/U,((e.clientY-b.top)/b.height*H-B)/V);});
 function frame(ms){const t=ms/1000,dt=Math.min(.05,(ms-(last||ms))/1000);last=ms;move(dt);if(S.mode==='hd')drawHD(t);else if(renderer)renderer.draw(t);frames++;if(ms-stat>1000){fps.textContent=Math.round(frames*1000/(ms-stat))+' FPS';frames=0;stat=ms;}requestAnimationFrame(frame);}
 requestAnimationFrame(frame);
+if(S.chefV3){document.querySelector('#sprite-version').textContent='角色 V3-'+S.chefV3;}
