@@ -1,4 +1,5 @@
-import {roundedFactory,makeChefY1} from './src/three_y1_models.js?v=y1';
+import {roundedFactory} from './src/three_y1_models.js?v=y1';
+import {makeChefY2} from './src/three_y2b_chef.js?v=y2b';
 import {paintChefV3,VARIANTS} from './src/chef_v3_lab.js?v=x3';
 import {pixelActor} from './src/pixels_v041.js';
 const view=document.querySelector('#view'),canvas=document.querySelector('#art'),ctx=canvas.getContext('2d'),msg=document.querySelector('#message'),fps=document.querySelector('#fps');
@@ -171,7 +172,7 @@ const flames=[],lights=[];
 const fire=mat('#e68735');fire.emissive.set('#ff802b');fire.emissiveIntensity=2.5;
 for(const o of room.stoves){let {x,z,type}=o;soft3(x,.3,z,1.48,.6,1.04,stone,.07);box3(x,.24,z+.53,.65,.28,.055,dark);box3(x,.64,z,1.6,.12,1.16,mortar);cyl(x,.77,z,.48,.48,.16,iron);if(type==='pot'){cyl(x,1.08,z,.42,.39,.50,iron);cyl(x,1.35,z,.45,.45,.08,brass);ball(x,1.41,z,.07,.06,.07,dark);for(const q of [-1,1])box3(x+q*.47,1.1,z,.16,.10,.18,brass)}else{const bowl=mesh(new T.LatheGeometry([new T.Vector2(.04,0),new T.Vector2(.22,.04),new T.Vector2(.40,.18),new T.Vector2(.48,.28)],28),new T.MeshStandardMaterial({color:'#455e59',side:T.DoubleSide,metalness:.4,roughness:.5}),x,.87,z);box3(x+.61,1.13,z,.37,.08,.08,dark);for(let i=0;i<7;i++)ball(x+Math.cos(i*2.4)*.22,1.03,z+Math.sin(i*2.4)*.22,.075,.05,.07,[red,green,brass][i%3]);}for(let i=0;i<3;i++)flames.push(ball(x+(i-1)*.16,.22,z+.56,.10,.09,.06,fire));const l=new T.PointLight('#ffad55',3,3,1.7);l.position.set(x,.7,z+.6);scene.add(l);lights.push(l);}
 const sx=room.shelf.x,sz=room.shelf.z;box3(sx,1.1,sz,1.65,2.2,.5,dark);for(let j=0;j<3;j++){box3(sx,.68+j*.52,sz+.04,1.59,.08,.57,woodTop);for(let i=0;i<5;i++){let x=sx-.63+i*.31;cyl(x,.83+j*.52,sz+.1,.10,.12,.23,[red,green,brass][(i+j)%3]);cyl(x,.96+j*.52,sz+.1,.09,.09,.045,cream);}}
-const chef=makeChefY1(T,rounded),hero=chef.root;scene.add(hero);
+const chef=makeChefY2(T,rounded),hero=chef.root;scene.add(hero);
 for(const x of [2.8,7.2]){mesh(new T.CylinderGeometry(.38,.72,.36,32),iron,x,2.10,1.5);cyl(x,2.65,1.5,.14,.14,.82,iron);cyl(x,1.91,1.5,.73,.73,.065,brass);}
 for(const x of [3.2,6.8]){soft3(x,1.65,.18,.16,2.9,.33,wood,.035);for(const y of [.35,2.72])ball(x,y,.37,.045,.045,.028,brass);}
 for(const x of [1.25,8.75]){soft3(x,1.37,.28,1.35,.11,.52,woodTop,.03);for(let i=0;i<3;i++){const xx=x-.40+i*.39;cyl(xx,1.58,.31,.11,.14,.28,[red,green,brass][i]);cyl(xx,1.735,.31,.105,.105,.045,cream);}}
