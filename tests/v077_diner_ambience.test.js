@@ -76,7 +76,7 @@ test('official new canvas paints bounded speech and hides duplicate head icons',
  assert.match(scene,/const speaking=new Set\(visibleSpeech\.map\(q=>q\.id\)\)/);
  assert.match(scene,/if\(!speaking\.has\(o\.id\)/);
  assert.match(scene,/Plates remain on the ACTUAL table/i);
- assert.match(scene,/if\(v\?\.walkable\|\|!v\)\{drawRestaurantV075\(c,s,t,w,h\);return;\}/);
+ assert.match(scene,/if\(v\?\.walkable\|\|!v\)\{\s*const y2=globalThis\.__oddpotY2Renderer;\s*if\(y2&&y2\.draw\(canvas,s,t,w,h,restaurantActorsV075\)\)return;\s*drawRestaurantV075\(c,s,t,w,h\);return;\s*\}/);
 });
 test('speech calculations do not mutate real inventory, orders, money or service clock',()=>{
  const s=newGame();s.phase='service';createService(s,{walkable:true});setServicePaused(s,false);tick(s,1);

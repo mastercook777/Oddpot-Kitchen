@@ -82,7 +82,7 @@ test('the same existing Canvas restaurant is displayed without inventing a secon
  assert.match(forecast,/restaurantView\(false\)/);
  assert.match(app,/if\(v\?\.walkable\|\|!v\)return/);
  const sc=source('../src/scenes_v04.js');
- assert.match(sc,/if\(v\?\.walkable\|\|!v\)\{drawRestaurantV075\(c,s,t,w,h\);return;\}/);
+ assert.match(sc,/if\(v\?\.walkable\|\|!v\)\{\s*const y2=globalThis\.__oddpotY2Renderer;\s*if\(y2&&y2\.draw\(canvas,s,t,w,h,restaurantActorsV075\)\)return;\s*drawRestaurantV075\(c,s,t,w,h\);return;\s*\}/);
 });
 test('app and stylesheet scripts parse without syntax errors',()=>{
  const p=spawnSync(process.execPath,['--check',new URL('../src/app.js',import.meta.url).pathname],{encoding:'utf8'});
