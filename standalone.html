@@ -10905,6 +10905,7 @@ function frame(now){const delta=Math.min(.045,(now-(lastFrame||now))/1000);lastF
  const notice=app.querySelector('#ingame-notice');if(notice&&now>flashUntil)notice.hidden=true;
  const forest=app.querySelector('#forest-canvas');if(forest)drawField(forest,game,gameClock);else globalThis.__oddpotY3Renderer?.leave();
  const diner=app.querySelector('#diner-canvas');if(diner)drawDiner(diner,game,gameClock,restaurantSimTime(now));
+ const research3d=globalThis.__oddpotY4bRenderer;if(research3d){const preview=game.phase==='research'&&game.cook?(game.cook.mode==='v014c-grill'?grillCookPreview(game):game.cook.mode==='v063-live'?liveCookPreview(game):null):null;research3d.draw(app,game,preview,now);}
  if(now-lastSave>1400&&(game.phase==='field'||['v063-live','v014c-grill'].includes(game.cook?.mode)||game.phase==='service'&&game.service?.walkable)){save(game);lastSave=now}
  requestAnimationFrame(frame);
 }
