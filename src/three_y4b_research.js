@@ -88,7 +88,7 @@ function makeWorkbench(T){
   else{ball(root,base,0,.115,0,.17,.13,.15);if(id==='onion')ball(root,base,0,.24,0,.055,.075,.055);}
   const v={root,base,raw};foodPool.set(id,v);return v;}
  const warm=new T.Color('#a76b35'),burn=new T.Color('#3d2d26');let host=null,hostStyle=null,hint=null,lastW=0,lastH=0,lastAt=-Infinity,lastReceipt=null,revealAt=0;
- function detach(){if(host){host.style.position=hostStyle.position;host.style.minHeight=hostStyle.minHeight;host.style.color=hostStyle.color;host.removeAttribute('data-y4b-active');}hint?.remove();hint=null;canvas.remove();host=null;}
+ function detach(){if(host){host.style.position=hostStyle.position;host.style.minHeight=hostStyle.minHeight;host.style.color=hostStyle.color;host.removeAttribute('data-y4b-active');for(const child of host.children)if(child.dataset.y4bHidden==='1'){child.style.visibility=child.dataset.y4bOldVisibility||'';delete child.dataset.y4bHidden;delete child.dataset.y4bOldVisibility;}}hint?.remove();hint=null;canvas.remove();host=null;}
  function attach(next,receipt){if(host===next)return;detach();host=next;hostStyle={position:host.style.position,minHeight:host.style.minHeight,color:host.style.color};host.style.position='relative';if(receipt){host.style.minHeight='92px';}host.append(canvas);if(!receipt){hint=document.createElement('span');hint.setAttribute('aria-hidden','true');Object.assign(hint.style,{position:'absolute',bottom:'8px',left:'0',right:'0',textAlign:'center',font:'600 12px system-ui',color:'#fff0cf',textShadow:'0 1px 3px #000',zIndex:'10',pointerEvents:'none'});host.append(hint);}}
  return {draw(next,f,r,receiptKey,now){
   const changed=host!==next;attach(next,!!r);if(!changed&&now-lastAt<30)return;if(!changed&&r&&lastReceipt===receiptKey&&now-revealAt>900&&lastAt-revealAt>850&&next.clientWidth===lastW&&next.clientHeight===lastH)return;lastAt=now;
@@ -106,6 +106,6 @@ function makeWorkbench(T){
    const height=r?.24:f.type==='POT'?.36+.17*f.reduction:f.type==='STEAM'?.56:f.type==='GRILL'?.06:.14;
    o.root.position.set(f?.type==='GRILL'?v.x:r?.type==='GRILL'?(i-((r.items.length-1)/2))*.62:v.x,height+v.y,f?.type==='GRILL'||r?.type==='GRILL'?0:v.z);
    o.root.rotation.set(v.rot||0,0,0);o.base.color.copy(o.raw).lerp(v.tone==='bad'?burn:warm,v.tone==='bad'?.86:v.tone==='good'?.26:v.tone==='warning'?.53:0);}
-  renderer.render(scene,camera);if(r)host.style.color='transparent';host.dataset.y4bActive='1';
+  renderer.render(scene,camera);if(r)host.style.color='transparent';else for(const child of host.children)if(child!==canvas&&child!==hint&&child.dataset.y4bHidden!=='1'){child.dataset.y4bOldVisibility=child.style.visibility;child.dataset.y4bHidden='1';child.style.visibility='hidden';}host.dataset.y4bActive='1';
  },dispose(){disposed=true;detach();for(const g of geos)g.dispose();for(const m of mats)m.dispose();renderer.dispose();renderer.forceContextLoss();}};
 }

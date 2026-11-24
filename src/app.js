@@ -749,7 +749,7 @@ function frame(now){const delta=Math.min(.045,(now-(lastFrame||now))/1000);lastF
      if(label)label.textContent=summary.label;if(detail)detail.textContent=summary.details;
    }
    const pan=app.querySelector('.v063-live-pan');
-   if(pan){
+   if(pan&&!pan.dataset.y4bActive){
      const motion=livePanMotion(c,{width:pan.clientWidth||310,height:pan.clientHeight||180});
      const bowl=pan.querySelector('.v063-bowl');
      if(bowl)bowl.style.transform='translate(-50%,-50%) translateY('+motion.panLift.toFixed(1)+'px) rotate('+motion.panRotation.toFixed(1)+'deg)';
