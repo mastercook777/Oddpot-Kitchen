@@ -7,7 +7,7 @@ const server=spawn('python3',['-m','http.server','5179'],{stdio:'ignore'});
 let browser;
 try{
  for(let i=0;i<50;i++){try{if((await fetch('http://127.0.0.1:5179/visual-lab.html')).ok)break;}catch{}await new Promise(r=>setTimeout(r,100))}
- browser=await chromium.launch({headless:true,args:['--no-sandbox','--enable-unsafe-swiftshader']});
+ browser=await chromium.launch({headless:true,executablePath:process.env.CHROME_PATH||'/usr/bin/google-chrome',args:['--no-sandbox','--enable-unsafe-swiftshader']});
  for(const width of [320,375,390]){
   const p=await browser.newPage({viewport:{width,height:844},isMobile:true,hasTouch:true});
   const errors=[];p.on('pageerror',e=>errors.push(e.message));
@@ -16,7 +16,13 @@ try{
   const canvas=p.locator('#art');
   assert.ok(await canvas.isVisible());
   assert.ok(await canvas.evaluate(c=>c.width>0&&c.getContext('2d').getImageData(Math.floor(c.width/2),Math.floor(c.height/2),1,1).data[3]===255));
-  await p.screenshot({path:dir+'/hd-'+width+'.png'});
+  await p.screenshot({path:dir+'/hd-v2-'+width+'.png'});
+  assert.equal(await p.locator('[data-mode="pixel"]').count(),0);
+  await p.locator('#hd-version').click();await p.locator('#sprite-version').click();await p.waitForTimeout(150);
+  assert.equal(await p.locator('#hd-version').getAttribute('aria-pressed'),'false');
+  assert.equal(await p.locator('#sprite-version').getAttribute('aria-pressed'),'false');
+  await p.screenshot({path:dir+'/hd-v1-original-'+width+'.png'});
+  await p.locator('#hd-version').click();await p.locator('#sprite-version').click();
   await p.locator('#night').click();await p.waitForTimeout(150);
   await p.screenshot({path:dir+'/night-'+width+'.png'});
   assert.equal(await p.locator('#night').getAttribute('aria-pressed'),'true');

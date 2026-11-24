@@ -1,11 +1,12 @@
+import {pixelActor} from './src/pixels_v041.js';
 const view=document.querySelector('#view'),canvas=document.querySelector('#art'),ctx=canvas.getContext('2d'),msg=document.querySelector('#message'),fps=document.querySelector('#fps');
-const S={night:false,mode:'hd',hero:{x:5,z:6.1},target:{x:5,z:6.1},moving:false};
+const S={night:false,mode:'hd',hero:{x:5,z:6.1},target:{x:5,z:6.1},moving:false,hd2:true,newHero:true,facing:'front'};
 const room={tables:[{x:2.65,z:7.6},{x:7.35,z:7.6}],stoves:[{x:2.8,z:2.05,type:'wok'},{x:7.2,z:2.05,type:'pot'}],counter:[{x:2.5,z:4.1},{x:7.5,z:4.1}],shelf:{x:1.15,z:.75}};
 const clamp=(n,l,h)=>Math.max(l,Math.min(h,n));
 let last=0,frames=0,stat=0,renderer=null,loading=null,revision=0;
 function blocked(x,z){return x<.55||x>9.45||z<.65||z>9.65||room.tables.some(o=>Math.abs(x-o.x)<1.04&&Math.abs(z-o.z)<.65)||room.stoves.some(o=>Math.abs(x-o.x)<.8&&Math.abs(z-o.z)<.65)||room.counter.some(o=>Math.abs(x-o.x)<1.75&&Math.abs(z-o.z)<.39)||x<2.25&&z<1.3;}
 function setTarget(x,z){x=clamp(x,.6,9.4);z=clamp(z,.7,9.6);if(!blocked(x,z))S.target={x,z};}
-function move(dt){const h=S.hero,dx=S.target.x-h.x,dz=S.target.z-h.z,d=Math.hypot(dx,dz),step=Math.min(d,dt*3.2);S.moving=d>.04;if(!S.moving)return;const nx=h.x+dx/d*step,nz=h.z+dz/d*step;if(!blocked(nx,nz)){h.x=nx;h.z=nz;}else if(!blocked(nx,h.z)){h.x=nx;}else if(!blocked(h.x,nz)){h.z=nz;}else{S.target={...h};S.moving=false;}}
+function move(dt){const h=S.hero,dx=S.target.x-h.x,dz=S.target.z-h.z,d=Math.hypot(dx,dz),step=Math.min(d,dt*3.2);S.moving=d>.04;if(!S.moving)return;S.facing=Math.abs(dx)>Math.abs(dz)*.85?(dx<0?'left':'right'):(dz<0?'back':'front');const nx=h.x+dx/d*step,nz=h.z+dz/d*step;if(!blocked(nx,nz)){h.x=nx;h.z=nz;}else if(!blocked(nx,h.z)){h.x=nx;}else if(!blocked(h.x,nz)){h.z=nz;}else{S.target={...h};S.moving=false;}}
 // Original vector/painted Canvas scene, authored in a single consistent projection.
 // Ground plane: x→screen x, z→screen y, height rises vertically.
 const W=600,H=720,U=52,V=40,A=48,B=220;
@@ -30,8 +31,51 @@ function jar(c,x,y,k){let color=['#b97040','#63805d','#c39a50','#954d42'][k%4];r
 function pantry(c){const x=X(1.15),y=Y(.75);shadow(c,1.15,.75,53,13);round(c,x-47,y-112,94,112,3,'#513b32','#322825');rect(c,x-42,y-107,84,77,'#66503a');for(let row=0;row<3;row++){const yy=y-80+row*24;beam(c,x-44,yy,88,5);for(let j=0;j<5;j++)jar(c,x-32+j*16,yy-1,row+j)}for(let i=0;i<2;i++){rect(c,x-40+i*40,y-25,37,22,'#a37147');rect(c,x-37+i*40,y-22,31,16,'#92603b');ellipse(c,x-11+i*19,y-13,2,2,'#e6bc79');}beam(c,x-47,y-112,94,6);beam(c,x-47,y-112,5,112);beam(c,x+42,y-112,5,112)}
 function lantern(c,x,y,t){const pulse=1+.045*Math.sin(t*6+x);const g=c.createRadialGradient(x,y,4,x,y,45*pulse);g.addColorStop(0,'#ffd78b55');g.addColorStop(1,'#ffc06900');ellipse(c,x,y,45*pulse,45*pulse,g);line(c,x,y-22,x,y-13,'#3a302b',3);round(c,x-8,y-12,16,23,2,'#563c2b');round(c,x-5,y-9,10,17,2,gradient(c,x,y-9,0,17,'#fff3b9','#d68640'));for(let k of [-5,5])line(c,x+k,y-10,x+k,y+9,'#986030',2);poly(c,[[x-10,y-12],[x,y-17],[x+10,y-12]],'#ad8554','#48362c');rect(c,x-9,y+9,18,4,'#6e4c32')}
 function carpet(c,x,z,w,d){let xx=X(x-w/2),yy=Y(z-d/2),ww=w*U,hh=d*V;round(c,xx,yy,ww,hh,3,'#684c40');rect(c,xx+4,yy+4,ww-8,hh-8,'#bba36d');rect(c,xx+7,yy+7,ww-14,hh-14,'#456c64');rect(c,xx+12,yy+12,ww-24,hh-24,'#577c6e');for(let k=0;k<3;k++){let a=xx+ww*(k+1)/4,b=yy+hh/2;poly(c,[[a,b-9],[a+7,b],[a,b+9],[a-7,b]],'#d2b57b')}for(let j=0;j<ww/6;j++){line(c,xx+j*6,yy,xx+j*6,yy-3,'#c9ad79');line(c,xx+j*6,yy+hh,xx+j*6,yy+hh+3,'#c9ad79')}}
-let bg=null,bgNight=null;
-function background(c){if(!bg||bgNight!==S.night){bg=document.createElement('canvas');bg.width=W;bg.height=H;const g=bg.getContext('2d');bgNight=S.night;
+// V2 architectural and material pass. Draw on static background cache, not over actors.
+function hd2Architecture(g){
+ const left=A,right=X(10),back=B,front=Y(10);
+ // Side masonry is a real cutaway edge; capped plinth, shadow line and end pillars.
+ for(const xx of [left-16,right+3]){
+  rect(g,xx,back-14,13,front-back+19,'#594c42');
+  for(let j=0;j<15;j++){const yy=back+j*27;round(g,xx+1,yy+1,11,25,2,['#9b8c7b','#83786b','#74685f'][j%3]);line(g,xx+2,yy+2,xx+11,yy+2,'#c7b49a77');}
+  beam(g,xx-2,back-17,17,7);beam(g,xx-2,front-7,17,10);
+ }
+ for(const x of [left+8,right-24]){
+  beam(g,x,back-155,16,151);rect(g,x-3,back-12,22,8,'#51362a');rect(g,x-3,back-14,22,2,'#cf9b65');
+  for(const y of [back-142,back-72,back-22]){ellipse(g,x+8,y,3,3,'#4b3529');ellipse(g,x+7,y-1,1,1,'#d9ad6a');}
+ }
+ // Window sill, beveled interior frame and brass latches.
+ const wx=X(4.15),wy=B-141,ww=84,wh=106;
+ line(g,wx-4,wy+ww/2,wx-4,wy+wh,'#c49364',2);
+ line(g,wx+ww+4,wy+ww/2,wx+ww+4,wy+wh,'#47362e',3);
+ round(g,wx+ww/2-5,wy+wh*.62-4,10,8,2,'#b69459','#5b4533');
+ // Wall-mounted brass rail, hanging utensils and herb bunches.
+ let hx=X(7.4),hy=B-113;beam(g,hx-55,hy-3,109,8);
+ for(let j=0;j<4;j++){let x=hx-39+j*23;line(g,x,hy+5,x,hy+25,'#c1a878',2);if(j%2)ellipse(g,x,hy+29,6,9,'#6b7775');else{ellipse(g,x,hy+29,9,10,'#434c4b');ellipse(g,x-1,hy+28,6,7,'#7d8a80');}}
+ for(let j=0;j<3;j++){let x=X(3.3)+j*12;line(g,x,B-103,x,B-84,'#a48e57',1.4);for(let k=0;k<4;k++){ellipse(g,x+(k%2?4:-4),B-99+k*5,4,7,['#5e7854','#82985b','#66754c'][j]);}}
+ // Joinery and nails on actual floor planks, not random image noise.
+ for(let j=0;j<15;j++){let y=B+3.52*V+j*18;if(y>front-6)break;for(let i=0;i<6;i++){let x=left+15+i*82+(j%2)*20;if(x<right-6){ellipse(g,x,y,1,1,'#664b36');ellipse(g,x+3,y,1,1,'#d49d64');}}}
+ // Entry threshold and carved front beam.
+ for(const x of [X(4.1)-8,X(5.9)+2]){round(g,x,front-12,10,18,2,'#77685b','#483a30');rect(g,x-2,front-15,14,4,'#b9a184');}
+ line(g,X(4.1),front+12,X(5.9),front+12,'#d1b793',2);
+}
+function hd2Details(c){
+ // Ceiling hoods visually connect the real stoves to the back wall. No fake new workstations.
+ for(const o of room.stoves){let x=X(o.x),y=Y(o.z)-84;round(c,x-9,B-75,18,Math.max(12,y-(B-75)),3,gradient(c,x-9,y,18,0,'#79817a','#414b49'),'#343b39');poly(c,[[x-11,y-12],[x+11,y-12],[x+31,y+13],[x-31,y+13]],gradient(c,x-31,y,62,0,'#777f75','#394542'),'#3d403b');line(c,x-29,y+12,x+29,y+12,'#c3a36f',3);for(const xx of [x-20,x,x+20])ellipse(c,xx,y+10,1.6,1.6,'#d6b783');}
+}
+function hd2Furniture(c,o,kind){const x=X(o.x),y=Y(o.z);
+ if(kind==='table'){// stitched edge, ceramic bowl and carved tabletop corner pins
+  const top=y-.83*U;
+  for(const dx of [-33,33])for(const dy of [-13,13])ellipse(c,x+dx,top+dy,1.8,1.5,'#d8ac74');
+  for(let i=0;i<5;i++){line(c,x-8,top-16+i*7,x-6,top-16+i*7,'#c9bc82',1);line(c,x+6,top-16+i*7,x+8,top-16+i*7,'#c9bc82',1);}
+  ellipse(c,x,top-3,8,4,'#f0dab4');ellipse(c,x,top-4,5,2.6,'#92794f');
+ }else if(kind==='counter'){for(let j=0;j<3;j++){let xx=x-57+j*57;line(c,xx-21,y-30,xx+19,y-30,'#bd8b5d88');line(c,xx-21,y-30,xx-21,y-11,'#c69b6b55');}
+  for(let j=0;j<3;j++)ellipse(c,x+46,y-.94*U-j*3,9,2.3,'#a99c81');
+ }else if(kind==='stove'){line(c,x-29,y-14,x+29,y-14,'#d1bca3aa',1.5);for(const dx of [-23,23])ellipse(c,x+dx,y+4,2,2,'#c0a784');}
+}
+
+let bg=null,bgNight=null,bgHD2=null;
+function background(c){if(!bg||bgNight!==S.night||bgHD2!==S.hd2){bg=document.createElement('canvas');bg.width=W;bg.height=H;const g=bg.getContext('2d');bgNight=S.night;bgHD2=S.hd2;
 rect(g,0,0,W,H,gradient(g,0,0,0,H,'#20282c','#34302d'));
 shadow(g,5,9.7,254,35,.65);
 rect(g,A-9,B-166,10*U+18,166,'#4b4039');
@@ -46,6 +90,7 @@ if(!S.night){g.save();g.beginPath();g.moveTo(X(4.15),B);g.lineTo(X(5.76),B);g.li
 rect(g,A-9,Y(10),10*U+18,12,'#4c3a32');for(let j=0;j<11;j++)stone(g,A-9+j*49,Y(10)+10,49,14,j);
 for(const [a,b] of [[0,4.1],[5.9,10]]){beam(g,X(a),Y(10)-5,(b-a)*U,10)}
 for(let j=0;j<3;j++)stone(g,X(4.1)-2,Y(10)+j*9,1.8*U+4,11,j);
+if(S.hd2)hd2Architecture(g);
 }c.drawImage(bg,0,0);}
 function pot(c,x,y,r){ellipse(c,x,y+10,r+5,9,'#302d2d');round(c,x-r,y-16,r*2,31,8,gradient(c,x-r,y,r*2,0,'#8b9d96','#3f5554'),C.ink);ellipse(c,x,y-16,r,7,'#a6b4a6');ellipse(c,x,y-17,r-3,5,'#617b73');round(c,x-4,y-25,8,6,2,'#c4a479');for(const s of [-1,1]){round(c,x+s*r-4,y-9,8,9,2,'#a48d68',C.ink)}line(c,x-r+5,y-9,x-r+5,y+5,'#d3dbc080',2)}
 function stove(c,o,t){let {x,z,type}=o,px=X(x),py=Y(z);shadow(c,x,z,57,18);box(c,x,z,1.48,1.04,.57,'#a79a87','#6b6057','#504842');for(let k=0;k<4;k++)stone(c,px-35+k*18,py-9,18,13,k);round(c,px-18,py-3,36,16,4,'#342b27');let pulse=.5+.5*Math.sin(t*8);ellipse(c,px,py+4,14,6,'#d05b32');ellipse(c,px-3,py+3,7+pulse*3,4,'#f0a94d');ellipse(c,px-3,py+2,3,3,'#fff1a4');
@@ -54,9 +99,41 @@ for(let j=0;j<4;j++){let age=(t*.55+j*.25)%1;ellipse(c,px+Math.sin(age*6+j)*7,yy
 function chair(c,x,z){shadow(c,x,z,17,7);for(const k of [-.19,.19])woodBox(c,x+k,z,.08,.35,.29);woodBox(c,x,z,.48,.45,.09,.28);box(c,x,z,.39,.34,.045,'#6b8370','#3e6158','#42594e',.37)}
 function table(c,o){let {x,z}=o;shadow(c,x,z,61,20);for(const sign of [-1,1])chair(c,x+sign*1.13,z+.12);for(const dx of [-.53,.53])for(const dz of [-.33,.33])woodBox(c,x+dx,z+dz,.13,.13,.69);let q=woodBox(c,x,z,1.55,1.04,.14,.69);const [l,y]=q.a,[r,bt]=q.e;rect(c,l+3,y+3,r-l-6,2,'#e5b57e');for(let j=1;j<4;j++)line(c,l+3,y+(bt-y)*j/4,r-3,y+(bt-y)*j/4,'#91613c');let mx=X(x),my=Y(z)-.83*U;rect(c,mx-10,y+1,20,bt-y+9,'#416f68');rect(c,mx-8,y+1,2,bt-y+9,'#c5ae77');rect(c,mx+6,y+1,2,bt-y+9,'#c5ae77');ellipse(c,mx,my-2,8,5,'#edcf96');ellipse(c,mx,my-3,5,3,'#6c8c68');}
 function counter(c,o){let {x,z}=o;shadow(c,x,z,99,17);const q=woodBox(c,x,z,3.42,.65,.84);let [l,y]=q.f,[r,b]=q.g;for(let i=0;i<3;i++){let xx=l+6+i*(r-l-12)/3,ww=(r-l-12)/3-4;round(c,xx,y+5,ww,b-y-11,2,'#7d5035','#583c2e');rect(c,xx+4,y+9,ww-8,b-y-19,'#9b6842');ellipse(c,xx+ww-7,y+15,2,2,'#e0b57a');}woodBox(c,x,z,3.52,.72,.10,.84);for(let k=0;k<3;k++)jar(c,X(x)-52+k*15,Y(z)-.94*U,k);for(let k=0;k<3;k++)ellipse(c,X(x)+46,Y(z)-.94*U-k*3,13,5,'#d9caaa');}
-function actor(c,t){let {x,z}=S.hero,px=X(x),py=Y(z),b=S.moving?Math.sin(t*13)*2:Math.sin(t*2)*.55;shadow(c,x,z,19,7);c.save();c.translate(px,py+b);for(const k of [-1,1]){round(c,k*6-4,-10,8,10,2,'#45372f');round(c,k*7-5,-4,10,5,2,'#392c28')}round(c,-12,-30,24,22,6,gradient(c,-12,-30,24,0,'#668c80','#365c58'),C.ink);round(c,-8,-27,16,19,2,'#ede0c2');rect(c,-7,-14,14,3,'#c8b49b');for(const k of [-1,1]){round(c,k*12-4,-25,8,15,4,'#73998c',C.ink);ellipse(c,k*13,-13,4,4,'#d9a77c')}ellipse(c,0,-39,12,12,'#55392d');ellipse(c,0,-39,10,10,'#e2b18a');ellipse(c,-4,-39,1.4,2,'#3b302c');ellipse(c,4,-39,1.4,2,'#3b302c');round(c,-10,-50,20,6,2,'#d7cfb9',C.ink);for(const k of [-7,0,7])ellipse(c,k,-54,7,7,'#f4e9cf');rect(c,-9,-49,18,3,'#d5cbb1');c.restore()}
-function drawHD(t){const dpr=Math.min(devicePixelRatio||1,2),r=view.getBoundingClientRect(),w=Math.round(r.width*dpr),h=Math.round(r.height*dpr);if(canvas.width!==w||canvas.height!==h){canvas.width=w;canvas.height=h}ctx.setTransform(w/W,0,0,h/H,0,0);background(ctx);pantry(ctx);
-const draws=[...room.stoves.map(o=>({z:o.z,fn:()=>stove(ctx,o,t)})),...room.counter.map(o=>({z:o.z,fn:()=>counter(ctx,o)})),...room.tables.map(o=>({z:o.z,fn:()=>table(ctx,o)})),{z:S.hero.z,fn:()=>actor(ctx,t)}];draws.sort((a,b)=>a.z-b.z).forEach(o=>o.fn());
+// Original chef evolution. Discrete 32x44 grid, no generated images or antialiasing.
+const heroCanvas=document.createElement('canvas');heroCanvas.width=32;heroCanvas.height=44;
+const hc=heroCanvas.getContext('2d');
+const sp={ink:'#283137',hat:'#f6e9ce',hatMid:'#d6c5aa',hatDark:'#9e9588',shine:'#fff7e1',skin:'#d49b70',skinLit:'#f3c69b',skinShadow:'#aa694d',hair:'#78503a',hairLit:'#a5734b',blue:'#477a91',blueLit:'#719fb0',blueDark:'#2e536a',apron:'#e7d4a7',apronLit:'#f7e7c5',apronDark:'#b8a480',red:'#c45c46',redLit:'#ee8766',shoe:'#59483b',shoeLit:'#8b6c4e'};
+function sr(x,y,w,h,k){hc.fillStyle=sp[k]||k;hc.fillRect(x,y,w,h)}
+function rows(y,x,lines,k){for(let j=0;j<lines.length;j++){const a=lines[j];for(let i=0;i<a.length;i++)if(a[i]==='#')sr(x+i,y+j,1,1,k)}}
+function drawChefSprite(t){
+ hc.clearRect(0,0,32,44);
+ const back=S.facing==='back',side=S.facing==='left'||S.facing==='right',step=S.moving?Math.round(Math.sin(t*12)*2):0;
+ // Feet alternate without moving the sprite anchor. Wide short legs retain original chibi proportions.
+ for(const [x,d] of [[8,step],[19,-step]]){sr(x,35+d,6,7,'ink');sr(x+1,36+d,4,4,'blueDark');sr(x-1,40+d,8,3,'ink');sr(x,40+d,6,2,'shoe');sr(x,40+d,4,1,'shoeLit');}
+ // Rounded silhouette made of connected pixel clusters.
+ sr(9,23,14,15,'ink');sr(7,25,18,11,'ink');sr(10,24,12,12,'blue');sr(8,26,2,8,'blueDark');sr(22,26,2,8,'blueDark');
+ sr(11,24,8,2,'blueLit');sr(10,34,12,2,'blueDark');
+ const swing=S.moving?Math.round(Math.sin(t*12+1)*1):0;
+ for(const [x,d] of [[4,-swing],[24,swing]]){sr(x,25+d,5,10,'ink');sr(x+1,26+d,3,6,'blue');sr(x+1,26+d,2,2,'blueLit');sr(x+1,32+d,3,2,'skin');}
+ if(back){sr(11,27,10,2,'apronDark');sr(12,29,2,6,'apron');sr(18,29,2,6,'apron');sr(10,33,12,2,'apronDark');sr(14,32,4,3,'apronLit');}
+ else if(side){sr(15,27,7,9,'apronDark');sr(16,27,5,7,'apron');sr(16,27,4,2,'apronLit');sr(19,30,2,3,'apronDark');sr(17,24,5,2,'red');}
+ else {sr(10,27,12,10,'apronDark');sr(11,27,10,9,'apron');sr(11,28,3,6,'apronLit');sr(15,31,5,4,'apronDark');sr(16,31,3,3,'apron');sr(9,33,14,2,'apronDark');sr(12,24,8,2,'red');sr(15,25,3,4,'red');sr(15,25,2,1,'redLit');}
+ // Face and warm hair; the silhouette is still the white-hatted blue chef.
+ sr(7,11,18,13,'ink');sr(9,10,14,16,'ink');sr(8,12,16,11,'hair');sr(10,23,12,2,'skinShadow');
+ if(back){sr(9,13,14,9,'hair');sr(10,13,8,2,'hairLit');sr(11,20,10,3,'hairLit');sr(13,23,6,1,'skinShadow');}
+ else if(side){sr(12,13,11,10,'skin');sr(13,14,9,7,'skinLit');sr(22,18,3,3,'skin');sr(20,16,2,3,'ink');sr(21,16,1,1,'shine');sr(17,20,3,1,'skinShadow');sr(8,12,5,7,'hair');sr(10,12,3,2,'hairLit');}
+ else{sr(9,13,14,10,'skin');sr(10,14,12,7,'skinLit');sr(7,17,2,4,'skinShadow');sr(23,17,2,4,'skinShadow');sr(10,16,2,3,'ink');sr(20,16,2,3,'ink');sr(10,16,1,1,'shine');sr(20,16,1,1,'shine');sr(15,19,2,1,'skinShadow');sr(14,21,4,1,'skinShadow');sr(10,20,2,1,'#e7a386');sr(20,20,2,1,'#e7a386');sr(8,12,4,4,'hair');sr(20,12,4,4,'hair');}
+ // Puffy chef hat: deliberately shaped clusters rather than a square cap.
+ sr(6,9,20,5,'ink');sr(5,5,22,5,'ink');sr(7,3,7,7,'ink');sr(11,1,10,9,'ink');sr(20,3,6,7,'ink');
+ sr(6,6,20,5,'hatMid');sr(8,4,6,6,'hat');sr(12,2,8,8,'hat');sr(21,4,4,6,'hat');sr(7,7,17,3,'hat');sr(8,5,3,3,'shine');sr(13,3,4,4,'shine');sr(18,6,2,4,'hatMid');sr(23,6,2,3,'hatMid');sr(7,10,18,3,'hatMid');sr(8,10,16,1,'shine');sr(8,12,16,1,'hatDark');
+}
+function actor(c,t){let {x,z}=S.hero,px=X(x),py=Y(z);shadow(c,x,z,19,7);
+ if(!S.newHero){pixelActor(c,'chef',px,py-19,1.65,{face:S.facing==='left'?-1:1,walk:S.moving?t:0});return;}
+ drawChefSprite(t);
+ c.save();c.imageSmoothingEnabled=false;const sc=1.5;c.translate(Math.round(px),Math.round(py));if(S.facing==='left')c.scale(-1,1);c.drawImage(heroCanvas,-16*sc,-43*sc,32*sc,44*sc);c.restore();
+}
+function drawHD(t){const dpr=Math.min(devicePixelRatio||1,2),r=view.getBoundingClientRect(),w=Math.round(r.width*dpr),h=Math.round(r.height*dpr);if(canvas.width!==w||canvas.height!==h){canvas.width=w;canvas.height=h}ctx.setTransform(w/W,0,0,h/H,0,0);background(ctx);if(S.hd2)hd2Details(ctx);pantry(ctx);
+const draws=[...room.stoves.map(o=>({z:o.z,fn:()=>{stove(ctx,o,t);if(S.hd2)hd2Furniture(ctx,o,'stove');}})),...room.counter.map(o=>({z:o.z,fn:()=>{counter(ctx,o);if(S.hd2)hd2Furniture(ctx,o,'counter');}})),...room.tables.map(o=>({z:o.z,fn:()=>{table(ctx,o);if(S.hd2)hd2Furniture(ctx,o,'table');}})),{z:S.hero.z,fn:()=>actor(ctx,t)}];draws.sort((a,b)=>a.z-b.z).forEach(o=>o.fn());
 for(const q of [[2.15,B-100],[7.8,B-100]])lantern(ctx,X(q[0]),q[1],t);
 if(S.night){ctx.fillStyle='#24304b58';ctx.fillRect(A,B-165,10*U,10*V+165);for(const q of [[2.15,B-100],[7.8,B-100]])lantern(ctx,X(q[0]),q[1],t);for(const o of room.stoves){let g=ctx.createRadialGradient(X(o.x),Y(o.z),4,X(o.x),Y(o.z),70);g.addColorStop(0,'#f9b95d43');g.addColorStop(1,'#f9b95d00');ellipse(ctx,X(o.x),Y(o.z),70,70,g);}}
 }
@@ -93,12 +170,14 @@ const hemi=new T.HemisphereLight('#d9e4d0','#73543c',2);scene.add(hemi);const su
 for(const x of [2.15,7.8]){box3(x,2.08,.35,.17,.26,.17,brass);ball(x,2.08,.35,.12,.13,.12,fire);const l=new T.PointLight('#ffc078',5,5,1.7);l.position.set(x,2.1,.7);scene.add(l);lights.push(l)}
 const ray=new T.Raycaster(),plane=new T.Plane(new T.Vector3(0,1,0),0),pt=new T.Vector3();r.domElement.addEventListener('pointerdown',e=>{if(S.mode==='hd')return;const b=r.domElement.getBoundingClientRect();ray.setFromCamera(new T.Vector2((e.clientX-b.left)/b.width*2-1,-((e.clientY-b.top)/b.height*2-1)),camera);if(ray.ray.intersectPlane(plane,pt))setTarget(pt.x,pt.z)});
 let oldW=0,oldH=0,oldMode='';
-return {element:r.domElement,draw(t){const b=view.getBoundingClientRect(),pixel=S.mode==='pixel',d=pixel?.38:Math.min(devicePixelRatio||1,1.8),w=Math.max(1,Math.round(b.width*d)),h=Math.max(1,Math.round(b.height*d));if(w!==oldW||h!==oldH||oldMode!==S.mode){r.setSize(w,h,false);r.domElement.style.imageRendering=pixel?'pixelated':'auto';const a=b.width/b.height;camera.left=-8*a;camera.right=8*a;camera.updateProjectionMatrix();oldW=w;oldH=h;oldMode=S.mode;}
+return {element:r.domElement,draw(t){const b=view.getBoundingClientRect(),d=Math.min(devicePixelRatio||1,1.8),w=Math.max(1,Math.round(b.width*d)),h=Math.max(1,Math.round(b.height*d));if(w!==oldW||h!==oldH||oldMode!==S.mode){r.setSize(w,h,false);r.domElement.style.imageRendering='auto';const a=b.width/b.height;camera.left=-8*a;camera.right=8*a;camera.updateProjectionMatrix();oldW=w;oldH=h;oldMode=S.mode;}
 hero.position.set(S.hero.x,S.moving?Math.abs(Math.sin(t*12))*.045:0,S.hero.z);hemi.intensity=S.night?.65:2;sun.intensity=S.night?.16:3.2;sun.color.set(S.night?'#9aafe0':'#ffe2b0');flames.forEach((o,i)=>o.scale.y=.07+.04*Math.sin(t*8+i));lights.forEach((l,i)=>l.intensity=(S.night?5:2.1)+.4*Math.sin(t*6+i));r.render(scene,camera);}};
 }
-async function switchMode(mode){const token=++revision;S.mode=mode;document.querySelectorAll('[data-mode]').forEach(b=>b.setAttribute('aria-pressed',String(b.dataset.mode===mode)));msg.textContent='';canvas.hidden=mode!=='hd';if(renderer)renderer.element.hidden=mode==='hd';document.querySelector('#label').textContent=mode==='hd'?'原创 Canvas 路径、材质、光影':'同一套 Three.js 模型 · '+(mode==='pixel'?'低分辨率最近邻':'实时光影');
-if(mode==='hd')return;try{if(!renderer){msg.textContent='加载 Three.js…';loading??=createThree();renderer=await loading;}if(token!==revision){renderer.element.hidden=S.mode==='hd';return;}renderer.element.hidden=false;msg.textContent='';}catch(e){loading=null;if(token===revision){await switchMode('hd');msg.textContent='3D 加载失败，已回到 Canvas HD：'+e.message;}}}
+async function switchMode(mode){const token=++revision;S.mode=mode;document.querySelectorAll('[data-mode]').forEach(b=>b.setAttribute('aria-pressed',String(b.dataset.mode===mode)));msg.textContent='';canvas.hidden=mode!=='hd';if(renderer)renderer.element.hidden=mode==='hd';document.querySelector('#label').textContent=mode==='hd'?'原创 Canvas 路径、材质、光影':'Three.js · 实时光影';
+document.querySelector('#hd-options').hidden=mode!=='hd';if(mode==='hd')return;try{if(!renderer){msg.textContent='加载 Three.js…';loading??=createThree();renderer=await loading;}if(token!==revision){renderer.element.hidden=S.mode==='hd';return;}renderer.element.hidden=false;msg.textContent='';}catch(e){loading=null;if(token===revision){await switchMode('hd');msg.textContent='3D 加载失败，已回到 Canvas HD：'+e.message;}}}
 document.querySelectorAll('[data-mode]').forEach(b=>b.addEventListener('click',()=>switchMode(b.dataset.mode)));
+document.querySelector('#hd-version').addEventListener('click',e=>{S.hd2=!S.hd2;e.currentTarget.textContent=S.hd2?'环境 V2':'环境 V1';e.currentTarget.setAttribute('aria-pressed',String(S.hd2));});
+document.querySelector('#sprite-version').addEventListener('click',e=>{S.newHero=!S.newHero;e.currentTarget.textContent=S.newHero?'角色 V2':'原版角色';e.currentTarget.setAttribute('aria-pressed',String(S.newHero));});
 document.querySelector('#night').addEventListener('click',e=>{S.night=!S.night;e.currentTarget.textContent=S.night?'☾ 夜晚':'☀ 白天';e.currentTarget.setAttribute('aria-pressed',String(S.night));});
 canvas.addEventListener('pointerdown',e=>{const b=canvas.getBoundingClientRect();setTarget(((e.clientX-b.left)/b.width*W-A)/U,((e.clientY-b.top)/b.height*H-B)/V);});
 function frame(ms){const t=ms/1000,dt=Math.min(.05,(ms-(last||ms))/1000);last=ms;move(dt);if(S.mode==='hd')drawHD(t);else if(renderer)renderer.draw(t);frames++;if(ms-stat>1000){fps.textContent=Math.round(frames*1000/(ms-stat))+' FPS';frames=0;stat=ms;}requestAnimationFrame(frame);}
