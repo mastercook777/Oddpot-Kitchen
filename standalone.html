@@ -10834,7 +10834,8 @@ function frame(now){const delta=Math.min(.045,(now-(lastFrame||now))/1000);lastF
  }
  if(game.phase==='service'&&game.service?.walkable){
    const v=game.service,h=v.hero;
-   if(h&&dinerBlocked(h.x,h.y,game)){const g=dinerFloor(game);if(h.y>=g.geometry.counterTop&&h.y<=g.geometry.counterBottom)h.y=g.geometry.counterBottom+.013;}
+   // Old active shifts may have saved the player inside a newly aligned counter.
+   if(h&&dinerBlocked(h.x,h.y,game)){const g=dinerFloor(game);if(h.y>=g.geometry.counterTop&&h.y<=g.geometry.counterBottom){h.y=g.geometry.counterBottom+.013;}}
    const canMove=!document.hidden&&!overlay&&!v.paused&&!v.breakAt&&!v.done&&!game.cook;
    if(canMove){
      const [dx,dy]=analogAxis();walkServiceHero(h,dx,dy,delta,game);
