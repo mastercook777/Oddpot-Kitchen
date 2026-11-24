@@ -10808,6 +10808,7 @@ function analogAxis(){let x=stick.x,y=stick.y;for(const key of keys){if(['ArrowL
 // Render progress derives from authoritative service seconds; a paused night
 // cannot loop arrival or plate animations through an unrelated wall clock.
 function restaurantSimTime(now){const v=game.service;if(!v)return gameClock;if(v.walkable)return v.time+(v.clockAccumulator||0);if(v.paused||v.breakAt||v.done)return v.time;return v.time+Math.max(0,Math.min(1,(now-(serviceTickAt||now))/750));}
+let researchPreviewCache=null;
 function frame(now){const delta=Math.min(.045,(now-(lastFrame||now))/1000);lastFrame=now;gameClock+=delta;
  if(game.phase==='field'&&game.field?.action&&game.field.segmentStatus!=='choice'&&!document.hidden&&!overlay){
   const [dx,dy]=analogAxis(),evt=stepActionField(game,dx,dy,delta);
@@ -10853,7 +10854,7 @@ function frame(now){const delta=Math.min(.045,(now-(lastFrame||now))/1000);lastF
   const auto=stepLiveResearch(game,delta);
   if(auto){message=auto.sellable?'自动出锅：'+auto.recipeName+' · '+auto.styleLabel:'自动出锅失败：'+auto.reason;render();}
   else if(game.cook?.mode==='v014c-grill'){
-   const p=grillCookPreview(game),clock=app.querySelector('#v014c-clock');if(clock)clock.textContent=p.lane?p.elapsed.toFixed(1)+'s':'未入炉';
+   const p=grillCookPreview(game),clock=app.querySelector('#v014c-clock');researchPreviewCache=p;if(clock)clock.textContent=p.lane?p.elapsed.toFixed(1)+'s':'未入炉';
    const finish=app.querySelector('[data-act="live-finish"]');if(finish)finish.disabled=p.elapsed<1.2;
    for(const item of p.items){
     const row=app.querySelector('[data-grill-id="'+item.id+'"]');if(row)row.dataset.heatTone=item.tone;
@@ -10867,7 +10868,7 @@ function frame(now){const delta=Math.min(.045,(now-(lastFrame||now))/1000);lastF
   else{
    const c=game.cook,clock=app.querySelector('#v063-clock');if(clock)clock.textContent=c.elapsed.toFixed(1)+'s / 19s';
    const finish=app.querySelector('[data-act="live-finish"]');if(finish)finish.disabled=c.elapsed<1.2||!c.dropped.length;
-   const indicators=liveCookPreview(game)?.indicators||[];
+   const indicators=(researchPreviewCache=liveCookPreview(game))?.indicators||[];
    for(const item of indicators){
      const node=app.querySelector('[data-live-status="'+item.id+'"]');
      if(node){node.textContent=item.state;node.closest('[data-heat-tone]')?.setAttribute('data-heat-tone',item.tone);const sides=node.closest('.v063-drop')?.querySelector('.v014b-sides');if(sides)sides.textContent='正面 '+(item.frontProgress||0)+'% · 反面 '+(item.backProgress||0)+'%';}
@@ -10879,7 +10880,7 @@ function frame(now){const delta=Math.min(.045,(now-(lastFrame||now))/1000);lastF
      if(label)label.textContent=summary.label;if(detail)detail.textContent=summary.details;
    }
    const pan=app.querySelector('.v063-live-pan');
-   if(pan){
+   if(pan&&!pan.dataset.y4bActive){
      const motion=livePanMotion(c,{width:pan.clientWidth||310,height:pan.clientHeight||180});
      const bowl=pan.querySelector('.v063-bowl');
      if(bowl)bowl.style.transform='translate(-50%,-50%) translateY('+motion.panLift.toFixed(1)+'px) rotate('+motion.panRotation.toFixed(1)+'deg)';
@@ -10904,8 +10905,8 @@ function frame(now){const delta=Math.min(.045,(now-(lastFrame||now))/1000);lastF
  }
  const notice=app.querySelector('#ingame-notice');if(notice&&now>flashUntil)notice.hidden=true;
  const forest=app.querySelector('#forest-canvas');if(forest)drawField(forest,game,gameClock);else globalThis.__oddpotY3Renderer?.leave();
- const diner=app.querySelector('#diner-canvas');if(diner)drawDiner(diner,game,gameClock,restaurantSimTime(now));
- const research3d=globalThis.__oddpotY4bRenderer;if(research3d){const preview=game.phase==='research'&&game.cook?(game.cook.mode==='v014c-grill'?grillCookPreview(game):game.cook.mode==='v063-live'?liveCookPreview(game):null):null;research3d.draw(app,game,preview,now);}
+ const diner=app.querySelector('#diner-canvas');if(diner)drawDiner(diner,game,gameClock,restaurantSimTime(now));else globalThis.__oddpotY2Renderer?.leave();
+ const research3d=globalThis.__oddpotY4bRenderer;if(research3d)research3d.draw(app,game,researchPreviewCache,now);
  if(now-lastSave>1400&&(game.phase==='field'||['v063-live','v014c-grill'].includes(game.cook?.mode)||game.phase==='service'&&game.service?.walkable)){save(game);lastSave=now}
  requestAnimationFrame(frame);
 }
