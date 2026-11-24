@@ -8,7 +8,7 @@ import {RECIPE_PROFILES} from './recipe_profiles_v063.js?v=0.13.0-alpha.9';
 import {generateBiomeMap,getFieldBiome} from './field_biomes_v081.js?v=0.13.0-alpha.9';
 import {makeFieldEncounterPlan,insertPlannedFieldEncounter} from './field_encounter_plan_v011b.js?v=0.13.0-alpha.9';
 import {expandFieldMap} from './field_world_v011b1.js';
-import {newServiceHero,heroZone} from './walkable_restaurant_v07.js?v=0.15.0-alpha.7';
+import {newServiceHero,heroZone} from './walkable_restaurant_v07.js?v=y4d';
 import {CAMPAIGNS,CREW_GROWTH,CREW_XP_THRESHOLDS,ensureManagement,selectedCampaign,chooseCampaign,crewWage,ensureStaffProgress,setCrewDuty,crewPromotion,applyCrewPromotion,payroll,settleCrewExperience} from './restaurant_management_v012c.js?v=0.15.0-alpha.7';
 export {CAMPAIGNS,CREW_GROWTH,CREW_XP_THRESHOLDS,ensureManagement,selectedCampaign,chooseCampaign,crewWage,setCrewDuty,crewPromotion};
 import {naturalStarAttendance,serviceArrivalWave,serviceArrivalSecond,outdoorQueueCount,outdoorQueueExpired,queueServiceReport} from './restaurant_demand_v012e.js';

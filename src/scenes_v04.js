@@ -19,8 +19,8 @@ import {pixelActor,pixelEnemy,pixelImpact} from './pixels_v041.js?v=0.15.0-alpha
 import {homeKitchenActors,homeKitchenChatter} from './home_kitchen_v013j.js?v=0.15.0-alpha.7';
 // Lightweight procedural game graphics: original Canvas shapes, no art pack.
 import {ING,RECIPES,CUSTOMERS} from './data.js?v=0.14.0-alpha.5';
-import {heroZone,waiterDeliveryPose,HERO_PASS} from './walkable_restaurant_v07.js?v=0.15.0-alpha.7';
-import {DINER_FLOOR,dinerFloor,dinerGuestRoute,dinerWeather,dinerQueueGuests} from './restaurant_scene_v075.js?v=0.15.0-alpha.7';
+import {heroZone,waiterDeliveryPose,HERO_PASS} from './walkable_restaurant_v07.js?v=y4d';
+import {DINER_FLOOR,dinerFloor,dinerGuestRoute,dinerWeather,dinerQueueGuests} from './restaurant_scene_v075.js?v=y4d';
 import {selectDiningSpeech,selectStaffSpeech,diningBubbleLines,speechOpacity} from './diner_ambience_v077.js?v=0.15.0-alpha.3';
 import {selectOutdoorQueueSpeech} from './outdoor_queue_speech_v012f.js';
 const color={ink:'#24382a',leaf:'#386b43',soil:'#806044',stone:'#a6b392',cream:'#f4dfb0',gold:'#dfb873'};
