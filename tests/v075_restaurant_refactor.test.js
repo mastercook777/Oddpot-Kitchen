@@ -51,7 +51,7 @@ test('player movement is smooth, frame-limited and collides with furniture witho
  assert.match(scenes,/drawRestaurantV075/);
  assert.match(scenes,/pixelActor\(c,a\.kind,X,Y,DINER_ACTOR_SCALE/);
  assert.doesNotMatch(scenes,/pixelActor\(c,a\.kind,X,Y,1\.5/);
- assert.match(scenes,/if\(icon\)text\(c,icon,/);
+ assert.match(scenes,/if\(icon&&a\.working\)text\(c,'烹饪中',/);
 });
 test('new movable service screen never constructs legacy queue-priority or customer-select dock',()=>{
  const modern=app.slice(app.indexOf('function service(){'),app.indexOf('\nfunction report(){',app.indexOf('function service(){')));

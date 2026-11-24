@@ -19,8 +19,8 @@ import {pixelActor,pixelEnemy,pixelImpact} from './pixels_v041.js?v=0.15.0-alpha
 import {homeKitchenActors,homeKitchenChatter} from './home_kitchen_v013j.js?v=0.15.0-alpha.7';
 // Lightweight procedural game graphics: original Canvas shapes, no art pack.
 import {ING,RECIPES,CUSTOMERS} from './data.js?v=0.14.0-alpha.5';
-import {heroZone,waiterDeliveryPose,HERO_PASS} from './walkable_restaurant_v07.js?v=0.15.0-alpha.7';
-import {DINER_FLOOR,dinerFloor,dinerGuestRoute,dinerWeather,dinerQueueGuests} from './restaurant_scene_v075.js?v=0.15.0-alpha.7';
+import {heroZone,waiterDeliveryPose,HERO_PASS} from './walkable_restaurant_v07.js?v=y4d';
+import {DINER_FLOOR,dinerFloor,dinerGuestRoute,dinerWeather,dinerQueueGuests} from './restaurant_scene_v075.js?v=y4d';
 import {selectDiningSpeech,selectStaffSpeech,diningBubbleLines,speechOpacity} from './diner_ambience_v077.js?v=0.15.0-alpha.3';
 import {selectOutdoorQueueSpeech} from './outdoor_queue_speech_v012f.js';
 const color={ink:'#24382a',leaf:'#386b43',soil:'#806044',stone:'#a6b392',cream:'#f4dfb0',gold:'#dfb873'};
@@ -1011,12 +1011,12 @@ export function restaurantActorsV075(s,t){
        ||(['left','rejected'].includes(o.status)&&Number.isFinite(o.leftAt)&&t-o.leftAt<2.6);
    if(!eligible)continue;
    const route=dinerGuestRoute(o.tableId,o.seatId??0,s);
-   const age=t-(o.doorAt??o.arrival);
+   const age=Math.max(0,t-(Number.isFinite(o.doorAt)?o.doorAt:Number.isFinite(o.arrival)?o.arrival:t));
    const leaving=o.status==='served'&&t-(o.reviewedAt??o.served??t)>.65||(['left','rejected'].includes(o.status)&&Number.isFinite(o.leftAt));
    const progress=leaving?Math.max(0,1-(t-(o.status==='served'?(o.reviewedAt??o.served??t)+.65:o.leftAt))/2.2):
-       Math.max(0,Math.min(1,age/2.4));
+       (o.status==='entering'?Math.max(0,Math.min(1,age/2.4)):1);
    if(leaving&&progress<=0)continue;
-   const loc=routePoint(route,progress);
+   const loc=progress>=.999?route.at(-1):routePoint(route,progress);if(!Number.isFinite(loc?.x)||!Number.isFinite(loc?.y))continue;
    actors.push({id:o.id,x:loc.x,y:loc.y,kind:o.segment,walk:progress>0&&progress<1,seat:progress>=.999&&!leaving,order:o});
   }
   const crew=v.crew||s.crew;
@@ -1145,9 +1145,9 @@ function drawRestaurantV075(c,s,t,w,h){
    line(c,px,py+ph,px+pw,py+ph,'#4b3429',2);
   }
  }
- rr(x(.441),y(.389),x(.118),h*.025,4,cloud?'#a2bdba':'#9e805d',cloud?'#f0e1bd':'#caaa77');
+ rr(x(g.passFurniture.x-.057),y(g.passFurniture.y-.012),x(.114),h*.025,4,cloud?'#a2bdba':'#9e805d',cloud?'#f0e1bd':'#caaa77');
  const pending=v?.orders?.filter(o=>o.status==='pickup')||[];
- pending.slice(0,3).forEach((o,i)=>{dish(c,x(.50+(i-(Math.min(pending.length,3)-1)/2)*.046),y(.400),RECIPES[o.recipeId]?.station||'WOK')});
+ pending.slice(0,3).forEach((o,i)=>{dish(c,x(g.passFurniture.x+(i-(Math.min(pending.length,3)-1)/2)*.038),y(g.passFurniture.y+.003),RECIPES[o.recipeId]?.station||'WOK')});
  const target=v?.hero?.carryOrderId?v.orders.find(o=>o.id===v.hero.carryOrderId&&o.status==='carried'):null;
  if(target){const p=g.tableWork[target.tableId];if(p){c.beginPath();c.ellipse(x(p.x),y(p.y),w*.081,h*.034,0,0,Math.PI*2);c.fillStyle='#ffe6a325';c.fill();c.lineWidth=2;c.strokeStyle='#f6d37d';c.stroke();}}
  // Real two-person SQUARE tables. Seats, plates, collision and serving target
@@ -1195,7 +1195,7 @@ function drawRestaurantV075(c,s,t,w,h){
     const pct=Math.max(.04,Math.min(1,patience/35));
     rr(X-half,Y+half+5,side,4,2,'#392c25');
     rr(X-half,Y+half+5,Math.max(2,side*pct),4,2,urgency);
-    const icon=RECIPES[waiting[0].recipeId]?.emoji||'🍽️';
+    const icon=RECIPES[waiting[0].recipeId]?.name||'点餐';
     text(c,icon,X,Y+4,'#ffe4af',14);
    }
   }
@@ -1235,7 +1235,7 @@ function drawRestaurantV075(c,s,t,w,h){
  const speaking=new Set(visibleSpeech.map(q=>q.id));
  for(const a of actors){
   const X=x(a.x),Y=y(a.y)+(a.order?.status==='eating'?Math.sin(t*5+Number(a.order.seatId||0))*.9:0);
-  if(a.id==='hero')circle(c,X,Y+11,12,'#f6df9e2d');
+  // No permanent player-foot overlay; interaction progress is on the action guide.
   pixelActor(c,a.kind,X,Y,DINER_ACTOR_SCALE,{walk:a.walk?t*2:0,
     face:a.direction==='left'?-1:1,attack:!!a.working,level:a.level||1});
   // Feet overlap the chair, not the floor next to it. The cushion lip
@@ -1259,16 +1259,14 @@ function drawRestaurantV075(c,s,t,w,h){
   }
   if(a.id==='hero'){
    const hero=v.hero,focus=hero.dwellZone;
-   if(focus&&hero.dwell>0){const required=focus.startsWith('serve:')?.48:.36;
-    c.beginPath();c.arc(X,Y+4,17,-Math.PI/2,-Math.PI/2+Math.PI*2*Math.min(1,hero.dwell/required));
-    c.lineWidth=3;c.strokeStyle='#ffe09d';c.stroke();}
+   // Dwell progress lives in the service action strip.
    const icon=a.working?'🍳':a.stateIcon;
-   if(icon)text(c,icon,X,Y-30,'#ffe8b9',13);
+   if(icon&&a.working)text(c,'烹饪中',X,Y-30,'#ffe8b9',10);
   }
   if(a.order){
    const o=a.order;
    if(!speaking.has(o.id)&&['queued','cooking','pickup','carried','delivering'].includes(o.status))
-    text(c,RECIPES[o.recipeId]?.emoji||'🍽️',X,Y-34,'#fff2c9',12);
+    text(c,RECIPES[o.recipeId]?.name||'点餐',X,Y-34,'#fff2c9',10);
    if(!speaking.has(o.id)&&(o.status==='review'||(o.status==='served'&&t-(o.reviewedAt??0)<1.1)))
     text(c,o.sat>=70?'💚':'💬',X,Y-34,'#ffe6bd',15);
   }

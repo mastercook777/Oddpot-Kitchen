@@ -128,7 +128,7 @@ test('merchant and traveler goods complete real research then physical current-s
   function frame(){advanceWalkableInteraction(s,.04);accumulator+=.04;if(accumulator>=1){accumulator-=1;tick(s,1);}if(v.breakAt){const event=currentServiceEvent(s);for(const c of event?.choices||[])if(chooseServiceEvent(s,c.id)){resumeBreak(s);break;}}}
   function walk(target){for(let i=0;i<400;i++){const h=v.hero,dx=target.x-h.x,dy=target.y-h.y,d=Math.hypot(dx,dy);if(d<.012)break;dinerWalk(h,dx/d,dy/d,.04,s);assert.ok(!dinerBlocked(h.x,h.y,s));frame();}assert.ok(Math.hypot(v.hero.x-target.x,v.hero.y-target.y)<.02);}
   walk(DINER_FLOOR.left);for(let i=0;i<500&&o.status!=='pickup';i++)frame();assert.equal(o.status,'pickup');assert.equal(s.inventory[rare],0);assert.equal(s.ledger.filter(t=>t.id==='sale-'+o.id).length,0);
-  walk({x:.5,y:.325});walk(DINER_FLOOR.pass);for(let i=0;i<20&&o.status==='pickup';i++)frame();assert.equal(o.status,'carried');
+  walk({x:.5,y:.325});walk({x:.5,y:DINER_FLOOR.pass.y});walk(DINER_FLOOR.pass);for(let i=0;i<20&&o.status==='pickup';i++)frame();assert.equal(o.status,'carried');
   walk({x:.5,y:DINER_FLOOR.tableWork[0].y});walk(DINER_FLOOR.tableWork[0]);for(let i=0;i<400&&o.status!=='served';i++)frame();assert.equal(o.status,'served');assert.equal(o.deliveryMode,'hero');
   assert.equal(v.premiumConsumed,1);assert.equal(s.ledger.filter(t=>t.id==='sale-'+o.id).length,1);assert.equal(s.ledger.filter(t=>t.type==='exploration').length,1);assert.equal(s.coins,wallet+s.ledger.reduce((n,t)=>n+(Number(t.amount)||0),0));
   tick(s,2);assert.equal(s.ledger.filter(t=>t.id==='sale-'+o.id).length,1);v.done=true;const report=closeService(s);assert.equal(report.premium.sold,1);assert.equal(report.premium.revenue,o.craft.price);
