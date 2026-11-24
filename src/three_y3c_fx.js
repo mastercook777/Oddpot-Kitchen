@@ -28,11 +28,32 @@ export function fieldTelegraphs3D(f){
  for(const z of f.bossZones||[])if(z.life>0)circle(z,z.radius,clamp(z.life/.25),z.source==='spore'?'#d7a6f4':'#ff9e56','activeZone');
  return out;
 }
+// Soft world-space energy: exact simulation footprint, no solid flat polygon.
+export function telegraphVisual(d){const active=['strike','hazardActive','activeZone'].includes(d.kind),lane=['charge','bossCharge','aim'].includes(d.kind);return {active,lane,progress:clamp(d.q||0),height:d.kind==='strike'?.32:lane?.11:.065};}
 export function makeTelegraphLayer(T,scene,sine){
  const root=new T.Group(),pool=[];scene.add(root);
- function slot(){const g=new T.Group(),geom=new T.BufferGeometry(),lineGeo=new T.BufferGeometry(),fill=new T.MeshBasicMaterial({transparent:true,depthWrite:false,side:T.DoubleSide,polygonOffset:true,polygonOffsetFactor:-2,polygonOffsetUnits:-2}),edge=new T.LineBasicMaterial({transparent:true,depthWrite:false});const mesh=new T.Mesh(geom,fill),line=new T.LineLoop(lineGeo,edge);mesh.frustumCulled=line.frustumCulled=false;mesh.renderOrder=2;line.renderOrder=3;g.add(mesh,line);root.add(g);const data={g,geom,lineGeo,fill,edge};pool.push(data);return data;}
- function attr(g,key,values){let a=g.getAttribute(key);if(!a||a.array.length!==values.length)g.setAttribute(key,new T.Float32BufferAttribute(values,3));else{a.array.set(values);a.needsUpdate=true;}}
- return {draw(f){const ds=fieldTelegraphs3D(f).slice(0,80);for(let i=0;i<Math.max(ds.length,pool.length);i++){const d=ds[i],s=pool[i]||(d?slot():null);if(!s)continue;s.g.visible=!!d;if(!d)continue;const pts=d.points,verts=[],edge=[];for(const p of pts)edge.push(p.x,.036,p.y/sine);for(let j=1;j<pts.length-1;j++)for(const p of [pts[0],pts[j],pts[j+1]])verts.push(p.x,.027,p.y/sine);attr(s.geom,'position',verts);attr(s.lineGeo,'position',edge);s.fill.color.set(d.color);s.edge.color.set(d.q>.78?'#fff2bd':d.color);const active=['strike','hazardActive','activeZone'].includes(d.kind);s.fill.opacity=active?.29*d.q+.09:d.kind==='aim'?.27+.25*d.q:.12+.25*d.q;s.edge.opacity=active?.65*d.q+.18:.55+.45*d.q;}return ds.length;},dispose(){for(const s of pool){s.geom.dispose();s.lineGeo.dispose();s.fill.dispose();s.edge.dispose();}scene.remove(root);}};
+ const arrowGeo=new T.ConeGeometry(.105,.34,3);arrowGeo.rotateX(Math.PI/2);
+ const sparkGeo=new T.OctahedronGeometry(1,0);
+ const shaderVertex=`attribute vec2 aField; varying vec2 vField; void main(){vField=aField;gl_Position=projectionMatrix*modelViewMatrix*vec4(position,1.0);}`;
+ const shaderFragment=`uniform vec3 tint; uniform float progress; uniform float time; uniform float mode; varying vec2 vField;
+ void main(){float r=vField.x;float edge=smoothstep(.76,.98,r);float delta=(r-progress)*11.0;float sweep=exp(-delta*delta);float bands=.5+.5*sin(vField.y*15.0-time*7.0-r*9.0);float a=(.025+.09*edge+.22*sweep+.045*bands*edge);if(mode>0.5)a=(.025+.18*edge+.14*sweep)*progress;vec3 c=mix(tint,vec3(1.0,.88,.63),sweep*.65+edge*.16);gl_FragColor=vec4(c,a);}`;
+ function slot(){const g=new T.Group(),geom=new T.BufferGeometry(),rimGeo=new T.BufferGeometry(),fill=new T.ShaderMaterial({uniforms:{tint:{value:new T.Color()},progress:{value:0},time:{value:0},mode:{value:0}},vertexShader:shaderVertex,fragmentShader:shaderFragment,transparent:true,depthWrite:false,side:T.DoubleSide}),rimMat=new T.MeshBasicMaterial({transparent:true,depthWrite:false,side:T.DoubleSide,blending:T.AdditiveBlending}),mesh=new T.Mesh(geom,fill),rim=new T.Mesh(rimGeo,rimMat);mesh.frustumCulled=rim.frustumCulled=false;mesh.renderOrder=2;rim.renderOrder=3;g.add(mesh,rim);const arrows=[],sparks=[];for(let j=0;j<4;j++){const o=new T.Mesh(arrowGeo,rimMat);g.add(o);arrows.push(o);}for(let j=0;j<6;j++){const o=new T.Mesh(sparkGeo,rimMat);g.add(o);sparks.push(o);}root.add(g);const data={g,geom,rimGeo,fill,rimMat,arrows,sparks};pool.push(data);return data;}
+ function attr(g,key,values,size){let a=g.getAttribute(key);if(!a||a.array.length!==values.length)g.setAttribute(key,new T.Float32BufferAttribute(values,size));else{a.array.set(values);a.needsUpdate=true;}}
+ return {draw(f,t=f.elapsed||0){const ds=fieldTelegraphs3D(f).slice(0,80);for(let i=0;i<Math.max(ds.length,pool.length);i++){const d=ds[i],s=pool[i]||(d?slot():null);if(!s)continue;s.g.visible=!!d;if(!d)continue;const v=telegraphVisual(d),pts=d.points,verts=[],uv=[],rim=[],q=v.progress,p=d.p;
+ const sector=d.kind==='sector'||d.kind==='strike',center=v.lane?{x:(p.x+d.end.x)/2,y:(p.y+d.end.y)/2}:p;
+ const ringPts=sector?pts.slice(1):pts;const count=ringPts.length;const limit=sector?count-1:count;
+ for(let j=0;j<limit;j++){const a=ringPts[j],b=ringPts[(j+1)%count];for(const [pt,r,k] of [[center,0,j],[a,1,j],[b,1,j+1]]){verts.push(pt.x,.035,pt.y/sine);uv.push(r,k/count*6.283);}
+ // A thin, rising luminous bevel, not a screen-space line.
+ const h=v.height*(.55+.45*q),ax=a.x,az=a.y/sine,bx=b.x,bz=b.y/sine;
+ rim.push(ax,.038,az,bx,.038,bz,bx,h,bz,ax,.038,az,bx,h,bz,ax,h,az);
+ if(d.kind==='strike'){const k=.93,ay=center.y+(a.y-center.y)*k,by=center.y+(b.y-center.y)*k;rim.push(ax,h,az,bx,h,bz,center.x+(b.x-center.x)*k,h+.045,by/sine,ax,h,az,center.x+(b.x-center.x)*k,h+.045,by/sine,center.x+(a.x-center.x)*k,h+.045,ay/sine);}
+ }
+ attr(s.geom,'position',verts,3);attr(s.geom,'aField',uv,2);attr(s.rimGeo,'position',rim,3);
+ s.fill.uniforms.tint.value.set(d.color);s.fill.uniforms.progress.value=q;s.fill.uniforms.time.value=t;s.fill.uniforms.mode.value=v.active?1:0;s.rimMat.color.set(d.color).lerp(new T.Color('#fff0c2'),.3+.45*q);s.rimMat.opacity=v.active?.22+.55*q:.18+.52*q;
+ for(const a of s.arrows)a.visible=false;for(const a of s.sparks)a.visible=false;
+ if(v.lane){const dx=d.end.x-p.x,dy=d.end.y-p.y,dist=Math.hypot(dx,dy),angle=Math.atan2(dx,dy/sine);for(let j=0;j<4;j++){const a=s.arrows[j],u=(j*.25+t*1.15)%1;a.visible=dist>.2;a.position.set(p.x+dx*u,.10+.055*q,(p.y+dy*u)/sine);a.rotation.set(0,angle,0);a.scale.setScalar(d.kind==='aim'?.33:.65+.22*q);}}
+ else if(d.kind!=='strike'){for(let j=0;j<6;j++){const a=s.sparks[j],k=Math.floor(((j/6+t*.13)%1)*count),pt=ringPts[k],u=.72+.28*q;a.visible=true;a.position.set(p.x+(pt.x-p.x)*u,.09+.09*q+.035*Math.sin(t*8+j),(p.y+(pt.y-p.y)*u)/sine);a.rotation.y=t*2+j;a.scale.setScalar(.023+.019*q);}}
+ }return ds.length;},dispose(){for(const s of pool){s.geom.dispose();s.rimGeo.dispose();s.fill.dispose();s.rimMat.dispose();}arrowGeo.dispose();sparkGeo.dispose();scene.remove(root);}};
 }
 
 export function fieldFx3D(f){

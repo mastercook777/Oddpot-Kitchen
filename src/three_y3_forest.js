@@ -4,7 +4,7 @@ import {makeChefY2} from './three_y2b_chef.js?v=y3d';
 import {makeBladeTrail} from './three_y3d_trail.js';
 import {createWeaponRig} from './three_y3b_weapon_pose.js?v=y3d';
 import {enemyHitVisual,pickupVisual} from './three_y3b_feedback.js';
-import {makeFieldFx3D,makeTelegraphLayer} from './three_y3c_fx.js?v=y5b';
+import {makeFieldFx3D,makeTelegraphLayer} from './three_y3c_fx.js?v=y5b2';
 import {fieldTilePath,hazardPhase} from './field_rules_v011a.js';
 const ANGLE=Math.PI*55/180, SINE=Math.sin(ANGLE), COS=Math.cos(ANGLE);
 export const FOREST_ZONES=Object.freeze({herb_path:'meadow',glow_mushroom:'glow',old_tree_edge:'roots',forest_garden:'garden',forest_secret:'glow',spore_gate:'roots',spore_roots:'roots'});
@@ -12,7 +12,8 @@ export const SPRING_ZONES=Object.freeze({hot_spring_shallows:'spring',steam_crac
 const THEMES={spring:{floor:'#bca68a',hue:.10,soil:'#dbc59d',sky:'#97b4aa',light:'#fff1c7',leaf:['#9ca899','#b6bbab','#d1c5a4','#9eaa9e'],grass:['#96a995','#c2b89d','#9eab9c']},steam:{floor:'#777b7d',hue:.58,soil:'#a9a7a0',sky:'#738486',light:'#e8f1ec',leaf:['#747c80','#929a99','#a7acaa','#5c686b'],grass:['#8d9895','#a8aaa4','#798b8b']},ember:{floor:'#654943',hue:.035,soil:'#a26c50',sky:'#594247',light:'#ffca98',leaf:['#5a4140','#794d43','#965b48','#614a45'],grass:['#b27d59','#97674d','#7f5650']},oasis:{floor:'#9eaa94',hue:.16,soil:'#c8c4a6',sky:'#83aea9',light:'#e3ffe8',leaf:['#85b2ad','#a8d9ce','#799e9b','#c2cfc4'],grass:['#8ab3a4','#a7c1a1','#b8cfb9']},meadow:{floor:'#809768',hue:.245,soil:'#a79a72',sky:'#536f58',light:'#ffe3ab',leaf:['#3e674a','#527b4b','#67894e','#83a45f'],grass:['#7e9b5a','#96ab6a','#607e4e']},glow:{floor:'#426b68',hue:.47,soil:'#6d8c82',sky:'#294d56',light:'#b9ebe0',leaf:['#2d625c','#387a70','#599184','#73aaa0'],grass:['#599184','#74b4a0','#3a7774']},roots:{floor:'#65605e',hue:.76,soil:'#9c8676',sky:'#434453',light:'#e6c4c9',leaf:['#494854','#5a5361','#706277','#88748b'],grass:['#7e747f','#a297a1','#5d5968']},garden:{floor:'#8b9d61',hue:.20,soil:'#b59b69',sky:'#657c55',light:'#fff0b6',leaf:['#557b39','#689345','#80a452','#a0b868'],grass:['#99af63','#b4bc75','#75944d']}};
 export function forestTheme(f){return FOREST_ZONES[f?.biome?.zoneId]||null;}
 export function field3DTheme(f){return forestTheme(f)||SPRING_ZONES[f?.biome?.zoneId]||null;}
-export function springVentVisual(hz,elapsed,biome){const p=hazardPhase(hz,elapsed,biome);return {...p,jet:p.active?Math.sin(Math.PI*Math.min(1,(p.phase-3.45)/.75))*(biome?.style==='ember'?1.12:1.48):0};}
+export function springVentVisual(hz,elapsed,biome){const p=hazardPhase(hz,elapsed,biome),start=p.source==='spore'?3.15:3.45;return {...p,jet:p.active?Math.sin(Math.PI*Math.min(1,(p.phase-start)/(4.2-start)))*(biome?.style==='ember'?1.12:1.48):0};}
+export function ventParticlePose(phase,j,t){const active=phase.active,warn=phase.warning,life=(j*.173+t*(active?1.9:.72))%1,spread=(active?.10+.22*life:.06+.055*life),a=j*2.399+t*.7;return {x:Math.cos(a)*spread,y:.09+life*(active?.52+phase.jet*.92:warn?.26+.32*phase.warningProgress:.12),z:Math.sin(a)*spread,scale:(.08+.19*life)*(active?1:warn?.64:.35),opacity:Math.sin(Math.PI*life)*(active?.74:warn?.43:.16)};}
 export function y3Eligible(s){const f=s?.field;return s?.phase==='field'&&!!f?.action&&f.worldVersion==='0.11-B1'&&!!field3DTheme(f)&&s.activeWorld!=='cloud';}
 export function y3Ground(x,y){return {x,z:y/SINE};}
 export function y3CameraFrame(camera,w,h,sx=0,sy=0){const k=camera.scale;return {x:(w/2-camera.offsetX-sx)/k,y:(h/2-camera.offsetY-sy)/k,halfW:w/k/2,halfH:h/k/2};}
@@ -91,10 +92,22 @@ function createForest(T){
   }
   (f.obstacles||[]).forEach((o,i)=>tree(terrain,o,i));
   // Only existing hazard cells: never introduce collision or an extra damage tile.
-  for(const hz of f.hazards||[]){const p=group(terrain);place(p,hz.x+.5,hz.y+.5);if(isSpring()){
-   const hot=style==='ember',rim=hot?basalt:mineral;for(let j=0;j<9;j++){const a=j*2*Math.PI/9;ball(p,rim,Math.cos(a)*.33,.045,Math.sin(a)*.33,.12,.07,.10,false);}ball(p,hot?ember:water,0,.028,0,.29,.025,.29,false);
-   const jet=group(p);const bubbles=[];for(let j=0;j<5;j++){const mat=new T.MeshBasicMaterial({color:hot?'#ffbf75':'#e5f5f4',transparent:true,opacity:.35,depthWrite:false});uniqueTerrain.push(mat);bubbles.push(ball(jet,mat,0,0,0,.11,.18,.11,false));}vents.push({hz,jet,bubbles});
-  }else{for(let j=0;j<6;j++){const a=j*1.047;ball(p,hazardMat,Math.cos(a)*.30,.035,Math.sin(a)*.30,.13,.03,.11,false);}ball(p,cap,0,.025,0,.39,.025,.39,false);}}
+  for(const hz of f.hazards||[]){
+   const p=group(terrain);place(p,hz.x+.5,hz.y+.5);
+   const hot=style==='ember',spore=style==='roots',rim=hot?basalt:spore?oldBark:mineral,inside=hot?ember:spore?cap:water;
+   // Broken asymmetric mineral / fungal vent, contained inside the real cell.
+   for(let j=0;j<9;j++){const a=j*2*Math.PI/9,r=.30+.035*Math.sin(j*2.7),o=mesh(p,rock,j%3===0?(hot?basaltLight:spore?hazardMat:sulfur):rim,Math.cos(a)*r,.055+random(j+hz.x*17)*.065,Math.sin(a)*r,false);o.scale.set(.12,.08+random(j*19)*.095,.11);o.rotation.set(.25*j,j*1.13,.27);}
+   ball(p,inside,0,.031,0,.25,.028,.25,false);
+   if(spore)for(let j=0;j<4;j++){const a=j*1.57+.35,x=Math.cos(a)*.29,z=Math.sin(a)*.29,h=.14+j*.035;cyl(p,cream,x,h*.5,z,.028,.042,h,7);ball(p,cap,x,h,z,.09,.045,.09,false);}
+   if(hot)for(let j=0;j<4;j++){const a=j*1.57;branch(p,[Math.cos(a)*.16,.045,Math.sin(a)*.16],[Math.cos(a)*.33,.065,Math.sin(a)*.33],.014,.025,ember);}
+   const jet=group(p),bubbles=[],drops=[];
+   // Procedural soft particles with a radial volume-like opacity profile.
+   // No image assets, billboards remain in world coordinates and depth-tested.
+   const plumeGeo=new T.PlaneGeometry(1,1);uniqueTerrain.push(plumeGeo);
+   for(let j=0;j<12;j++){const mat=new T.ShaderMaterial({uniforms:{tint:{value:new T.Color(hot?'#ffd6a1':spore?'#d7adf4':'#e5f9f6')},opacity:{value:0},seed:{value:j*.73},time:{value:0}},vertexShader:'varying vec2 vUv; void main(){vUv=uv;gl_Position=projectionMatrix*modelViewMatrix*vec4(position,1.0);}',fragmentShader:'varying vec2 vUv; uniform vec3 tint; uniform float opacity; uniform float seed; uniform float time; void main(){vec2 p=vUv*2.0-1.0;float r=length(p);float n=sin(p.x*8.0+p.y*5.0+seed+time*2.0)*sin(p.y*9.0-p.x*4.0+seed);float a=pow(max(0.0,1.0-r),1.6)*(0.78+0.22*n);gl_FragColor=vec4(tint,a*opacity);}',transparent:true,depthWrite:false,side:T.DoubleSide});uniqueTerrain.push(mat);const o=mesh(jet,plumeGeo,mat,0,0,0,false);o.receiveShadow=false;bubbles.push(o);}
+   const dropMat=new T.MeshBasicMaterial({color:hot?'#ffbb63':spore?'#e3b9ff':'#b8f4ef',transparent:true,opacity:.8,depthWrite:false});uniqueTerrain.push(dropMat);
+   for(let j=0;j<8;j++){const o=ball(jet,dropMat,0,0,0,.025,.06,.025,false);o.receiveShadow=false;drops.push(o);}vents.push({hz,jet,bubbles,drops,dropMat});
+  }
   if(isSpring())for(let j=0;j<5;j++){
    const p=group(terrain,j%2?mw+.70:-.70,0,(j+1)*mh/6/SINE);
    if(style==='spring'||style==='oasis'){ball(p,mineral,0,-.03,0,.69,.09,1.05,false);ball(p,water,0,.035,0,.56,.025,.85,false);const ripple=mesh(p,pickupGeo,new T.MeshBasicMaterial({color:'#dffdf3',transparent:true,opacity:.5,depthWrite:false,side:T.DoubleSide}),0,.07,0,false);uniqueTerrain.push(ripple.material);pools.push(ripple);}
@@ -179,11 +192,14 @@ function createForest(T){
   const key=[f.worldW,f.worldH,f.biome?.zoneId,f.biome?.encounterSeed,f.segmentIndex,(f.obstacles||[]).map(o=>o.x+','+o.y).join(';')].join('|');if(key!==mapKey)rebuild(f,key);
   const v=y3CameraFrame(cam,w,h,sx,sy),center=y3Ground(v.x,v.y);camera.left=-v.halfW;camera.right=v.halfW;camera.top=v.halfH;camera.bottom=-v.halfH;camera.position.set(center.x,SINE*20,center.z+COS*20);camera.lookAt(center.x,0,center.z);camera.updateProjectionMatrix();
   for(const [i,q] of treeCrowns.entries()){q.crown.visible=!(f.pos.y<q.y&&q.y-f.pos.y<1.20&&Math.abs(f.pos.x-q.x)<.74);q.crown.rotation.z=Math.sin(t*.65+i*.73)*.025;}
-  for(const [i,v] of vents.entries()){const p=springVentVisual(v.hz,f.elapsed,f.biome);v.jet.visible=p.active||p.warning;for(const [j,o] of v.bubbles.entries()){const q=j/5;o.position.set(Math.sin(i+j)*.12,.12+p.jet*(.24+q),Math.cos(i+j)*.10);o.scale.set(.10+q*.12,.15+q*.15,.10+q*.12);o.material.opacity=p.active?.48-q*.28:p.warning?.12:0;}}for(const [i,o] of pools.entries()){o.scale.setScalar(.24+((t*.28+i*.17)%1)*.28);o.material.opacity=.45*(1-((t*.28+i*.17)%1));}
+  for(const [i,v] of vents.entries()){const p=springVentVisual(v.hz,f.elapsed,f.biome);v.jet.visible=true;
+   for(const [j,o] of v.bubbles.entries()){const q=ventParticlePose(p,j,f.elapsed+i*.19);o.position.set(q.x,q.y,q.z);o.quaternion.copy(camera.quaternion);o.scale.set(q.scale*2.5,q.scale*3.2,1);o.material.uniforms.opacity.value=q.opacity;o.material.uniforms.time.value=f.elapsed;}
+   v.dropMat.opacity=p.active?.85:p.warning?.48:0;for(const [j,o] of v.drops.entries()){const u=(j*.137+f.elapsed*2.6)%1,a=j*2.399;o.visible=p.active||p.warning;o.position.set(Math.cos(a)*u*.34,.06+Math.sin(Math.PI*u)*(p.active?.35+p.jet*.8:.13),Math.sin(a)*u*.34);o.scale.set(.022,.036+.035*(1-u),.022);}}
+  for(const [i,o] of pools.entries()){o.scale.setScalar(.24+((t*.28+i*.17)%1)*.28);o.material.opacity=.45*(1-((t*.28+i*.17)%1));}
   sync(nodePool,(f.nodes||[]).filter(n=>!n.claimed),node,(p,n)=>{place(p,n.x,n.y);const v=pickupVisual(n,t),u=p.userData;u.item.position.y=v.bob;u.ring.material.opacity=v.opacity;u.outer.material.opacity=v.opacity*.30;u.outer.scale.setScalar(v.radius*(1.20+.06*Math.sin(t*3+n.x)));});
   sync(enemyPool,(f.enemies||[]).filter(e=>e.hp>0||e.deathFx>0),enemy,(p,e)=>{place(p,e.x,e.y);const body=p.userData.body,v=enemyHitVisual(e);p.rotation.y=Math.atan2(f.pos.x-e.x,(f.pos.y-e.y)/SINE);body.position.y=e.moving?Math.abs(Math.sin(t*10+e.x))*.035:0;body.scale.set(v.sx,v.sy,v.sz);body.rotation.z=v.tilt*(e.hitResponse?.dx||1);const wind=e.warning>0?Math.max(0,Math.min(1,1-e.warning/(e.windupTotal||1))):0,rush=!!(e.ecologyRush||e.rush),stride=e.moving?Math.sin(t*(rush?19:9)+e.x):0;body.rotation.x=-v.tilt*(e.hitResponse?.dy||0)+(rush?.19:wind*.14);body.scale.y*=1-wind*.13;for(const [i,l] of p.userData.limbs.entries())l.rotation.x=stride*(i%3===0?1:-1)*(rush?.62:.33);for(const [i,l] of p.userData.wings.entries())l.rotation.z=(i===0?-1:1)*(e.moving?.25+Math.abs(stride)*.60:wind*.70);if(p.userData.skull)p.userData.skull.rotation.x=rush?.34:wind*.34;if(e.kind==='chicken')body.position.y+=Math.abs(stride)*.055+wind*.08;if(e.kind==='sporeling'||e.kind==='pepper')body.scale.x*=1+wind*.12;for(const m of p.userData.flashMats){m.emissive.set('#fff1c7');m.emissiveIntensity=v.flash*.85;}});
   place(hero.root,f.pos.x,f.pos.y);const facing=y3Facing(f.facing);hero.update(t,{facing,moving:!!f.moving,working:false,carrying:false});const aim=f.attackFx?.ttl>0&&Number.isFinite(f.attackFx.dx)?{x:f.attackFx.dx,y:f.attackFx.dy}:f.facing;if(aim&&Math.hypot(aim.x,aim.y)>.01)hero.root.rotation.y=Math.atan2(aim.x,aim.y/SINE);weaponRig.update(f,t);const nativeBlade=bladeTrail.draw(f,weaponRig);
   if(ambient){const dummy=ambientDummy;for(let i=0;i<32;i++){dummy.position.set(random(i*31)*f.worldW+Math.sin(t*.5+i)*.13,.22+random(i*23)*1.9+Math.sin(t*.7+i)*.08,(random(i*53)*f.worldH)/SINE+Math.cos(t*.4+i)*.14);dummy.updateMatrix();ambient.setMatrixAt(i,dummy.matrix);}ambient.instanceMatrix.needsUpdate=true;}
-  combatFx.draw(f,t,nativeBlade);element.dataset.telegraphCount=String(telegraphs.draw(f));renderer.render(scene,camera);document.documentElement.dataset.oddpotForest3d='active';
+  combatFx.draw(f,t,nativeBlade);element.dataset.telegraphCount=String(telegraphs.draw(f,t));renderer.render(scene,camera);document.documentElement.dataset.oddpotForest3d='active';
  },dispose(){disposed=true;element.remove();bladeTrail.dispose();combatFx.dispose();telegraphs.dispose();const geometries=new Set(),materials=new Set();scene.traverse(o=>{if(o.geometry)geometries.add(o.geometry);if(o.material)for(const m of Array.isArray(o.material)?o.material:[o.material])materials.add(m);});for(const g of geometries)g.dispose();for(const m of materials)m.dispose();for(const g of boxCache.values())g.dispose();for(const g of cylinderCache.values())g.dispose();for(const g of uniqueTerrain)g.dispose();renderer.dispose();renderer.forceContextLoss();}};
 }
