@@ -16,11 +16,14 @@ const wx=x=>x*10,wz=z=>z*12;
 const clamp=(x,a,b)=>Math.min(b,Math.max(a,x));
 const activeOrders=new Set(['queued','cooking','pickup','carried','delivering','flying','ordering']);
 let disabled=false,instance=null,pending=null;
-function fail(error){disabled=true;instance?.element.remove();instance=null;console.warn('Oddpot 3D fallback',error);document.documentElement.dataset.oddpot3d='fallback';}
+const y2bHotspots=['stock','book','bento','crew','door'];
+export function y2bHotspotPosition(x,y,w,h){return {x:clamp(x,Math.min(36,w/2),Math.max(w-36,w/2)),y:clamp(y,Math.min(24,h/2),Math.max(h-24,h/2))};}
+function resetHotspots(){for(const k of y2bHotspots)for(const el of document.querySelectorAll('.v016-'+k+'[data-y2b-anchor]')){el.style.removeProperty('left');el.style.removeProperty('top');el.style.removeProperty('bottom');el.style.removeProperty('transform');delete el.dataset.y2bAnchor;}}
+function fail(error){disabled=true;resetHotspots();instance?.element.remove();instance=null;console.warn('Oddpot 3D fallback',error);document.documentElement.dataset.oddpot3d='fallback';}
 export function enableY2(){
  document.documentElement.dataset.oddpot3d='loading';
  globalThis.__oddpotY2Renderer={draw(canvas,s,t,w,h,actorsFn){
-  if(!y2Eligible(s)||disabled){instance?.element.remove();return false;}
+  if(!y2Eligible(s)||disabled){resetHotspots();instance?.element.remove();return false;}
   if(!instance){if(!pending)pending=import('https://cdn.jsdelivr.net/npm/three@0.170.0/build/three.module.js').then(T=>{instance=createDiner(T);document.documentElement.dataset.oddpot3d='ready';}).catch(fail);return false;}
   try{instance.draw(canvas,s,t,w,h,actorsFn(s,t));return true;}catch(e){fail(e);return false;}
  }};
@@ -55,6 +58,9 @@ function createDiner(T){
  const pantry=group(scene,1.55,0,1.73);box(pantry,0,1.03,0,1.8,2.06,.52,dark,.04);for(let j=0;j<3;j++){box(pantry,0,.56+j*.56,.12,1.77,.085,.62,top,.025);for(let i=0;i<5;i++){const x=-.66+i*.33;cyl(pantry,x,.72+j*.56,.18,.11,.13,.24,[red,green,brass][(i+j)%3]);cyl(pantry,x,.86+j*.56,.18,.105,.105,.05,cream);}}
  const ledger=group(scene,8.3,1.6,1.6);box(ledger,0,0,0,1.12,.82,.13,dark,.035);box(ledger,0,0,.075,.93,.62,.035,cream,.02);for(let i=0;i<4;i++)box(ledger,0,.18-i*.115,.103,.65-i%2*.12,.025,.02,wood);
  for(const [a,b] of [[.075,.390],[.610,.925]]){const x=wx((a+b)/2),w=wx(b-a),z=wz(.408);box(scene,x,.43,z,w,.86,.48,wood,.04);box(scene,x,.91,z,w+.09,.16,.57,top,.04);for(let i=0;i<3;i++){const xx=x+(i-1)*w/3;box(scene,xx,.43,z+.25,w/3-.08,.64,.04,dark,.02);box(scene,xx,.43,z+.28,w/3-.18,.52,.03,wood,.02);box(scene,xx+.18,.56,z+.31,.09,.05,.04,brass,.015);}for(let j=0;j<3;j++)cyl(scene,x-.55+j*.22,1.10,z,.085,.10,.22,[red,green,brass][j]);}
+ // The existing action buttons point at these real display props.
+ const lunch=group(scene,2.45,1.02,wz(.408));box(lunch,0,.10,0,.58,.20,.37,wood,.035);box(lunch,0,.23,0,.62,.085,.41,top,.025);box(lunch,0,.16,0,.08,.26,.43,red,.015);
+ const roster=group(scene,7.55,1.0,wz(.408));box(roster,0,.17,0,.47,.34,.13,dark,.025);box(roster,0,.17,.076,.40,.27,.025,cream,.015);for(let i=0;i<3;i++)box(roster,0,.24-i*.075,.095,.27,.018,.015,wood);
  const pass=group(scene,5,0,wz(.397));box(pass,0,.39,0,1.13,.78,.35,wood,.04);box(pass,0,.83,0,1.22,.14,.42,top,.04);const passPlates=[-1,0,1].map(i=>plate(pass,i*.32,.94,0));
  box(scene,5,.045,10.65,1.7,.035,1.45,cream,.02);box(scene,5,.067,10.65,1.55,.02,1.30,teal,.02);
  for(const x of [.85,9.15]){cyl(scene,x,.26,10.36,.22,.16,.48,wood);for(let i=0;i<5;i++)ball(scene,x+Math.cos(i*2.4)*.15,.62+Math.sin(i)*.07,10.36+Math.sin(i*2.4)*.12,.15,.25,.13,green);}
@@ -63,6 +69,7 @@ function createDiner(T){
   for(const x of [-1.02,1.02]){for(const dx of [-.16,.16])for(const dz of [-.16,.16])box(p,x+dx,.18,dz,.075,.36,.075,dark,.015);box(p,x,.39,0,.49,.12,.49,wood,.035);box(p,x,.465,0,.44,.08,.43,teal,.025);}
   const meals=[plate(p,-.40,.88,.04),plate(p,.40,.88,.04)];tables.push({p,meals});}
  const flameMat=mat('#f2a052');flameMat.emissive.set('#ff842d');flameMat.emissiveIntensity=1.6;
+ const steamGeo=new T.SphereGeometry(1,10,8),steamMats=Array.from({length:4},()=>new T.MeshBasicMaterial({color:'#f6e9d0',transparent:true,opacity:.13,depthWrite:false}));
  const stoves=[];
  for(let i=0;i<3;i++){const p=group(scene);box(p,0,.29,0,1.56,.58,1.05,stone,.08);box(p,0,.64,0,1.68,.14,1.16,mortar,.04);box(p,0,.25,.535,.72,.27,.045,dark,.025);
   const flames=[];for(let k=0;k<3;k++)flames.push(ball(p,(k-1)*.16,.25,.58,.10,.10,.065,flameMat));
@@ -72,7 +79,8 @@ function createDiner(T){
   const grill=vessels.GRILL;box(grill,0,.87,0,1.32,.29,.88,iron,.04);for(let j=0;j<7;j++)box(grill,-.52+j*.17,1.035,0,.045,.035,.77,brass,.008);
   const steam=vessels.STEAM;for(let j=0;j<2;j++){cyl(steam,0,.84+j*.23,0,.43,.43,.22,top,32);cyl(steam,0,.73+j*.23,0,.45,.45,.04,dark,32);}cyl(steam,0,1.21,0,.45,.45,.08,cream,32);
   box(vessels.LOCKED,0,.81,0,1.34,.17,.91,dark,.04);for(const k of [-1,1])box(vessels.LOCKED,0,.93,0,1.13,.08,.12,top,.01).rotation.y=k*.61;
-  stoves.push({p,flames,vessels});
+  const wisps=steamMats.map(m=>{const o=mesh(p,steamGeo,m,0,1.4,0);o.castShadow=false;o.receiveShadow=false;return o;});
+  stoves.push({p,flames,vessels,wisps});
  }
  for(const x of [2.45,7.55]){cyl(scene,x,2.15,2.46,.36,.70,.35,iron,32);cyl(scene,x,2.67,2.46,.14,.14,.85,iron);cyl(scene,x,1.96,2.46,.72,.72,.06,brass,32);}
  const hemi=new T.HemisphereLight('#e3e9cf','#76634d',1.9);scene.add(hemi);const sun=new T.DirectionalLight('#ffdfb1',3.1);sun.position.set(-3,10,4);sun.target.position.set(5,0,6);sun.castShadow=true;sun.shadow.mapSize.set(1024,1024);Object.assign(sun.shadow.camera,{left:-9,right:9,top:9,bottom:-9,near:.5,far:35});sun.shadow.normalBias=.03;scene.add(sun,sun.target);
@@ -102,13 +110,17 @@ function createDiner(T){
   if(rw!==lastW||rh!==lastH){renderer.setSize(rw,rh,false);const aspect=w/h,half=Math.max(5.5/aspect,5.9);camera.left=-half*aspect;camera.right=half*aspect;camera.top=half;camera.bottom=-half;camera.updateProjectionMatrix();lastW=rw;lastH=rh;}
   const layout=y2Layout(s),v=s.service;
   for(let i=0;i<tables.length;i++){const item=tables[i],p=layout.tables[i];item.p.visible=!!p;if(p){item.p.position.set(wx(p.x),0,wz(p.z));for(let j=0;j<2;j++)item.meals[j].visible=!!v?.orders?.some(o=>o.tableId===i&&(o.seatId??0)===j&&['eating','review'].includes(o.status));}}
-  for(let i=0;i<3;i++){const item=stoves[i],p=layout.stoves[i],busy=v?.stations?.[p.id];item.p.position.set(wx(p.x),0,wz(p.z));const type=p.unlocked?(item.vessels[p.type]?p.type:'WOK'):'LOCKED';for(const [k,g] of Object.entries(item.vessels))g.visible=k===type;item.flames.forEach((f,j)=>{f.visible=p.unlocked&&(!v||!!busy);f.scale.y=.07+.035*Math.sin(t*8+j);});}
+  for(let i=0;i<3;i++){const item=stoves[i],p=layout.stoves[i],busy=v?.stations?.[p.id];item.p.position.set(wx(p.x),0,wz(p.z));const type=p.unlocked?(item.vessels[p.type]?p.type:'WOK'):'LOCKED';for(const [k,g] of Object.entries(item.vessels))g.visible=k===type;item.flames.forEach((f,j)=>{f.visible=p.unlocked&&(!v||!!busy);f.scale.y=.07+.035*Math.sin(t*8+j);});item.wisps.forEach((o,j)=>{const q=(t*.55+j*.25)%1;o.visible=p.unlocked&&!!busy;o.position.set(Math.sin(q*5+j)*.14,1.18+q*.75,Math.cos(q*4+j)*.09);o.scale.set(.08+q*.11,.12+q*.15,.08+q*.11);});}
   const ready=v?.orders?.filter(o=>o.status==='pickup').length||0;passPlates.forEach((p,i)=>p.visible=i<ready);
   const ids=new Set(actors.map(a=>a.id));for(const [id,a] of byId)if(!ids.has(id)){a.root.visible=false;byId.delete(id);}
   for(const list of pool.values())for(const a of list)a.used=false;
   for(const a of actors){const m=actor(a.kind,a.id);m.used=true;m.root.visible=true;let direction=a.direction==='up'?'back':a.direction==='down'?'front':a.direction;if(!direction&&m.last){const dx=a.x-m.last.x,dz=a.y-m.last.y;if(Math.hypot(dx,dz)>.0004)direction=Math.abs(dx)>Math.abs(dz)?dx<0?'left':'right':dz<0?'back':'front';}if(a.seat&&a.order)direction=(a.order.seatId??0)===0?'right':'left';m.facing=direction||m.facing||'front';m.last={x:a.x,y:a.y};m.root.position.set(wx(a.x),a.seat?.19:0,wz(a.y));m.dish.visible=!!a.plate;m.update(t,{facing:a.working?'back':m.facing,moving:!!a.walk,working:!!a.working,carrying:!!a.plate,seated:!!a.seat,eating:a.order?.status==='eating'});}
   hemi.intensity=v?1.05:1.9;sun.intensity=v?1.65:3.1;renderer.render(scene,camera);
   const c=canvas.getContext('2d');c.clearRect(0,0,w,h);
+  if(!v){const section=parent.closest('.v016-scene');if(section){
+   const anchors={stock:[.155,1.73/12,1.72],book:[.83,1.6/12,1.63],bento:[.245,.408,1.15],crew:[.755,.408,1.18],door:[.50,.93,.05]};
+   for(const [key,[x,z,y]] of Object.entries(anchors)){const el=section.querySelector('.v016-'+key);if(!el)continue;const pt=project(x,z,y,w,h),q=y2bHotspotPosition(pt.x,pt.y,w,h);el.style.left=q.x+'px';el.style.top=q.y+'px';el.style.bottom='auto';el.style.transform='translate(-50%,-50%)';el.dataset.y2bAnchor='1';}
+  }}else resetHotspots();
   const guestCues=selectDiningSpeech(v?.orders||[],t,2),staffCue=selectStaffSpeech(s,t,guestCues),home=!v?homeKitchenChatter(s,t,globalThis.matchMedia?.('(prefers-reduced-motion: reduce)').matches||false):null;
   for(const a of actors){const p=project(a.x,a.y,1.45,w,h),cue=guestCues.find(q=>q.id===a.id),o=a.order;const txt=cue?.text||(staffCue?.staffRole===a.id?staffCue.text:null)||(home?.actor===a.id?home.text:null)||(o&&activeOrders.has(o.status)?RECIPES[o.recipeId]?.emoji||'🍽':o?.status==='review'?o.sat>=70?'💚':'💬':a.working?'🍳':a.plate?'🍽':null);if(txt)label(c,p,txt,w,h);
    if(a.id==='hero'){const base=project(a.x,a.y,.05,w,h),hero=v?.hero;c.strokeStyle='#f1d59b';c.lineWidth=2;c.beginPath();c.ellipse(base.x,base.y,9,4,0,0,Math.PI*2);c.stroke();if(hero?.dwellZone&&hero.dwell>0){c.beginPath();c.arc(base.x,base.y,11,-Math.PI/2,-Math.PI/2+Math.PI*2*Math.min(1,hero.dwell/(hero.dwellZone.startsWith('serve:')?.48:.36)));c.stroke();}}
