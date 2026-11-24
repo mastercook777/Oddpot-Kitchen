@@ -1,6 +1,8 @@
 // Y3a: read-only 3D forest. No physics, inventory or combat simulation.
 import {roundedFactory} from './three_y1_models.js?v=y1';
-import {makeChefY2} from './three_y2b_chef.js?v=y2b';
+import {makeChefY2} from './three_y2b_chef.js?v=y3b';
+import {createWeaponRig} from './three_y3b_weapon_pose.js';
+import {enemyHitVisual,pickupVisual} from './three_y3b_feedback.js';
 const ANGLE=Math.PI*55/180, SINE=Math.sin(ANGLE), COS=Math.cos(ANGLE);
 export function y3Eligible(s){const f=s?.field;return s?.phase==='field'&&!!f?.action&&f.worldVersion==='0.11-B1'&&f.biome?.zoneId==='herb_path'&&s.activeWorld!=='cloud';}
 export function y3Ground(x,y){return {x,z:y/SINE};}
@@ -41,12 +43,7 @@ function createForest(T){
  function branch(p,a,b,r1,r2,m){const u=new T.Vector3(...a),v=new T.Vector3(...b),d=v.clone().sub(u),q=u.clone().add(v).multiplyScalar(.5),o=cyl(p,m,q.x,q.y,q.z,r1,r2,d.length(),9);o.quaternion.setFromUnitVectors(new T.Vector3(0,1,0),d.normalize());return o;}
  let terrain=null,mapKey='',treeCrowns=[],nodePool=new Map(),enemyPool=new Map(),uniqueTerrain=[];
  const actors=group(scene),hero=makeChefY2(T,rounded,true);actors.add(hero.root);hero.root.scale.setScalar(.72);
- // Weapon is visibly equipped independently from the signature back skillet.
- const weapons={};for(const k of ['WOK','POT','GRILL','STEAM'])weapons[k]=group(hero.root,.35,.66,.26);
- const wok=weapons.WOK;mesh(wok,new T.LatheGeometry([[.02,0],[.18,.05],[.30,.15],[.35,.22]].map(v=>new T.Vector2(...v)),24),new T.MeshStandardMaterial({color:'#526b65',metalness:.5,roughness:.42,side:T.DoubleSide}),0,0,0).rotation.x=.72;box(wok,bark,.25,.03,0,.43,.07,.075);
- const pot=weapons.POT;cyl(pot,iron,0,.02,0,.24,.20,.28,24);cyl(pot,copper,0,.18,0,.26,.26,.045,24);ball(pot,bark,0,.22,0,.055,.04,.055);
- const fork=weapons.GRILL;box(fork,bark,0,0,0,.075,.08,.55);for(const dx of [-.09,.09])box(fork,iron,dx,0,.37,.042,.045,.30);box(fork,iron,0,0,.23,.24,.045,.055);
- const steamer=weapons.STEAM;for(let i=0;i<2;i++){cyl(steamer,barkLight,0,i*.13,0,.25,.25,.13,24);cyl(steamer,copper,0,i*.13-.065,0,.26,.26,.03,24);}
+ const weaponRig=createWeaponRig(T,hero,rounded);
  function tree(parent,o,i){const p=group(parent);place(p,o.x+.5,o.y+.5);
   if(i%5===2){for(let j=0;j<3;j++){const a=mesh(p,rock,j===0?stone:stone2,(j-1)*.22,.22+j*.025,(j%2)*.16);a.scale.set(.36-j*.06,.27+j*.06,.34-j*.05);a.rotation.y=i*.73+j;}ball(p,moss,-.10,.36,.05,.27,.07,.20);return;}
   const h=1.0+random(i*7)*.38;branch(p,[0,0,0],[.08,h,0],.13,.20,bark);for(let j=0;j<5;j++){const a=j*Math.PI*2/5;branch(p,[0,.20,0],[Math.cos(a)*.38,.015,Math.sin(a)*.38],.045,.095,bark);}
@@ -66,7 +63,7 @@ function createForest(T){
   for(let variant=0;variant<3;variant++){const pts=props.filter((p,i)=>i%3===variant);if(!pts.length)continue;const grassGeo=new T.ConeGeometry(.095,.26,5),g=new T.InstancedMesh(grassGeo,grasses[variant],pts.length*3);uniqueTerrain.push(grassGeo,g);let j=0;for(const p of pts){for(let k=0;k<3;k++){dummy.position.set(p.x+(k-1)*.08,.12,p.y/SINE+(k%2)*.08);dummy.rotation.set(.12*(k-1),random(j)*6.28,(k-1)*.18);dummy.scale.setScalar((p.scale||1)*.7);dummy.updateMatrix();g.setMatrixAt(j++,dummy.matrix);}}g.receiveShadow=true;terrain.add(g);}
   for(const [i,p] of props.entries())if(i%9===0){const flower=group(terrain);place(flower,p.x,p.y);cyl(flower,green,0,.12,0,.018,.024,.24,7);for(let j=0;j<5;j++)ball(flower,i%2?cream:purple,Math.cos(j*1.26)*.064,.24,Math.sin(j*1.26)*.064,.048,.026,.048,false);ball(flower,gold,0,.26,0,.035,.024,.035,false);}
   // No stale nodes or enemies survive a segment change.
-  for(const pool of [nodePool,enemyPool])for(const item of pool.values())actors.remove(item);nodePool.clear();enemyPool.clear();
+  for(const pool of [nodePool,enemyPool])for(const item of pool.values()){actors.remove(item);for(const m of item.userData.flashMats||[])m.dispose();}nodePool.clear();enemyPool.clear();
  }
  function node(n){const p=group(actors);const id=n.id||'mushroom';
   if(n.type==='event'){if(n.kind==='ecology'){for(let i=0;i<5;i++)ball(p,i%2?gold:purple,Math.cos(i*1.26)*.18,.32,Math.sin(i*1.26)*.18,.13,.18,.11);cyl(p,green,0,.18,0,.07,.11,.34);}
@@ -81,12 +78,25 @@ function createForest(T){
  }
  function enemy(e){const p=group(actors),body=group(p),kind=e.kind;
   if(e.isBoss){ball(body,purple,0,.46,0,.56,.46,.47);cyl(body,cream,0,.60,0,.21,.24,.60);ball(body,red,0,.97,0,.76,.26,.69);for(let i=0;i<7;i++){let a=i*.90;ball(body,cream,Math.cos(a)*.49,1.15,Math.sin(a)*.45,.09,.025,.09);}for(const k of [-1,1]){ball(body,red,k*.57,.43,0,.18,.28,.20);ball(body,ink,k*.14,.70,.39,.06,.065,.035);}}
-  else if(kind==='chicken'){ball(body,cream,0,.27,0,.27,.24,.24);ball(body,cream,0,.53,.16,.18,.17,.17);ball(body,red,0,.68,.17,.075,.065,.05);ball(body,gold,0,.50,.32,.10,.055,.08);for(const k of [-1,1]){ball(body,cream,k*.24,.30,0,.11,.15,.19);ball(body,ink,k*.08,.56,.29,.025,.028,.018);}}
-  else if(kind==='boar'){ball(body,bark,0,.36,0,.41,.34,.49);ball(body,barkLight,0,.38,.34,.27,.25,.24);ball(body,red,0,.34,.55,.18,.12,.08);for(const k of [-1,1]){ball(body,bark,k*.21,.59,.27,.10,.15,.08);ball(body,cream,k*.16,.28,.48,.055,.11,.06);ball(body,ink,k*.12,.43,.53,.026,.035,.015);}}
+  else if(kind==='chicken'){ball(body,cream,0,.27,0,.27,.24,.24);ball(body,cream,0,.53,.16,.18,.17,.17);for(let j=0;j<3;j++)ball(body,red,0,.68+j*.025,.10+j*.07,.045,.075,.045);for(let j=0;j<3;j++){const tail=ball(body,cream,(j-1)*.07,.40,-.26,.07,.20,.16);tail.rotation.x=-.6;}ball(body,gold,0,.50,.32,.10,.055,.08);for(const k of [-1,1]){ball(body,cream,k*.24,.30,0,.11,.15,.19);ball(body,ink,k*.08,.56,.29,.025,.028,.018);}}
+  else if(kind==='boar'){
+   // The internal legacy id is boar; the GDD/data identify Ironhorn Bison.
+   ball(body,bark,0,.44,-.08,.37,.35,.52);ball(body,bark,0,.55,.14,.40,.43,.34);
+   ball(body,barkLight,0,.48,.40,.26,.27,.29);ball(body,stone2,0,.35,.61,.24,.135,.16);
+   for(const k of [-1,1]){
+    ball(body,bark,k*.27,.64,.35,.15,.09,.08);
+    branch(body,[k*.17,.67,.40],[k*.33,.81,.40],.067,.095,stone2);
+    branch(body,[k*.33,.81,.40],[k*.40,.98,.44],.012,.067,cream);
+    ball(body,ink,k*.13,.53,.60,.035,.035,.025);ball(body,ink,k*.095,.35,.74,.042,.025,.018);
+    for(const zz of [-.37,.26]){cyl(body,bark,k*.24,.18,zz,.09,.10,.30);box(body,ink,k*.24,.055,zz+.025,.19,.11,.22);}
+   }
+   branch(body,[0,.47,-.56],[.08,.31,-.79],.035,.045,bark);ball(body,ink,.08,.26,-.81,.065,.10,.06);
+   for(let j=0;j<3;j++)ball(body,moss,(j-1)*.13,.85,-.03+j*.08,.12,.045,.15);
+  }
   else if(kind==='pepper'){ball(body,red,0,.35,0,.23,.35,.22);branch(body,[0,.61,0],[.11,.76,0],.05,.065,green);for(const k of [-1,1])ball(body,ink,k*.08,.42,.20,.036,.045,.02);}
   else {ball(body,cream,0,.23,0,.22,.24,.20);ball(body,kind==='sporeling'?purple:blue,0,.49,0,.36,.17,.31);for(const k of [-1,1])ball(body,ink,k*.075,.29,.19,.03,.035,.018);}
-  for(const k of [-1,1])if(!['pepper','sporeling'].includes(kind))for(let j=0;j<(kind==='boar'?2:1);j++)ball(body,bark,k*.14,.075,j*.26-.08,.07,.08,.10);
-  p.userData.body=body;return p;
+  for(const k of [-1,1])if(!['pepper','sporeling','boar'].includes(kind)&&!e.isBoss)for(let j=0;j<(kind==='boar'?2:1);j++)ball(body,bark,k*.14,.075,j*.26-.08,.07,.08,.10);
+  p.userData.body=body;const own=new Map();body.traverse(o=>{if(o.isMesh&&o.material?.emissive){if(!own.has(o.material))own.set(o.material,o.material.clone());o.material=own.get(o.material);}});p.userData.flashMats=[...own.values()];return p;
  }
  function sync(pool,items,build,fn){const live=new Set();for(const v of items){const k=v.key??v.id;live.add(k);let p=pool.get(k);if(!p){p=build(v);pool.set(k,p);}p.visible=true;fn(p,v);}for(const [k,p] of pool)if(!live.has(k))p.visible=false;}
  let lastW=0,lastH=0;
@@ -97,9 +107,8 @@ function createForest(T){
   const v=y3CameraFrame(cam,w,h,sx,sy),center=y3Ground(v.x,v.y);camera.left=-v.halfW;camera.right=v.halfW;camera.top=v.halfH;camera.bottom=-v.halfH;camera.position.set(center.x,SINE*20,center.z+COS*20);camera.lookAt(center.x,0,center.z);camera.updateProjectionMatrix();
   for(const q of treeCrowns){q.crown.visible=!(f.pos.y<q.y&&q.y-f.pos.y<1.20&&Math.abs(f.pos.x-q.x)<.74);}
   sync(nodePool,(f.nodes||[]).filter(n=>!n.claimed),node,(p,n)=>{place(p,n.x,n.y,n.type==='event'?0:.035+Math.sin(t*3+n.x)*.025);});
-  sync(enemyPool,(f.enemies||[]).filter(e=>e.hp>0||e.deathFx>0),enemy,(p,e)=>{place(p,e.x,e.y);const body=p.userData.body,dead=e.hp<=0,hit=e.hurtFx||0;p.rotation.y=Math.atan2(f.pos.x-e.x,(f.pos.y-e.y)/SINE);body.position.y=e.moving?Math.abs(Math.sin(t*10+e.x))*.035:0;body.scale.setScalar(dead?Math.max(.05,(e.deathFx||0)/.45):1);body.rotation.z=hit?Math.sin(t*32)*hit*.28:0;});
-  place(hero.root,f.pos.x,f.pos.y);const attacking=!!(f.attackFx?.ttl>0),facing=y3Facing(f.facing);hero.update(t,{facing,moving:!!f.moving,working:attacking,carrying:false});
-  const type=f.weapon?.type||'WOK';for(const [k,p] of Object.entries(weapons)){p.visible=k===type;p.rotation.y=attacking?Math.sin((1-f.attackFx.ttl/(f.attackFx.duration||.3))*Math.PI)*1.1:0;p.rotation.x=f.guardTime>0?-.65:attacking?-.3:0;}
+  sync(enemyPool,(f.enemies||[]).filter(e=>e.hp>0||e.deathFx>0),enemy,(p,e)=>{place(p,e.x,e.y);const body=p.userData.body,v=enemyHitVisual(e);p.rotation.y=Math.atan2(f.pos.x-e.x,(f.pos.y-e.y)/SINE);body.position.y=e.moving?Math.abs(Math.sin(t*10+e.x))*.035:0;body.scale.set(v.sx,v.sy,v.sz);body.rotation.z=v.tilt*(e.hitResponse?.dx||1);body.rotation.x=-v.tilt*(e.hitResponse?.dy||0);for(const m of p.userData.flashMats){m.emissive.set('#fff1c7');m.emissiveIntensity=v.flash*.85;}});
+  place(hero.root,f.pos.x,f.pos.y);const attacking=!!(f.attackFx?.ttl>0),facing=y3Facing(f.facing);hero.update(t,{facing,moving:!!f.moving,working:false,carrying:false});weaponRig.update(f);
   renderer.render(scene,camera);document.documentElement.dataset.oddpotForest3d='active';
  },dispose(){disposed=true;element.remove();const geometries=new Set(),materials=new Set();scene.traverse(o=>{if(o.geometry)geometries.add(o.geometry);if(o.material)for(const m of Array.isArray(o.material)?o.material:[o.material])materials.add(m);});for(const g of geometries)g.dispose();for(const m of materials)m.dispose();for(const g of boxCache.values())g.dispose();for(const g of cylinderCache.values())g.dispose();for(const g of uniqueTerrain)g.dispose();renderer.dispose();renderer.forceContextLoss();}};
 }
