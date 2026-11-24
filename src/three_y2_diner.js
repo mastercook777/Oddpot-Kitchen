@@ -3,7 +3,8 @@ import {dinerFloor} from './restaurant_scene_v075.js';
 import {RECIPES,CUSTOMERS} from './data.js';
 import {selectDiningSpeech,selectStaffSpeech} from './diner_ambience_v077.js';
 import {homeKitchenChatter} from './home_kitchen_v013j.js';
-import {roundedFactory,makeChefY1} from './three_y1_models.js?v=y1';
+import {roundedFactory} from './three_y1_models.js?v=y1';
+import {makeChefY2} from './three_y2b_chef.js?v=y2b';
 
 export function y2Eligible(s){return s?.activeWorld!=='cloud'&&(s?.phase==='forecast'&&!s.service||s?.phase==='service'&&!!s.service?.walkable);}
 export function y2Layout(s){
@@ -78,20 +79,20 @@ function createDiner(T){
  for(const x of [2.2,7.8]){box(scene,x,2.25,1.59,.19,.34,.19,brass,.04);ball(scene,x,2.25,1.72,.11,.14,.11,flameMat);const l=new T.PointLight('#ffbf79',3,5,1.8);l.position.set(x,2.25,1.95);scene.add(l);}
  // Stable reusable actors. Staff use the Y1 chef model, guests have species silhouettes.
  function makeGuest(kind){const root=group(scene),body=group(root),legs=[];let m=kind==='family'?red:kind==='critic'?violet:kind==='gardener'?green:blue;
-  for(const k of [-1,1]){const leg=group(body,k*.12,.27,0);ball(leg,wood,0,-.12,.04,.12,.13,.15);legs.push(leg);}
-  if(kind==='regular'){ball(body,teal,0,.54,0,.38,.44,.33);ball(body,green,-.12,.78,.17,.11,.08,.09);}
-  else if(kind==='critic'){ball(body,violet,0,.61,0,.30,.48,.29);ball(body,cream,0,1.0,0,.25,.25,.24);}
+  if(!['regular','critic'].includes(kind))for(const k of [-1,1]){const leg=group(body,k*.12,.27,0);ball(leg,wood,0,-.12,.04,.12,.13,.15);legs.push(leg);}
+  if(kind==='regular'){ball(body,teal,0,.34,0,.43,.34,.36);ball(body,green,-.16,.55,.18,.12,.09,.08);ball(body,teal,.29,.28,0,.18,.16,.22);}
+  else if(kind==='critic'){mesh(body,new T.LatheGeometry([[0,0],[.10,.02],[.30,.18],[.32,.46],[.24,.74],[0,.83]].map(a=>new T.Vector2(...a)),24),violet,0,.18,0);ball(body,cream,0,.91,.035,.26,.24,.24);for(const k of [-1,1])ball(body,violet,k*.29,.57,.04,.14,.085,.12);}
   else{ball(body,m,0,.48,0,.26,.27,.21);ball(body,cream,0,.86,.03,.26,.24,.23);
    if(kind==='family'){ball(body,red,0,1.07,0,.39,.18,.36);for(let i=0;i<4;i++)ball(body,cream,Math.cos(i*1.6)*.23,1.18,Math.sin(i*1.6)*.21,.07,.025,.07);}
-   else if(kind==='adventurer'){ball(body,iron,0,1.01,0,.29,.16,.26);ball(body,wood,0,.73,.20,.20,.15,.11);}
+   else if(kind==='adventurer'){ball(body,iron,0,1.01,0,.29,.16,.26);ball(body,wood,0,.69,.20,.22,.20,.14);for(const k of [-1,1]){ball(body,wood,k*.085,.55,.23,.07,.13,.075);ball(body,brass,k*.085,.48,.28,.045,.04,.03);}box(body,brass,0,1.03,.255,.07,.20,.035,.018);}
    else if(kind==='gardener'){for(const k of [-1,1]){box(body,k*.20,1.17,0,.055,.34,.06,wood,.02).rotation.z=k*.32;ball(body,green,k*.24,1.22,.02,.09,.12,.06);}}
    else{cyl(body,0,1.09,0,.035,.30,.45,blue);ball(body,brass,.17,1.08,.2,.05,.05,.04);}
   }
-  const ey=kind==='regular'?.67:.88;for(const k of [-1,1])ball(body,dark,k*.09,ey,.25,.029,.037,.017);
-  return {root,update(t,s){for(let i=0;i<2;i++)legs[i].rotation.x=s.moving?Math.sin(t*10+i*Math.PI)*.36:0;body.position.y=s.moving?Math.abs(Math.sin(t*10))*.025:kind==='critic'?.06:0;root.rotation.y={front:0,right:Math.PI/2,back:Math.PI,left:-Math.PI/2}[s.facing]||0;}};
+  const ey=kind==='regular'?.43:kind==='critic'?.92:.88;for(const k of [-1,1])ball(body,dark,k*.09,ey,.25,.029,.037,.017);
+  const hands=[];if(!['regular','critic'].includes(kind))for(const k of [-1,1]){const hand=group(body,k*.25,.57,.04);ball(hand,m,0,-.08,0,.085,.12,.08);ball(hand,cream,0,-.17,.03,.07,.07,.07);hands.push(hand);}return {root,update(t,s){for(let i=0;i<legs.length;i++)legs[i].rotation.x=s.seated?-1.15:s.moving?Math.sin(t*10+i*Math.PI)*.36:0;for(let i=0;i<hands.length;i++)hands[i].rotation.x=s.eating?-1.0+Math.sin(t*4+i)*.40:s.seated?-.25:s.moving?Math.sin(t*10+i*Math.PI)*.23:0;body.position.y=kind==='critic'?.10+Math.sin(t*2.4)*.04:s.moving?Math.abs(Math.sin(t*10))*.025:0;body.rotation.x=s.eating?.07+Math.sin(t*4)*.04:0;if(kind==='regular'){body.scale.y=1+(s.moving?.10:.035)*Math.sin(t*(s.moving?8:2));body.scale.x=1-(body.scale.y-1)*.45;}root.rotation.y={front:0,right:Math.PI/2,back:Math.PI,left:-Math.PI/2}[s.facing]||0;}};
  }
  const pool=new Map(),byId=new Map();
- function actor(kind,id){let a=byId.get(id);if(a&&a.kind===kind)return a;if(a){a.root.visible=false;byId.delete(id);}let list=pool.get(kind);if(!list)pool.set(kind,list=[]);a=list.find(o=>!o.used&&!byId.has(o.id));if(!a){const staff=['chef','helper','helper2','waiter','waiter2'].includes(kind),m=staff?makeChefY1(T,rounded):makeGuest(kind);scene.add(m.root);m.root.scale.setScalar(staff?.70:.76);a={...m,kind};if(staff&&kind!=='chef'){m.root.traverse(o=>{if(o.isMesh&&o.material?.color?.getHexString()==='417b91'){o.material=o.material.clone();o.material.color.set(kind==='waiter'?'#708d62':kind==='helper'?'#d27a46':'#517d85');}});}a.dish=plate(m.root,0,.72,.44);list.push(a);}a.id=id;byId.set(id,a);return a;}
+ function actor(kind,id){let a=byId.get(id);if(a&&a.kind===kind)return a;if(a){a.root.visible=false;byId.delete(id);}let list=pool.get(kind);if(!list)pool.set(kind,list=[]);a=list.find(o=>!o.used&&!byId.has(o.id));if(!a){const staff=['chef','helper','helper2','waiter','waiter2'].includes(kind),m=staff?makeChefY2(T,rounded,kind==='chef'):makeGuest(kind);scene.add(m.root);m.root.scale.setScalar(kind==='chef'?.84:staff?.70:.76);a={...m,kind};if(staff&&kind!=='chef'){m.root.traverse(o=>{if(o.isMesh&&o.material?.color?.getHexString()==='417b91'){o.material=o.material.clone();o.material.color.set(kind==='waiter'?'#708d62':kind==='helper'?'#d27a46':'#517d85');}});}a.dish=plate(m.root,0,.60,.43);list.push(a);}a.id=id;byId.set(id,a);return a;}
  const tmp=new T.Vector3();let lastW=0,lastH=0;
  function project(x,z,y,w,h){tmp.set(wx(x),y,wz(z)).project(camera);return {x:(tmp.x+1)*w/2,y:(1-tmp.y)*h/2};}
  function label(c,p,txt,w,h){if(!txt)return;c.font='bold 11px system-ui';const width=Math.min(w-12,c.measureText(txt).width+12),x=clamp(p.x-width/2,6,w-width-6),y=clamp(p.y-16,5,h-23);c.fillStyle='#2d3029e8';c.beginPath();c.roundRect(x,y,width,19,5);c.fill();c.fillStyle='#fff0ce';c.textAlign='center';c.textBaseline='middle';c.fillText(txt,x+width/2,y+9.5,width-8);}
@@ -105,7 +106,7 @@ function createDiner(T){
   const ready=v?.orders?.filter(o=>o.status==='pickup').length||0;passPlates.forEach((p,i)=>p.visible=i<ready);
   const ids=new Set(actors.map(a=>a.id));for(const [id,a] of byId)if(!ids.has(id)){a.root.visible=false;byId.delete(id);}
   for(const list of pool.values())for(const a of list)a.used=false;
-  for(const a of actors){const m=actor(a.kind,a.id);m.used=true;m.root.visible=true;let direction=a.direction==='up'?'back':a.direction==='down'?'front':a.direction;if(!direction&&m.last){const dx=a.x-m.last.x,dz=a.y-m.last.y;if(Math.hypot(dx,dz)>.0004)direction=Math.abs(dx)>Math.abs(dz)?dx<0?'left':'right':dz<0?'back':'front';}if(a.seat&&a.order)direction=(a.order.seatId??0)===0?'right':'left';m.facing=direction||m.facing||'front';m.last={x:a.x,y:a.y};m.root.position.set(wx(a.x),a.seat?.19:0,wz(a.y));m.dish.visible=!!a.plate;m.update(t,{facing:m.facing,moving:!!a.walk});}
+  for(const a of actors){const m=actor(a.kind,a.id);m.used=true;m.root.visible=true;let direction=a.direction==='up'?'back':a.direction==='down'?'front':a.direction;if(!direction&&m.last){const dx=a.x-m.last.x,dz=a.y-m.last.y;if(Math.hypot(dx,dz)>.0004)direction=Math.abs(dx)>Math.abs(dz)?dx<0?'left':'right':dz<0?'back':'front';}if(a.seat&&a.order)direction=(a.order.seatId??0)===0?'right':'left';m.facing=direction||m.facing||'front';m.last={x:a.x,y:a.y};m.root.position.set(wx(a.x),a.seat?.19:0,wz(a.y));m.dish.visible=!!a.plate;m.update(t,{facing:a.working?'back':m.facing,moving:!!a.walk,working:!!a.working,carrying:!!a.plate,seated:!!a.seat,eating:a.order?.status==='eating'});}
   hemi.intensity=v?1.05:1.9;sun.intensity=v?1.65:3.1;renderer.render(scene,camera);
   const c=canvas.getContext('2d');c.clearRect(0,0,w,h);
   const guestCues=selectDiningSpeech(v?.orders||[],t,2),staffCue=selectStaffSpeech(s,t,guestCues),home=!v?homeKitchenChatter(s,t,globalThis.matchMedia?.('(prefers-reduced-motion: reduce)').matches||false):null;
