@@ -1,3 +1,4 @@
+import {a21AtlasReady,a21Sprite,a21Tile} from './hearth_assets_v016a21.js?v=0.16-a21';
 import {fieldHitPose,fieldAttackPose} from './field_hit_response_v011h.js?v=0.12.0-alpha.1';
 import {drawFieldHitEffects} from './field_effects_v011e2.js?v=0.12.0-alpha.1';
 import {drawEcologyWarning} from './field_ecology_v011b2.js';
@@ -926,14 +927,79 @@ function drawLivingHearthA1(c,w,h){
  c.restore();
 }
 
+// A2.1: real pixel atlas layered at the existing room anchors.
+function a21HearthBackground(c,w,h){
+ const sx=n=>n*w,sy=n=>n*h,unit=Math.max(38,Math.round(w/6));
+ rect(c,0,0,w,h,'#302727');
+ a21Tile(c,'floor',sx(.035),sy(.145),sx(.93),sy(.855),unit);
+ a21Tile(c,'stone',sx(.035),sy(.145),sx(.93),sy(.245),unit*.72);
+ a21Tile(c,'wall',sx(.035),0,sx(.93),sy(.145),unit*.75);
+ // Dark top beam and side walls give a readable cutaway silhouette.
+ rect(c,0,0,w,7,'#3b2b2b');rect(c,0,7,w,4,'#705343');
+ for(const px of [0,.966]){
+  a21Tile(c,'stone',sx(px),0,sx(.034),h,unit*.55);
+  rect(c,sx(px),0,3,h,'#463732');
+ }
+ rect(c,sx(.035),sy(.14),sx(.93),6,'#553a2e');
+ rect(c,sx(.035),sy(.14)+1,sx(.93),2,'#c49159');
+ // Shelf under its existing stock hotspot; window and ledger retain their actions.
+ const shelfW=Math.min(w*.24,84),shelfH=Math.min(h*.125,shelfW*39/42);
+ a21Sprite(c,'shelf',sx(.175)-shelfW/2,sy(.135)-shelfH,shelfW,shelfH);
+ const wx=sx(.39),wy=sy(.025),ww=sx(.22),wh=sy(.105);
+ rect(c,wx-3,wy-3,ww+6,wh+6,'#49352d');rect(c,wx,wy,ww,wh,'#94b0a0');
+ a20Poly(c,[[wx,wy+wh],[wx,wy+wh*.68],[wx+ww*.36,wy+wh*.25],[wx+ww*.64,wy+wh*.72],[wx+ww,wy+wh*.44],[wx+ww,wy+wh]],'#527952');
+ rect(c,wx+ww*.48,wy,3,wh,'#694832');rect(c,wx,wy+wh*.54,ww,3,'#694832');
+ rect(c,wx-4,wy+wh,ww+8,4,'#bc8b57');
+ const bx=sx(.737),by=sy(.035),bw=sx(.18),bh=sy(.09);
+ rect(c,bx-3,by-3,bw+6,bh+6,'#563c2f');rect(c,bx,by,bw,bh,'#d6b88a');
+ for(let k=0;k<4;k++)rect(c,bx+4,by+4+k*bh*.19,bw*(k%2?.62:.76),1.5,'#876547');
+ // Fixed props stay near the walls, out of all walkable kitchen/table paths.
+ const prop=Math.min(35,w*.095);
+ a21Sprite(c,'barrel',sx(.045),sy(.79),prop*.76,prop*1.1);
+ a21Sprite(c,'crate',sx(.85),sy(.79),prop,prop*1.06);
+ const bwid=Math.min(38,w*.11);
+ a21Sprite(c,'banner',sx(.50)-bwid/2,sy(.435),bwid,bwid*39/34);
+ const light=c.createLinearGradient(0,sy(.15),w,sy(.9));
+ light.addColorStop(0,'#ffdf9a14');light.addColorStop(.65,'#302c2500');light.addColorStop(1,'#241e2930');
+ c.fillStyle=light;c.fillRect(sx(.035),sy(.145),sx(.93),sy(.855));
+ // Woven entry runner stays off the furniture and table paths.
+ rect(c,sx(.41),sy(.79),sx(.18),sy(.065),'#553c32');
+ rect(c,sx(.42),sy(.795),sx(.16),sy(.055),'#536c5e');
+ rect(c,sx(.43),sy(.802),sx(.14),sy(.041),'#647968');
+ for(const q of [.435,.56])rect(c,sx(q),sy(.806),2,sy(.033),'#d1ab73');
+}
+function a21DrawTable(c,X,Y,side){
+ const tw=side*1.12,th=tw*36/44;
+ a20Ellipse(c,X+3,Y+th*.38,tw*.55,8,'#31282155');
+ for(const sign of [-1,1]){
+  const cx=X+sign*side*.77,sw=side*.32,sh=sw*22/17;
+  a20Ellipse(c,cx+2,Y+7,sw*.55,4,'#30251d55');
+  a21Sprite(c,'stool',cx-sw/2,Y-sh*.62,sw,sh);
+ }
+ a21Sprite(c,'table',X-tw/2,Y-th*.60,tw,th);
+}
+function a21DrawRange(c,X,Y,rw,type){
+ const w=rw*.95,h=w*(type==='POT'?44/34:47/31);
+ a20Ellipse(c,X+3,Y+23,w*.53,7,'#30282066');
+ a21Sprite(c,type==='POT'?'pot':'hearth',X-w/2,Y+24-h,w,h);
+ if(type==='WOK'){
+  // The extracted hearth is a chimney/range. Keep a distinct iron wok in
+  // front of the chimney; no duplicate stove or false third work station.
+  a20Ellipse(c,X,Y-6,rw*.29,8,'#282c2d');
+  a20Ellipse(c,X,Y-9,rw*.29,7,'#a5a89b');
+  a20Ellipse(c,X,Y-9,rw*.25,5,'#405048');
+  line(c,X+rw*.24,Y-9,X+rw*.45,Y-17,'#433428',4);
+ }
+}
+
 function drawRestaurantV075(c,s,t,w,h){
  const g=dinerFloor(s),v=s.service,x=f=>f*w,y=f=>f*h;
  const rr=(X,Y,W,H,R,color,stroke)=>{
   c.beginPath();c.roundRect(X,Y,W,H,R);c.fillStyle=color;c.fill();
   if(stroke){c.strokeStyle=stroke;c.lineWidth=2;c.stroke();}
  };
- const cloud=s.activeWorld==='cloud';
- if(cloud){drawCloudRestaurantBackdrop(c,t,w,h);drawCloudPortProps(c,t,w,h);}else if(s.phase==='forecast'&&!v){drawLivingHearthA1(c,w,h);}else rect(c,0,0,w,h,'#6f513b');
+ const cloud=s.activeWorld==='cloud',assetHome=!cloud&&s.phase==='forecast'&&!v&&a21AtlasReady();
+ if(cloud){drawCloudRestaurantBackdrop(c,t,w,h);drawCloudPortProps(c,t,w,h);}else if(assetHome){a21HearthBackground(c,w,h);}else if(s.phase==='forecast'&&!v){drawLivingHearthA1(c,w,h);}else rect(c,0,0,w,h,'#6f513b');
  // Rich warm tile floor: one drawable scene rather than HTML furniture overlay.
  for(let row=0;!cloud&&!(s.phase==='forecast'&&!v)&&row<Math.ceil(h/28);row++){
   rect(c,0,row*28,w,27,row%2?'#796045':'#72563e');
@@ -970,7 +1036,7 @@ function drawRestaurantV075(c,s,t,w,h){
    }
    if(busy)for(let j=0;j<3;j++)circle(c,X-12+j*12,gy-5-Math.sin(t*4+j)*2,1.7,'#e8d8b599');
   }else if(!cloud&&s.phase==='forecast'&&!v){
-   a20Range(c,X,Y,rw,type,!!busy,t);
+   if(assetHome)a21DrawRange(c,X,Y,rw,type);else a20Range(c,X,Y,rw,type,!!busy,t);
   }else{
    rr(X-rw/2,Y-24,rw,51,7,cloud?'#476b80':'#513c30',cloud?'#e5d6ad':'#b99765');
    rr(X-rw*.43,Y-20,rw*.86,39,5,cloud?'#9dbabd':'#916d49',cloud?'#e8dcba':'#d8ae74');
@@ -983,11 +1049,11 @@ function drawRestaurantV075(c,s,t,w,h){
   // Equipment level is shown with one understated pip, never a large floating label.
   if(slot?.level>1)circle(c,X+rw*.37,Y-19,3.4,'#ffe3a2');
   const cookProgress=busy?Math.max(0,Math.min(1,1-(busy.left/Math.max(1,RECIPES[v.orders.find(o=>o.id===busy.orderId)?.recipeId]?.time||10)))):0;
-  rr(X-rw*.34,Y+19,rw*.68,5,3,'#243c33','#b18b64');
+  if(!assetHome)rr(X-rw*.34,Y+19,rw*.68,5,3,'#243c33','#b18b64');
   if(busy){rr(X-rw*.33,Y+20,Math.max(2,rw*.66*cookProgress),3,2,'#f6cc82');text(c,Math.ceil(busy.left)+'s',X,Y+33,'#ffe3a8',10);}
   const near=heroZone(v?.hero,s)===key;
   c.beginPath();c.ellipse(x(pt.x),y(pt.y),w*.075,h*.025,0,0,Math.PI*2);
-  c.lineWidth=1.5;c.strokeStyle=near?'#ffe69f':'#c8b68575';c.stroke();
+  if(!assetHome){c.lineWidth=1.5;c.strokeStyle=near?'#ffe69f':'#c8b68575';c.stroke();}
  }
  // Before the REAL expansion purchase, show the old sealed central hearth.
  if((v?.kitchenSnapshot?.length||(!v&&s.kitchen?.thirdUnlocked?3:2))<3){
@@ -1018,6 +1084,7 @@ function drawRestaurantV075(c,s,t,w,h){
  for(const [i,pt] of g.tables.entries()){
   const X=x(pt.x),Y=y(pt.y),side=Math.min(51,Math.max(39,w*.126)),half=side/2;
   if(cloud)drawCloudCrystalTable(c,X,Y,side,t,i);
+  else if(assetHome)a21DrawTable(c,X,Y,side);
   else if(s.phase==='forecast'&&!v)a20Table(c,X,Y,side,i);
   else{
   for(const sign of [-1,1]){
@@ -1066,6 +1133,7 @@ function drawRestaurantV075(c,s,t,w,h){
  // pantry sticks at x=.15..315 and y=.185 looked like mysterious controls.
  // They had no mechanics and are removed in BOTH worlds (v0.15-G).
  for(const [sx,shade] of [[.088,'#76a17f'],[.912,'#8d9b7d']]){
+  if(assetHome){const sw=Math.min(29,w*.08);a21Sprite(c,'lantern',x(sx)-sw/2,y(.185)-sw*37/26,sw,sw*37/26);continue;}
   line(c,x(sx),y(.144),x(sx),y(.187),'#b69c72',2);
   circle(c,x(sx),y(.190),8,shade);
   circle(c,x(sx)-2,y(.187),2,'#e4e3ae');
