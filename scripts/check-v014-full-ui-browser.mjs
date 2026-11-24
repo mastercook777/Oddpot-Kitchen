@@ -39,7 +39,24 @@ try{
    });
    assert.ok(layout.shellBottom<=height+1&&layout.stageBottom<=height+1&&layout.stageHeight>120,`${phase} fits ${width}×${height}: ${JSON.stringify(layout)}`);
    if(width!==375&&['prep','report'].includes(phase))await page.screenshot({path:`${output}/${phase}-${width}.png`});
-   if(phase==='forecast')assert.ok((await page.locator('.v076-preview').boundingBox()).height>=80,'living scene stays visible');
+   if(phase==='forecast'){
+    const scene=page.locator('.v016-scene');
+    assert.equal(await scene.count(),1,'border home uses the scene-first layout');
+    const rect=await scene.boundingBox();
+    assert.ok(rect.height>=layout.stageHeight*.60,'scene occupies at least 60% of stage');
+    assert.equal(await scene.locator('canvas').count(),1);
+    for(const act of ['stock','book','bento','crew']){
+     await scene.locator('[data-act="'+act+'"]').click();
+     assert.ok(await page.locator('.sheet').isVisible(),act+' uses the existing sheet');
+     await page.locator('[data-act="close-sheet"]').last().click();
+    }
+    await page.screenshot({path:`${output}/v016-home-${width}.png`});
+    await scene.locator('[data-act="to-field"]').click();
+    assert.equal(await page.locator('.stage.field').count(),1,'door opens the real field preparation');
+    assert.deepEqual(errors,[],`A1 home runtime errors at ${width}`);
+    await page.close();
+    continue;
+   }
    if(phase==='field')assert.equal(await page.locator('[data-route]').count(),2);
    if(phase==='research')assert.equal(await page.locator('.v063-food-picker button').count(),12);
    if(phase==='menu'){
@@ -71,5 +88,12 @@ try{
  await offline.goto(url+'standalone.html',{waitUntil:'networkidle'});
  assert.equal(await offline.locator('.v014-menu-value').count(),3,'offline menu uses same UI');
  await offline.close();
+ const offlineHome=await browser.newPage({viewport:{width:390,height:844},isMobile:true,hasTouch:true,locale:'zh-CN'});
+ await offlineHome.addInitScript(([key,state])=>localStorage.setItem(key,JSON.stringify(state)),[storageKey,fixture('forecast')]);
+ await offlineHome.goto(url+'standalone.html',{waitUntil:'networkidle'});
+ assert.equal(await offlineHome.locator('.v016-scene').count(),1,'offline uses A1 home');
+ await offlineHome.locator('.v016-scene [data-act="stock"]').click();
+ assert.ok(await offlineHome.locator('.sheet').isVisible(),'offline scene action works');
+ await offlineHome.close();
  console.log('v0.14 real Chrome: eight stages at 320/375/390, sheets, marketing, ledger and offline menu passed');
 }finally{if(browser)await browser.close();server.kill('SIGTERM');}

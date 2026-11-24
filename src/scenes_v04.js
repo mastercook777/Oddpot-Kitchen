@@ -786,6 +786,57 @@ export function drawDinerDoorway(c,s,t,w,h){
 
 // v0.7.5 official restaurant. One world; furniture, actors, services and
 // collision share DINER_FLOOR. The old DOM kitchen is NOT drawn here.
+// A1: decorative backdrop only. No hitboxes, inventory, or simulation effects.
+function drawLivingHearthA1(c,w,h){
+ c.save();
+ const X=n=>n*w,Y=n=>n*h;
+ const block=(x,y,a,b,color)=>{c.fillStyle=color;c.fillRect(X(x),Y(y),X(a),Y(b))};
+ const wall=c.createLinearGradient(0,0,0,Y(.18));wall.addColorStop(0,'#263c35');wall.addColorStop(1,'#53644a');
+ c.fillStyle=wall;c.fillRect(0,0,w,Y(.18));
+ const floor=c.createLinearGradient(0,Y(.15),0,h);floor.addColorStop(0,'#956e47');floor.addColorStop(.48,'#b0875a');floor.addColorStop(1,'#6b4d37');
+ c.fillStyle=floor;c.fillRect(0,Y(.15),w,h-Y(.15));
+ // Long staggered planks and restrained grain; fixed coordinates, no random flicker.
+ for(let j=0;j<11;j++){
+  const px=j*w/11;
+  c.fillStyle=j%2?'#e7b87b12':'#392a2010';c.fillRect(px,Y(.15),w/11,h-Y(.15));
+  c.strokeStyle='#4d352b78';c.lineWidth=1;c.beginPath();c.moveTo(px,Y(.15));c.lineTo(px,h);c.stroke();
+  for(let k=0;k<3;k++){
+   const py=Y(.2+((j*7+k*11)%21)*.031);
+   c.fillStyle='#f5c78924';c.fillRect(px+3,py,1,Y(.06));
+  }
+  for(let k=0;k<3;k++){
+   const py=Y(.27+k*.25+(j%3)*.075);
+   c.fillStyle='#4b352953';c.fillRect(px,py,w/11,1);
+  }
+ }
+ // Framed wall and three physical objects associated with the home actions.
+ block(0,.135,1,.022,'#543925');block(0,.135,1,.006,'#d1a16a');
+ block(.02,0,.025,.15,'#4a3328');block(.955,0,.025,.15,'#4a3328');
+ // Pantry cupboard (left). Shelf silhouettes: jars, baskets, roots.
+ block(.055,.018,.25,.117,'#422d25');block(.066,.024,.228,.105,'#9a6d43');
+ for(let k=0;k<2;k++){
+  const yy=.028+k*.048;block(.074,yy,.212,.041,'#503c2c');
+  for(let j=0;j<4;j++){const px=.084+j*.051;block(px,yy+.011,.032,.027,['#ac7047','#c5a16a','#83925f','#aa8751'][j]);block(px-.003,yy+.006,.038,.007,'#e0c797');}
+  block(.07,yy+.038,.22,.007,'#d3a06a');
+ }
+ // Open window with hills, trees and mullions.
+ block(.35,.012,.30,.116,'#4b3327');block(.366,.023,.268,.095,'#d5e3bd');
+ block(.366,.075,.268,.043,'#7a9a72');
+ for(let i=0;i<6;i++){const px=.37+i*.045;c.fillStyle=i%2?'#486a51':'#628660';c.beginPath();c.moveTo(X(px),Y(.104));c.lineTo(X(px+.021),Y(.046+(i%3)*.008));c.lineTo(X(px+.043),Y(.104));c.fill();}
+ block(.493,.023,.012,.095,'#68452e');block(.366,.062,.268,.009,'#68452e');block(.34,.119,.32,.011,'#d1a16a');
+ // Wall recipe ledger; actual button opens existing recipe book.
+ block(.715,.023,.22,.107,'#493126');block(.73,.033,.19,.087,'#ceaf79');
+ for(let i=0;i<4;i++)block(.75,.047+i*.015,.145-(i%2)*.035,.003,'#77583a');
+ // Canvas gradients create sunlight without laying a tint over real actors.
+ c.save();c.beginPath();c.moveTo(X(.38),Y(.15));c.lineTo(X(.61),Y(.15));c.lineTo(X(.89),Y(.83));c.lineTo(X(.48),Y(.83));c.closePath();c.clip();
+ const sun=c.createLinearGradient(0,Y(.15),0,Y(.83));sun.addColorStop(0,'#ffe6a345');sun.addColorStop(1,'#ffe6a300');c.fillStyle=sun;c.fillRect(0,0,w,h);c.restore();
+ // Border shadows and a woven entry runner, outside furniture collision geometry.
+ block(0,.16,.026,.84,'#3c2d27a0');block(.974,.16,.026,.84,'#3c2d27a0');
+ block(.413,.795,.174,.057,'#55473a');block(.422,.799,.156,.049,'#8b5140');
+ for(let k=0;k<5;k++)block(.432+k*.028,.801,.008,.045,'#c6a16a');
+ c.restore();
+}
+
 function drawRestaurantV075(c,s,t,w,h){
  const g=dinerFloor(s),v=s.service,x=f=>f*w,y=f=>f*h;
  const rr=(X,Y,W,H,R,color,stroke)=>{
@@ -793,16 +844,16 @@ function drawRestaurantV075(c,s,t,w,h){
   if(stroke){c.strokeStyle=stroke;c.lineWidth=2;c.stroke();}
  };
  const cloud=s.activeWorld==='cloud';
- if(cloud){drawCloudRestaurantBackdrop(c,t,w,h);drawCloudPortProps(c,t,w,h);}else rect(c,0,0,w,h,'#6f513b');
+ if(cloud){drawCloudRestaurantBackdrop(c,t,w,h);drawCloudPortProps(c,t,w,h);}else if(s.phase==='forecast'&&!v){drawLivingHearthA1(c,w,h);}else rect(c,0,0,w,h,'#6f513b');
  // Rich warm tile floor: one drawable scene rather than HTML furniture overlay.
- for(let row=0;!cloud&&row<Math.ceil(h/28);row++){
+ for(let row=0;!cloud&&!(s.phase==='forecast'&&!v)&&row<Math.ceil(h/28);row++){
   rect(c,0,row*28,w,27,row%2?'#796045':'#72563e');
   line(c,0,row*28,w,row*28,'#4b382ca0',1);
   for(let column=0;column<Math.ceil(w/36);column++)
     line(c,column*36+(row%2)*18,row*28,column*36+(row%2)*18,row*28+27,'#9d775022',1);
  }
  // Shrink the redundant upper wall; the game HUD already displays the name.
- if(!cloud)rect(c,0,0,w,h*.145,'#304f3e');rect(c,0,h*.145-7,w,8,cloud?'#e2d6aa':'#b88c5c');
+ if(!cloud&&!(s.phase==='forecast'&&!v))rect(c,0,0,w,h*.145,'#304f3e');if(cloud||s.phase!=='forecast'||v)rect(c,0,h*.145-7,w,8,cloud?'#e2d6aa':'#b88c5c');
  // v0.15-F: obsolete saturated wall posts were mistaken for controls; remove them from both chapters.
  // The two active stoves are deliberately compact; the centre is reserved for
  // a later third production slot. No area names are printed on screen.

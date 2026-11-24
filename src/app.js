@@ -8,7 +8,7 @@ import {livePanMotion} from './cook_motion_v063.js?v=0.6.3';
 import {walkServiceHero} from './walkable_restaurant_v07.js?v=0.15.0-alpha.7';
 import {PHASES,newGame,save,load,beginLiveResearch,threadGrillIngredient,placeGrillSkewer,grillCookPreview,dropLiveIngredient,performLiveAction,finishLiveResearch,stepLiveResearch,liveCookPreview,ensureRecipeVariants,activeRecipeVariant,chooseRecipeVariant,recipeCraftSnapshot,availableBento,prepareBento,today,serviceDayPlan,tableSeatState,enterField,settleField,discardFieldStack,fieldBagSlotsUsed,completeFieldSegment,chooseFieldBranch,selectFieldWeapon,fieldWeaponChoices,selectedFieldWeaponType,skipField,purchase,startCook,moveTile,beat,finishCook,synergyFor,canMenu,selectMenuRecipe,chapterRecipeAvailable,recipeAtlasRegion,recipeResearchAccess,recipeCookware,cookwareOwned,crewRoleName,redeemFerrySupply,ferrySupplyAvailable,FERRY_SUPPLY_PACKS,managedFreightStatus,configureManagedFreight,claimManagedFreight,MANAGED_FREIGHT_FOCUS,MANAGED_FREIGHT_DAYS,prepDish,createService,tick,expedite,walkableSpecial,activateWalkableSpecial,advanceWalkableInteraction,closeService,nextPhase,advanceDay,buyUpgrade,buyKitchenUpgrade,kitchenUpgradeCost,buyCookwareUpgrade,cookwareUpgradeCost,configureKitchenSlot,kitchenPreview,kitchenRefitCost,kitchenHasMenuCoverage,ensureKitchen,ensureCrew,CREW_ROLES,hireCrew,assignCrew,feedCrew,activeCrewMeal,crewEffects,CAMPAIGNS,ensureManagement,selectedCampaign,chooseCampaign,setCrewDuty,crewWage,crewPromotion,promoteCrew,buyBagUpgrade,bagUpgradePrice,canUse,setServicePaused,resumeBreak,breakPrep,setFlame,tossWok,previewHeat,moveExplorer,interactExplorer,sootheGuest,newRecipeLead,currentServiceEvent,chooseServiceEvent,swapBreakMenu,serviceGoalResult,serviceSupplyStatus,prepStockForecast,premiumMenuOptions,premiumMenuActive,recipeAvailableServings,setPremiumMenu,REGULAR_GUESTS,guestBookEntries,ensureDailyMarket,DAILY_STAPLE_MIN_PURCHASES,expandDiningRoom,ROOM_EXPANSION_COST,roomExpansionAvailable,totalBusinessDay,firstChallenge,tableCapacity,ensureChapterProgress,firstStarAvailable,firstStarRequested,requestFirstStar,secondStarAvailable,secondStarRequested,requestSecondStar,ensureSecondAppraisal,thirdStarAvailable,thirdStarRequested,requestThirdStar,activeWorld,portalAvailable,travelPortal,FOURTH_TABLE_COST,THIRD_KITCHEN_BUNDLE_COST,thirdKitchenBundleAvailable,buyThirdKitchenBundle,GRILL_COST,grillAvailable,buyGrill,STEAMER_COST,steamerAvailable,buySteamer} from './engine.js?v=0.15.0-alpha.11';
 import {startActionField,stepActionField,useFieldSkill,resolveFieldEvent} from './field_v04.js?v=0.15.0-alpha.7';
-import {drawField,drawDiner} from './scenes_v04.js?v=0.15.0-alpha.7';
+import {drawField,drawDiner} from './scenes_v04.js?v=0.16-a1';
 import {drawGuestPortraits} from './guest_portraits_v104.js?v=0.10.4';
 import {crewAppearance} from './pixels_v041.js?v=0.15.0-alpha.7';
 import {drawCrewPortraits} from './crew_portraits_v012d.js?v=0.15.0-alpha.7';
@@ -213,6 +213,28 @@ function forecast(){
  const bentoReady=game.bento?.day===game.cycle+'-'+game.day;
  const title=firstChallenge(game)?'爆炎厨王踢馆':plan.pressure;
  const brief=firstChallenge(game)?'评委会关注辛辣与爆香。':'达成目标，积累食堂口碑。';
+ if(activeWorld(game)!=='cloud'){
+  const milestone=starInvite()+portalPanel();
+  return [`
+   <div class="v076-home v016-home${milestone?' has-milestone':''}">
+    <section class="v016-notice" aria-label="今日营业目标">
+     <div><strong>${esc(title)}</strong><span> · ${esc(plan.goal.label)}</span></div>
+     <small>预计 ${plan.count} 位客人 · 食材 ${stock} 份</small>
+    </section>
+    <section class="v076-preview v016-scene" aria-label="边境食堂 · 点击场景中的物件">
+     ${restaurantView(false)}
+     <div class="v076-home-shortcuts v016-world-actions" aria-label="场景互动">
+      <button type="button" class="v016-stock" data-act="stock" aria-label="打开食材柜和采购">食材柜</button>
+      <button type="button" class="v016-book" data-act="book" aria-label="翻开料理图鉴">料理笔记</button>
+      <button type="button" class="v016-bento" data-act="bento">便当${bentoReady?' ✓':''}</button>
+      <button type="button" class="v016-crew" data-act="crew">伙伴</button>
+      <button type="button" class="v076-home-primary v016-door" data-act="to-field">出门取材 <span aria-hidden="true">↗</span></button>
+     </div>
+    </section>
+    ${milestone?'<div class="v016-milestone">'+milestone+'</div>':''}
+    <div class="v016-foot"><span>边境食堂 · 开店前</span><span>点击场景物件互动</span></div>
+   </div>`,'' ];
+ }
  return [`
  <div class="v076-home">
   <section class="v076-mission" aria-label="今日营业目标">
