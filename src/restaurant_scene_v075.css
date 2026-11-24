@@ -72,3 +72,6 @@
 
 /* v0.9: queue means actual unseated visitors awaiting a free chair. */
 .v09-queue{position:absolute;z-index:8;top:46px;left:50%;transform:translateX(-50%);max-width:95%;white-space:nowrap;border-radius:9px;padding:5px 9px;background:#573b30e8;border:1px solid #e3b981;color:#ffe6ae;font-size:10px;font-weight:800;pointer-events:none}
+
+/* Y4d: clear next action without competing with the joystick or modal. */
+.v4d-service-guide{position:absolute;z-index:7;left:12px;right:76px;bottom:12px;min-height:40px;padding:7px 10px;border-radius:10px;background:#253b31ed;border:1px solid #c9ad78;color:#fff2d0;pointer-events:none;display:grid;gap:3px;box-shadow:0 2px 6px #191f1b66}.v4d-service-guide b{font-size:12px;line-height:1.3}.v4d-service-guide small{font-size:10px;color:#c6d3b6;line-height:1.25}.v4d-service-guide i{height:4px;background:linear-gradient(to right,#f0cd7f var(--v4d-fill,0%),#172a22 var(--v4d-fill,0%));border-radius:3px}.v4d-service-guide i[hidden]{display:none}

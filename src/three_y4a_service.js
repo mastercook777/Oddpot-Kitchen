@@ -36,14 +36,14 @@ export function createServiceRig(T,model,rounded){
  for(const x of [-.038,.038])box(tools.GRILL,steel,x,-.26,0,.035,.60,.035).rotation.z=x*.65;
  box(tools.GRILL,wood,0,-.07,0,.12,.20,.055);
  box(tools.STEAM,brass,0,-.15,0,.055,.35,.055);box(tools.STEAM,wood,0,-.31,0,.15,.065,.12);
- return {update(action,t,moving,tray){
+ return {update(action,t,moving,tray,targetWorld=null){
   // Reset before every state, so reused actors never retain a previous IK pose.
   for(const g of [...elbows,...grips])g.rotation.set(0,0,0);
-  for(const g of Object.values(tools))g.visible=false;
+  for(const g of Object.values(tools)){g.visible=false;g.scale.set(1,1,1);}
   body.rotation.y=0;const pose=servicePose(action,t,moving);if(!pose)return;
   body.rotation.x=pose.lean;body.rotation.z=0;
   applyArm(T,model.rig,0,pose.right,[-1,-.3,0],pose.direction||null);applyArm(T,model.rig,1,pose.left,[1,-.3,0]);
   if(action.mode==='carry'){tray.position.set(...pose.tray);tray.quaternion.copy(body.quaternion).invert();head.rotation.x=.06;}
-  else{(tools[action.type]||tools.WOK).visible=true;head.rotation.x=.17;}
+  else{const tool=tools[action.type]||tools.WOK;tool.visible=true;head.rotation.x=.17;if(targetWorld){model.root.updateMatrixWorld(true);const target=body.worldToLocal(targetWorld.clone());target.x+=Math.sin(t*5.2)*.13;target.z+=Math.cos(t*5.2)*.09;const hand=applyArm(T,model.rig,0,pose.right,[-1,-.3,0],pose.direction||null).hand,dir=target.clone().sub(new T.Vector3(...hand)),len=dir.length();if(len>.001){applyArm(T,model.rig,0,pose.right,[-1,-.3,0],dir.normalize().toArray());const tip=action.type==='STEAM'?.31:action.type==='GRILL'?.55:.62;tool.scale.y=Math.max(.80,Math.min(1.35,len/tip));}}}
  }};
 }

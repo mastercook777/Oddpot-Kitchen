@@ -11,7 +11,7 @@ export const DINER_FLOOR={
  left:{x:.245,y:.325},right:{x:.755,y:.325},centre:{x:.500,y:.325},
  stoveLeft:{x:.245,y:.240},stoveRight:{x:.755,y:.240},
  reservedStove:{x:.500,y:.240},
- pass:{x:.50,y:.448},passFurniture:{x:.50,y:.397},
+ pass:{x:.33,y:.466},passFurniture:{x:.33,y:.397},
  // Two stools face each other across each compact square table.
  tables:[{x:.255,y:.745},{x:.745,y:.745}],
  tableWork:[{x:.385,y:.752},{x:.615,y:.752}],
@@ -23,10 +23,10 @@ export const DINER_FLOOR={
  entrance:{x:.50,y:.930},
  waitLane:{x:.50,y:.620},
  doorwayView:{left:.185,right:.815,top:.857,bottom:.985},
- helper:[{x:.120,y:.325},{x:.880,y:.325},{x:.412,y:.324}],
+ helper:[{x:.245,y:.302},{x:.755,y:.302},{x:.500,y:.302}],
  margin:{left:.075,right:.925,top:.165,bottom:.945},
  geometry:{tableHalfX:.088,tableHalfY:.046,stoveHalfX:.085,stoveHalfY:.046,
-  counterTop:.388,counterBottom:.428,counterGapLeft:.410,counterGapRight:.590}
+  counterTop:.383,counterBottom:.433,counterGapLeft:.410,counterGapRight:.590}
 };
 export function dinerSeatPoint(table,seat,s=null){
  const g=dinerFloor(s),pt=g.tables[table];
@@ -51,7 +51,7 @@ const close075=(a,b,rx,ry)=>((a.x-b.x)/rx)**2+((a.y-b.y)/ry)**2<1;
 export function dinerSpot(hero,s=null){
  if(!hero)return null;
  const g=dinerFloor(s);
- if(close075(hero,g.pass,.100,.055))return 'PASS';
+ if(close075(hero,g.pass,.105,.046)&&!dinerBlocked(hero.x,hero.y,s))return 'PASS';
  if(close075(hero,g.left,.108,.060))return 'WOK';
  if(close075(hero,g.right,.108,.060))return 'POT';
  if((s?.service?.kitchenSnapshot?.length||0)>=3&&close075(hero,g.centre,.085,.056))return 'CENTER';
@@ -118,3 +118,6 @@ export function dinerWeather(s){
 export function dinerQueueGuests(s,at=s?.service?.time||0){
  return (s?.service?.orders||[]).filter(o=>o.status==='waiting'&&o.arrival<=at);
 }
+
+// Presentation of the one authoritative pickup/delivery interaction; no state writes.
+export function dinerGuide(s){const v=s?.service,h=v?.hero,g=dinerFloor(s);if(!v?.walkable||!h||v.done)return null;const carry=v.orders.find(o=>o.id===h.carryOrderId&&o.status==='carried'),ready=v.orders.find(o=>o.status==='pickup'),o=carry||ready;if(o){const mode=carry?'serve':'pickup',target=carry?g.tableWork[o.tableId]:g.pass;if(!target)return null;const focus=mode+':'+o.id,required=carry?.48:.36;return {mode,target,table:o.tableId,recipeId:o.recipeId,progress:h.dwellZone===focus?clamp075(h.dwell/required,0,1):0,near:carry?dinerSpot(h,s)==='TABLE'+o.tableId:dinerSpot(h,s)==='PASS'};}return {mode:'cook',target:null,progress:0,near:false};}
