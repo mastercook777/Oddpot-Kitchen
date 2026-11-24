@@ -15,10 +15,10 @@ export function makeChefY2(T,rounded,signature=true){
  box(body,fold,.035,.44,.269,.16,.10,.024);box(body,apron,.035,.465,.285,.13,.06,.018);
  for(const k of [-1,1]){const strap=box(body,apron,k*.12,.70,.18,.045,.14,.035);strap.rotation.z=k*.13;}
  ell(body,red,0,.77,.15,.16,.065,.10);ell(body,red,0,.74,.25,.075,.065,.05);box(body,red,.055,.675,.255,.08,.14,.035).rotation.z=.28;
- const legs=[],arms=[],grips=[];
+ const legs=[],arms=[],elbows=[],grips=[];
  for(const k of [-1,1]){
   const leg=group(root,k*.125,.36,0);legs.push(leg);ell(leg,navy,0,-.12,0,.11,.15,.11);ell(leg,shoe,0,-.265,.045,.125,.09,.17);
-  const arm=group(body,k*.265,.685,0);arms.push(arm);arm.rotation.z=k*.19;ell(arm,blue,0,-.11,0,.115,.15,.105);ell(arm,navy,0,-.205,0,.098,.048,.095);ell(arm,skin,0,-.275,.015,.085,.095,.082);grips.push(group(arm,0,-.275,.015));
+  const arm=group(body,k*.265,.685,0);arms.push(arm);arm.rotation.z=k*.19;ell(arm,blue,0,-.075,0,.105,.125,.10);const elbow=group(arm,0,-.15,0);elbows.push(elbow);ell(elbow,blue,0,-.035,0,.093,.085,.092);ell(elbow,navy,0,-.055,0,.096,.045,.09);const wrist=group(elbow,0,-.125,.015);ell(wrist,skin,0,0,0,.085,.095,.082);grips.push(wrist);
  }
  const head=group(body,0,.96,0);
  ell(head,hair,0,.04,-.025,.305,.285,.26);ell(head,skin,0,-.005,.065,.28,.245,.245);ell(head,skin,0,-.10,.135,.245,.16,.18);
@@ -63,5 +63,5 @@ export function makeChefY2(T,rounded,signature=true){
   const rim=mesh(kit,new T.TorusGeometry(.225,.025,8,32),gold,0,0,-.035);
   box(kit,leather,0,.31,-.012,.072,.28,.075);box(kit,gold,0,.19,-.012,.085,.07,.085);
  }
- let heading=0;return {root,rig:{body,head,arms,grips},update(t,s){const aim={front:0,right:Math.PI/2,back:Math.PI,left:-Math.PI/2}[s.facing]??0;heading+=Math.atan2(Math.sin(aim-heading),Math.cos(aim-heading))*.18;root.rotation.y=heading;const a=s.moving?Math.sin(t*11):0,work=s.working&&!s.carrying;body.position.y=s.moving?Math.abs(a)*.035:Math.sin(t*2.1)*.008;body.rotation.z=a*.035+(work?Math.sin(t*5)*.04:0);body.rotation.x=s.moving?.075:work?.14:0;head.rotation.z=-a*.025;head.rotation.x=work?.12:0;scarf.rotation.x=s.moving?-.22+Math.sin(t*11)*.10:Math.sin(t*2)*.025;for(let i=0;i<2;i++){const k=i?1:-1;legs[i].rotation.x=k*a*.47;arms[i].rotation.x=s.carrying?-1.05:work?-.75+Math.sin(t*7+i*1.5)*.38:-k*a*.34;arms[i].rotation.z=s.carrying?-k*.23:k*.19;}}};
+ let heading=0;return {root,rig:{body,head,arms,elbows,grips},update(t,s){const aim={front:0,right:Math.PI/2,back:Math.PI,left:-Math.PI/2}[s.facing]??0;heading+=Math.atan2(Math.sin(aim-heading),Math.cos(aim-heading))*.18;root.rotation.y=heading;const a=s.moving?Math.sin(t*11):0,work=s.working&&!s.carrying;body.position.y=s.moving?Math.abs(a)*.035:Math.sin(t*2.1)*.008;body.rotation.z=a*.035+(work?Math.sin(t*5)*.04:0);body.rotation.x=s.moving?.075:work?.14:0;head.rotation.z=-a*.025;head.rotation.x=work?.12:0;scarf.rotation.x=s.moving?-.22+Math.sin(t*11)*.10:Math.sin(t*2)*.025;for(let i=0;i<2;i++){const k=i?1:-1;legs[i].rotation.x=k*a*.47;arms[i].rotation.x=s.carrying?-1.05:work?-.75+Math.sin(t*7+i*1.5)*.38:-k*a*.34;arms[i].rotation.z=s.carrying?-k*.23:k*.19;}}};
 }
