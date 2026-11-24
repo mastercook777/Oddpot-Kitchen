@@ -9027,7 +9027,7 @@ function drawField(canvas,s,clock){const size=setCanvas(canvas);if(!size||!s.fie
    for(const pt of trail.slice(1))c.lineTo(pt.x,pt.y);
    c.strokeStyle='#f2e6b082';c.lineWidth=.11;c.setLineDash([.12,.23]);c.stroke();c.restore();}}
 
- if(f.hazards?.length)for(const hz of f.hazards){
+ if(!three&&f.hazards?.length)for(const hz of f.hazards){
    const p=hazardPhase(hz,f.elapsed,f.biome),x=hz.x+.5,y=hz.y+.5;
    if(herbHybridArt){drawHybridMeadowHazard(c,hz,p,clock);continue;}
    if(fieldHybridArt){drawHybridFieldHazard(c,hz,p,f.biome.style,clock);continue;}
@@ -9085,10 +9085,10 @@ function drawField(canvas,s,clock){const size=setCanvas(canvas);if(!size||!s.fie
   circle(c,p.x-.045,p.y-arc-.04,.04,'#fff0ca');
   line(c,p.x,p.y-arc-.17,p.x+.08,p.y-arc-.22,'#7ca26a',.06);
  }
- drawMeleeWarnings(c,f);
+ if(!three){drawMeleeWarnings(c,f);
  for(const e of f.enemies||[])drawEcologyWarning(c,e);
  for(const e of f.enemies||[])if(e.isBoss)drawMiniBossWarning(c,e);
- drawBossZones(c,f);
+ drawBossZones(c,f);}
  for(const e of f.enemies||[]){
   if(e.hp<=0&&!(e.deathFx>0))continue;
   if(three){drawFieldActorIndicators(c,e,sc);continue;}
@@ -9121,7 +9121,7 @@ function drawField(canvas,s,clock){const size=setCanvas(canvas);if(!size||!s.fie
  if(!smoothFx&&f.skillFx>0&&!['GRILL','STEAM'].includes(f.weapon?.type)){c.save();c.strokeStyle=`rgba(255,231,151,${Math.min(.95,f.skillFx*2.4)})`;c.lineWidth=.12;c.beginPath();c.arc(f.pos.x,f.pos.y,(.42-f.skillFx)*3+.35,0,Math.PI*2);c.stroke();c.restore();}
  for(const e of f.enemies||[]){if(e.hurtFx>0&&e.hp>0&&!e.hitResponse){c.save();c.translate(e.x,e.y);c.scale(1/sc,1/sc);if(smoothFx)drawFieldImpact(c,0,-5,e.hurtFx/.36,8);else pixelImpact(c,0,-5,8);c.restore()}}
  }
- for(const fx of f.popFx||[]){if(smoothFx&&fx.text==='💥'){drawFieldBurst(c,fx);continue;}if(smoothFx&&String(fx.text).startsWith('+'))drawFieldCollection(c,fx);c.save();c.translate(fx.x,fx.y-(.76-fx.ttl)*.5);c.scale(1/sc,1/sc);text(c,fx.text,0,-17,fx.color||'#fff1b1',12);c.restore()}
+ for(const fx of f.popFx||[]){if(smoothFx&&fx.text==='💥'){if(!three)drawFieldBurst(c,fx);continue;}if(!three&&smoothFx&&String(fx.text).startsWith('+'))drawFieldCollection(c,fx);c.save();c.translate(fx.x,fx.y-(.76-fx.ttl)*.5);c.scale(1/sc,1/sc);text(c,fx.text,0,-17,fx.color||'#fff1b1',12);c.restore()}
  c.save();c.translate(f.pos.x,f.pos.y);c.scale(1/sc,1/sc);
  const attackPose=fieldAttackPose(f);c.translate(attackPose.x,attackPose.y);
  if(!three){
