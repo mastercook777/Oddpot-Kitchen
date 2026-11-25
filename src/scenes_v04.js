@@ -1,3 +1,4 @@
+import {z2aOrderMark,z2aDrawMark} from './scene_hud_z2a.js?v=z2a';
 import {a21AtlasReady,a21Sprite,a21Tile} from './hearth_assets_v016a21.js?v=0.16-a21';
 import {fieldHitPose,fieldAttackPose} from './field_hit_response_v011h.js?v=0.12.0-alpha.1';
 import {drawFieldHitEffects} from './field_effects_v011e2.js?v=y5c2';
@@ -742,7 +743,7 @@ export function drawDinerDoorway(c,s,t,w,h){
   for(let i=0;i<5;i++)line(c,L+i*W*.23,T+H*.80,L+i*W*.23,T+H,'#526f8299',2);
   queue.slice(0,4).forEach((o,i)=>pixelActor(c,o.segment,L+W*(.20+i*.205),T+H*.77,DINER_ACTOR_SCALE*.82,{walk:0}));
   c.fillStyle='#294e68cb';c.fillRect(L+6,T+6,94,22);text(c,'☁ 等位 '+queue.length,L+51,T+17,'#fff6dd',11);
-  drawOutdoorQueueChatter(c,queue,t,L,T,W,H);c.strokeStyle='#e4d4aa';c.lineWidth=4;c.strokeRect(L+2,T+2,W-4,H-4);c.restore();
+  if(!s.service?.walkable)drawOutdoorQueueChatter(c,queue,t,L,T,W,H);c.strokeStyle='#e4d4aa';c.lineWidth=4;c.strokeRect(L+2,T+2,W-4,H-4);c.restore();
   return {queue:queue.length,weather:'breeze'};
  }
  c.save();
@@ -785,7 +786,7 @@ export function drawDinerDoorway(c,s,t,w,h){
  c.font='bold 11px system-ui';c.textBaseline='middle';
  c.fillStyle='#193a32c9';c.fillRect(L+6,T+6,Math.min(W-12,queue.length?94:102),22);
  text(c,(weather==='rain'?'☔':weather==='mist'?'☁️':weather==='breeze'?'🍃':'☀️')+' 等位 '+queue.length,L+51,T+17,'#fff0cc',11);
- drawOutdoorQueueChatter(c,queue,t,L,T,W,H);
+ if(!s.service?.walkable)drawOutdoorQueueChatter(c,queue,t,L,T,W,H);
  // Door threshold and open-frame mullions sit above the outdoor strip.
  c.strokeStyle='#d7b07b';c.lineWidth=4;c.strokeRect(L+2,T+2,W-4,H-4);
  c.fillStyle='#79563d';c.fillRect(L+W*.475,T+H*.03,W*.05,H*.13);
@@ -1196,8 +1197,7 @@ function drawRestaurantV075(c,s,t,w,h){
     const pct=Math.max(.04,Math.min(1,patience/35));
     rr(X-half,Y+half+5,side,4,2,'#392c25');
     rr(X-half,Y+half+5,Math.max(2,side*pct),4,2,urgency);
-    const icon=RECIPES[waiting[0].recipeId]?.name||'点餐';
-    text(c,icon,X,Y+4,'#ffe4af',14);
+    // Z2a: table remains visible; patience bar is the table-level cue.
    }
   }
  }
@@ -1225,11 +1225,11 @@ function drawRestaurantV075(c,s,t,w,h){
  }
  // The dialogue slots attach to actual seated actors. Only high-signal
  // transient phrases survive, with one bubble per table and no stick overlays.
- const speechCues=selectDiningSpeech(v?.orders||[],t,2);
+ const speechCues=v?[]:selectDiningSpeech(v?.orders||[],t,2);
  const speechActors=new Map(actors.filter(a=>a.order&&(!a.walk||['left','rejected'].includes(a.order.status))).map(a=>[a.id,a]));
  const visibleSpeech=speechCues.filter(q=>speechActors.has(q.id));
  // Customer urgency and actual reviews always beat optional worker banter.
- const workerCue=selectStaffSpeech(s,t,visibleSpeech);
+ const workerCue=v?null:selectStaffSpeech(s,t,visibleSpeech);
  const workerActor=workerCue?actors.find(a=>a.id===workerCue.staffRole):null;
  const speechPlacements=placeRestaurantSpeech(visibleSpeech,workerCue,actors,w,h);
  for(const a of actors)a.speechPlacement=speechPlacements.get(a.id)||(workerCue&&a.id===workerCue.staffRole?speechPlacements.get(workerCue.id):null);
@@ -1262,14 +1262,11 @@ function drawRestaurantV075(c,s,t,w,h){
    const hero=v.hero,focus=hero.dwellZone;
    // Dwell progress lives in the service action strip.
    const icon=a.working?'🍳':a.stateIcon;
-   if(icon&&a.working)text(c,'烹饪中',X,Y-30,'#ffe8b9',10);
+   if(icon&&a.working)z2aDrawMark(c,X,Y-30,{glyph:'…',color:'#f5dda1'},w,h);
   }
   if(a.order){
    const o=a.order;
-   if(!speaking.has(o.id)&&['queued','cooking','pickup','carried','delivering'].includes(o.status))
-    text(c,RECIPES[o.recipeId]?.name||'点餐',X,Y-34,'#fff2c9',10);
-   if(!speaking.has(o.id)&&(o.status==='review'||(o.status==='served'&&t-(o.reviewedAt??0)<1.1)))
-    text(c,o.sat>=70?'💚':'💬',X,Y-34,'#ffe6bd',15);
+   z2aDrawMark(c,X,Y-34,z2aOrderMark(o,t),w,h);
   }
  }
  for(const cue of visibleSpeech){const speaker=speechActors.get(cue.id);if(speaker)drawGuestSpeech077(c,cue,speaker,w,h)}
