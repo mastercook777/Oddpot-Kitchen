@@ -1,3 +1,4 @@
+import {Z2A3_ART} from '../src/ui_icon_art_z2a3.js';
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import {Z2A2_ICONS,z2a2Icon,z2a2DrawIcon} from '../src/ui_icons_z2a2.js';
@@ -14,8 +15,8 @@ test('Z2a2 shared icon registry covers live HUD, skill and all order states',()=
 });
 test('Z2a2 Canvas uses the same authored paths, not a system font',()=>{
  const orig=globalThis.Path2D;let count=0;
- try{globalThis.Path2D=class {constructor(d){assert.ok(d.startsWith('M'));}};const c={save(){},restore(){},translate(){},scale(){},stroke(){count++;}};
- assert.ok(z2a2DrawIcon(c,'plate',12,12,18,'#eed'));assert.equal(count,Z2A2_ICONS.plate.length);}
+ try{globalThis.Path2D=class {constructor(d){assert.ok(d.startsWith('M'));}};const c={save(){},restore(){},translate(){},scale(){},fill(){},stroke(){count++;}};
+ assert.ok(z2a2DrawIcon(c,'plate',12,12,18,'#eed'));assert.equal(count,Z2A3_ART.plate.filter(l=>l[2]!=='none'&&l[3]>0).length);}
  finally{if(orig===undefined)delete globalThis.Path2D;else globalThis.Path2D=orig;}
 });
 test('Z2a2 bounded two-line dialogue with actual speaker identity, quiet intervals and no body overlap',()=>{
