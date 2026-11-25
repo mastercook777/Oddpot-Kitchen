@@ -109,7 +109,7 @@ function potLaunch(f,target,damage=1,radius=.65,slow=0,eruption=false){
  f.playerProjectiles.push({x:eruption?target.x:f.pos.x,y:eruption?target.y:f.pos.y,fromX:f.pos.x,fromY:f.pos.y,
   targetX:target.x,targetY:target.y,time:0,duration:f.weapon?.level>1?.30:.38,damage,radius,slow,empowered:damage>1,level:f.weapon?.level||1,...(eruption?{eruption:true}:{})});
 }
-function advancePlayerProjectiles(s,dt){
+export function advancePlayerProjectiles(s,dt){
  const f=s.field;
  for(const p of f.playerProjectiles||[]){
   p.time+=dt;const factor=Math.min(1,p.time/p.duration);
