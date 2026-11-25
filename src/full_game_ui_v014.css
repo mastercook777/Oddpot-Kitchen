@@ -222,3 +222,23 @@
 .z2a2-count b,.z2a-hud .field-clock b{font-weight:750}
 .z2a-ledger-summary .z2a2-icon{width:16px;height:16px}
 @media(max-width:350px){.z2a-hud .z2a2-icon{width:17px;height:17px}.z2a-hud .field-hp .z2a2-icon{width:19px;height:19px}.z2a2-queue .z2a2-icon{width:11px;height:11px}.z2a-hud .v075-status>span{gap:2px}.z2a-hud .v075-status button{padding:0}.z2a2-queue{font-size:10px}}
+
+/* Hearthcraft — object illustrations rather than line glyphs.
+   Preserve the compact Z2a rail and 44px touch targets. */
+.z2a3-art{overflow:visible;filter:drop-shadow(0 1px 0 #14251d55)}
+.z2a-hud .z2a3-art{width:23px;height:23px}
+.z2a-hud .z2a2-queue .z2a3-art{width:13px;height:13px}
+.z2a-hud .z2a-ledger-btn .z2a3-art,.z2a-hud .z2a-settings .z2a3-art{width:28px;height:28px}
+.z2a-hud button,.z2a-hud .v075-status button,.z2a-hud .action-hud button{background:linear-gradient(155deg,#4c513a 0%,#344432 42%,#26342a 100%);border:1px solid #b29460;border-radius:8px;box-shadow:inset 0 0 0 2px #2e372b,inset 0 1px #e2c18c6b,0 2px #16261c}
+.z2a-hud .field-hp .z2a3-art{width:22px;height:22px;fill:none}
+.z2a-hud .field-hp .is-empty{fill:none;filter:none}
+.z2a-hud .field-hp.taking-hit .is-full{fill:none;filter:brightness(1.5) drop-shadow(0 0 2px #e8ae72)}
+.z2a-live .field-skill .z2a3-art{width:37px;height:37px;filter:drop-shadow(0 2px 1px #1d251b)}
+.z2a-field .action-forest .field-skill{background:radial-gradient(ellipse at 42% 25%,#62796a,#344c40 53%,#25372c 75%);border-color:#c5a367;box-shadow:inset 0 0 0 3px #242c22,inset 0 0 0 4px #b58d5b88,0 3px 0 #372c22,0 4px 9px #0a1d15aa}
+.z2a-field .action-forest .field-skill[data-cookware="POT"]{background:radial-gradient(ellipse at 42% 25%,#678a91,#345b63 53%,#293c40 75%)}
+.z2a-field .action-forest .field-skill[data-cookware="GRILL"]{background:radial-gradient(ellipse at 42% 25%,#9b6340,#6d4130 53%,#452e26 75%)}
+.z2a-field .action-forest .field-skill[data-cookware="STEAM"]{background:radial-gradient(ellipse at 42% 25%,#8a9b88,#536d60 53%,#34473d 75%)}
+.z2a-diner .diner-special>.z2a3-art{width:31px;height:31px}
+.z2a-diner .diner-special small .z2a3-art{width:13px;height:13px}
+.z2a-diner #z2a2-guide-icon .z2a3-art{width:23px;height:23px}
+@media(max-width:350px){.z2a-hud .z2a3-art{width:18px;height:18px}.z2a-hud .field-hp .z2a3-art{width:19px;height:19px}.z2a-hud .z2a2-queue .z2a3-art{width:11px;height:11px}.z2a-hud .z2a-ledger-btn .z2a3-art,.z2a-hud .z2a-settings .z2a3-art{width:25px;height:25px}}

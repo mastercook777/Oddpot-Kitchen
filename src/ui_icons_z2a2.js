@@ -1,3 +1,4 @@
+import {z2a3Layers} from './ui_icon_art_z2a3.js?v=z2a3';
 // Authored 24-unit game glyphs. One geometry vocabulary for DOM and Canvas.
 export const Z2A2_ICONS=Object.freeze({
  moon:['M16 3A9 9 0 1 0 21 17Q10 20 10 9Q11 5 16 3Z','M19 3V7M17 5H21'],
@@ -32,13 +33,19 @@ export const Z2A2_ICONS=Object.freeze({
  coin:['M12 3A9 9 0 1 0 12 21A9 9 0 1 0 12 3Z','M12 7L17 12L12 17L7 12Z'],
  rep:['M12 3L15 9L21 10L16 14L17 21L12 17L7 21L8 14L3 10L9 9Z']
 });
+// Legacy geometry is retained for comparison and unsupported Canvas fallback.
+export function z2a2LineIcon(name){const paths=Z2A2_ICONS[name];if(!paths)return '';
+ return '<svg class="z2a2-icon" viewBox="0 0 24 24" aria-hidden="true" fill="none" stroke="#e8c783" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round">'+paths.map(d=>'<path d="'+d+'"/>').join('')+'</svg>';
+}
 export function z2a2Icon(name,cls=''){
- const paths=Z2A2_ICONS[name];if(!paths)return '';
- return '<svg class="z2a2-icon '+cls+'" data-game-icon="'+name+'" viewBox="0 0 24 24" aria-hidden="true" focusable="false" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round">'+paths.map(d=>'<path d="'+d+'"/>').join('')+'</svg>';
+ const layers=z2a3Layers(name,cls);if(!layers)return '';
+ return '<svg class="z2a2-icon z2a3-art '+cls+'" data-game-icon="'+name+'" data-icon-art="hearthcraft" viewBox="0 0 24 24" aria-hidden="true" focusable="false" stroke-linecap="round" stroke-linejoin="round">'+layers.map(([d,f,s,w])=>'<path d="'+d+'" fill="'+f+'" stroke="'+s+'" stroke-width="'+w+'"/>').join('')+'</svg>';
 }
 const z2a2PathCache=new Map();
 export function z2a2DrawIcon(c,name,x,y,size,color){
- const paths=Z2A2_ICONS[name];if(!paths||typeof Path2D==='undefined')return false;
- let geom=z2a2PathCache.get(name);if(!geom){geom=paths.map(d=>new Path2D(d));z2a2PathCache.set(name,geom);}
- c.save();c.translate(x-size/2,y-size/2);c.scale(size/24,size/24);c.strokeStyle=color;c.lineWidth=1.8;c.lineCap='round';c.lineJoin='round';for(const p of geom)c.stroke(p);c.restore();return true;
+ const layers=z2a3Layers(name);if(!layers||typeof Path2D==='undefined')return false;
+ let geom=z2a2PathCache.get(name);if(!geom){geom=layers.map(([d,f,s,w])=>[new Path2D(d),f,s,w]);z2a2PathCache.set(name,geom);}
+ c.save();c.translate(x-size/2,y-size/2);c.scale(size/24,size/24);c.lineCap='round';c.lineJoin='round';
+ for(const [p,f,s,w] of geom){if(f!=='none'){c.fillStyle=f;c.fill(p);}if(s!=='none'&&w>0){c.strokeStyle=s;c.lineWidth=w;c.stroke(p);}}
+ c.restore();return true;
 }
