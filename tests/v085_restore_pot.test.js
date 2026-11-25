@@ -104,6 +104,14 @@ test('kitchen POT station rendering and refit controls are preserved independent
  const s=newGame();
  assert.equal(s.kitchen.slots[1].type,'POT');
  const app=readFileSync(new URL('../src/app.js',import.meta.url),'utf8');
- assert.match(app,/data-act="kitchen:\$\{i\}:POT"/);
- assert.match(app,/cookName\(slot\.type\)/);
+ // Z2b builds all refit buttons from the same cookware list. Test the actual
+ // emitted action/label/selection rather than requiring a literal template.
+ const line=app.split('\n').find(l=>l.includes('const slotCards=k.slots.map('));
+ assert.ok(line);
+ const cookName=t=>({WOK:'炒锅',POT:'炖锅',STEAM:'蒸笼',GRILL:'烤架'})[t];
+ const markup=new Function('k','z2bCookIcon','cookName',line+';return slotCards;')(s.kitchen,t=>'<i>'+t+'</i>',cookName);
+ assert.match(markup,/<button data-act="kitchen:0:POT" class="" aria-pressed="false" aria-label="左厨位：炖锅">/);
+ assert.match(markup,/<button data-act="kitchen:1:POT" class="active" aria-pressed="true" aria-label="右厨位：炖锅">/);
+ assert.match(markup,/<button data-act="kitchen:1:WOK" class="" aria-pressed="false"/);
+ assert.match(app,/configureKitchenSlot\(game,Number\(i\),type\)/);
 });
