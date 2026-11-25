@@ -61,15 +61,52 @@ try{
     continue;
    }
    if(phase==='field')assert.equal(await page.locator('[data-route]').count(),2);
-   if(phase==='research')assert.equal(await page.locator('.v063-food-picker button').count(),12);
+   if(['research','menu','prep'].includes(phase)){assert.equal(await page.locator('.z2b-hud').count(),1);assert.equal(await page.locator('.brand,.day-strip').count(),0);assert.equal(await page.evaluate(()=>document.documentElement.scrollWidth>innerWidth),false);}
+   if(phase==='research'){
+    assert.equal(await page.locator('.v063-food-picker button').count(),12);
+    assert.equal(await page.locator('.z2b-tray-slot').count(),3);
+    assert.equal(await page.locator('.z2b-tray-slot.filled').count(),2);
+    const id=await page.locator('.z2b-tray-slot.filled').first().getAttribute('data-ingredient');
+    await page.locator('.z2b-tray-slot.filled').first().click();
+    assert.equal(await page.locator('.z2b-tray-slot.filled').count(),1);
+    assert.ok(await page.locator('[data-act="start-research"]').isDisabled());
+    await page.locator('.z2b-pantry [data-ingredient="'+id+'"]').click();
+    assert.equal(await page.locator('.z2b-tray-slot.filled').count(),2);
+    await page.locator('[data-act="method:stew"]').click();
+    assert.equal(await page.locator('[data-act="method:stew"]').getAttribute('aria-pressed'),'true');
+    assert.ok(await page.locator('.z2b-bench-vessel svg[data-game-icon="pot"]').count());
+    await page.screenshot({path:output+'/z2b-bench-'+width+'.png'});
+    await page.locator('[data-act="start-research"]').click();
+    assert.ok(await page.locator('.v063-live-pan').isVisible());
+    assert.equal(await page.locator('.v063-live-actions .action-row').count(),1);
+    await page.locator('[data-live-drop="'+id+'"]').click();
+    assert.ok(await page.locator('[data-live-drop="'+id+'"]').isDisabled());
+    assert.ok(await page.locator('[data-act="live-action:gentle"]').isEnabled());
+    await page.screenshot({path:output+'/z2b-live-'+width+'.png'});
+   }
    if(phase==='menu'){
     assert.equal(await page.locator('.menu-line').count(),3);
     assert.equal(await page.locator('.v014-menu-value').count(),3);
-    await page.locator('.menu-line').first().click();assert.ok(await page.locator('.sheet').isVisible());
-    await page.locator('[data-act="close-sheet"]').last().click();
+    assert.equal(await page.locator('.menu-line .z2b-dish-art').count(),3);
+    await page.locator('.menu-line').first().click();assert.ok(await page.locator('.sheet').isVisible());assert.ok(await page.locator('.z2b-menu-group').count()>0);
+    const before=await page.evaluate(k=>JSON.parse(localStorage.getItem(k)).menu[0],storageKey);
+    const choices=await page.locator('[data-menu-pick]:enabled').evaluateAll(es=>es.map(e=>e.dataset.menuPick));
+    const picked=choices.find(x=>x.split(':')[1]!==before)||choices[0];assert.ok(picked);
+    await page.locator('[data-menu-pick="'+picked+'"]').click();assert.equal(await page.locator('.sheet').count(),0);
+    assert.equal(await page.evaluate(k=>JSON.parse(localStorage.getItem(k)).menu[0],storageKey),picked.split(':')[1]);
    }
    if(phase==='prep'){
     assert.ok(await page.locator('[data-act="open"]').isVisible());
+    const scene=page.locator('.z2b-prep-scene'),work=page.locator('.z2b-prep-work'),a=await scene.boundingBox(),d=await work.boundingBox();assert.ok(a.height>=135&&a.y+a.height<=d.y+1&&a.height>=layout.stageHeight*.40);
+    assert.equal(await page.locator('.kitchen-config-slot').count(),2);
+    const stock=await page.locator('.z2b-stock-shortcut').count();assert.equal(stock,1);
+    const dish=page.locator('.prep-item:enabled').first();if(await dish.count()){
+      const id=(await dish.getAttribute('data-act')).split(':')[1],before=await page.evaluate(k=>JSON.parse(localStorage.getItem(k)),storageKey);
+      await dish.click();const after=await page.evaluate(k=>JSON.parse(localStorage.getItem(k)),storageKey);
+      assert.equal(after.prep[id],(before.prep[id]||0)+1);assert.ok(Object.keys(before.inventory).some(i=>(after.inventory[i]||0)<before.inventory[i]));
+      const a2=await scene.boundingBox();assert.ok(Math.abs(a2.y-a.y)<1&&Math.abs(a2.height-a.height)<1,'preparation remains separated after action');
+    }
+    await page.screenshot({path:output+'/z2b-prep-'+width+'.png'});
     await page.locator('.v014-marketing summary').click();
     await page.locator('[data-act="promo:flyer"]').click();
     assert.ok(await page.locator('.v014-marketing').getAttribute('open')!==null,'campaign choice stays expanded');
