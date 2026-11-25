@@ -1,3 +1,4 @@
+import {makeFireVolume} from './three_y5c3_fire_volume.js?v=y5c3';
 import {makeSkillFluidLayer} from './three_y5c2_fluid_fx.js?v=y5c2';
 // Native 3D effects derived only from authoritative simulation state.
 const clamp=x=>Math.max(0,Math.min(1,x));
@@ -80,7 +81,7 @@ export function fieldFx3D(f){
  return out;
 }
 export function makeFieldFx3D(T,scene,sine){
- const root=new T.Group();scene.add(root);const pool=[],fluid=makeSkillFluidLayer(T,scene,sine);
+ const root=new T.Group();scene.add(root);const pool=[],fluid=makeSkillFluidLayer(T,scene,sine),fire=makeFireVolume(T,scene,sine);
  const orb=new T.SphereGeometry(1,12,8),ring=new T.RingGeometry(.82,1,48);ring.rotateX(-Math.PI/2);
  // An actual curved, bevelled-looking ribbon with tapered ends. The shape is
  // oriented in tile coordinates before z compensation, not a screen sprite.
@@ -91,7 +92,7 @@ export function makeFieldFx3D(T,scene,sine){
  for(let j=0;j<=40;j++){const u=j/40,a=u*Math.PI*1.65,w=.025+.19*Math.sin(Math.PI*u);for(const side of [-1,1])verts.push(Math.cos(a)*(1+side*w),.10+.25*u+side*w*.36,Math.sin(a)*(1+side*w));if(j<40){const k=j*2;indices.push(k,k+1,k+2,k+1,k+3,k+2);}}
  ribbon.setAttribute('position',new T.Float32BufferAttribute(verts,3));ribbon.setIndex(indices);
  function create(){const g=new T.Group();root.add(g);const mat=new T.MeshBasicMaterial({color:'#fff0bf',transparent:true,opacity:1,depthWrite:false,side:T.DoubleSide});const meshes={};for(const [k,geo] of Object.entries({orb,ring,arc,cone,streak,ribbon})){const o=new T.Mesh(geo,mat);g.add(o);meshes[k]=o;}const sparks=[];for(let i=0;i<8;i++){const o=new T.Mesh(orb,mat);g.add(o);sparks.push(o);}const slot={g,mat,meshes,sparks};pool.push(slot);return slot;}
- return {draw(f,t,nativeBlade=false){const all=fieldFx3D(f).filter(d=>!nativeBlade||d.kind!=='slash');const count=fluid.draw(all,t);const data=all.filter(d=>!['flame','thrust','potErupt'].includes(d.kind)).slice(0,96);for(let i=0;i<Math.max(data.length,pool.length);i++){const d=data[i],s=pool[i]||(d?create():null);if(!s)continue;s.g.visible=!!d;if(!d)continue;const {g,mat,meshes,sparks}=s;g.position.set(d.x,d.h||0,d.y/sine);g.scale.set(1,1,1/sine);g.rotation.set(0,0,0);mat.color.set(d.color||'#ffe4a0');mat.opacity=Math.max(0,Math.min(1,d.alpha??1));for(const o of Object.values(meshes)){o.visible=false;o.position.set(0,0,0);o.rotation.set(0,0,0);o.scale.set(1,1,1);}for(const o of sparks){o.visible=false;o.rotation.set(0,0,0);}
+ return {draw(f,t,nativeBlade=false,fork=null,camera=null){const all=fieldFx3D(f).filter(d=>!nativeBlade||d.kind!=='slash');const volume=fire.draw(all.find(d=>d.kind==='flame'),t,fork?.tip,camera,f.skillOrigin);const count=fluid.draw(all.filter(d=>d.kind!=='flame'),t)+volume;const data=all.filter(d=>!['flame','thrust','potErupt'].includes(d.kind)).slice(0,96);for(let i=0;i<Math.max(data.length,pool.length);i++){const d=data[i],s=pool[i]||(d?create():null);if(!s)continue;s.g.visible=!!d;if(!d)continue;const {g,mat,meshes,sparks}=s;g.position.set(d.x,d.h||0,d.y/sine);g.scale.set(1,1,1/sine);g.rotation.set(0,0,0);mat.color.set(d.color||'#ffe4a0');mat.opacity=Math.max(0,Math.min(1,d.alpha??1));for(const o of Object.values(meshes)){o.visible=false;o.position.set(0,0,0);o.rotation.set(0,0,0);o.scale.set(1,1,1);}for(const o of sparks){o.visible=false;o.rotation.set(0,0,0);}
   const q=1-(d.alpha??1),r=Math.max(.02,d.r||.2),angle=Math.atan2(d.dx||0,d.dy||0);
   if(d.kind==='slash'){const o=meshes.arc;o.visible=true;o.rotation.y=angle+(q-.5)*.45;o.scale.set(r,1,r);o.position.y=.12;for(let j=0;j<5;j++){const v=sparks[j],a=angle-.75+j*.375+(q-.5)*.45;v.visible=true;v.position.set(Math.sin(a)*r,.13+.12*Math.sin(j*Math.PI/4),Math.cos(a)*r);v.scale.set(.035,.055,.035);}}
     else if(d.kind==='orb'){const o=meshes.orb;o.visible=true;o.scale.set(r,r,r);const tail=meshes.streak;tail.visible=true;tail.rotation.y=angle;tail.position.set(-Math.sin(angle)*r*1.35,0,-Math.cos(angle)*r*1.35);tail.scale.set(r*.48,r*.48,r*2.4);for(let j=0;j<5;j++){const v=sparks[j];v.visible=true;const d=r*(1+j*.64);v.position.set(-Math.sin(angle)*d+Math.sin(t*13+j)*r*.3,.03+Math.sin(t*10+j)*r*.4,-Math.cos(angle)*d);v.scale.setScalar(r*(.48-j*.065));}}
@@ -100,5 +101,5 @@ export function makeFieldFx3D(T,scene,sine){
   else if(d.kind==='mist'){mat.opacity=Math.min(.35,d.alpha*.48);for(let j=0;j<8;j++){const v=sparks[j],a=j*Math.PI/4+t*.55;v.visible=true;v.position.set(Math.cos(a)*r*.61,.18+Math.sin(t*2+j)*.12,Math.sin(a)*r*.61);v.scale.set(r*.37,.22+.13*Math.sin(t+j),r*.34);}}
   else if(['wave','burst'].includes(d.kind)){const o=meshes.ring;o.visible=true;o.scale.set(r,1,r);if(d.kind==='burst')for(let j=0;j<8;j++){const v=sparks[j],a=j*Math.PI/4+t*.4;v.visible=true;v.position.set(Math.cos(a)*r*.65,.14+Math.sin(t*4+j)*.09,Math.sin(a)*r*.65);v.scale.set(.11,.22,.20);} }
   else if(d.kind==='spark'||d.kind==='dust'){for(let j=0;j<8;j++){const v=sparks[j],a=j*2.399;v.visible=true;v.position.set(Math.cos(a)*r*(.2+q),.08+Math.sin(q*Math.PI)*.32+(j%3)*.04,Math.sin(a)*r*(.2+q));v.scale.set(.035+(1-q)*.045,.035,.055);}}
- }return {count,kinds:all.filter(d=>['flame','thrust','potPressure','potErupt'].includes(d.kind)).map(d=>d.kind).join(',')};},dispose(){fluid.dispose();for(const s of pool)s.mat.dispose();for(const g of [orb,ring,arc,cone,streak,ribbon])g.dispose();scene.remove(root);}};
+ }return {count,volume,kinds:all.filter(d=>['flame','thrust','potPressure','potErupt'].includes(d.kind)).map(d=>d.kind).join(',')};},dispose(){fire.dispose();fluid.dispose();for(const s of pool)s.mat.dispose();for(const g of [orb,ring,arc,cone,streak,ribbon])g.dispose();scene.remove(root);}};
 }
