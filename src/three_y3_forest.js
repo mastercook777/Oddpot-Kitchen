@@ -1,8 +1,8 @@
 // Y3a: read-only 3D forest. No physics, inventory or combat simulation.
 import {roundedFactory} from './three_y1_models.js?v=y1';
-import {makeChefY2} from './three_y2b_chef.js?v=y3d';
+import {makeChefY2} from './three_y2b_chef.js?v=y5c';
 import {makeBladeTrail} from './three_y3d_trail.js';
-import {createWeaponRig} from './three_y3b_weapon_pose.js?v=y3d';
+import {createWeaponRig} from './three_y3b_weapon_pose.js?v=y5c';
 import {enemyHitVisual,pickupVisual} from './three_y3b_feedback.js';
 import {makeFieldFx3D,makeTelegraphLayer} from './three_y3c_fx.js?v=y5b2';
 import {fieldTilePath,hazardPhase} from './field_rules_v011a.js';
@@ -185,7 +185,7 @@ function createForest(T){
   p.userData.body=body;p.userData.limbs=limbs;p.userData.wings=wings;p.userData.skull=skull;const own=new Map();body.traverse(o=>{if(o.isMesh&&o.material?.emissive){if(!own.has(o.material))own.set(o.material,o.material.clone());o.material=own.get(o.material);}});p.userData.flashMats=[...own.values()];return p;
  }
  function sync(pool,items,build,fn){const live=new Set();for(const v of items){const k=v.key??v.id;live.add(k);let p=pool.get(k);if(!p){p=build(v);pool.set(k,p);}p.visible=true;fn(p,v);}for(const [k,p] of pool)if(!live.has(k))p.visible=false;}
- const ambientDummy=new T.Object3D();let lastW=0,lastH=0;
+ const ambientDummy=new T.Object3D();let lastW=0,lastH=0,gaitBlend=0,lastGaitT=null;
  return {element,draw(canvas,f,t,w,h,cam,sx,sy){
   if(element.parentElement!==canvas.parentElement)canvas.parentElement.insertBefore(element,canvas);
   const rw=Math.max(1,Math.round(w*Math.min(devicePixelRatio||1,1.35))),rh=Math.max(1,Math.round(h*Math.min(devicePixelRatio||1,1.35)));if(rw!==lastW||rh!==lastH){renderer.setSize(rw,rh,false);lastW=rw;lastH=rh;}
@@ -198,7 +198,7 @@ function createForest(T){
   for(const [i,o] of pools.entries()){o.scale.setScalar(.24+((t*.28+i*.17)%1)*.28);o.material.opacity=.45*(1-((t*.28+i*.17)%1));}
   sync(nodePool,(f.nodes||[]).filter(n=>!n.claimed),node,(p,n)=>{place(p,n.x,n.y);const v=pickupVisual(n,t),u=p.userData;u.item.position.y=v.bob;u.ring.material.opacity=v.opacity;u.outer.material.opacity=v.opacity*.30;u.outer.scale.setScalar(v.radius*(1.20+.06*Math.sin(t*3+n.x)));});
   sync(enemyPool,(f.enemies||[]).filter(e=>e.hp>0||e.deathFx>0),enemy,(p,e)=>{place(p,e.x,e.y);const body=p.userData.body,v=enemyHitVisual(e);p.rotation.y=Math.atan2(f.pos.x-e.x,(f.pos.y-e.y)/SINE);body.position.y=e.moving?Math.abs(Math.sin(t*10+e.x))*.035:0;body.scale.set(v.sx,v.sy,v.sz);body.rotation.z=v.tilt*(e.hitResponse?.dx||1);const wind=e.warning>0?Math.max(0,Math.min(1,1-e.warning/(e.windupTotal||1))):0,rush=!!(e.ecologyRush||e.rush),stride=e.moving?Math.sin(t*(rush?19:9)+e.x):0;body.rotation.x=-v.tilt*(e.hitResponse?.dy||0)+(rush?.19:wind*.14);body.scale.y*=1-wind*.13;for(const [i,l] of p.userData.limbs.entries())l.rotation.x=stride*(i%3===0?1:-1)*(rush?.62:.33);for(const [i,l] of p.userData.wings.entries())l.rotation.z=(i===0?-1:1)*(e.moving?.25+Math.abs(stride)*.60:wind*.70);if(p.userData.skull)p.userData.skull.rotation.x=rush?.34:wind*.34;if(e.kind==='chicken')body.position.y+=Math.abs(stride)*.055+wind*.08;if(e.kind==='sporeling'||e.kind==='pepper')body.scale.x*=1+wind*.12;for(const m of p.userData.flashMats){m.emissive.set('#fff1c7');m.emissiveIntensity=v.flash*.85;}});
-  place(hero.root,f.pos.x,f.pos.y);const facing=y3Facing(f.facing);hero.update(t,{facing,moving:!!f.moving,working:false,carrying:false});const aim=f.attackFx?.ttl>0&&Number.isFinite(f.attackFx.dx)?{x:f.attackFx.dx,y:f.attackFx.dy}:f.facing;if(aim&&Math.hypot(aim.x,aim.y)>.01)hero.root.rotation.y=Math.atan2(aim.x,aim.y/SINE);weaponRig.update(f,t);const nativeBlade=bladeTrail.draw(f,weaponRig);
+  place(hero.root,f.pos.x,f.pos.y);const dt=lastGaitT==null?1/60:Math.max(0,Math.min(.08,t-lastGaitT));lastGaitT=t;gaitBlend+=((f.moving?1:0)-gaitBlend)*(1-Math.exp(-dt*15));const facing=y3Facing(f.facing);hero.update(t,{facing,moving:!!f.moving,gaitBlend,working:false,carrying:false});const spin=f.skillOrigin?.spin&&f.skillFx>0,aim=spin?{x:f.skillOrigin.dx,y:f.skillOrigin.dy}:f.attackFx?.ttl>0&&Number.isFinite(f.attackFx.dx)?{x:f.attackFx.dx,y:f.attackFx.dy}:f.facing;if(aim&&Math.hypot(aim.x,aim.y)>.01)hero.root.rotation.y=Math.atan2(aim.x,aim.y/SINE);if(spin){const u=Math.max(0,Math.min(1,1-f.skillFx/(f.skillOrigin.duration||.6)));hero.root.rotation.y+=Math.PI*2*(u*u*(3-2*u));}weaponRig.update(f,t,gaitBlend);const nativeBlade=bladeTrail.draw(f,weaponRig);
   if(ambient){const dummy=ambientDummy;for(let i=0;i<32;i++){dummy.position.set(random(i*31)*f.worldW+Math.sin(t*.5+i)*.13,.22+random(i*23)*1.9+Math.sin(t*.7+i)*.08,(random(i*53)*f.worldH)/SINE+Math.cos(t*.4+i)*.14);dummy.updateMatrix();ambient.setMatrixAt(i,dummy.matrix);}ambient.instanceMatrix.needsUpdate=true;}
   combatFx.draw(f,t,nativeBlade);element.dataset.telegraphCount=String(telegraphs.draw(f,t));renderer.render(scene,camera);document.documentElement.dataset.oddpotForest3d='active';
  },dispose(){disposed=true;element.remove();bladeTrail.dispose();combatFx.dispose();telegraphs.dispose();const geometries=new Set(),materials=new Set();scene.traverse(o=>{if(o.geometry)geometries.add(o.geometry);if(o.material)for(const m of Array.isArray(o.material)?o.material:[o.material])materials.add(m);});for(const g of geometries)g.dispose();for(const m of materials)m.dispose();for(const g of boxCache.values())g.dispose();for(const g of cylinderCache.values())g.dispose();for(const g of uniqueTerrain)g.dispose();renderer.dispose();renderer.forceContextLoss();}};
