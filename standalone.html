@@ -9138,7 +9138,7 @@ function circle(c,x,y,r,fill){c.fillStyle=fill;c.beginPath();c.arc(x,y,r,0,Math.
 function line(c,x1,y1,x2,y2,stroke,width=1){c.strokeStyle=stroke;c.lineWidth=width;c.beginPath();c.moveTo(x1,y1);c.lineTo(x2,y2);c.stroke()}
 function text(c,string,x,y,fill='#fff1d0',size=12,align='center'){c.textAlign=align;c.textBaseline='middle';c.fillStyle=fill;c.font=`bold ${size}px system-ui`;c.fillText(string,x,y)}
 function capsule(c,x,y,w,h,fill,stroke){c.beginPath();c.roundRect(x,y,w,h,h/2);c.fillStyle=fill;c.fill();if(stroke){c.strokeStyle=stroke;c.lineWidth=2;c.stroke()}}
-function setCanvas(canvas){if(!canvas)return null;const {width,height}=canvas.getBoundingClientRect();if(width<10||height<10)return null;const dpr=Math.min(window.devicePixelRatio||1,2);const W=Math.floor(width*dpr),H=Math.floor(height*dpr);if(canvas.width!==W||canvas.height!==H){canvas.width=W;canvas.height=H}const c=canvas.getContext('2d');c.setTransform(dpr,0,0,dpr,0,0);c.imageSmoothingEnabled=false;c.clearRect(0,0,width,height);return {c,w:width,h:height};}
+function setCanvas(canvas){if(!canvas)return null;const {width,height}=canvas.getBoundingClientRect();if(width<10||height<10)return null;const dpr=Math.min(window.devicePixelRatio||1,2);const W=Math.floor(width*dpr),H=Math.floor(height*dpr);if(canvas.width!==W||canvas.height!==H){canvas.width=W;canvas.height=H}const c=canvas.getContext('2d');if(!c||c.isContextLost?.())return null;c.setTransform(dpr,0,0,dpr,0,0);c.imageSmoothingEnabled=false;c.clearRect(0,0,width,height);return {c,w:width,h:height};}
 function tree(c,x,y,t=0){rect(c,x-4,y+2,8,16,'#6d4930');circle(c,x,y-8,16,'#214d34');circle(c,x-6,y-12,12,'#3e7850');circle(c,x+7,y-13,10,'#4e8a50');circle(c,x-6,y-16,2,'#92b66d')}
 function chef(c,x,y,t=0,options={}){
  pixelActor(c,'chef',x,y,options.scale||1.7,{face:options.face||1,walk:options.walk?t:0,attack:options.attack||false,hurt:options.hurt||0});
@@ -11134,7 +11134,18 @@ function analogAxis(){let x=stick.x,y=stick.y;for(const key of keys){if(['ArrowL
 // cannot loop arrival or plate animations through an unrelated wall clock.
 function restaurantSimTime(now){const v=game.service;if(!v)return gameClock;if(v.walkable)return v.time+(v.clockAccumulator||0);if(v.paused||v.breakAt||v.done)return v.time;return v.time+Math.max(0,Math.min(1,(now-(serviceTickAt||now))/750));}
 let researchPreviewCache=null;
-function frame(now){const delta=Math.min(.045,(now-(lastFrame||now))/1000);lastFrame=now;gameClock+=delta;
+// Z2br: an optional scene or transient canvas error must not kill the RAF chain.
+const sceneFrameErrors=new Map();
+function safeSceneFrame(name,draw){
+ const key='frame-'+name,diagnostics=globalThis.__oddpotBuild?.sceneErrors;
+ try{draw();sceneFrameErrors.delete(key);if(diagnostics)delete diagnostics[key];return true;}
+ catch(error){const detail=String(error);if(sceneFrameErrors.get(key)!==detail){sceneFrameErrors.set(key,detail);console.warn('Oddpot frame recovery',name,error);}if(diagnostics)diagnostics[key]=detail;return false;}
+}
+function frame(now){
+ requestAnimationFrame(frame);
+ safeSceneFrame('loop',()=>advanceFrame(now));
+}
+function advanceFrame(now){const delta=Math.min(.045,(now-(lastFrame||now))/1000);lastFrame=now;gameClock+=delta;
  if(game.phase==='field'&&game.field?.action&&game.field.segmentStatus!=='choice'&&!document.hidden&&!overlay){
   const [dx,dy]=analogAxis(),evt=stepActionField(game,dx,dy,delta);
   if(evt==='harvest'&&game.field?.nodes?.some(n=>n.key==='target'&&n.claimed)){releaseStick();render();}
@@ -11235,11 +11246,11 @@ function frame(now){const delta=Math.min(.045,(now-(lastFrame||now))/1000);lastF
  const forest=app.querySelector('#forest-canvas'),diner=app.querySelector('#diner-canvas'),research3d=globalThis.__oddpotY4bRenderer;
  // Release inactive contexts before the next scene allocates its context.
  if(!forest)globalThis.__oddpotY3Renderer?.leave();if(!diner)globalThis.__oddpotY2Renderer?.leave();if(game.phase!=='research')research3d?.leave();
- if(forest)drawField(forest,game,gameClock);
- if(diner)drawDiner(diner,game,gameClock,restaurantSimTime(now));
- if(game.phase==='research')research3d?.draw(app,game,researchPreviewCache,now);
+ if(forest)safeSceneFrame('forest',()=>drawField(forest,game,gameClock));
+ if(diner)safeSceneFrame('diner',()=>drawDiner(diner,game,gameClock,restaurantSimTime(now)));
+ if(game.phase==='research')safeSceneFrame('research',()=>research3d?.draw(app,game,researchPreviewCache,now));
+ for(const [name,present] of [['forest',!!forest],['diner',!!diner],['research',game.phase==='research']])if(!present){const key='frame-'+name;sceneFrameErrors.delete(key);if(globalThis.__oddpotBuild?.sceneErrors)delete globalThis.__oddpotBuild.sceneErrors[key];}
  if(now-lastSave>1400&&(game.phase==='field'||['v063-live','v014c-grill'].includes(game.cook?.mode)||game.phase==='service'&&game.service?.walkable)){save(game);lastSave=now}
- requestAnimationFrame(frame);
 }
 requestAnimationFrame(frame);
 // Z1: one selection policy for every game surface, including restaurant.

@@ -13,7 +13,7 @@ import {walkServiceHero} from './walkable_restaurant_v07.js?v=y4d';
 import {dinerGuide,dinerBlocked,dinerFloor,dinerQueueGuests} from './restaurant_scene_v075.js?v=y4d';
 import {PHASES,newGame,save,load,beginLiveResearch,threadGrillIngredient,placeGrillSkewer,grillCookPreview,dropLiveIngredient,performLiveAction,finishLiveResearch,stepLiveResearch,liveCookPreview,ensureRecipeVariants,activeRecipeVariant,chooseRecipeVariant,recipeCraftSnapshot,availableBento,prepareBento,today,serviceDayPlan,tableSeatState,enterField,settleField,discardFieldStack,fieldBagSlotsUsed,completeFieldSegment,chooseFieldBranch,selectFieldWeapon,fieldWeaponChoices,selectedFieldWeaponType,skipField,purchase,startCook,moveTile,beat,finishCook,synergyFor,canMenu,selectMenuRecipe,chapterRecipeAvailable,recipeAtlasRegion,recipeResearchAccess,recipeCookware,cookwareOwned,crewRoleName,redeemFerrySupply,ferrySupplyAvailable,FERRY_SUPPLY_PACKS,managedFreightStatus,configureManagedFreight,claimManagedFreight,MANAGED_FREIGHT_FOCUS,MANAGED_FREIGHT_DAYS,prepDish,createService,tick,expedite,walkableSpecial,activateWalkableSpecial,advanceWalkableInteraction,closeService,nextPhase,advanceDay,buyUpgrade,buyKitchenUpgrade,kitchenUpgradeCost,buyCookwareUpgrade,cookwareUpgradeCost,configureKitchenSlot,kitchenPreview,kitchenRefitCost,kitchenHasMenuCoverage,ensureKitchen,ensureCrew,CREW_ROLES,hireCrew,assignCrew,feedCrew,activeCrewMeal,crewEffects,CAMPAIGNS,ensureManagement,selectedCampaign,chooseCampaign,setCrewDuty,crewWage,crewPromotion,promoteCrew,buyBagUpgrade,bagUpgradePrice,canUse,setServicePaused,resumeBreak,breakPrep,setFlame,tossWok,previewHeat,moveExplorer,interactExplorer,sootheGuest,newRecipeLead,currentServiceEvent,chooseServiceEvent,swapBreakMenu,serviceGoalResult,serviceSupplyStatus,prepStockForecast,premiumMenuOptions,premiumMenuActive,recipeAvailableServings,setPremiumMenu,REGULAR_GUESTS,guestBookEntries,ensureDailyMarket,DAILY_STAPLE_MIN_PURCHASES,expandDiningRoom,ROOM_EXPANSION_COST,roomExpansionAvailable,totalBusinessDay,firstChallenge,tableCapacity,ensureChapterProgress,firstStarAvailable,firstStarRequested,requestFirstStar,secondStarAvailable,secondStarRequested,requestSecondStar,ensureSecondAppraisal,thirdStarAvailable,thirdStarRequested,requestThirdStar,activeWorld,portalAvailable,travelPortal,FOURTH_TABLE_COST,THIRD_KITCHEN_BUNDLE_COST,thirdKitchenBundleAvailable,buyThirdKitchenBundle,GRILL_COST,grillAvailable,buyGrill,STEAMER_COST,steamerAvailable,buySteamer} from './engine.js?v=0.15.0-alpha.11-y4d';
 import {startActionField,stepActionField,useFieldSkill,resolveFieldEvent} from './field_v04.js?v=y5c';
-import {drawField,drawDiner} from './scenes_v04.js?v=z2a3';
+import {drawField,drawDiner} from './scenes_v04.js?v=z2br';
 import {drawGuestPortraits} from './guest_portraits_v104.js?v=0.10.4';
 import {crewAppearance} from './pixels_v041.js?v=0.15.0-alpha.7';
 import {drawCrewPortraits} from './crew_portraits_v012d.js?v=0.15.0-alpha.7';
@@ -706,7 +706,18 @@ function analogAxis(){let x=stick.x,y=stick.y;for(const key of keys){if(['ArrowL
 // cannot loop arrival or plate animations through an unrelated wall clock.
 function restaurantSimTime(now){const v=game.service;if(!v)return gameClock;if(v.walkable)return v.time+(v.clockAccumulator||0);if(v.paused||v.breakAt||v.done)return v.time;return v.time+Math.max(0,Math.min(1,(now-(serviceTickAt||now))/750));}
 let researchPreviewCache=null;
-function frame(now){const delta=Math.min(.045,(now-(lastFrame||now))/1000);lastFrame=now;gameClock+=delta;
+// Z2br: an optional scene or transient canvas error must not kill the RAF chain.
+const sceneFrameErrors=new Map();
+function safeSceneFrame(name,draw){
+ const key='frame-'+name,diagnostics=globalThis.__oddpotBuild?.sceneErrors;
+ try{draw();sceneFrameErrors.delete(key);if(diagnostics)delete diagnostics[key];return true;}
+ catch(error){const detail=String(error);if(sceneFrameErrors.get(key)!==detail){sceneFrameErrors.set(key,detail);console.warn('Oddpot frame recovery',name,error);}if(diagnostics)diagnostics[key]=detail;return false;}
+}
+function frame(now){
+ requestAnimationFrame(frame);
+ safeSceneFrame('loop',()=>advanceFrame(now));
+}
+function advanceFrame(now){const delta=Math.min(.045,(now-(lastFrame||now))/1000);lastFrame=now;gameClock+=delta;
  if(game.phase==='field'&&game.field?.action&&game.field.segmentStatus!=='choice'&&!document.hidden&&!overlay){
   const [dx,dy]=analogAxis(),evt=stepActionField(game,dx,dy,delta);
   if(evt==='harvest'&&game.field?.nodes?.some(n=>n.key==='target'&&n.claimed)){releaseStick();render();}
@@ -807,11 +818,11 @@ function frame(now){const delta=Math.min(.045,(now-(lastFrame||now))/1000);lastF
  const forest=app.querySelector('#forest-canvas'),diner=app.querySelector('#diner-canvas'),research3d=globalThis.__oddpotY4bRenderer;
  // Release inactive contexts before the next scene allocates its context.
  if(!forest)globalThis.__oddpotY3Renderer?.leave();if(!diner)globalThis.__oddpotY2Renderer?.leave();if(game.phase!=='research')research3d?.leave();
- if(forest)drawField(forest,game,gameClock);
- if(diner)drawDiner(diner,game,gameClock,restaurantSimTime(now));
- if(game.phase==='research')research3d?.draw(app,game,researchPreviewCache,now);
+ if(forest)safeSceneFrame('forest',()=>drawField(forest,game,gameClock));
+ if(diner)safeSceneFrame('diner',()=>drawDiner(diner,game,gameClock,restaurantSimTime(now)));
+ if(game.phase==='research')safeSceneFrame('research',()=>research3d?.draw(app,game,researchPreviewCache,now));
+ for(const [name,present] of [['forest',!!forest],['diner',!!diner],['research',game.phase==='research']])if(!present){const key='frame-'+name;sceneFrameErrors.delete(key);if(globalThis.__oddpotBuild?.sceneErrors)delete globalThis.__oddpotBuild.sceneErrors[key];}
  if(now-lastSave>1400&&(game.phase==='field'||['v063-live','v014c-grill'].includes(game.cook?.mode)||game.phase==='service'&&game.service?.walkable)){save(game);lastSave=now}
- requestAnimationFrame(frame);
 }
 requestAnimationFrame(frame);
 // Z1: one selection policy for every game surface, including restaurant.
