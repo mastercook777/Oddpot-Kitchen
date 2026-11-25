@@ -42,3 +42,12 @@ test('Z2a2 real review/eating fixture produces anchored speech in 2D and 3D proj
   assert.equal(JSON.stringify(s),before);
  }
 });
+
+test('Z2a2 real queue and employee voices use actual actor identity; not fabricated visitors',()=>{
+ const anchor={id:'q',x:150,y:330,width:22,height:28},s={service:{walkable:true,time:2,orders:[{id:'q',segment:'regular',status:'waiting',arrival:0,patience:35}],crew:{},events:[]}};
+ const q=z2a2LiveSpeech(s,2,[anchor],375,617);assert.equal(q.length,1);assert.equal(q[0].actorId,'q');assert.equal(z2a2LiveSpeech(s,2,[anchor],375,617,false).length,0);
+ assert.equal(z2a2LiveSpeech(s,2,[{...anchor,id:'nonexistent'}],375,617).length,0);
+ assert.equal(z2a2LiveSpeech(s,5.5,[anchor],375,617).length,0);
+ const staff={service:{walkable:true,time:10,orders:[],crew:{helper:{hired:true,station:0}},events:[{type:'started',station:'WOK',t:10,order:'r'}]}};
+ const p=z2a2LiveSpeech(staff,10.6,[{...anchor,id:'helper'}],375,617);assert.equal(p.length,1);assert.equal(p[0].actorId,'helper');assert.equal(p[0].cue.kind,'staff');
+});
