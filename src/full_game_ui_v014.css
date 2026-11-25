@@ -442,3 +442,13 @@
 .z2c-route:has(.z2c2-expedition) .dock{min-height:0;padding:4px 8px calc(4px + env(safe-area-inset-bottom))}
 .z2c-route:has(.z2c2-expedition) .dock .game-btn{display:flex;align-items:center;justify-content:center;gap:4px;font-size:12px;background:#354838;border:1px solid #a68a5e;box-shadow:0 2px #213023}
 @media(max-width:350px){.z2c2-scroll{padding:6px;gap:6px}.z2c2-map{min-height:218px}.z2c2-region{padding:3px 6px;font-size:12px}.z2c2-tool .z2a3-art{width:30px;height:30px}.z2c2-tool span{font-size:10px}.z2c2-map-stop{min-height:84px}}
+
+/* Map destinations are pins with labels, not full-width cards on top of an illustration. */
+.z2c2-map-stop,.z2c2-map-stop.danger{width:37%;min-height:77px;top:48%;background:none;border:0;box-shadow:none;gap:3px}
+.z2c2-map-stop.gather{left:2%}.z2c2-map-stop.danger{right:2%}
+.z2c2-map-stop>b{background:#ecd6a6ed;border:1px solid #8b6d48;border-radius:3px;padding:4px 6px;margin-top:12px;box-shadow:0 1px #80624277}
+.z2c2-map-stop.danger>b{background:#e7bd94ed;border-color:#9d654a}
+.z2c2-stop-food{background:#f0e0b7b0;padding:1px 4px;border-radius:10px}
+.z2c2-map-stop small{background:#f0e0b7bb;border-radius:3px;padding:1px 4px;color:#5c432d}
+.z2c2-map-stop:focus-visible{outline:2px dashed #694d32;outline-offset:-2px}
+.z2c-home .v016-home .v016-world-actions .v016-door.z2c2-threshold:not([data-y2b-anchor]){top:88%}
