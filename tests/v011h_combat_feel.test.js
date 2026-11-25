@@ -64,10 +64,10 @@ test('WOK target selection, fan cleave and active wave cannot hit through actual
   assert.equal(e.hp,8);assert.equal(f.impactFx.length,0);assert.equal(f.combatJolt,0);
  }
 });
-test('POT empowered shot lands once at true point, distinguishes blast and spares enemies behind wall',()=>{
+test('POT ground eruption hits once at locked point, distinguishes blast and spares enemies behind wall',()=>{
  const {s,f}=setup('POT'),e=enemy(f,'pepper',6.8,7.5),behind=enemy(f,'pepper',7.8,7.5);f.obstacles=[{x:7,y:7}];
- assert.equal(useFieldSkill(s),true);const p=f.playerProjectiles[0];assert.equal(p.empowered,true);const landing={x:p.targetX,y:p.targetY};
- assert.equal(e.hp,8);advance(s,.39);assert.equal(e.hp,6);assert.equal(behind.hp,8);assert.equal(f.playerProjectiles.length,0);
+ assert.equal(useFieldSkill(s),true);const p=f.potBurst;assert.ok(p);assert.equal(f.playerProjectiles.length,0);const landing={x:p.x,y:p.y};
+ assert.equal(e.hp,8);advance(s,.39);assert.equal(e.hp,6);assert.equal(behind.hp,8);assert.equal(f.playerProjectiles.length,0);assert.equal(f.potBurst,null);
  const burst=f.impactFx.find(fx=>fx.kind==='burst');assert.ok(burst.strong);assert.equal(burst.x,landing.x);assert.equal(burst.y,landing.y);
  assert.ok(e.slowTime>0);advance(s,.2);assert.equal(e.hp,6);
 });

@@ -1,6 +1,6 @@
 import {a21AtlasReady,a21Sprite,a21Tile} from './hearth_assets_v016a21.js?v=0.16-a21';
 import {fieldHitPose,fieldAttackPose} from './field_hit_response_v011h.js?v=0.12.0-alpha.1';
-import {drawFieldHitEffects} from './field_effects_v011e2.js?v=0.12.0-alpha.1';
+import {drawFieldHitEffects} from './field_effects_v011e2.js?v=y5c';
 import {drawEcologyWarning} from './field_ecology_v011b2.js';
 import {drawPixelMiniBoss,drawMiniBossWarning,drawBossZones} from './field_bosses_v011g.js';
 import {isHybridFieldArt,drawHybridFieldGround,drawHybridFieldObstacle,drawHybridFieldHazard,drawHybridFieldAtmosphere} from './field_hybrid_biomes_v011f.js?v=0.12.0-alpha.1';
@@ -319,7 +319,8 @@ export function drawField(canvas,s,clock){const size=setCanvas(canvas);if(!size|
  }
  if(smoothFx){if(f.weapon?.type==='GRILL')drawForkFlameFx(c,f);else if(f.weapon?.type!=='STEAM')drawFieldSkillWave(c,f);drawFieldHitEffects(c,f);}
  if(!smoothFx&&f.weapon?.type==='GRILL')drawForkFlameFx(c,f);
- if(!smoothFx&&f.skillFx>0&&!['GRILL','STEAM'].includes(f.weapon?.type)){c.save();c.strokeStyle=`rgba(255,231,151,${Math.min(.95,f.skillFx*2.4)})`;c.lineWidth=.12;c.beginPath();c.arc(f.pos.x,f.pos.y,(.42-f.skillFx)*3+.35,0,Math.PI*2);c.stroke();c.restore();}
+ if(!smoothFx&&f.skillFx>0&&f.skillOrigin?.duration&&!['GRILL','STEAM'].includes(f.weapon?.type))drawFieldSkillWave(c,f);
+ if(!smoothFx&&f.skillFx>0&&!f.skillOrigin?.duration&&!['GRILL','STEAM'].includes(f.weapon?.type)){c.save();c.strokeStyle=`rgba(255,231,151,${Math.min(.95,f.skillFx*2.4)})`;c.lineWidth=.12;c.beginPath();c.arc(f.pos.x,f.pos.y,(.42-f.skillFx)*3+.35,0,Math.PI*2);c.stroke();c.restore();}
  for(const e of f.enemies||[]){if(e.hurtFx>0&&e.hp>0&&!e.hitResponse){c.save();c.translate(e.x,e.y);c.scale(1/sc,1/sc);if(smoothFx)drawFieldImpact(c,0,-5,e.hurtFx/.36,8);else pixelImpact(c,0,-5,8);c.restore()}}
  }
  for(const fx of f.popFx||[]){if(smoothFx&&fx.text==='💥'){if(!three)drawFieldBurst(c,fx);continue;}if(!three&&smoothFx&&String(fx.text).startsWith('+'))drawFieldCollection(c,fx);c.save();c.translate(fx.x,fx.y-(.76-fx.ttl)*.5);c.scale(1/sc,1/sc);text(c,fx.text,0,-17,fx.color||'#fff1b1',12);c.restore()}

@@ -60,9 +60,13 @@ export function drawFieldSwipe(c,f){
 }
 export function drawFieldSkillWave(c,f){
  if(!(f.skillFx>0))return;
- const q=fieldFxClamp(f.skillFx/.42),p=1-q,o=f.skillOrigin||f.pos,pot=o.type==='POT'||!o.type&&f.weapon?.type==='POT';
+ const o=f.skillOrigin||f.pos,q=fieldFxClamp(f.skillFx/(o.duration||.42)),p=1-q,pot=o.type==='POT'||!o.type&&f.weapon?.type==='POT';
  c.save();c.globalAlpha=q;c.lineCap='round';
- if(pot){
+ if(pot&&o.delay){const age=o.duration-f.skillFx,pre=age<o.delay,u=pre?age/o.delay:fieldFxClamp((age-o.delay)/.48),r=o.radius;
+  fieldFxRing(c,o.x,o.y,r,'#cde8ca',.045);
+  if(pre){fieldFxRing(c,o.x,o.y,r*(1-u*.65),'#e9f6db',.07);for(let j=0;j<6;j++){const a=j*Math.PI/3+u;fieldFxEllipse(c,o.x+Math.cos(a)*r*.6,o.y+Math.sin(a)*r*.6,.06,.06+u*.05,'#e4f4d6');}}
+  else {for(let j=0;j<8;j++){const a=j*2.399;fieldFxEllipse(c,o.x+Math.cos(a)*r*u*.8,o.y+Math.sin(a)*r*u*.65-Math.sin(Math.PI*u)*.55,.10+u*.15,.13+u*.15,'#e9f6db');}}
+ }else if(pot){
   // Cast pressure hugs the caster. The damaging blast is at the landing point.
   fieldFxRing(c,o.x,o.y,.20+p*.40,'#cde8ca',.05*q);
   for(let i=0;i<3;i++){

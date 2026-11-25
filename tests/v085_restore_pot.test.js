@@ -75,7 +75,7 @@ test('spare POT can actually launch free onion bombs with no onion inventory',()
  assert.ok(f.enemies[0].hp<8,'remote thrown-onion attacks must work');
  assert.equal(s.inventory.onion||0,onions,'animated onion ammo never consumes real ingredients');
  f.skillCd=0;assert.equal(useFieldSkill(s),true);
- assert.ok(f.playerProjectiles.some(p=>p.damage===2));
+ assert.ok(f.potBurst&&f.potBurst.radius>=1.1);assert.ok(!f.playerProjectiles.some(p=>p.empowered),'skill is no longer a second projectile');
 });
 
 test('four-direction POT stance and renderer keep a recognisable lower held pot',()=>{
