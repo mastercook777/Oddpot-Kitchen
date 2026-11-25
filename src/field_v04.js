@@ -205,7 +205,7 @@ export function useFieldSkill(s){
   for(const e of hits)damageEnemy(s,e,FORK_FLAME.damage,'fork_flame');
   f.skillCd=6.5;f.skillFx=.85;f.skillOrigin={...f.pos,type:'GRILL',dx:facing.x,dy:facing.y,level:f.weapon?.level||1,duration:.85};
   f.attackFx={ttl:.38,duration:.38,dx:facing.x,dy:facing.y,forkFlame:true,x:f.pos.x,y:f.pos.y};
-  pushMsg(f,'🔥 烤叉喷焰！扇区命中 '+hits.length+' 个敌人。');return true;
+  pushMsg(f,'🔥 烈焰横扫！扇区命中 '+hits.length+' 个敌人。');return true;
  }
  if(f.weapon?.type==='POT'){
   const target=f.enemies.filter(e=>e.hp>0&&dist(f.pos,e)<=3.9&&clearLineOfFire(f,f.pos,e))
