@@ -21,7 +21,7 @@ export function makeGuestFactory(T,rounded){
  function aimArm(arm,target,tipTarget=null){const s=arm.shoulder.position.toArray(),q=solveArm(s,target,[arm.sign,-.35,-.30],armLength,foreLength),v=a=>new T.Vector3(...a),upper=v(q.elbow).sub(v(s)).normalize(),lower=v(q.hand).sub(v(q.elbow)).normalize();
   arm.shoulder.quaternion.setFromUnitVectors(new T.Vector3(0,-1,0),upper);arm.elbow.quaternion.setFromUnitVectors(new T.Vector3(0,-1,0),lower.applyQuaternion(arm.shoulder.quaternion.clone().invert()));
   const inv=arm.shoulder.quaternion.clone().multiply(arm.elbow.quaternion).invert();arm.wrist.quaternion.copy(inv);
-  if(tipTarget){const d=v(tipTarget).sub(v(q.hand));if(d.lengthSq()>.00001)arm.utensil.quaternion.setFromUnitVectors(new T.Vector3(0,0,1),d.normalize());}
+  if(tipTarget){const d=v(tipTarget).sub(v(q.hand));if(d.lengthSq()>.00001){arm.utensil.scale.z=Math.max(.84,Math.min(1.18,d.length()/.212));arm.utensil.quaternion.setFromUnitVectors(new T.Vector3(0,0,1),d.normalize());}}else arm.utensil.scale.z=1;
   return q.hand;
  }
  function create(kind){
@@ -70,13 +70,13 @@ export function makeGuestFactory(T,rounded){
    accent(ball(shoulder,isGhost?ghostDark:outfit,0,-.095,0,.083,.13,.082));accent(ball(elbow,isGhost?ghost:outfit,0,-.07,0,.069,.103,.067));ball(wrist,skinMat,0,0,0,.068,.076,.066);
    const utensil=group(wrist);box(utensil,bronze,0,0,.10,.023,.023,.20);ball(utensil,iron,0,0,.212,.050,.021,.065);utensil.visible=false;arms.push({shoulder,elbow,wrist,utensil,sign});
   }
-  let identityKey='',lastMode='';
+  let identityKey=null;
   function update(t,s){
    const v=guestLife(kind,s.order,t,{moving:s.moving,seated:s.seated,waiting:s.waiting},s.id),phase=v.identity.phase,walk=v.mode==='walk',eat=v.mode==='eat',review=v.mode==='review',lift=v.meal.lift;
-   if(identityKey!==String(s.id)){identityKey=String(s.id);for(const a of accents){if(a.kind==='beard')a.o.material=beardMats[v.identity.variant];else if(a.kind==='cap')a.o.material=capMats[v.identity.variant];else if(cloth[kind])a.o.material=cloth[kind][v.identity.variant];}root.rotation.y=0;lastMode='';}
+   if(identityKey!==String(s.id)){identityKey=String(s.id);for(const a of accents){if(a.kind==='beard')a.o.material=beardMats[v.identity.variant];else if(a.kind==='cap')a.o.material=capMats[v.identity.variant];else if(cloth[kind])a.o.material=cloth[kind][v.identity.variant];}root.rotation.y=0;}
    const a=v.a,step=Math.sin(t*(isDwarf?8:10)*v.identity.tempo+phase);
    root.rotation.y={front:0,right:Math.PI/2,back:Math.PI,left:-Math.PI/2}[s.facing]||0;
-   body.position.set(0,isGhost?.09+Math.sin(a*2.6)*.045:walk?Math.abs(step)*.035:0,0);
+   body.position.set(0,isGhost?.09+Math.sin(a*2.6)*.045:isSlime&&s.seated?.16:walk?Math.abs(step)*.035:0,0);
    body.rotation.set(eat?.035+lift*.10:review?(v.positive?-.06:.065)*v.reaction:0,0,walk?step*.045:0);
    head.rotation.set(eat?-.08*lift:review?(v.positive?-.11:.09)*v.reaction:Math.sin(a*1.35)*.035,eat?0:review&&!v.positive?Math.sin(a*8)*.18*v.reaction:v.look,0);
    const blink=(a%4.7+4.7)%4.7<.13;for(const e of eyes)e.scale.y=blink?.008:.047;
@@ -103,7 +103,7 @@ export function makeGuestFactory(T,rounded){
      arm.utensil.visible=eat&&dominant;aimArm(arm,target,tip);
     }
    }
-   lastMode=v.mode;return v;
+   return v;
   }
   return {root,update};
  }
