@@ -1,0 +1,44 @@
+// Hearthcraft: hand-authored small illustrated objects, 24×24.
+ // Layers are [path, fill, stroke, width]; SVG and Canvas consume the same art.
+const hc={ink:'#322b29',brass:'#bc8141',gold:'#e9b85d',shine:'#fff0b3',dark:'#704b38',cream:'#f6e3b8',paper:'#e6c68d',rust:'#b65c42',red:'#e88762',green:'#578a75',mint:'#a9d7bc',teal:'#396b69',steel:'#8fa9a4',blue:'#6aa6b5',leather:'#9a603e',wood:'#795139',purple:'#87729a'};
+const A=(d,f,s='ink',w=.85)=>[d,hc[f]||f,hc[s]||s,w];
+const H=(d,s='shine',w=.95)=>A(d,'none',s,w);
+const N=(d,f)=>A(d,f,'none',0);
+export const Z2A3_ART=Object.freeze({
+ moon:[A('M16.7 2.7C7.3.6 1 9.4 4.2 17.1C7.1 24 17.8 23 21.3 15.6C14 18.5 9.2 9.1 16.7 2.7Z','gold'),N('M5.1 12.3Q7.7 21.4 17.9 18.4Q12 24 6.3 18.6Z','brass'),H('M5.4 11.1Q5.8 5.4 12.2 4.1'),A('M19 1.8L20 5L23 6L20 7L19 10L18 7L15 6L18 5Z','cream')],
+ plate:[A('M2 17Q12 14 22 17L20 20Q12 23 4 20Z','brass'),A('M4.5 16C4.5 8.5 8 6 12 6S19.5 8.5 19.5 16Z','cream'),N('M12 6Q19.5 8 19.5 16H12Z','paper'),A('M10 5Q10 2.5 12 2.5T14 5L13 6H11Z','gold'),H('M6.5 14Q7 9.5 11 8.8','#fff8df',1.5),H('M4 18H20','shine')],
+ energy:[A('M12.6 1.5C14 7 20.7 8 20 15.3Q19 23 11.5 22Q3 21.5 4 14Q4.6 9 9.5 6.5L8.9 12Q13.4 9 12.6 1.5Z','rust'),N('M12.5 5.4Q16 11 17.2 14.5Q18 20 12 21Q6 20 7.4 15L10 12L11 15Z','gold'),N('M12 13Q15.2 17 13.7 20.3Q9 20.5 9.5 17Z','cream'),H('M7.1 13Q5.3 16 7.2 18.3','red')],
+ ledger:[A('M4 3L17.8 2Q20 2 20 5L21 20L6 22L3 19Z','dark'),A('M5.5 4L18 3.3L19.3 18.4L6.4 20Z','paper'),A('M3 3L16.5 2L18 17.8L4 20Z','leather'),A('M4 4L6 3.8L7 19L4 19.7Z','brass'),A('M8 7L13.9 6.6L14.4 12.7L8.5 13.2Z','cream'),H('M9.7 9L12.5 8.8M10 11L12.8 10.8','dark',.7),A('M13.8 18L16.2 17.7L16.6 22L15.3 21L14.3 22Z','rust'),H('M7.5 4.7L15 4.1','gold')],
+ pause:[A('M4 3.5L10 3L10.5 20.3L5 21Z','brass'),A('M13.5 3L19.5 3.5L19 21L13 20.3Z','brass'),N('M5.4 4.5L8.5 4.1L8.8 18.7L6.2 19.2Z','gold'),N('M14.7 4.2L18.2 4.8L17.7 19L14.6 18.8Z','gold'),H('M6.5 6V16M15.7 6V16')],
+ play:[A('M5 3L21 12L5 21Z','brass'),N('M7 6.5L17.7 12L7 17.5Z','gold'),H('M7 5.4L18.2 11.4')],
+ queue:[A('M13 11Q21 9 22 18L21 21L11 20Z','teal'),A('M13 7Q13 3 17 3Q22 3 21 8Q20 11 17 11Q13 10 13 7Z','paper'),A('M12 6Q13 1.7 18 2L22 6Z','green'),A('M2 22V18Q2 12 8 12Q14 12 14 18L13 22Z','rust'),A('M4 8Q4 4 8.2 4Q13 4 12 9Q11 13 8 13Q4 12 4 8Z','cream'),A('M2.5 7Q3 2 8 2.5Q13.5 3 14 7Z','brass'),H('M4 6L10 5.6','gold')],
+ heart:[A('M12 21.5L4 14Q.5 10.5 3.3 5.8Q7 1.3 12 6.5Q17 1.3 20.7 5.8Q23.5 10.5 20 14Z','rust'),N('M4.2 7Q7 3.1 11.7 8Q14 5 17 5Q16 13 12 18.5Q5 13 4.2 7Z','red'),H('M5.5 8.8Q5.5 6.5 8 6.4','#ffd7ac',1.4)],
+ bag:[A('M8 7Q7 2 12 2Q17 2 16 7H14Q15 4 12 4Q9 4 10 7Z','dark'),A('M5 6Q12 4.5 19 7L22 19Q22 22 12 22Q2 22 2 19Z','leather'),N('M14 7L18.5 8L20.5 19Q18 21 14 21Z','dark'),A('M4 7Q12 10 20 7L18 12Q12 15 6 12Z','paper'),A('M10 11H14V15H10Z','brass'),A('M6 16Q12 14 17 16V20H6Z','green'),H('M5 8L10 9.8','cream')],
+ route:[A('M3 4L9 2L15 5L21 3L22 20L15 22L9 19L2 21Z','paper'),N('M9 2L15 5V22L9 19Z','#c0a576'),H('M4.7 16Q7.2 10 10.5 13T18.5 8','teal',1.8),A('M16 5L20 6L18.5 11L15 9Z','rust'),N('M4 16L6 18L4 20L2.8 18Z','green')],
+ gear:[A('M9 2H15L16 5L19 4L22 9L19 11V13L22 15L19 20L16 19L15 22H9L8 19L5 20L2 15L5 13V11L2 9L5 4L8 5Z','brass'),A('M12 5A7 7 0 1 0 12 19A7 7 0 1 0 12 5Z','gold'),A('M12 8A4 4 0 1 0 12 16A4 4 0 1 0 12 8Z','dark'),H('M6.5 10Q7.5 6.5 11 6.5')],
+ shield:[A('M12 2L21 6L20 14Q18 20 12 23Q6 20 4 14L3 6Z','brass'),A('M12 4.5L18.8 7.3L18 13.7Q17 18 12 20.5Q7 18 6 13.7L5.2 7.3Z','teal'),N('M12 5L12 20Q7 17 6 13L5.5 7.5Z','green'),H('M8 12L11 15L16 9','cream',1.9),H('M5.2 6.5L11.7 3.6')],
+ bento:[A('M3 7Q12 4 21 7L22 18Q12 23 2 18Z','wood'),A('M3 7Q12 3.5 21 7L20 11Q12 14 4 11Z','paper'),A('M4 12Q12 15 20 12L20 17Q12 20 4 17Z','leather'),A('M10 5L14 5L15 20L11 21Z','green'),H('M5 7Q9 5.8 13 6.1','cream')],
+ target:[A('M12 1.5L22 11L12 22.5L2 12Z','brass'),A('M12 5L18.5 12L12 19L5.5 12Z','teal'),A('M12 7L14 10L17 12L14 14L12 17L10 14L7 12L10 10Z','mint'),H('M3.7 11.5L12 3.2')],
+ warn:[A('M12 2L22 19Q17 22 12 21Q7 22 2 19Z','dark'),A('M12 4L19.5 18.3Q12 20.4 4.5 18.3Z','rust'),N('M11 8L13 8L12.6 14H11.4ZM12 15.5A1.2 1.2 0 1 0 12 17.9A1.2 1.2 0 1 0 12 15.5Z','cream'),H('M6 16L11.6 6','red')],
+ menu:[A('M4 3L18.5 2L21 20L5 22Z','leather'),A('M6 4L17 3.6L19 18.6L7 20Z','cream'),A('M8 6Q12 2.5 15.5 6L15 9H8Z','green'),H('M9 12L16 11.5M9 15L14 14.7','dark',1.2),N('M4.5 4L6 4L7 20L5 20.7Z','brass')],
+ wait:[A('M6 2H18L17 5H7ZM7 19H17L18 22H6Z','brass'),A('M8 5H16Q16 9 12 12Q16 15 16 19H8Q8 15 12 12Q8 9 8 5Z','#92b7ae'),N('M9 7H15L12 11Z','gold'),N('M9 18L12 14L15 18Z','gold'),H('M9 6V8L10 9','#e9f2d9')],
+ cutlery:[A('M3 3L5 3V9H6V3H8V9H9V3H11V10Q11 13 8 14L8.6 22H5.4L6 14Q3 13 3 10Z','steel'),A('M17.5 2Q23 2 22 8Q22 12 18.5 13L19 22H16L16.5 13Q13 11 13 7Q13 2 17.5 2Z','gold'),H('M15 7Q15 4 17 4','cream'),H('M6.8 15V20','#e1eee3')],
+ star:[A('M12 1.3L15.4 7.7L22.5 9L17.7 14.5L18.4 22L12 18.5L5.6 22L6.4 14.5L1.5 9L8.6 7.7Z','brass'),A('M12 4.7L14 9.6L19 10.4L15.4 14L15.9 18.8L12 16.1L8.1 18.8L8.6 14L5 10.4L10 9.6Z','gold'),H('M9 12L11.4 14.4L15.4 10','cream',1.9),H('M4.7 9.8L9.6 8.8L12 3.3')],
+ cook:[A('M16 13L22 8L23 10L17 16Z','wood'),A('M2 12Q10 9 18 12Q18 20 10 21Q3 20 2 12Z','steel'),N('M4 14Q12 17 16 14Q15 19 10 19.7Q5 19 4 14Z','teal'),A('M2 12Q10 8.8 18 12Q10 16 2 12Z','dark'),N('M5 12L8 10.5L12 11.5L15 11.4L12 13.5L7 13.5Z','gold'),H('M6 9Q3 6 7 3M12 8Q9 5 13 2','cream',1.4),H('M4 15Q5 18 8 19','mint')],
+ carry:[A('M2 17Q12 14 22 17L20 20Q12 23 4 20Z','brass'),A('M7 14Q7 8 12 7Q17 8 17 14Z','cream'),N('M12 8Q17 9 17 14H12Z','paper'),A('M10.5 6Q10.5 3 12 3Q14 3 13.5 6Z','gold'),H('M4 17H20'),H('M1 12H5M19 12H23','mint',1.5)],
+ wok:[A('M16 12L21 5L23 7L18 15Z','wood'),A('M3 12Q10 8.5 18 12Q17 20 10 20Q4 20 3 12Z','steel'),A('M3 12Q10 9 18 12Q11 16 3 12Z','teal'),N('M2 8Q8 1 17 4L19 6L15 7Q7 4 3 10Z','mint'),N('M1 14Q5 20 12 20L16 18L14 22Q4 23 1 16Z','green'),H('M5 12Q9 10 14 12','cream'),H('M3 7Q8 2 14 4','cream')],
+ pot:[A('M4 10H20L18 21Q12 23 6 21Z','teal'),N('M5 11H11V21L7 20Z','blue'),A('M2 11H5V15H2Q.5 13 2 11ZM19 11H22Q23.5 13 22 15H19Z','brass'),A('M3 9Q12 6 21 9L20 11H4Z','gold'),A('M10 6H14L15 8H9Z','brass'),N('M5 5L7 1L8 5L11 3L10 7ZM16 6L17 1L18 4L22 3L20 7Z','cream'),H('M7 13V18','mint',1.5)],
+ grill:[A('M2 21L13 9L15 11L4 23Z','wood'),A('M12 10L17 3L19 4L16 10L21 6L22 8L16 13Z','steel'),A('M15 2Q20 1 20 5L22 3Q24 10 19 13Q15 15 13 10Q12 7 15 2Z','rust'),N('M17 4Q18 7 20 5Q22 11 18 12Q14 11 16 8Z','gold'),H('M4 20L10 13','gold')],
+ steam:[A('M3 11Q12 8 21 11V19Q12 23 3 19Z','wood'),A('M2 11Q12 6 22 11L21 13Q12 17 3 13Z','paper'),A('M4 15Q12 18 20 15V19Q12 22 4 19Z','brass'),H('M6 16V19M10 17V20M14 17V20M18 16V19','dark',.8),N('M5 9Q1 5 6 1Q3 5 9 7L10 10ZM12 8Q8 4 14 0Q11 4 17 6L18 9Z','mint'),H('M5 12Q12 9 18 12','cream')],
+ soothe:[A('M3 15Q8 10 12 15Q16 10 21 15L19 20Q12 23 5 20Z','teal'),A('M12 15L5 9Q2 5 6 3Q9 1 12 5Q15 1 18 3Q22 5 19 9Z','rust'),N('M6 5Q8 2 12 7L16 4Q16 10 12 12Z','red'),H('M5 17Q12 21 19 17','mint')],
+ move:[A('M12 1L16 6H14V10H18V8L23 12L18 16V14H14V18H16L12 23L8 18H10V14H6V16L1 12L6 8V10H10V6H8Z','brass'),N('M12 4L13 11L20 12L13 13L12 20L11 13L4 12L11 11Z','gold'),H('M3 12H10V6','shine')],
+ home:[A('M4 10L20 10L19 22H5Z','paper'),A('M1 11L11 2L23 11L20 13L11 6L4 13Z','rust'),A('M9 14Q12 10 15 14V22H9Z','wood'),A('M6 12H9V16H6Z','mint'),A('M17 3H20V8L17 6Z','dark'),H('M4 10L11 4L20 11','red')],
+ next:[A('M2 9L13 9L13 4L23 12L13 20V15H2Z','brass'),N('M3 10H15V7L20 12H3Z','gold'),H('M4 10H14L14 7')],
+ coin:[A('M11 2Q21 2 22 11Q22 21 12 22Q2 22 2 12Q2 3 11 2Z','brass'),A('M11 3.5A8 8 0 1 0 11 19.5A8 8 0 1 0 11 3.5Z','gold'),A('M11 7L16 11.5L11 16L6 11.5Z','brass'),H('M4.5 10Q5 5.8 10 5','shine')],
+ rep:[A('M6 13L4 22L9 20L12 22L14 14L18 22L19 17L22 17L18 12Z','green'),A('M12 1L15 4L19 4L20 8L23 11L20 14L19 18L15 18L12 21L9 18L5 18L4 14L1 11L4 8L5 4L9 4Z','brass'),A('M12 5A6 6 0 1 0 12 17A6 6 0 1 0 12 5Z','gold'),A('M12 6.7L13.8 10L17 10.5L14.6 13L15 16L12 14.5L9 16L9.4 13L7 10.5L10.2 10Z','cream'),H('M6 9Q7 5.5 10 5')]
+});
+export function z2a3Layers(name,variant=''){
+ const art=Z2A3_ART[name];if(!art)return null;
+ if(name==='heart'&&variant.includes('is-empty'))return art.map(([d,f,s,w],i)=>[d,i===0?'#4e534b':i===1?'#666b60':'none',i===2?'#929386':s,w]);
+ return art;
+}
