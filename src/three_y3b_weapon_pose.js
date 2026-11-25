@@ -1,5 +1,5 @@
 // Y3b: grip-bound cookware, driven exclusively by existing attack timelines.
-import {meleePose,potIdlePose,applyArm} from './three_y3d_pose.js';
+import {meleePose,potIdlePose,otherToolPose,skillMotion,gaitPose,applyArm} from './three_y3d_pose.js?v=y5c';
 const clamp=x=>Math.min(1,Math.max(0,x));
 // Deliberate windup, contact and recovery: contact is immediate in the existing sim.
 export function weaponPose(f){
@@ -43,7 +43,8 @@ export function createWeaponRig(T,hero,rounded){
   pot.rotation.x=-arms[1].rotation.x;pot.rotation.z=-arms[1].rotation.z;
   fork.rotation.x=-Math.PI/2-arms[0].rotation.x;fork.rotation.z=-arms[0].rotation.z;basket.rotation.x=-arms[0].rotation.x;basket.rotation.z=-arms[0].rotation.z;
   if(p.type==='WOK'){const m=meleePose(f,t);body.rotation.x=m.lean;body.rotation.y=m.yaw;applyArm(T,hero.rig,0,m.hand,[-1,-.2,-.3],m.direction);applyArm(T,hero.rig,1,m.shield,[1,-.2,-.3]);spatula.rotation.set(0,0,0);shield.rotation.set(m.guard?-.13:.18,0,m.guard?-.10:.30);}
-  else if(p.type==='POT'&&!(f.attackFx?.ttl>0)){const m=potIdlePose(f,t);applyArm(T,hero.rig,0,m.hand,[-1,-.2,-.25],m.direction);applyArm(T,hero.rig,1,m.pot,[1,-.2,-.3]);ladle.rotation.set(0,0,0);pot.rotation.set(0,0,0);}
+  else if(p.type==='POT'&&(!(f.attackFx?.ttl>0)||skillMotion(f))){const m=potIdlePose(f,t);applyArm(T,hero.rig,0,m.hand,[-1,-.2,-.25],m.direction);applyArm(T,hero.rig,1,m.pot,[1,-.2,-.3]);ladle.rotation.set(0,0,0);pot.rotation.set(0,0,0);const g=gaitPose(f,t);body.rotation.x=g.lean;body.rotation.y=g.yaw;}
+  else if((p.type==='GRILL'||p.type==='STEAM')&&(!(f.attackFx?.ttl>0)||skillMotion(f))){const m=otherToolPose(f,t);body.rotation.x=m.lean;body.rotation.y=m.yaw;applyArm(T,hero.rig,0,m.right,[-1,-.3,-.2],m.direction);applyArm(T,hero.rig,1,m.left,[1,-.3,-.2]);if(p.type==='GRILL')fork.rotation.set(0,0,0);else basket.rotation.set(0,0,0);}
  },bladeWorld(){hero.root.updateMatrixWorld(true);return {base:bladeBase.getWorldPosition(new T.Vector3()),tip:bladeTip.getWorldPosition(new T.Vector3())};
  }};
 }
