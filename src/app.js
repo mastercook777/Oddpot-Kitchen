@@ -1,3 +1,4 @@
+import {departureEcologyZ2c4} from './field_ecology_v011b2.js?v=z2c4';
 import {z2a2Icon} from './ui_icons_z2a2.js?v=z2a3';
 import {selectOutdoorQueueSpeech} from './outdoor_queue_speech_v012f.js';
 import {z2aOrderStatus} from './scene_hud_z2a.js?v=z2a3';
@@ -236,7 +237,7 @@ function managedFreightPanel(){
  (st.enabled?'<button data-act="managed-freight:off" '+(!st.canConfigure?'disabled':'')+'>暂停后续发车</button>':'')+freight+'</section>';
 }
 
-function z2c2Door(){return '<button type="button" class="v016-door z2c2-threshold" data-act="to-field" aria-label="走出食堂，整装出发">'+z2a2Icon('route')+'<span>门外小路</span></button>';}
+function z2c2Door(){return '<button type="button" class="v016-door z2c2-threshold" data-act="to-field" aria-label="走出食堂，整装出发">'+z2a2Icon('route')+'<span>整装出发</span><i aria-hidden="true">›</i></button>';}
 function z2c2MapArt(region){
  const tree=(x,y,k=1)=>'<g transform="translate('+x+' '+y+') scale('+k+')"><path d="M-3 8H3V22H-3Z" fill="#846044"/><path d="M0 -23L-15 4H-8L-19 15H19L8 4H15Z" fill="#41634d" stroke="#314d41" stroke-width="1.2"/><path d="M0 -23L-15 4H0L-10 15H0Z" fill="#759267"/></g>';
  const rock=(x,y,k=1)=>'<g transform="translate('+x+' '+y+') scale('+k+')"><path d="M-22 12L-9 -19 4 -25 21 8 13 17H-14Z" fill="#a77e61" stroke="#7d5c4a" stroke-width="1.2"/><path d="M-9 -19L4 -25 1 9 -14 17 -22 12Z" fill="#d3ad80"/><path d="M1 9L21 8 13 17H-14Z" fill="#8d6652"/></g>';
@@ -255,7 +256,7 @@ function z2c2WeaponText(type,level){
 function z2c2Departure(routes,lowStock){
  const cloud=activeWorld(game)==='cloud',region=cloud?'cloud':selectedRegion==='spring'?'spring':'forest';
  const regions=cloud?[['cloud','云港浮岛']]:[['forest','晨露森林'],['spring','热泉峡谷']];
- const supplies=region==='forest'?[['cabbage','garlic','mushroom'],['chicken','beef']]:region==='spring'?[['potato','onion','chili'],['chili','beef']]:[['cloud_rice','sky_moss','sour_bell'],['storm_egg','sky_moss']];
+ const eco=departureEcologyZ2c4(region),supplies=eco.resources,enemyNames={"chicken":"鸡怪","boar":"铁角野牛","sporeling":"孢怪","steam_crab":"蒸汽蟹","pepper":"椒怪","gust_moth":"风蛾"};
  const choices=fieldWeaponChoices(game),selected=selectedFieldWeaponType(game),w=choices.find(q=>q.type===selected)||choices[0];
  const info=w?z2c2WeaponText(w.type,w.level):null;
  return `<div class="forest-scene route-scene z2c2-expedition"><div class="route-panel z2c2-scroll">
@@ -264,10 +265,10 @@ function z2c2Departure(routes,lowStock){
   ${z2c2MapArt(region)}
   <div class="z2c2-map-regions" role="group" aria-label="选择探索地区">${regions.map(([id,name])=>cloud?`<span class="z2c2-region current">${name}</span>`:`<button class="z2c2-region ${id===region?'current':''}" data-region="${id}" aria-pressed="${id===region}">${name}</button>`).join('')}</div>
   <div class="z2c2-map-caption">${region==='forest'?'草甸、溪流与古树之间':region==='spring'?'热雾、矿泉与赤焰岩层':'浮岛、风道与雷羽巢缘'}</div>
-  ${routes.map((r,i)=>`<button class="z2c2-map-stop ${/risk/.test(r.id)?'danger':'gather'}" data-route="${r.id}" aria-label="${esc(r.name)} · ${esc(r.subtitle)}"><span class="z2c2-stop-seal">${z2a2Icon(/risk/.test(r.id)?'wok':'route')}</span><b>${r.name}</b><span class="z2c2-stop-food">${supplies[i].map(id=>ingredientIconHtml(id,23)).join('')}</span><small>${/risk/.test(r.id)?'深入 · 战斗':'沿路 · 寻材'}</small></button>`).join('')}
-  <span class="z2c2-map-origin">${cloud?'从码头启程':'食堂门口'}</span>
+  <div class="z2c4-ecology" aria-label="本地区可能遭遇"><small>可能遭遇</small><span>${eco.enemies.map(id=>enemyNames[id]||id).join(' · ')}</span></div>
  </section>
- <section class="z2c2-rack" aria-label="上路厨具"><div class="z2c2-rack-head"><b>带哪件厨具上路？</b><small>点选器物</small></div><div class="z2c2-tools">${choices.map(q=>`<button data-weapon="${q.type}" class="z2c2-tool ${q.type===selected?'chosen':''}" aria-pressed="${q.type===selected}" aria-label="${z2c2WeaponText(q.type,q.level).name} Lv${q.level}">${z2bCookIcon(q.type)}<span>${z2c2WeaponText(q.type,q.level).name}</span><small>Lv.${q.level}${q.type===selected?' · 已带上':''}</small></button>`).join('')}</div>${info?`<div class="z2c2-tool-flavor">${info.flavor}</div>`:''}</section>
+ <div class="z2c4-routes" role="group" aria-label="选择当前地区路线">${routes.map((r,i)=>`<button class="z2c4-route-card ${/risk/.test(r.id)?'danger':'gather'}" data-route="${r.id}" aria-label="${esc(r.name)} · ${esc(r.subtitle)}"><div class="z2c4-route-head">${z2a2Icon(/risk/.test(r.id)?'wok':'route')}<b>${r.name}</b><i aria-hidden="true">›</i></div><span class="z2c4-route-food">${supplies[i].map(id=>ingredientIconHtml(id,20)).join('')}</span><small>${/risk/.test(r.id)?'敌人更多 · 战利品':'采集为主 · 仍有敌人'}</small></button>`).join('')}</div>
+ <section class="z2c2-rack z2c4-loadout" aria-label="上路厨具"><div class="z2c4-loadout-head"><b>今日装备</b><small>点选切换</small></div><div class="z2c4-loadout-body"><div class="z2c4-hero" aria-label="当前主角装备预览"><div class="z2c4-hero-fallback">${w?z2bCookIcon(w.type):''}<small>${info?.name||''} Lv.${w?.level||1}</small></div></div><div class="z2c2-tools z2c4-tool-list">${choices.map(q=>`<button data-weapon="${q.type}" data-weapon-level="${q.level}" class="z2c2-tool ${q.type===selected?'chosen':''}" aria-pressed="${q.type===selected}" aria-label="${z2c2WeaponText(q.type,q.level).name} Lv${q.level}">${z2bCookIcon(q.type)}<span>${z2c2WeaponText(q.type,q.level).name}<small>Lv.${q.level}</small></span><i aria-hidden="true">${q.type===selected?'✓':'›'}</i></button>`).join('')}</div></div>${info?`<div class="z2c2-tool-flavor">${info.flavor}</div>`:''}</section>
  <details class="z2c2-travel-notes"><summary>翻开旅行笔记</summary><div>${routes.map(r=>`<p><b>${r.name}</b> · ${esc(r.subtitle)}${/risk/.test(r.id)&&!cloud?' · 第三段挑战'+bossHint(region).boss+'，预留背包格':''}</p>`).join('')}${info?`<p><b>${info.name}</b> · ${w.fitted?(['左','右','中'][w.slotIndex]||'')+'厨位装配':'背包备用'} · ${info.stats}</p>`:''}<p>${cloud?'三段航路，可随时返港。':'三段路，可随时回店。'}生态决定主要产物，不保证指定食材掉落。库存少于6份时标为偏低。</p></div></details>
  </div></div>`;
 }
@@ -568,6 +569,7 @@ function render(){
  const prevStageScroll=app.querySelector('.stage')?.classList.contains(game.phase)?app.querySelector(stageScrollSelector)?.scrollTop||0:0;
  const [stage,dock]=({forecast,field,research,menu,prep,service,report,upgrade}[game.phase])();
  app.innerHTML=shell(stage,dock);
+ globalThis.__oddpotDepartureRenderer?.rebind?.(app);
  if(game.phase==='upgrade'&&portalAvailable(game))app.querySelector('.upgrade-card')?.insertAdjacentHTML('afterbegin',portalPanel());
  if(game.phase==='upgrade'&&activeWorld(game)==='cloud')app.querySelector('.upgrade-card')?.insertAdjacentHTML('afterbegin',`<section class="v014b-grill-unlock"><strong>♨️ 云汽蒸笼 · 云港特有厨具</strong><small>${game.cloudProgress?.explored?'使用深锅厨位，但通过封笼与排汽研发独立的蒸制菜谱。':'先完成一次云港探索并带回食材，才能向港口匠人订制。'}</small>${game.kitchen.steamerOwned?'<span>已购入 · 探索可携带，成长页还可升至 Lv2</span>':b('buy-steamer','购入蒸笼 · '+STEAMER_COST+' 金币','secondary',!steamerAvailable(game))}</section>`);
  if(prevLastCookOpen&&game.phase==='research')app.querySelector('.z2b-last-cook')?.setAttribute('open','');

@@ -1,3 +1,4 @@
+import {getFieldBiome} from './field_biomes_v081.js';
 // B2 applies only to newly spawned expanded segments. Existing enemies keep
 // their saved controller. All movement uses the real obstacle grid.
 import {fieldTilePath} from './field_rules_v011a.js';
@@ -10,6 +11,15 @@ export const ECOLOGY_ENCOUNTERS={
  ember:{base:3,mix:['pepper','boar','steam_crab']},oasis:{base:2,mix:['steam_crab','chicken']},
  cloud:{base:2,mix:['gust_moth','chicken']},cloud_roost:{base:3,mix:['gust_moth','gust_moth','chicken']}
 };
+
+ // Read-only preview of actual encounter ecology at both regional route entrances.
+export function departureEcologyZ2c4(region){
+ const entries=region==='cloud'?[['cloud_dock','cloud_safe'],['cloud_roost','cloud_risk']]:region==='spring'?[['hot_spring_shallows','spring_safe'],['ember_edge','spring_risk']]:[['herb_path','safe'],['old_tree_edge','risk']];
+ const biomes=entries.map(([zone,route])=>getFieldBiome(zone,route));
+ const enemies=[...new Set(biomes.flatMap(b=>ECOLOGY_ENCOUNTERS[b.style].mix))];
+ const resources=biomes.map(b=>b.resources.slice().sort((a,b)=>b[1]-a[1]).slice(0,3).map(q=>q[0]));
+ return {enemies,resources,styles:biomes.map(b=>b.style),routes:entries.map(e=>e[1])};
+}
 const ecologyDist=(a,b)=>Math.hypot(a.x-b.x,a.y-b.y);
 const ecologyHash=n=>{let h=n>>>0;h=Math.imul(h^(h>>>16),0x45d9f3b);h=Math.imul(h^(h>>>16),0x45d9f3b);return (h^(h>>>16))>>>0;};
 export function ecologyHasSight(f,a,b,padding=0){

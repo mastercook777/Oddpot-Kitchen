@@ -45,7 +45,26 @@ export function createWeaponRig(T,hero,rounded){
  const [basket,support]=sets.STEAM;basket.position.set(.29,-.09,.10);
  for(let i=0;i<2;i++){cylinder(basket,bamboo,0,i*.115,0,.25,.25,.115);cylinder(basket,wood,0,i*.115-.052,0,.26,.26,.025);}
  cylinder(basket,bamboo,0,.18,0,.25,.25,.045);box(basket,wood,0,.22,0,.12,.045,.05);
- return {update(f,t=0){const p=weaponPose(f);for(const g of [...elbows,...grips])g.rotation.set(0,0,0);for(const [k,pair] of Object.entries(sets))for(const g of pair)g.visible=k===p.type;fork.visible=p.type==='GRILL';
+
+ // Cosmetic mastery meshes use the same rig in preview and live field.
+ const mastery={WOK:[group(spatula),group(lid)],POT:[group(ladle),group(potBody)],GRILL:[group(fork)],STEAM:[group(basket)]};
+ const [blade2,lid2]=mastery.WOK;
+ box(blade2,copper,0,-.40,0,.12,.10,.085);box(blade2,edge,0,-.60,.033,.20,.035,.02);box(blade2,copper,0,-.52,.035,.045,.18,.023);
+ const shieldRim=mesh(lid2,new T.TorusGeometry(.33,.027,8,40),copper,0,.035,0);shieldRim.rotation.x=Math.PI/2;
+ for(let j=0;j<8;j++){const a=j*Math.PI/4;cylinder(lid2,edge,Math.cos(a)*.28,.066,Math.sin(a)*.28,.022,.022,.028);}
+ cylinder(lid2,edge,0,.123,0,.105,.12,.032);
+ const [ladle2,pot2]=mastery.POT;
+ box(ladle2,copper,0,-.23,0,.089,.12,.089);for(const y of [-.12,.07]){const rim=mesh(pot2,new T.TorusGeometry(.246,.023,8,36),copper,0,y,0);rim.rotation.x=Math.PI/2;}
+ for(let j=0;j<6;j++){const a=j*Math.PI/3;const rivet=mesh(pot2,new T.SphereGeometry(.033,10,8),edge,Math.cos(a)*.252,.025,Math.sin(a)*.252);rivet.scale.y=.8;}
+ cylinder(pot2,copper,0,.23,0,.10,.12,.065);cylinder(pot2,edge,0,.27,0,.065,.065,.028);
+ const [fork2]=mastery.GRILL;for(const y of [.24,-.49,-.70])cylinder(fork2,copper,0,y,0,.061,.061,.066);
+ for(const x of [-.10,0,.10]){box(fork2,copper,x,-.78,.03,.055,.08,.04);box(fork2,edge,x,-.91,.025,.035,.12,.02);}
+ const [basket2]=mastery.STEAM;
+ for(const y of [-.02,.095,.21]){const rim=mesh(basket2,new T.TorusGeometry(.258,.023,8,36),copper,0,y,0);rim.rotation.x=Math.PI/2;}
+ for(let j=0;j<4;j++){const a=j*Math.PI/2;const strap=box(basket2,edge,Math.cos(a)*.257,.10,Math.sin(a)*.257,.055,.22,.025);strap.rotation.y=Math.PI/2-a;}box(basket2,copper,0,.255,0,.16,.045,.075);
+ for(const gs of Object.values(mastery))for(const g of gs)g.visible=false;
+ let visibleMasteryParts=0;
+ return {masteryParts(){return visibleMasteryParts;},update(f,t=0){const p=weaponPose(f);for(const g of [...elbows,...grips])g.rotation.set(0,0,0);for(const [k,pair] of Object.entries(sets))for(const g of pair)g.visible=k===p.type;fork.visible=p.type==='GRILL';visibleMasteryParts=0;for(const [k,gs] of Object.entries(mastery))for(const g of gs){g.visible=k===p.type&&(f.weapon?.level||1)>1;if(g.visible)g.traverse(o=>{if(o.isMesh)visibleMasteryParts++;});}
   // Pose indices are anatomical left/right; negative-X arm is right.
   arms[0].rotation.set(...p.right);arms[1].rotation.set(...p.left);body.rotation.x=p.lean;body.rotation.y=p.twist;
   shield.rotation.x=-arms[1].rotation.x+(f.guardTime>0?-.16:.12);shield.rotation.z=-arms[1].rotation.z;spatula.rotation.z=-.22-p.strike*.30;spatula.rotation.x=.18-p.strike*.34;

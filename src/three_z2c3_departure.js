@@ -1,3 +1,7 @@
+import {makeChefY2} from './three_y2b_chef.js?v=y3d';
+import {createWeaponRig} from './three_y3b_weapon_pose.js?v=z2c4';
+import {createFieldEnemyModel} from './three_y3_enemy_models.js?v=z2c4';
+import {departureEcologyZ2c4} from './field_ecology_v011b2.js?v=z2c4';
 import {createRecovery,sharedThree,visibleHost} from './three_y6a_recovery.js?v=y6a';
 import {makeLandscapeY5d} from './three_y5d_landscape.js?v=y5d';
 import {roundedFactory} from './three_y1_models.js?v=y1';
@@ -9,12 +13,12 @@ function release(){if(instance){const old=instance;instance=null;old.dispose();}
 function leave(){if(!entered&&!instance)return;entered=false;release();recovery.reset();status('idle');}
 function fail(e){recovery.fail();release();status('fallback');if(globalThis.__oddpotBuild?.sceneErrors)globalThis.__oddpotBuild.sceneErrors.departure=String(e);console.warn('Oddpot departure fallback',e);}
 export function enableZ2c3(){
- status('idle');globalThis.__oddpotDepartureRenderer={leave,retry(){release();recovery.reset();sharedThree.reset();status('idle');},draw(app,s,now){
+ status('idle');globalThis.__oddpotDepartureRenderer={leave,rebind(app){const a=app.querySelector('.z2c2-map'),b=app.querySelector('.z2c4-hero');if(instance&&a&&b){instance.rebind(a,b);lastAt=-Infinity;}},retry(){release();recovery.reset();sharedThree.reset();status('idle');},draw(app,s,now){
   if(s.phase!=='field'||s.field){leave();return;}
-  const map=app.querySelector('.z2c2-map'),rack=app.querySelector('.z2c2-tools');if(!map||!rack){leave();return;}entered=true;
+  const map=app.querySelector('.z2c2-map'),rack=app.querySelector('.z2c4-hero');if(!map||!rack){leave();return;}entered=true;
   if(!visibleHost(map)||!visibleHost(rack)||!recovery.canTry())return;
   const T=sharedThree.value;if(!T){sharedThree.tryLoad();status(sharedThree.exhausted?'fallback':'loading');return;}
-  if(instance?.same(map,rack)&&now-lastAt<90)return;lastAt=now;
+  if(instance?.same(map,rack)&&now-lastAt<66)return;lastAt=now;
   try{if(!instance)instance=makeDiorama(T);instance.draw(map,rack,now/1000);recovery.success();status('active');if(globalThis.__oddpotBuild?.sceneErrors)delete globalThis.__oddpotBuild.sceneErrors.departure;}catch(e){fail(e);}
  }};
 }
@@ -23,7 +27,7 @@ function makeDiorama(T){
  renderer.setPixelRatio(1);renderer.outputColorSpace=T.SRGBColorSpace;renderer.toneMapping=T.ACESFilmicToneMapping;renderer.toneMappingExposure=1.14;
  renderer.shadowMap.enabled=true;renderer.shadowMap.type=T.PCFSoftShadowMap;
  let disposed=false;renderer.domElement.addEventListener('webglcontextlost',e=>{e.preventDefault();if(!disposed)fail(Error('departure WebGL context lost'));});
- let map=null,rack=null,land=null,bench=null,region='',weaponKey='',mapCanvas=null,rackCanvas=null;const lands=new Map(),benches=new Map();
+ let map=null,rack=null,land=null,bench=null,region='',mapCanvas=null,rackCanvas=null;const lands=new Map();
  const rounded=roundedFactory(T),geo=new Set(),mats=new Set();
  const mat=(color,opts={})=>{const o=new T.MeshStandardMaterial({color,roughness:.84,...opts});mats.add(o);return o;};
  const wood=mat('#9d663b'),woodDark=mat('#5d3828'),woodLight=mat('#cc9558'),roof=mat('#6a6358'),roofEdge=mat('#51483c'),plaster=mat('#d9b97a'),iron=mat('#52625f',{metalness:.55,roughness:.38}),brass=mat('#c69b54',{metalness:.45,roughness:.4}),teal=mat('#437d7b',{roughness:.38,metalness:.15}),cream=mat('#ead9ab'),bamboo=mat('#ba9159'),red=mat('#ad5441'),green=mat('#66874c'),rock=mat('#787b70'),water=mat('#4faaa7',{metalness:.2,roughness:.24}),gold=mat('#f5c879',{emissive:'#db8c35',emissiveIntensity:.55}),light=mat('#ffd681',{emissive:'#ffb94e',emissiveIntensity:1.1});
@@ -44,7 +48,7 @@ function makeDiorama(T){
   const scene=new T.Scene();scene.background=new T.Color(r==='cloud'?'#a0bac3':'#6a8870');
   scene.fog=new T.Fog(scene.background,20,37);lights(scene,{x:5,z:5});
   const root=group(scene),spring=r==='spring',cloud=r==='cloud',style=spring?'spring':'meadow';
-  const points=[{x:5,y:9},{x:5,y:7},{x:2.1,y:4.8},{x:2.1,y:3.7},{x:5,y:7},{x:7.9,y:4.8},{x:7.9,y:3.7}];
+  const points=[{x:5,y:9},{x:4.4,y:7.1},{x:5.6,y:5.2},{x:4.4,y:3.5},{x:5,y:1}];
   const scenery=Array.from({length:125},(_,i)=>({x:.5+(Math.sin(i*127.1)*43758.5453%1+1)%1*9,y:.5+(Math.sin(i*311.7)*13758.5453%1+1)%1*9}));
   const f={worldW:10,worldH:10,biome:{encounterSeed:24017,zoneId:'departure-'+r},scenery,nodes:[],obstacles:spring?[{x:1,y:2},{x:7,y:1},{x:8,y:6},{x:4,y:2}]:[],hazards:[]};
   const landscape=makeLandscapeY5d(T,root,f,style,points,1);root.traverse(o=>{if(o.isInstancedMesh)o.castShadow=true;});
@@ -62,36 +66,37 @@ function makeDiorama(T){
    for(let i=0;i<18;i++){const a=i*2.399,x=i%2?.65+(i%3)*.18:9.25-(i%3)*.16,z=1.4+(i%9)*.84;ell(root,i%3?pineMid:pineLight,x,.20,z,.32,.25,.25);if(i%3===0)ell(root,rock,x+.15,.13,z+.23,.21,.14,.24);}
   }else if(spring){const rust=mat('#a65e3c'),terracotta=mat('#bd8050');for(let i=0;i<13;i++){const side=i%2?1:-1,x=5+side*(3.4+(i%3)*.43),z=1.2+(i%6)*.82;ell(root,i%3?rust:terracotta,x,.4+(i%3)*.19,z,.55,.63+(i%3)*.26,.54);}}
   // Foreground clearing and visible destinations: existing terrain plus hand-built landmarks.
-  lodge(root,5,8.6);flag(root,2.05,4.8,false);flag(root,7.95,4.8,true);
+  // A regional ecology sample, not a route map; no route flags or restaurant origin.
+  const ecology=departureEcologyZ2c4(r),actors=group(root),enemyMats={basalt:mat('#50464a'),basaltLight:mat('#7d6660'),red,ember:mat('#e68441'),sulfur:mat('#d9b758'),ink:mat('#3a3931'),purple:mat('#9678a6'),cream,barkLight:woodLight,gold:brass,bark:woodDark,stone2:rock,moss:green,copper:brass,green,blue:teal};
+  const branch=(p,a,b,r1,r2,m)=>{const u=new T.Vector3(...a),v=new T.Vector3(...b),d=v.clone().sub(u),q=u.clone().add(v).multiplyScalar(.5),o=cyl(p,m,q.x,q.y,q.z,r1,r2,d.length(),9);o.quaternion.setFromUnitVectors(new T.Vector3(0,1,0),d.normalize());return o;};
+  const homes=[[2.3,5.6],[7.2,5.3],[5.0,7.0]],critters=ecology.enemies.map((kind,i)=>{const model=createFieldEnemyModel(T,actors,{kind},{group,ball:ell,cyl,box,branch},enemyMats);model.scale.setScalar(kind==='boar'?1.5:1.85);return {kind,model,x:homes[i%3][0],z:homes[i%3][1]};});
   for(let i=0;i<14;i++){const a=i*2.399,x=(i%2?7.9:2.1)+Math.sin(a)*1.1,z=3.3+Math.cos(a)*.95;if(spring)ell(root,rock,x,.16,z,.24,.20,.30);else {cyl(root,woodLight,x,.08,z,.035,.045,.16,8);ell(root,i%3?red:cream,x,.19,z,.13,.07,.12);}}
-  for(let i=0;i<6;i++){const z=7.8-i*.38;for(const k of [-1,1])box(root,woodDark,5+k*.65,.20,z,.08,.4,.08);}
+
   const camera=new T.OrthographicCamera(-6,6,5,-5,.1,70);camera.position.set(5,14,17);camera.lookAt(5,0,5.2);
-  return {scene,camera,landscape,anchors:[[2.05,1.0,4.8],[7.95,1.0,4.8]],dispose(){for(const o of landscape.resources)o.dispose?.();}};
+  return {scene,camera,landscape,critters,ecology,update(t){landscape.update(t);for(const [i,v] of critters.entries()){const a=t*.7+i*2.1;v.model.position.set(v.x+Math.sin(a)*.36,v.kind==='gust_moth'?.27+Math.sin(a*2)*.08:0,v.z+Math.cos(a)*.22);v.model.rotation.y=Math.sin(a)*.7;const d=v.model.userData;d.body.position.y=Math.sin(t*3+i)*.025;for(const [j,l] of d.limbs.entries())l.rotation.x=Math.sin(t*4+j*Math.PI+i)*.16;for(const [j,w] of d.wings.entries())w.rotation.z=Math.sin(t*(v.kind==='gust_moth'?10:3)+j)*.22;}},dispose(){for(const o of landscape.resources)o.dispose?.();for(const v of critters)for(const mat of v.model.userData.flashMats||[])mat.dispose();}};
  }
- function buildBench(types,selected){
-  const scene=new T.Scene();scene.background=new T.Color('#4a3528');lights(scene,{x:0,z:0});const root=group(scene),count=types.length,span=Math.max(5.8,count*1.65);
-  box(root,woodDark,0,-.24,0,span+.65,.42,3.7);for(let i=0;i<8;i++)box(root,i%2?wood:woodLight,0,.005,-1.62+i*.46,span+.6,.09,.45);
-  for(const k of [-1,1])box(root,woodDark,k*(span/2+.1),-.62,1.2,.25,.7,.34);
-  const models=[];for(const [i,type] of types.entries()){const x=(i-(count-1)/2)*span/count,g=group(root,x,.10,0);models.push(g);const active=type===selected;
-   box(g,active?gold:woodDark,0,-.02,0,span/count*.88,.10,2.0);box(g,wood,0,.04,0,span/count*.81,.08,1.92);
-   const v=group(g,0,.12,-.04);const scale=Math.min(.78,span/count/2.6);v.scale.setScalar(scale);
-   if(type==='WOK'){lathe(v,iron,[[0,0],[.46,.03],[.81,.20],[1.04,.46],[1.06,.51],[.99,.51],[.76,.25],[.42,.10],[0,.08]]);ring(v,brass,1.04,.026,.49);box(v,woodDark,1.32,.40,0,.63,.13,.18);box(v,brass,1.03,.40,0,.18,.13,.19);const shield=group(v,-.64,.20,.53);shield.rotation.x=-.6;const lid=cyl(shield,iron,0,.05,0,.48,.48,.08);ring(shield,brass,.44,.035,.10);ell(shield,brass,0,.15,0,.12,.10,.12);}
-   else if(type==='POT'){lathe(v,teal,[[0,0],[.70,0],[.86,.14],[.86,.74],[.82,.78],[.77,.73],[.77,.09],[0,.09]]);ring(v,brass,.84,.035,.76);for(const k of [-1,1]){const h=mesh(v,new T.TorusGeometry(.20,.055,8,24),brass,k*.95,.57,0);h.rotation.y=Math.PI/2;}const lid=group(v,0,.78,0);lathe(lid,teal,[[0,.21],[.25,.19],[.66,.10],[.88,0],[.86,-.04],[.66,.03],[0,.15]]);ring(lid,brass,.86,.028,0);ell(lid,brass,0,.25,0,.14,.08,.14);}
-   else if(type==='GRILL'){box(v,woodDark,-.64,.20,0,.90,.20,.16);box(v,brass,-.05,.20,0,.31,.18,.20);box(v,iron,.43,.20,0,.85,.09,.13);for(const k of [-1,1])box(v,iron,.95,.20,k*.20,.59,.075,.08);}
-   else{for(let j=0;j<3;j++){cyl(v,bamboo,0,.14+j*.23,0,.86,.86,.22);ring(v,woodDark,.86,.024,.05+j*.23);}const lid=group(v,0,.70,0);lathe(lid,bamboo,[[0,.19],[.35,.18],[.72,.09],[.9,0],[.88,-.035],[0,.15]]);box(lid,woodDark,0,.23,0,.25,.08,.12);}
-  }
-  const camera=new T.OrthographicCamera(-span/2,span/2,2,-2,.1,50);camera.position.set(0,5.4,7.6);camera.lookAt(0,.1,0);return {scene,camera,span,models};
+ function buildBench(){
+  const scene=new T.Scene();scene.background=new T.Color('#394d3d');lights(scene,{x:0,z:0});const root=group(scene);
+  cyl(root,woodDark,0,-.12,0,.83,.90,.20,40);cyl(root,woodLight,0,-.025,0,.84,.86,.06,40);ring(root,brass,.81,.022,.017);
+  const hero=makeChefY2(T,rounded,true);root.add(hero.root);const rig=createWeaponRig(T,hero,rounded);
+  const camera=new T.OrthographicCamera(-1.0,1.0,1,-1,.1,40);camera.position.set(0,2.25,5.8);camera.lookAt(0,.70,0);
+  return {scene,camera,hero,rig,update(type,level,t){hero.update(t,{facing:'front',moving:false,working:false,carrying:false});rig.update({weapon:{type,level},moving:false,facing:{x:0,y:1}},t);hero.root.rotation.y=Math.sin(t*.85)*.035;},dispose(){const gs=new Set(),ms=new Set();hero.root.traverse(o=>{if(o.geometry)gs.add(o.geometry);if(o.material)for(const v of Array.isArray(o.material)?o.material:[o.material])ms.add(v);});for(const g of gs)if(!geo.has(g))g.dispose();for(const v of ms)if(!mats.has(v))v.dispose();}};
  }
+
  function clearHost(host,canvas){canvas?.remove();if(host)host.removeAttribute('data-z2c3-active');}
- function attach(nextMap,nextRack){if(map===nextMap&&rack===nextRack)return;clearHost(map,mapCanvas);clearHost(rack,rackCanvas);map=nextMap;rack=nextRack;mapCanvas=document.createElement('canvas');rackCanvas=document.createElement('canvas');for(const [host,c,kind] of [[map,mapCanvas,'landscape'],[rack,rackCanvas,'equipment']]){c.className='z2c3-render';c.dataset.oddpotDeparture=kind;c.setAttribute('aria-hidden','true');host.prepend(c);}}
- function paint(host,canvas,scene,camera,halfWidth,halfHeight){const w=Math.min(780,Math.max(1,Math.round(host.clientWidth*1.3))),h=Math.min(780,Math.max(1,Math.round(host.clientHeight*1.3)));const aspect=w/h,half=Math.max(halfHeight,halfWidth/aspect);camera.left=-half*aspect;camera.right=half*aspect;camera.top=half;camera.bottom=-half;camera.updateProjectionMatrix();renderer.setSize(w,h,false);renderer.render(scene,camera);if(canvas.width!==w)canvas.width=w;if(canvas.height!==h)canvas.height=h;const ctx=canvas.getContext('2d');if(!ctx||ctx.isContextLost?.())throw Error('departure display canvas unavailable');ctx.drawImage(renderer.domElement,0,0);return renderer.info.render.calls;}
+ function attach(nextMap,nextRack){if(map===nextMap&&rack===nextRack)return;if(map)map.removeAttribute('data-z2c3-active');if(rack)rack.removeAttribute('data-z2c3-active');map=nextMap;rack=nextRack;
+  if(!mapCanvas)mapCanvas=document.createElement('canvas');if(!rackCanvas)rackCanvas=document.createElement('canvas');
+  for(const [host,c,kind] of [[map,mapCanvas,'landscape'],[rack,rackCanvas,'equipment']]){c.className='z2c3-render';c.dataset.oddpotDeparture=kind;c.setAttribute('aria-hidden','true');host.prepend(c);if(c.dataset.drawCalls&&(kind==='equipment'||c.dataset.region===host.dataset.departureRegion))host.dataset.z2c3Active='1';}
+ }
+ function paint(host,canvas,scene,camera,halfWidth,halfHeight){const scale=Math.min(1.3,780/host.clientWidth,780/host.clientHeight),w=Math.max(1,Math.round(host.clientWidth*scale)),h=Math.max(1,Math.round(host.clientHeight*scale));const aspect=w/h,half=Math.max(halfHeight,halfWidth/aspect);camera.left=-half*aspect;camera.right=half*aspect;camera.top=half;camera.bottom=-half;camera.updateProjectionMatrix();renderer.setSize(w,h,false);renderer.render(scene,camera);if(canvas.width!==w)canvas.width=w;if(canvas.height!==h)canvas.height=h;const ctx=canvas.getContext('2d');if(!ctx||ctx.isContextLost?.())throw Error('departure display canvas unavailable');ctx.drawImage(renderer.domElement,0,0);return renderer.info.render.calls;}
  function releaseScene(s){if(!s)return;s.dispose?.();s.scene.traverse(o=>{if(o.geometry&&!geo.has(o.geometry))o.geometry.dispose();});}
- return {same:(a,b)=>map===a&&rack===b,draw(a,b,t){
-  attach(a,b);const next=a.dataset.departureRegion||'forest',buttons=[...b.querySelectorAll('[data-weapon]')],types=buttons.map(x=>x.dataset.weapon),selected=buttons.find(x=>x.getAttribute('aria-pressed')==='true')?.dataset.weapon,key=types.join(',')+':'+selected;
+ return {same:(a,b)=>map===a&&rack===b,rebind:attach,draw(a,b,t){
+  attach(a,b);const next=a.dataset.departureRegion||'forest',buttons=[...b.parentElement.querySelectorAll('[data-weapon]')],selectedButton=buttons.find(x=>x.getAttribute('aria-pressed')==='true')||buttons[0],selected=selectedButton?.dataset.weapon||'WOK',level=Number(selectedButton?.dataset.weaponLevel)||1;
   if(next!==region){if(!lands.has(next))lands.set(next,buildLand(next));land=lands.get(next);region=next;}
-  if(key!==weaponKey){if(!benches.has(key))benches.set(key,buildBench(types,selected));bench=benches.get(key);weaponKey=key;}
-  land.landscape.update(t);const landCalls=paint(a,mapCanvas,land.scene,land.camera,5.75,4.6),benchCalls=paint(b,rackCanvas,bench.scene,bench.camera,bench.span/2+.25,1.20);
-  mapCanvas.dataset.region=region;mapCanvas.dataset.drawCalls=String(landCalls);mapCanvas.dataset.landscape='y5d';rackCanvas.dataset.drawCalls=String(benchCalls);rackCanvas.dataset.selected=selected||'';rackCanvas.dataset.models=String(types.length);
+  if(!bench)bench=buildBench();
+  land.update(t);bench.update(selected,level,t);
+  const landCalls=paint(a,mapCanvas,land.scene,land.camera,5.55,3.7),benchCalls=paint(b,rackCanvas,bench.scene,bench.camera,.79,.87);
+  mapCanvas.dataset.region=region;mapCanvas.dataset.drawCalls=String(landCalls);mapCanvas.dataset.landscape='y5d';mapCanvas.dataset.enemies=land.ecology.enemies.join(',');rackCanvas.dataset.drawCalls=String(benchCalls);rackCanvas.dataset.selected=selected;rackCanvas.dataset.level=String(level);rackCanvas.dataset.upgradeParts=String(bench.rig.masteryParts());rackCanvas.dataset.models=String(buttons.length);
   a.dataset.z2c3Active='1';b.dataset.z2c3Active='1';
- },dispose(){disposed=true;clearHost(map,mapCanvas);clearHost(rack,rackCanvas);for(const v of lands.values())releaseScene(v);for(const v of benches.values())releaseScene(v);lands.clear();benches.clear();for(const g of geo)g.dispose();for(const m of mats)m.dispose();renderer.dispose();renderer.forceContextLoss();}};
+ },dispose(){disposed=true;clearHost(map,mapCanvas);clearHost(rack,rackCanvas);for(const v of lands.values())releaseScene(v);lands.clear();bench?.dispose();for(const g of geo)g.dispose();for(const mat of mats)mat.dispose();renderer.dispose();renderer.forceContextLoss();}};
 }
