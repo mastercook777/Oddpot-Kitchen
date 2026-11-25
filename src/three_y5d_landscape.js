@@ -25,10 +25,10 @@ export function landscapeSample(f,style,x,y,route=[],seed=landscapeSeed(f)){
  return {height,broad,grain,seam,path};
 }
 export function landscapePlan(f,style,route=[]){
- const seed=landscapeSeed(f),w=f.worldW,h=f.worldH,rock=['spring','steam','ember','oasis'].includes(style),rim=[],plants=[],springs=[];
+ const seed=landscapeSeed(f),w=f.worldW,h=f.worldH,rock=['spring','steam','ember','oasis'].includes(style),rim=[],plants=[],springs=[],outcrops=[];
  // continuous groups, not evenly spaced single-file props. Preserve clear foreground.
  for(let i=0;i<Math.ceil(w*1.2);i++){const x=(i+.5)*w/Math.ceil(w*1.2)+(rnd(seed,i)-.5)*.52,y=-.62-rnd(seed,i+100)*1.6;rim.push({x,y,size:.72+rnd(seed,i+300)*.65,rot:rnd(seed,i+400)*6.28,kind:rock?'cliff':'grove',back:true});}
- for(const side of [-1,1])for(let i=0;i<Math.ceil(h*.72);i++){const x=side<0?-.60-rnd(seed,i+500)*.9:w+.60+rnd(seed,i+700)*.9,y=(i+.5)*h/Math.ceil(h*.72)+(rnd(seed,i+800)-.5)*.55;rim.push({x,y,size:.48+rnd(seed,i+900)*.56,rot:rnd(seed,i+1000)*6.28,kind:rock?'cliff':'grove',back:false});}
+ for(const side of [-1,1])for(let i=0;i<Math.ceil(h*.72);i++){const x=side<0?-1.08-rnd(seed,i+500)*.65:w+1.08+rnd(seed,i+700)*.65,y=(i+.5)*h/Math.ceil(h*.72)+(rnd(seed,i+800)-.5)*.55;rim.push({x,y,size:.48+rnd(seed,i+900)*.56,rot:rnd(seed,i+1000)*6.28,kind:rock?'cliff':'grove',back:false});}
  const forbidden=[...(f.nodes||[]).map(n=>({x:n.x,y:n.y})),...(f.obstacles||[]).map(n=>({x:n.x+.5,y:n.y+.5})),...(f.hazards||[]).map(n=>({x:n.x+.5,y:n.y+.5}))];
  for(const [i,p] of (f.scenery||[]).entries()){
   if(p.x<.35||p.y<.35||p.x>w-.35||p.y>h-.35||pathDistance(p.x,p.y,route)<.72||forbidden.some(q=>Math.hypot(p.x-q.x,p.y-q.y)<.83))continue;
@@ -38,7 +38,8 @@ export function landscapePlan(f,style,route=[]){
   for(const [i,o] of (f.obstacles||[]).entries())springs.push({x:o.x+.5,y:o.y+.5,size:.67+rnd(seed,i+2100)*.16,rot:rnd(seed,i+2200)*6.28,kind:'obstacle'});
   for(let i=0;i<5;i++){const x=i%2?w+.88:-.88,y=(i+1)*h/6;springs.push({x,y,size:1.05+rnd(seed,i+2300)*.30,rot:rnd(seed,i+2400)*6.28,kind:'outer'});}
  }
- return {seed,rim,plants,springs};
+ if(style==='steam'||style==='ember')for(const [i,o] of (f.obstacles||[]).entries())outcrops.push({x:o.x+.5,y:o.y+.5,size:.83+rnd(seed,i+2500)*.17,rot:rnd(seed,i+2600)*6.28});
+ return {seed,rim,plants,springs,outcrops};
 }
 const palettes={
  meadow:['#597b46','#9eac6b','#ad9569','#65794b','#37583d','#78944e','#bdab7e'],
@@ -86,14 +87,26 @@ export function makeLandscapeY5d(T,parent,f,style,route,sine){
   }
  }
  // Irregular travertine shelves with actual inset water surface; never a new hazard.
+ // Shape a continuous open mineral lip around each inset water surface.
+ const lipV=[],lipI=[],lipN=32;for(let k=0;k<4;k++)for(let j=0;j<lipN;j++){const a=j*Math.PI*2/lipN,r=[.36,.39,.47,.49][k]*(.94+.06*Math.sin(a*3)+.04*Math.cos(a*5));lipV.push(Math.cos(a)*r,[.02,.075,.09,.015][k],Math.sin(a)*r);}for(let k=0;k<3;k++)for(let j=0;j<lipN;j++){const a=k*lipN+j,b=k*lipN+(j+1)%lipN;lipI.push(a,b,a+lipN,b,b+lipN,a+lipN);}const lip=own(new T.BufferGeometry());lip.setAttribute('position',new T.Float32BufferAttribute(lipV,3));lip.setIndex(lipI);lip.computeVertexNormals();const lipMat=mat(palette[5],{side:T.DoubleSide});
  const waterGeo=own(new T.CircleGeometry(1,32));waterGeo.rotateX(-Math.PI/2);const wp=waterGeo.attributes.position;for(let i=1;i<wp.count;i++){const a=Math.atan2(wp.getZ(i),wp.getX(i)),r=.94+.06*Math.sin(a*3)+.04*Math.cos(a*5);wp.setX(i,wp.getX(i)*r);wp.setZ(i,wp.getZ(i)*r);}wp.needsUpdate=true;
  const waterMat=own(new T.ShaderMaterial({uniforms:{time:{value:0},tint:{value:new T.Color(style==='oasis'?'#70d8d3':'#78b8b1')}},vertexShader:'varying vec2 vUv;void main(){vUv=uv;gl_Position=projectionMatrix*modelViewMatrix*vec4(position,1.0);}',fragmentShader:'varying vec2 vUv;uniform float time;uniform vec3 tint;void main(){vec2 p=vUv*2.0-1.0;float r=length(p);float wave=sin(r*28.0-time*2.0+sin(p.x*9.0+p.y*5.0)*.8);float w=pow(max(0.0,wave),8.0);vec3 c=mix(tint*.55,tint,clamp(r*.65+.25,0.0,1.0));c+=vec3(.24,.30,.25)*w*.30;gl_FragColor=vec4(c,1.0);}',side:T.DoubleSide}));
  for(const p of plan.springs){const s=p.size,y=p.kind==='outer'?elevation(p.x,p.y):0,z=p.y/sine;
   // Outer shelves are taller; interior footprint fits existing collision tile.
-  for(let j=0;j<3;j++){const r=(.57-j*.075)*s,hh=.10*s;add('shelf',strata,lightStone,p.x,y+j*hh,z,r,hh,r*1.03,p.rot+j*.13);}
-  const o=new T.Mesh(waterGeo,waterMat);o.position.set(p.x,y+.309*s,z);o.scale.set(.37*s,1,.37*s);o.rotation.y=p.rot;parent.add(o);
+  for(let j=0;j<3;j++){const r=(.56-j*.035)*s,hh=.10*s;add('shelf',strata,lightStone,p.x,y+j*hh,z,r,hh,r*1.03,p.rot+j*.13);}
+  add('poolLip',lip,lipMat,p.x,y+.29*s,z,s,s,s,p.rot);
+  const o=new T.Mesh(waterGeo,waterMat);o.position.set(p.x,y+.327*s,z);o.scale.set(.386*s,1,.386*s);o.rotation.y=p.rot;parent.add(o);
+  if(style==='oasis')for(let j=0;j<3;j++){const a=p.rot+j*2.4;add('crystal',shard,mineral,p.x+Math.cos(a)*.43*s,y+(.34+j*.10)*s,z+Math.sin(a)*.43*s,.055*s,(.18+j*.13)*s,.065*s,a,0,.18*Math.sin(a));}
   for(let j=0;j<8;j++){const a=j*Math.PI/4+p.rot,r=.43*s;add('rimStone',boulder,plainStone,p.x+Math.cos(a)*r,y+.28*s,z+Math.sin(a)*r,.095*s,.053*s,.105*s,a);}
  }
+ // Tall stratified masses only inside the original blocked tiles; no
+ // invented collision. Connected stepped forms break the repeated pebble look.
+ for(const p of plan.outcrops){const s=p.size,z=p.y/sine;
+  add('strata',strata,stone,p.x,0,z,.39*s,.76*s,.39*s,p.rot);
+  add('shelf',strata,lightStone,p.x+.13*s,.04,z+.08*s,.25*s,.47*s,.28*s,p.rot+.5);
+  add('strata',strata,stone,p.x-.13*s,.03,z-.13*s,.25*s,.55*s,.25*s,p.rot-.8);
+  if(style==='ember')for(let j=0;j<3;j++)add('mineral',shard,mineral,p.x+(j-1)*.16*s,.28*s+j*.07,z+.28*s,.035*s,.23*s,.045*s,p.rot,0,.22*(j-1));
+ }
  for(const {g,m,items} of batches.values()){const inst=own(new T.InstancedMesh(g,m,items.length));let i=0;for(const p of items){dummy.position.set(p.x,p.y,p.z);dummy.rotation.set(p.rx,p.ry,p.rz);dummy.scale.set(p.sx,p.sy,p.sz);dummy.updateMatrix();inst.setMatrixAt(i++,dummy.matrix);}inst.receiveShadow=true;parent.add(inst);}
- return {resources,stats:{vertices:pos.count,rim:plan.rim.length,plants:plan.plants.length,pools:plan.springs.length,batches:batches.size},update(t){waterMat.uniforms.time.value=t;}};
+ return {resources,stats:{vertices:pos.count,rim:plan.rim.length,plants:plan.plants.length,pools:plan.springs.length,outcrops:plan.outcrops.length,batches:batches.size},update(t){waterMat.uniforms.time.value=t;}};
 }
