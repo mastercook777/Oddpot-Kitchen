@@ -40,8 +40,8 @@ try{
   assert.equal(await page.locator('.v063-book-entry').filter({hasText:'烤架 ·'}).count(),10);
   await page.locator('.sheet-close').click();
   await page.locator('[data-act="method:grill"]').click();
-  await page.locator('[data-ingredient="chicken"]').click();await page.locator('[data-ingredient="chili"]').click();
-  await page.locator('[data-ingredient="mushroom"]').click();await page.locator('[data-ingredient="garlic"]').click();
+  await page.locator('.z2b-pantry [data-ingredient="chicken"]').click();await page.locator('.z2b-pantry [data-ingredient="chili"]').click();
+  await page.locator('.z2b-pantry [data-ingredient="mushroom"]').click();await page.locator('.z2b-pantry [data-ingredient="garlic"]').click();
   assert.ok((await page.locator('.v063-recipe-clue').innerText()).includes('蒜香菌菇串'));
   await page.locator('[data-act="start-research"]').click();
   await page.locator('[data-grill-thread="mushroom"]').click();await page.locator('[data-grill-thread="garlic"]').click();
