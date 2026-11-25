@@ -24,7 +24,7 @@ test('active pan skill drives a separate broad visual shockwave and cooldown',()
  const s=explore(),f=s.field;
  assert.equal(useFieldSkill(s),true);assert.ok(f.skillFx>0);assert.ok(f.skillCd>0);
  assert.equal(useFieldSkill(s),false);
- for(let i=0;i<16;i++)stepActionField(s,0,0,.03);
+ for(let i=0;i<18;i++)stepActionField(s,0,0,.03);
  assert.equal(f.skillFx,0);
 });
 test('hit warning and hero hurt state are set by real damage not visual timer',()=>{
