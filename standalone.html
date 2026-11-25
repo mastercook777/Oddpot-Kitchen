@@ -6202,7 +6202,7 @@ function startActionField(s){
  const f=s.field;if(!f||f.action)return false;
  f.action=true;f.pos={...(f.spawn||{x:4.5,y:9.4})};f.x=f.pos.x;f.y=f.pos.y;
  f.elapsed=0;f.harvestProgress=0;f.harvestNode=null;f.attackCd=0;f.skillCd??=0;f.damageCd=0;f.guardTime??=0;f.shieldCharge??=(f.weapon?.type==='WOK');f.shieldCooldown??=0;f.shieldFlash??=0;f.activeEvent=null;
- f.impactFx=[];f.combatJolt=0;f.skillOrigin=null;f.steamMist=null;f.projectiles=[];f.playerProjectiles=[];f.attackFx=null;f.skillFx=0;f.hurtFx=0;f.hitFlash=0;f.hitShake=0;f.hitDir=null;f.popFx=[];f.facing={x:0,y:-1};f.moving=false;f.actionMessage='移动寻找食材。靠近目标会自动采集。';f.actionMessageTTL=4;
+ f.impactFx=[];f.combatJolt=0;f.skillOrigin=null;f.potBurst=null;f.steamMist=null;f.projectiles=[];f.playerProjectiles=[];f.attackFx=null;f.skillFx=0;f.hurtFx=0;f.hitFlash=0;f.hitShake=0;f.hitDir=null;f.popFx=[];f.facing={x:0,y:-1};f.moving=false;f.actionMessage='移动寻找食材。靠近目标会自动采集。';f.actionMessageTTL=4;
  const profile=f.biome||{},mix=profile.enemyMix||[f.region==='spring'?'pepper':'chicken'];
  const risk=/risk/.test(f.route),wave=f.segmentIndex||1;
  // Encounter composition, count and spawn rotate with the run seed and zone,
@@ -6304,6 +6304,20 @@ function advancePlayerProjectiles(s,dt){
  }
  f.playerProjectiles=(f.playerProjectiles||[]).filter(p=>!p.hit);
 }
+// A locked ground eruption is not a projectile. It uses the old empowered
+// bomb's travel delay, radius, damage and cover rules; normal shots are unchanged.
+function advancePotBurst(s,dt){
+ const f=s.field,b=f.potBurst;if(!b)return false;
+ b.time+=dt;if(b.time+1e-8<b.delay)return false;
+ f.potBurst=null;
+ for(const e of f.enemies||[]){
+  if(e.hp>0&&dist(b,e)<=b.radius&&clearLineOfFire(f,b,e)){
+   damageEnemy(s,e,2,'pot_skill',b);e.slowTime=Math.max(e.slowTime||0,.8);
+  }
+ }
+ queueFieldImpact(f,{kind:'burst',x:b.x,y:b.y,radius:b.radius,strong:true,ttl:.48,duration:.48});
+ return true;
+}
 const WOK_SHIELD_RECHARGE=8;
 function shieldAttackIsFrontal(f,attacker){
  if(!attacker||!Number.isFinite(attacker.x)||!Number.isFinite(attacker.y))return false;
@@ -6323,7 +6337,7 @@ function hurt(s,amount=1,source='enemy',attacker=null){
    else {f.shieldCharge=false;f.shieldCooldown=WOK_SHIELD_RECHARGE;}
    f.shieldFlash=.55;f.damageCd=.38;
    f.popFx??=[];f.popFx.push({x:f.pos.x,y:f.pos.y-.2,text:parry?'完美格挡!':'盾牌挡住!',ttl:.82,color:'#faffb8'});
-   pushMsg(f,parry?'🛡️ 锅盖反击成功！':'🛡️ 锅盖自动抵挡！8 秒后恢复防护。');
+   pushMsg(f,parry?'🛡️ 旋风斩格挡成功！':'🛡️ 锅盖自动抵挡！8 秒后恢复防护。');
    return true;
   }
  }
@@ -6372,8 +6386,8 @@ function useFieldSkill(s){
  const f=s.field;if(s.phase!=='field'||!f?.action||f.skillCd>0||f.finished||f.segmentStatus==='choice'||f.activeEvent)return false;
  if(f.weapon?.type==='STEAM'){
   startSteamMist(f);
-  f.skillCd=6.5;f.skillFx=.42;
-  f.skillOrigin={x:f.steamMist.x,y:f.steamMist.y,type:'STEAM'};
+  f.skillCd=6.5;f.skillFx=.58;
+  f.skillOrigin={x:f.steamMist.x,y:f.steamMist.y,type:'STEAM',duration:.58};
   pushMsg(f,'☁️ 凝雾结界！在当前位置留下减速雾域，持续 '+f.steamMist.duration+' 秒。');
   return true;
  }
@@ -6382,20 +6396,21 @@ function useFieldSkill(s){
   const facing={x:(f.facing?.x||0)/length,y:(f.facing?.y??-1)/length};
   const hits=f.enemies.filter(e=>e.hp>0&&inForkFlameCone(f.pos,facing,e,f.weapon?.level)&&clearLineOfFire(f,f.pos,e));
   for(const e of hits)damageEnemy(s,e,FORK_FLAME.damage,'fork_flame');
-  f.skillCd=6.5;f.skillFx=.85;f.skillOrigin={...f.pos,type:'GRILL',dx:facing.x,dy:facing.y,level:f.weapon?.level||1};
+  f.skillCd=6.5;f.skillFx=.85;f.skillOrigin={...f.pos,type:'GRILL',duration:.85,dx:facing.x,dy:facing.y,level:f.weapon?.level||1};
   f.attackFx={ttl:.38,duration:.38,dx:facing.x,dy:facing.y,forkFlame:true,x:f.pos.x,y:f.pos.y};
   pushMsg(f,'🔥 烤叉喷焰！扇区命中 '+hits.length+' 个敌人。');return true;
  }
  if(f.weapon?.type==='POT'){
   const target=f.enemies.filter(e=>e.hp>0&&dist(f.pos,e)<=3.9&&clearLineOfFire(f,f.pos,e))
    .sort((a,b)=>dist(f.pos,a)-dist(f.pos,b))[0];
-  if(!target){pushMsg(f,'高压汤锅：附近没有可瞄准的敌人。');return false;}
-  potLaunch(f,target,2,f.weapon?.level>1?1.25:1.1,.8);f.skillCd=6.5;f.skillFx=.42;f.skillOrigin={...f.pos,type:'POT'};
+  if(!target){pushMsg(f,'沸汤爆裂：附近没有可瞄准的敌人。');return false;}
+  const delay=f.weapon?.level>1?.30:.38,radius=f.weapon?.level>1?1.25:1.1,duration=delay+.48;
   const d=dist(f.pos,target)||1;f.facing={x:(target.x-f.pos.x)/d,y:(target.y-f.pos.y)/d};
-  f.attackFx={ttl:.24,duration:.24,dx:f.facing.x,dy:f.facing.y,pot:true};
-  pushMsg(f,'🍲 高压汤锅！投出强化洋葱炸弹。');return true;
+  f.potBurst={x:target.x,y:target.y,time:0,delay,radius,dx:f.facing.x,dy:f.facing.y};
+  f.skillCd=6.5;f.skillFx=duration;f.skillOrigin={x:target.x,y:target.y,type:'POT',duration,delay,radius,casterX:f.pos.x,casterY:f.pos.y,dx:f.facing.x,dy:f.facing.y};
+  pushMsg(f,'🍲 沸汤爆裂！锁定地面，喷发高压蒸汽。');return true;
  }
- f.skillCd=6.5;f.skillFx=.42;f.skillOrigin={...f.pos,type:'WOK'};f.guardTime=f.weapon?.level>1?.70:.45;
+ f.skillCd=6.5;f.skillFx=.48;f.skillOrigin={...f.pos,type:'WOK',duration:.48,dx:f.facing?.x??0,dy:f.facing?.y??-1,radius:1.85};f.guardTime=f.weapon?.level>1?.70:.45;
  let hits=0;
  for(const e of f.enemies){
   if(e.hp<=0||dist(f.pos,e)>1.85||!clearLineOfFire(f,f.pos,e))continue;
@@ -6405,7 +6420,7 @@ function useFieldSkill(s){
   }
   hits++;
  }
- pushMsg(f,hits?'🛡️ 锅盖反击！击退 '+hits+' 个敌人':'🛡️ 举起锅盖！短暂防御迎面攻击。');
+ pushMsg(f,hits?'🌀 旋风斩！击退 '+hits+' 个敌人':'🌀 旋风斩！短暂防御迎面攻击。');
  return true;
 }
 function resolveFieldEvent(s,choice){const f=s.field;if(f?.nodes?.some(n=>n.key===f.activeEvent&&['merchant','traveler','ecology'].includes(n.kind)))return resolveSpecialFieldEvent(s,choice);if(!f?.action||!f.activeEvent||f.finished)return false;const n=f.nodes.find(n=>n.key===f.activeEvent);if(!n||n.claimed)return false;let label='';if(choice==='trade'){
@@ -6508,7 +6523,7 @@ function stepActionField(s,axisX,axisY,dt){
  }
  stepBossZones(f,dt,(amount,source,attacker)=>hurt(s,amount,source,attacker));
  for(const p of f.projectiles){p.x+=p.vx*dt;p.y+=p.vy*dt;p.life-=dt;if(dist(f.pos,p)<(p.windSheet?.38:.28)){p.life=0;hurt(s,1,p.source||'pepper',{x:p.ownerX??p.x,y:p.ownerY??p.y});if(p.windSheet){const speed=Math.hypot(p.vx,p.vy)||1,next={x:f.pos.x-p.vy/speed*.26*(p.side||1),y:f.pos.y+p.vx/speed*.26*(p.side||1)};if(!blocked(f,next,.18)){f.pos=next;f.x=next.x;f.y=next.y;}}}}f.projectiles=f.projectiles.filter(p=>p.life>0&&!blocked(f,p,0));
- advancePlayerProjectiles(s,dt);
+ advancePlayerProjectiles(s,dt);advancePotBurst(s,dt);
  if(f.attackCd<=0){
   const isPot=f.weapon?.type==='POT',isFork=f.weapon?.type==='GRILL',isSteam=f.weapon?.type==='STEAM';
   const range=isPot?3.5:isFork?(f.weapon?.level>1?2.35:2.1):isSteam?steamPulseStats(f.weapon?.level).range:1.25;
@@ -8431,9 +8446,13 @@ function drawFieldSwipe(c,f){
 }
 function drawFieldSkillWave(c,f){
  if(!(f.skillFx>0))return;
- const q=fieldFxClamp(f.skillFx/.42),p=1-q,o=f.skillOrigin||f.pos,pot=o.type==='POT'||!o.type&&f.weapon?.type==='POT';
+ const o=f.skillOrigin||f.pos,q=fieldFxClamp(f.skillFx/(o.duration||.42)),p=1-q,pot=o.type==='POT'||!o.type&&f.weapon?.type==='POT';
  c.save();c.globalAlpha=q;c.lineCap='round';
- if(pot){
+ if(pot&&o.delay){const age=o.duration-f.skillFx,pre=age<o.delay,u=pre?age/o.delay:fieldFxClamp((age-o.delay)/.48),r=o.radius;
+  fieldFxRing(c,o.x,o.y,r,'#cde8ca',.045);
+  if(pre){fieldFxRing(c,o.x,o.y,r*(1-u*.65),'#e9f6db',.07);for(let j=0;j<6;j++){const a=j*Math.PI/3+u;fieldFxEllipse(c,o.x+Math.cos(a)*r*.6,o.y+Math.sin(a)*r*.6,.06,.06+u*.05,'#e4f4d6');}}
+  else {for(let j=0;j<8;j++){const a=j*2.399;fieldFxEllipse(c,o.x+Math.cos(a)*r*u*.8,o.y+Math.sin(a)*r*u*.65-Math.sin(Math.PI*u)*.55,.10+u*.15,.13+u*.15,'#e9f6db');}}
+ }else if(pot){
   // Cast pressure hugs the caster. The damaging blast is at the landing point.
   fieldFxRing(c,o.x,o.y,.20+p*.40,'#cde8ca',.05*q);
   for(let i=0;i<3;i++){
@@ -9118,7 +9137,8 @@ function drawField(canvas,s,clock){const size=setCanvas(canvas);if(!size||!s.fie
  }
  if(smoothFx){if(f.weapon?.type==='GRILL')drawForkFlameFx(c,f);else if(f.weapon?.type!=='STEAM')drawFieldSkillWave(c,f);drawFieldHitEffects(c,f);}
  if(!smoothFx&&f.weapon?.type==='GRILL')drawForkFlameFx(c,f);
- if(!smoothFx&&f.skillFx>0&&!['GRILL','STEAM'].includes(f.weapon?.type)){c.save();c.strokeStyle=`rgba(255,231,151,${Math.min(.95,f.skillFx*2.4)})`;c.lineWidth=.12;c.beginPath();c.arc(f.pos.x,f.pos.y,(.42-f.skillFx)*3+.35,0,Math.PI*2);c.stroke();c.restore();}
+ if(!smoothFx&&f.skillFx>0&&f.skillOrigin?.duration&&!['GRILL','STEAM'].includes(f.weapon?.type))drawFieldSkillWave(c,f);
+ if(!smoothFx&&f.skillFx>0&&!f.skillOrigin?.duration&&!['GRILL','STEAM'].includes(f.weapon?.type)){c.save();c.strokeStyle=`rgba(255,231,151,${Math.min(.95,f.skillFx*2.4)})`;c.lineWidth=.12;c.beginPath();c.arc(f.pos.x,f.pos.y,(.42-f.skillFx)*3+.35,0,Math.PI*2);c.stroke();c.restore();}
  for(const e of f.enemies||[]){if(e.hurtFx>0&&e.hp>0&&!e.hitResponse){c.save();c.translate(e.x,e.y);c.scale(1/sc,1/sc);if(smoothFx)drawFieldImpact(c,0,-5,e.hurtFx/.36,8);else pixelImpact(c,0,-5,8);c.restore()}}
  }
  for(const fx of f.popFx||[]){if(smoothFx&&fx.text==='💥'){if(!three)drawFieldBurst(c,fx);continue;}if(!three&&smoothFx&&String(fx.text).startsWith('+'))drawFieldCollection(c,fx);c.save();c.translate(fx.x,fx.y-(.76-fx.ttl)*.5);c.scale(1/sc,1/sc);text(c,fx.text,0,-17,fx.color||'#fff1b1',12);c.restore()}
@@ -10433,7 +10453,7 @@ function field(){
  const readyToFinish=f.nodes?.some(n=>n.key==='target'&&n.claimed)&&!(f.segmentIndex===3&&f.enemies?.some(e=>e.isBoss&&e.hp>0));
  const bag=Object.entries(f.bag).map(([id,n])=>`${ING[id].name}${n}`).join(' · ')||'空';
  const event=f.activeEvent&&f.nodes.find(n=>n.key===f.activeEvent);
- return [`<div class="forest-scene action-forest"><canvas id="forest-canvas" class="forest-canvas"></canvas><div class="floating-joystick" id="field-stick" aria-hidden="true"><div class="floating-joystick-knob" id="field-stick-knob"></div></div><div class="action-hud" aria-label="探索状态"><span class="field-hp" aria-label="体力">${'♥'.repeat(f.hp)}${'♡'.repeat(3-f.hp)}</span><button data-act="field-bag" class="field-bag-chip" aria-label="查看野外背包">背包 <b id="field-bag-count">${fieldBagSlotsUsed(f)}/${f.capacity||8}</b></button><span class="field-clock" id="field-clock">${f.segmentIndex||1}/3 · ${Math.floor(f.elapsed)}s</span></div><div class="field-action-notice" id="field-action-notice" hidden></div>${f.weapon?.type==='WOK'?`<div class="v082-shield-status" id="v082-shield-status" aria-label="锅盖被动防御状态">${f.shieldCharge!==false?'🛡 防御就绪':'🛡 蓄能 '+Math.ceil(f.shieldCooldown||0)+'s'}</div>`:''}${f.bento?`<div class="v063-field-bento">🍱 ${esc(RECIPES[f.bento.recipeId]?.name||"便当")} · <span id="v063-bento-effect">${f.bento.used?"已触发":"待触发"}</span></div>`:""}<button data-act="skill" class="field-skill" aria-label="${f.weapon?.type==='GRILL'?'扇形火焰':f.weapon?.type==='POT'?'高压洋葱炸弹':'锅盖反击'}"><span class="skill-glyph" aria-hidden="true">${f.weapon?.type==='GRILL'?'🍢':f.weapon?.type==='WOK'?'🛡':ingredientIconHtml('onion',25)}</span><span class="skill-caption">${f.weapon?.type==='GRILL'?'喷焰':f.weapon?.type==='POT'?'汤锅':'反击'}</span><span class="skill-cooldown" id="skill-cooldown" hidden></span></button>${event?(event.offer?specialEncounterHtml(game,event):`<div class="field-event"><strong>野外遭遇 · 流浪调味师</strong><p>你在野外遇见流浪调味师。本次机会只有一次，要交换还是继续赶路？</p><button data-event="trade">蘑菇 ×1 → 火椒 ×1（野外背包）</button><button data-event="forage">深入调查：损失生命，争取两份材料</button><button data-event="leave">绕开，保留现有收获</button></div>`):''}</div>`,
+ return [`<div class="forest-scene action-forest"><canvas id="forest-canvas" class="forest-canvas"></canvas><div class="floating-joystick" id="field-stick" aria-hidden="true"><div class="floating-joystick-knob" id="field-stick-knob"></div></div><div class="action-hud" aria-label="探索状态"><span class="field-hp" aria-label="体力">${'♥'.repeat(f.hp)}${'♡'.repeat(3-f.hp)}</span><button data-act="field-bag" class="field-bag-chip" aria-label="查看野外背包">背包 <b id="field-bag-count">${fieldBagSlotsUsed(f)}/${f.capacity||8}</b></button><span class="field-clock" id="field-clock">${f.segmentIndex||1}/3 · ${Math.floor(f.elapsed)}s</span></div><div class="field-action-notice" id="field-action-notice" hidden></div>${f.weapon?.type==='WOK'?`<div class="v082-shield-status" id="v082-shield-status" aria-label="锅盖被动防御状态">${f.shieldCharge!==false?'🛡 防御就绪':'🛡 蓄能 '+Math.ceil(f.shieldCooldown||0)+'s'}</div>`:''}${f.bento?`<div class="v063-field-bento">🍱 ${esc(RECIPES[f.bento.recipeId]?.name||"便当")} · <span id="v063-bento-effect">${f.bento.used?"已触发":"待触发"}</span></div>`:""}<button data-act="skill" class="field-skill" aria-label="${f.weapon?.type==='GRILL'?'扇形火焰':f.weapon?.type==='POT'?'沸汤爆裂':f.weapon?.type==='STEAM'?'凝雾结界':'旋风斩'}"><span class="skill-glyph" aria-hidden="true">${f.weapon?.type==='GRILL'?'🍢':f.weapon?.type==='WOK'?'🌀':f.weapon?.type==='STEAM'?'☁️':'♨️'}</span><span class="skill-caption">${f.weapon?.type==='GRILL'?'喷焰':f.weapon?.type==='POT'?'爆裂':f.weapon?.type==='STEAM'?'凝雾':'旋风'}</span><span class="skill-cooldown" id="skill-cooldown" hidden></span></button>${event?(event.offer?specialEncounterHtml(game,event):`<div class="field-event"><strong>野外遭遇 · 流浪调味师</strong><p>你在野外遇见流浪调味师。本次机会只有一次，要交换还是继续赶路？</p><button data-event="trade">蘑菇 ×1 → 火椒 ×1（野外背包）</button><button data-event="forage">深入调查：损失生命，争取两份材料</button><button data-event="leave">绕开，保留现有收获</button></div>`):''}</div>`,
  `<div class="action-field-dock field-compact-dock"><span class="field-touch-tip">按住场景 · 拖动移动</span>${readyToFinish?b('finish-segment',f.segmentIndex===3?'探索结束 · 返回':'结束本区 · 选择下一站','primary'):''}${b('retreat','撤离回店','secondary')} </div>`]
 }
 
