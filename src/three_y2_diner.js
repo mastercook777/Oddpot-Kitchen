@@ -1,3 +1,4 @@
+import {createRecovery,sharedThree,visibleHost} from './three_y6a_recovery.js?v=y6a';
 // Y2a read-only 3D renderer. Original game remains the only simulation.
 import {dinerFloor,dinerQueueGuests,dinerGuide} from './restaurant_scene_v075.js?v=y4d';
 import {RECIPES,CUSTOMERS} from './data.js';
@@ -23,18 +24,21 @@ const wx=dinerWorldX,wz=dinerWorldZ;
 export function dinerVisibleActors(s,t,actors){const v=s.service;if(!v)return actors;const queued=dinerQueueGuests(s,v.time),outside=queued.slice(0,10).map((o,i)=>({id:o.id,kind:o.segment,x:.18+(i%5)*.16,y:1.015+Math.floor(i/5)*.065,order:o,waiting:true,walk:false}));return [...actors,...outside];}
 const clamp=(x,a,b)=>Math.min(b,Math.max(a,x));
 const activeOrders=new Set(['queued','cooking','pickup','carried','delivering','flying','ordering']);
-let disabled=false,instance=null,pending=null,lib=null;
+let instance=null,entered=false;const recovery=createRecovery();
 const y2bHotspots=['stock','book','bento','crew','door'];
 export function y2bHotspotPosition(x,y,w,h){return {x:clamp(x,Math.min(36,w/2),Math.max(w-36,w/2)),y:clamp(y,Math.min(24,h/2),Math.max(h-24,h/2))};}
 function resetHotspots(){for(const k of y2bHotspots)for(const el of document.querySelectorAll('.v016-'+k+'[data-y2b-anchor]')){el.style.removeProperty('left');el.style.removeProperty('top');el.style.removeProperty('bottom');el.style.removeProperty('transform');delete el.dataset.y2bAnchor;}}
-function leave(){if(!instance)return;const old=instance;instance=null;old.dispose();resetHotspots();}
-function fail(error){disabled=true;leave();resetHotspots();console.warn('Oddpot 3D fallback',error);document.documentElement.dataset.oddpot3d='fallback';}
+function state(v){document.documentElement.dataset.oddpot3d=v;}
+function release(){if(instance){const old=instance;instance=null;old.dispose();}resetHotspots();}
+function leave(){if(!entered&&!instance)return;entered=false;release();recovery.reset();state('idle');}
+function fail(error){recovery.fail();release();console.warn('Oddpot 3D fallback',error);state('fallback');globalThis.__oddpotBuild?.sceneErrors&&(globalThis.__oddpotBuild.sceneErrors.diner=String(error));}
 export function enableY2(){
- document.documentElement.dataset.oddpot3d='loading';
- globalThis.__oddpotY2Renderer={leave,draw(canvas,s,t,w,h,actorsFn){
-  if(!y2Eligible(s)||disabled){leave();resetHotspots();return false;}
-  if(!lib){if(!pending)pending=import('https://cdn.jsdelivr.net/npm/three@0.170.0/build/three.module.js').then(T=>{lib=T;document.documentElement.dataset.oddpot3d='ready';}).catch(fail);return false;}
-  try{if(!instance)instance=createDiner(lib);instance.draw(canvas,s,t,w,h,dinerVisibleActors(s,t,actorsFn(s,t)));return true;}catch(e){fail(e);return false;}
+ state('idle');
+ globalThis.__oddpotY2Renderer={leave,retry(){release();recovery.reset();sharedThree.reset();state('idle');},draw(canvas,s,t,w,h,actorsFn){
+  if(!y2Eligible(s)){leave();return false;}entered=true;
+  if(!visibleHost(canvas)||!recovery.canTry())return false;
+  const lib=sharedThree.value;if(!lib){sharedThree.tryLoad();state(sharedThree.exhausted?'fallback':'loading');return false;}
+  try{if(!instance)instance=createDiner(lib);instance.draw(canvas,s,t,w,h,dinerVisibleActors(s,t,actorsFn(s,t)));recovery.success();return true;}catch(e){fail(e);return false;}
  }};
 }
 function createDiner(T){
