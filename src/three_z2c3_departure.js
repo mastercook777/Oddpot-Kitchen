@@ -23,7 +23,7 @@ function makeDiorama(T){
  renderer.setPixelRatio(1);renderer.outputColorSpace=T.SRGBColorSpace;renderer.toneMapping=T.ACESFilmicToneMapping;renderer.toneMappingExposure=1.14;
  renderer.shadowMap.enabled=true;renderer.shadowMap.type=T.PCFSoftShadowMap;
  let disposed=false;renderer.domElement.addEventListener('webglcontextlost',e=>{e.preventDefault();if(!disposed)fail(Error('departure WebGL context lost'));});
- let map=null,rack=null,land=null,bench=null,region='',weaponKey='',mapCanvas=null,rackCanvas=null;
+ let map=null,rack=null,land=null,bench=null,region='',weaponKey='',mapCanvas=null,rackCanvas=null;const lands=new Map(),benches=new Map();
  const rounded=roundedFactory(T),geo=new Set(),mats=new Set();
  const mat=(color,opts={})=>{const o=new T.MeshStandardMaterial({color,roughness:.84,...opts});mats.add(o);return o;};
  const wood=mat('#9d663b'),woodDark=mat('#5d3828'),woodLight=mat('#cc9558'),roof=mat('#6a6358'),roofEdge=mat('#51483c'),plaster=mat('#d9b97a'),iron=mat('#52625f',{metalness:.55,roughness:.38}),brass=mat('#c69b54',{metalness:.45,roughness:.4}),teal=mat('#437d7b',{roughness:.38,metalness:.15}),cream=mat('#ead9ab'),bamboo=mat('#ba9159'),red=mat('#ad5441'),green=mat('#66874c'),rock=mat('#787b70'),water=mat('#4faaa7',{metalness:.2,roughness:.24}),gold=mat('#f5c879',{emissive:'#db8c35',emissiveIntensity:.55}),light=mat('#ffd681',{emissive:'#ffb94e',emissiveIntensity:1.1});
@@ -47,14 +47,20 @@ function makeDiorama(T){
   const points=[{x:5,y:9},{x:5,y:7},{x:2.1,y:4.8},{x:2.1,y:3.7},{x:5,y:7},{x:7.9,y:4.8},{x:7.9,y:3.7}];
   const scenery=Array.from({length:125},(_,i)=>({x:.5+(Math.sin(i*127.1)*43758.5453%1+1)%1*9,y:.5+(Math.sin(i*311.7)*13758.5453%1+1)%1*9}));
   const f={worldW:10,worldH:10,biome:{encounterSeed:24017,zoneId:'departure-'+r},scenery,nodes:[],obstacles:spring?[{x:1,y:2},{x:7,y:1},{x:8,y:6},{x:4,y:2}]:[],hazards:[]};
-  const landscape=makeLandscapeY5d(T,root,f,style,points,1);
+  const landscape=makeLandscapeY5d(T,root,f,style,points,1);root.traverse(o=>{if(o.isInstancedMesh)o.castShadow=true;});
   if(cloud){root.position.y=-.16;const cloudMat=mat('#e5eee5',{roughness:1});for(let i=0;i<21;i++){const a=i*2.399;ell(scene,cloudMat,5+Math.cos(a)*(7+i%3),-.5-(i%4)*.19,5+Math.sin(a)*7,1.6,.42,1.1);}}
   // Stream behind the trailheads, natural banks and a small bridge.
   if(!spring&&!cloud){const curve=new T.CatmullRomCurve3([new T.Vector3(-2,.035,2.8),new T.Vector3(1,.04,2.0),new T.Vector3(4,.04,3.1),new T.Vector3(7,.04,2.4),new T.Vector3(12,.04,3.3)]);
-   const bank=mesh(root,new T.TubeGeometry(curve,48,.42,8,false),rock,0,-.23,0);bank.scale.y=.25;
-   const stream=mesh(root,new T.TubeGeometry(curve,48,.31,10,false),water,0,-.08,0);stream.scale.y=.22;
+   const bank=mesh(root,new T.TubeGeometry(curve,48,.42,8,false),rock,0,-.02,0);bank.scale.y=.25;
+   const stream=mesh(root,new T.TubeGeometry(curve,48,.31,10,false),water,0,.07,0);stream.scale.y=.22;
    const bridge=group(root,5,.17,2.8);for(let i=0;i<7;i++)box(bridge,i%2?wood:woodLight,0,0,-.55+i*.18,1.15,.12,.16);for(const k of [-1,1]){for(const z of [-.55,.55])box(bridge,woodDark,k*.60,.25,z,.08,.50,.08);box(bridge,wood,k*.60,.43,0,.08,.08,1.24);}
   }
+  // More intentional masses around the trail: pine silhouettes, warm stones and bushes.
+  const pineDark=mat('#37543d'),pineMid=mat('#557344'),pineLight=mat('#82995b'),bark=mat('#735238');
+  function pine(x,z,size){const p=group(root,x,0,z);p.scale.setScalar(size);cyl(p,bark,0,.62,0,.10,.16,1.24,9);for(let k=0;k<4;k++){const yy=.70+k*.39,r=.64-k*.10;const crown=mesh(p,new T.ConeGeometry(r,.92,9),[pineDark,pineMid,pineMid,pineLight][k],0,yy,0);crown.rotation.y=k*.8;}return p;}
+  if(!spring&&!cloud){for(const [x,z,k] of [[.4,3.9,.9],[.7,5.4,1],[1.0,7.3,.7],[3.2,1.4,1.1],[4.1,1.0,.8],[6.3,1.2,1],[8.9,2.2,1.1],[9.3,5.3,.9],[9.1,7.1,.8],[.5,8.2,.65]])pine(x,z,k);
+   for(let i=0;i<18;i++){const a=i*2.399,x=i%2?.65+(i%3)*.18:9.25-(i%3)*.16,z=1.4+(i%9)*.84;ell(root,i%3?pineMid:pineLight,x,.20,z,.32,.25,.25);if(i%3===0)ell(root,rock,x+.15,.13,z+.23,.21,.14,.24);}
+  }else if(spring){const rust=mat('#a65e3c'),terracotta=mat('#bd8050');for(let i=0;i<13;i++){const side=i%2?1:-1,x=5+side*(3.4+(i%3)*.43),z=1.2+(i%6)*.82;ell(root,i%3?rust:terracotta,x,.4+(i%3)*.19,z,.55,.63+(i%3)*.26,.54);}}
   // Foreground clearing and visible destinations: existing terrain plus hand-built landmarks.
   lodge(root,5,8.6);flag(root,2.05,4.8,false);flag(root,7.95,4.8,true);
   for(let i=0;i<14;i++){const a=i*2.399,x=(i%2?7.9:2.1)+Math.sin(a)*1.1,z=3.3+Math.cos(a)*.95;if(spring)ell(root,rock,x,.16,z,.24,.20,.30);else {cyl(root,woodLight,x,.08,z,.035,.045,.16,8);ell(root,i%3?red:cream,x,.19,z,.13,.07,.12);}}
@@ -82,10 +88,10 @@ function makeDiorama(T){
  function releaseScene(s){if(!s)return;s.dispose?.();s.scene.traverse(o=>{if(o.geometry&&!geo.has(o.geometry))o.geometry.dispose();});}
  return {same:(a,b)=>map===a&&rack===b,draw(a,b,t){
   attach(a,b);const next=a.dataset.departureRegion||'forest',buttons=[...b.querySelectorAll('[data-weapon]')],types=buttons.map(x=>x.dataset.weapon),selected=buttons.find(x=>x.getAttribute('aria-pressed')==='true')?.dataset.weapon,key=types.join(',')+':'+selected;
-  if(next!==region){releaseScene(land);land=buildLand(next);region=next;}
-  if(key!==weaponKey){releaseScene(bench);bench=buildBench(types,selected);weaponKey=key;}
+  if(next!==region){if(!lands.has(next))lands.set(next,buildLand(next));land=lands.get(next);region=next;}
+  if(key!==weaponKey){if(!benches.has(key))benches.set(key,buildBench(types,selected));bench=benches.get(key);weaponKey=key;}
   land.landscape.update(t);const landCalls=paint(a,mapCanvas,land.scene,land.camera,5.75,4.6),benchCalls=paint(b,rackCanvas,bench.scene,bench.camera,bench.span/2+.25,1.20);
   mapCanvas.dataset.region=region;mapCanvas.dataset.drawCalls=String(landCalls);mapCanvas.dataset.landscape='y5d';rackCanvas.dataset.drawCalls=String(benchCalls);rackCanvas.dataset.selected=selected||'';rackCanvas.dataset.models=String(types.length);
   a.dataset.z2c3Active='1';b.dataset.z2c3Active='1';
- },dispose(){disposed=true;clearHost(map,mapCanvas);clearHost(rack,rackCanvas);releaseScene(land);releaseScene(bench);for(const g of geo)g.dispose();for(const m of mats)m.dispose();renderer.dispose();renderer.forceContextLoss();}};
+ },dispose(){disposed=true;clearHost(map,mapCanvas);clearHost(rack,rackCanvas);for(const v of lands.values())releaseScene(v);for(const v of benches.values())releaseScene(v);lands.clear();benches.clear();for(const g of geo)g.dispose();for(const m of mats)m.dispose();renderer.dispose();renderer.forceContextLoss();}};
 }

@@ -1807,6 +1807,11 @@
 .z2c2-tools[data-z2c3-active] .z2c2-tool:focus-visible{outline:2px solid #f6e0a8;outline-offset:-3px}
 @media(max-width:350px){.z2c2-map[data-z2c3-active]{aspect-ratio:320/310}.z2c2-tools[data-z2c3-active],.z2c2-tools[data-z2c3-active] .z2c2-tool{min-height:112px}}
 
+/* Z2c3 short mobile viewport: preserve space for the actual objects. */
+@media(max-height:650px){.z2c2-map[data-z2c3-active]{aspect-ratio:320/270;max-height:300px}.z2c2-tools[data-z2c3-active],.z2c2-tools[data-z2c3-active] .z2c2-tool{min-height:108px}}
+.z2c2-map[data-z2c3-active] .z2c2-region{background:#553b26e8;color:#f1d9a7;border-color:#b48b54;box-shadow:0 2px #39291c}
+.z2c2-map[data-z2c3-active] .z2c2-region.current{background:#36593eea;border-color:#edc67b;box-shadow:0 0 0 1px #d7a55e}
+
 .v014b-grill-unlock{display:grid;gap:8px;margin:12px 0;padding:14px;border:2px solid #d8a867;border-radius:18px;background:#3d5e49;color:#fff0c7}
 .v014b-grill-unlock strong{font-size:18px}
 .v014b-grill-unlock small{line-height:1.35;color:#e7e2c6}
