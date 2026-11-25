@@ -14,7 +14,7 @@ import {mealLife} from './three_y6_life.js?v=y6';
 import {makeGuestFactory} from './three_y6_guests.js?v=y6';
 import {makeDishFactory} from './three_y6_dishes.js?v=y6';
 
-export function y2Eligible(s){return s?.activeWorld!=='cloud'&&(s?.phase==='forecast'&&!s.service||s?.phase==='service'&&!!s.service?.walkable);}
+export function y2Eligible(s){return s?.activeWorld!=='cloud'&&(['forecast','prep'].includes(s?.phase)&&!s.service||s?.phase==='service'&&!!s.service?.walkable);}
 export function y2Layout(s){
  const g=dinerFloor(s),v=s.service,slots=v?.kitchenSnapshot||s.kitchen?.slots||[];
  const n=v?v.kitchenSnapshot?.length||2:s.kitchen?.thirdUnlocked?3:2;
@@ -119,13 +119,13 @@ function createDiner(T){
  }
  const pool=new Map(),byId=new Map();
  function actor(kind,id){let a=byId.get(id);if(a&&a.kind===kind)return a;if(a){a.root.visible=false;byId.delete(id);}let list=pool.get(kind);if(!list)pool.set(kind,list=[]);a=list.find(o=>!o.used&&!byId.has(o.id));if(!a){const staff=['chef','helper','helper2','waiter','waiter2'].includes(kind),m=staff?makeChefY2(T,rounded,kind==='chef'):guestFactory.create(kind);scene.add(m.root);m.root.scale.setScalar(kind==='chef'?.84:staff?.84:1.24);a={...m,kind};if(staff&&kind!=='chef'){m.root.traverse(o=>{if(o.isMesh&&o.material?.color?.getHexString()==='417b91'){o.material=o.material.clone();o.material.color.set(kind==='waiter'?'#708d62':kind==='helper'?'#d27a46':'#517d85');}});}if(staff){a.dish=plate(m.rig.body,0,.59,.30);a.rank=kind==='chef'?null:staffLook(m,kind);a.tray=cyl(a.dish,0,-.035,0,.32,.30,.042,wood,24);a.serviceRig=createServiceRig(T,m,rounded);}list.push(a);}a.id=id;a.last=null;a.facing=null;byId.set(id,a);return a;}
- const tmp=new T.Vector3();let lastW=0,lastH=0;
+ const tmp=new T.Vector3();let lastW=0,lastH=0,lastPrep=null;
  function project(x,z,y,w,h){tmp.set(wx(x),y,wz(z)).project(camera);return {x:(tmp.x+1)*w/2,y:(1-tmp.y)*h/2};}
  function label(c,p,txt,w,h){if(!txt)return;c.font='bold 11px system-ui';const width=Math.min(w-12,c.measureText(txt).width+12),x=clamp(p.x-width/2,6,w-width-6),y=clamp(p.y-16,5,h-23);c.fillStyle='#2d3029e8';c.beginPath();c.roundRect(x,y,width,19,5);c.fill();c.fillStyle='#fff0ce';c.textAlign='center';c.textBaseline='middle';c.fillText(txt,x+width/2,y+9.5,width-8);}
  return {element,draw(canvas,s,t,w,h,actors){
   const parent=canvas.parentElement;if(!parent)return;if(element.parentElement!==parent)parent.insertBefore(element,canvas);
   const dpr=Math.min(devicePixelRatio||1,1.5),rw=Math.round(w*dpr),rh=Math.round(h*dpr);
-  if(rw!==lastW||rh!==lastH){renderer.setSize(rw,rh,false);const aspect=w/h,half=Math.max(5.65/aspect,8.35);camera.left=-half*aspect;camera.right=half*aspect;camera.top=half;camera.bottom=-half;camera.updateProjectionMatrix();lastW=rw;lastH=rh;}
+  const prep=s.phase==='prep';if(rw!==lastW||rh!==lastH||prep!==lastPrep){renderer.setSize(rw,rh,false);const aspect=w/h,half=prep?Math.max(5.6/aspect,3.65):Math.max(5.65/aspect,8.35);if(prep){camera.position.set(5,15,16);camera.lookAt(5,0,4.2);}else{camera.position.set(5,23,25);camera.lookAt(5,0,8.7);}camera.left=-half*aspect;camera.right=half*aspect;camera.top=half;camera.bottom=-half;camera.updateProjectionMatrix();lastW=rw;lastH=rh;lastPrep=prep;}element.dataset.view=prep?'kitchen-preview':'restaurant';
   const layout=y2Layout(s),v=s.service,guide=dinerGuide(s);pass.position.set(wx(layout.floor.passFurniture.x),0,wz(layout.floor.passFurniture.y));guideMark.visible=!!guide?.target;if(guide?.target){guideMark.position.set(wx(guide.target.x),0,wz(guide.target.y));arrow.position.y=.55+Math.sin(t*4)*.085;arrow.rotation.y=t*.9;markerMat.color.set(guide.mode==='serve'?'#b8f1ac':'#ffdf8b');}alcoves.forEach((a,i)=>a.visible=layout.tables.length>=i+3);
   let mealCount=0,foodPieces=0;const mealKinds=new Set();
   for(let i=0;i<tables.length;i++){const item=tables[i],p=layout.tables[i];item.p.visible=!!p;if(p){item.p.position.set(wx(p.x),0,wz(p.z));for(let j=0;j<2;j++){const order=v?.orders?.find(o=>o.tableId===i&&(o.seatId??0)===j&&['eating','review'].includes(o.status));item.meals[j].visible=!!order;if(order){const stats=item.meals[j].userData.setDish(order.recipeId,mealLife(order,t,DINER_TIMING.eat).portion);mealCount++;foodPieces+=stats.count;mealKinds.add(stats.kind);}}}}
