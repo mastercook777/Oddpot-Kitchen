@@ -1785,6 +1785,33 @@
 .z2c2-map-stop:focus-visible{outline:2px dashed #694d32;outline-offset:-2px}
 .z2c-home .v016-home .v016-world-actions .v016-door.z2c2-threshold:not([data-y2b-anchor]){top:88%}
 
+/* Z2c3 real rendered art. Only switch after BOTH canvases draw successfully. */
+.z2c2-map[data-z2c3-active]{aspect-ratio:320/330;max-height:460px;border:3px solid #795333;box-shadow:0 3px #261d16, inset 0 0 0 1px #c79a5b;background:#557557}
+.z2c2-map[data-z2c3-active] .z2c2-map-art{visibility:hidden}
+.z2c3-render{position:absolute;inset:0;width:100%;height:100%;pointer-events:none;display:block}
+.z2c2-map .z2c3-render{z-index:-1}
+.z2c2-map[data-z2c3-active] .z2c2-map-caption{color:#fff1cf;text-shadow:0 2px 3px #231e16;top:21%;font-size:12px}
+.z2c2-map[data-z2c3-active] .z2c2-map-stop{top:47%}
+.z2c2-map[data-z2c3-active] .z2c2-map-stop>b{background:#4d3b28ee;color:#fff0c7;border-color:#ccaa70}
+.z2c2-map[data-z2c3-active] .z2c2-map-stop.danger>b{background:#683c2cef}
+.z2c2-map[data-z2c3-active] .z2c2-stop-seal{display:none}
+.z2c2-map[data-z2c3-active] .z2c2-map-stop small{background:#382b1ed9;color:#ffdfaa}
+.z2c2-map[data-z2c3-active] .z2c2-stop-food{background:#ddc79ed9}
+.z2c2-map[data-z2c3-active] .z2c2-map-origin{bottom:3%;background:#402e21d9;color:#f4dab0}
+.z2c2-tools[data-z2c3-active]{position:relative;isolation:isolate;min-height:126px;gap:0;border:1px solid #936a43;overflow:hidden;border-radius:3px}
+.z2c2-tools[data-z2c3-active] .z2c3-render{z-index:-1}
+.z2c2-tools[data-z2c3-active] .z2c2-tool{position:relative;justify-content:flex-end;gap:2px;background:transparent;border:1px solid transparent;box-shadow:none;padding:3px 1px;min-height:126px}
+.z2c2-tools[data-z2c3-active] .z2c2-tool>.z2a3-art{visibility:hidden;position:absolute}
+.z2c2-tools[data-z2c3-active] .z2c2-tool span,.z2c2-tools[data-z2c3-active] .z2c2-tool small{background:#3d2b20da;padding:2px 3px;text-shadow:0 1px #24180f}
+.z2c2-tools[data-z2c3-active] .z2c2-tool.chosen{border-color:#f1c77a;box-shadow:inset 0 0 8px #f2b85b55}
+.z2c2-tools[data-z2c3-active] .z2c2-tool:focus-visible{outline:2px solid #f6e0a8;outline-offset:-3px}
+@media(max-width:350px){.z2c2-map[data-z2c3-active]{aspect-ratio:320/310}.z2c2-tools[data-z2c3-active],.z2c2-tools[data-z2c3-active] .z2c2-tool{min-height:112px}}
+
+/* Z2c3 short mobile viewport: preserve space for the actual objects. */
+@media(max-height:650px){.z2c2-map[data-z2c3-active]{aspect-ratio:320/270;max-height:300px}.z2c2-tools[data-z2c3-active],.z2c2-tools[data-z2c3-active] .z2c2-tool{min-height:108px}}
+.z2c2-map[data-z2c3-active] .z2c2-region{background:#553b26e8;color:#f1d9a7;border-color:#b48b54;box-shadow:0 2px #39291c}
+.z2c2-map[data-z2c3-active] .z2c2-region.current{background:#36593eea;border-color:#edc67b;box-shadow:0 0 0 1px #d7a55e}
+
 .v014b-grill-unlock{display:grid;gap:8px;margin:12px 0;padding:14px;border:2px solid #d8a867;border-radius:18px;background:#3d5e49;color:#fff0c7}
 .v014b-grill-unlock strong{font-size:18px}
 .v014b-grill-unlock small{line-height:1.35;color:#e7e2c6}
@@ -10909,7 +10936,7 @@ function z2c2Departure(routes,lowStock){
  const info=w?z2c2WeaponText(w.type,w.level):null;
  return `<div class="forest-scene route-scene z2c2-expedition"><div class="route-panel z2c2-scroll">
  <section class="v013h-supply-hint z2c2-note" aria-label="经营备料提示"><div class="z2c2-note-pin"></div><div><b>今日备料便笺</b><span>${lowStock.length?'菜单库存偏低 · 先找这些食材':'库存相对充足，今天不妨寻找新味道。'}</span></div>${lowStock.length?`<div class="z2c2-note-food">${lowStock.map(id=>`<span>${ingredientIconHtml(id,22)} ${esc(ING[id].name)} <small>${game.inventory[id]||0}份</small></span>`).join('')}</div>`:''}</section>
- <section class="z2c2-map" aria-label="食堂周边旅行示意地图">
+ <section class="z2c2-map" data-departure-region="${region}" aria-label="食堂周边旅行示意地图">
   ${z2c2MapArt(region)}
   <div class="z2c2-map-regions" role="group" aria-label="选择探索地区">${regions.map(([id,name])=>cloud?`<span class="z2c2-region current">${name}</span>`:`<button class="z2c2-region ${id===region?'current':''}" data-region="${id}" aria-pressed="${id===region}">${name}</button>`).join('')}</div>
   <div class="z2c2-map-caption">${region==='forest'?'草甸、溪流与古树之间':region==='spring'?'热雾、矿泉与赤焰岩层':'浮岛、风道与雷羽巢缘'}</div>
@@ -11490,12 +11517,13 @@ function advanceFrame(now){const delta=Math.min(.045,(now-(lastFrame||now))/1000
   }
  }
  const notice=app.querySelector('#ingame-notice');if(notice&&now>flashUntil)notice.hidden=true;
- const forest=app.querySelector('#forest-canvas'),diner=app.querySelector('#diner-canvas'),research3d=globalThis.__oddpotY4bRenderer;
+ const forest=app.querySelector('#forest-canvas'),diner=app.querySelector('#diner-canvas'),research3d=globalThis.__oddpotY4bRenderer,departure3d=globalThis.__oddpotDepartureRenderer;
  // Release inactive contexts before the next scene allocates its context.
  if(!forest)globalThis.__oddpotY3Renderer?.leave();if(!diner)globalThis.__oddpotY2Renderer?.leave();if(game.phase!=='research')research3d?.leave();
  if(forest)safeSceneFrame('forest',()=>drawField(forest,game,gameClock));
  if(diner)safeSceneFrame('diner',()=>drawDiner(diner,game,gameClock,restaurantSimTime(now)));
  if(game.phase==='research')safeSceneFrame('research',()=>research3d?.draw(app,game,researchPreviewCache,now));
+ if(game.phase==='field'&&!game.field)safeSceneFrame('departure',()=>departure3d?.draw(app,game,now));else departure3d?.leave();
  for(const [name,present] of [['forest',!!forest],['diner',!!diner],['research',game.phase==='research']])if(!present){const key='frame-'+name;sceneFrameErrors.delete(key);if(globalThis.__oddpotBuild?.sceneErrors)delete globalThis.__oddpotBuild.sceneErrors[key];}
  if(now-lastSave>1400&&(game.phase==='field'||['v063-live','v014c-grill'].includes(game.cook?.mode)||game.phase==='service'&&game.service?.walkable)){save(game);lastSave=now}
 }
