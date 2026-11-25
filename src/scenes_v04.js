@@ -1,4 +1,5 @@
-import {z2aOrderMark,z2aDrawMark} from './scene_hud_z2a.js?v=z2a';
+import {z2a2LiveSpeech,z2a2DrawSpeech} from './diner_speech_z2a2.js?v=z2a2';
+import {z2aOrderMark,z2aDrawMark} from './scene_hud_z2a.js?v=z2a2';
 import {a21AtlasReady,a21Sprite,a21Tile} from './hearth_assets_v016a21.js?v=0.16-a21';
 import {fieldHitPose,fieldAttackPose} from './field_hit_response_v011h.js?v=0.12.0-alpha.1';
 import {drawFieldHitEffects} from './field_effects_v011e2.js?v=y5c2';
@@ -743,7 +744,7 @@ export function drawDinerDoorway(c,s,t,w,h){
   for(let i=0;i<5;i++)line(c,L+i*W*.23,T+H*.80,L+i*W*.23,T+H,'#526f8299',2);
   queue.slice(0,4).forEach((o,i)=>pixelActor(c,o.segment,L+W*(.20+i*.205),T+H*.77,DINER_ACTOR_SCALE*.82,{walk:0}));
   c.fillStyle='#294e68cb';c.fillRect(L+6,T+6,94,22);text(c,'☁ 等位 '+queue.length,L+51,T+17,'#fff6dd',11);
-  if(!s.service?.walkable)drawOutdoorQueueChatter(c,queue,t,L,T,W,H);c.strokeStyle='#e4d4aa';c.lineWidth=4;c.strokeRect(L+2,T+2,W-4,H-4);c.restore();
+  if(!s.service?.walkable||!selectDiningSpeech(s.service.orders,t,2).length&&!selectStaffSpeech(s,t,[]))drawOutdoorQueueChatter(c,queue,t,L,T,W,H);c.strokeStyle='#e4d4aa';c.lineWidth=4;c.strokeRect(L+2,T+2,W-4,H-4);c.restore();
   return {queue:queue.length,weather:'breeze'};
  }
  c.save();
@@ -786,7 +787,7 @@ export function drawDinerDoorway(c,s,t,w,h){
  c.font='bold 11px system-ui';c.textBaseline='middle';
  c.fillStyle='#193a32c9';c.fillRect(L+6,T+6,Math.min(W-12,queue.length?94:102),22);
  text(c,(weather==='rain'?'☔':weather==='mist'?'☁️':weather==='breeze'?'🍃':'☀️')+' 等位 '+queue.length,L+51,T+17,'#fff0cc',11);
- if(!s.service?.walkable)drawOutdoorQueueChatter(c,queue,t,L,T,W,H);
+ if(!s.service?.walkable||!selectDiningSpeech(s.service.orders,t,2).length&&!selectStaffSpeech(s,t,[]))drawOutdoorQueueChatter(c,queue,t,L,T,W,H);
  // Door threshold and open-frame mullions sit above the outdoor strip.
  c.strokeStyle='#d7b07b';c.lineWidth=4;c.strokeRect(L+2,T+2,W-4,H-4);
  c.fillStyle='#79563d';c.fillRect(L+W*.475,T+H*.03,W*.05,H*.13);
@@ -1233,7 +1234,8 @@ function drawRestaurantV075(c,s,t,w,h){
  const workerActor=workerCue?actors.find(a=>a.id===workerCue.staffRole):null;
  const speechPlacements=placeRestaurantSpeech(visibleSpeech,workerCue,actors,w,h);
  for(const a of actors)a.speechPlacement=speechPlacements.get(a.id)||(workerCue&&a.id===workerCue.staffRole?speechPlacements.get(workerCue.id):null);
- const speaking=new Set(visibleSpeech.map(q=>q.id));
+ const dialogue=v?z2a2LiveSpeech(s,t,actors.map(a=>({id:a.id,x:x(a.x),y:y(a.y)-31,width:24,height:33})),w,h,false):[];
+ const speaking=new Set(dialogue.map(p=>p.actorId));
  for(const a of actors){
   const X=x(a.x),Y=y(a.y)+(a.order?.status==='eating'?Math.sin(t*5+Number(a.order.seatId||0))*.9:0);
   // No permanent player-foot overlay; interaction progress is on the action guide.
@@ -1266,11 +1268,12 @@ function drawRestaurantV075(c,s,t,w,h){
   }
   if(a.order){
    const o=a.order;
-   z2aDrawMark(c,X,Y-34,z2aOrderMark(o,t),w,h);
+   if(!speaking.has(o.id))z2aDrawMark(c,X,Y-43,z2aOrderMark(o,t),w,h);
   }
  }
  for(const cue of visibleSpeech){const speaker=speechActors.get(cue.id);if(speaker)drawGuestSpeech077(c,cue,speaker,w,h)}
  if(workerCue&&workerActor)drawStaffSpeech078(c,workerCue,workerActor,w,h);
+ for(const p of dialogue)z2a2DrawSpeech(c,p);
  if(!v){
   const reduced=globalThis.matchMedia?.('(prefers-reduced-motion: reduce)').matches||false;
   const cue=homeKitchenChatter(s,t,reduced),speaker=actors.find(a=>a.id===cue?.actor);

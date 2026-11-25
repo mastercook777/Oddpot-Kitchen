@@ -192,3 +192,33 @@
 .z2a-order>div{display:flex;justify-content:space-between;gap:8px;align-items:baseline}.z2a-order>div>span:first-child{min-width:0;overflow-wrap:anywhere}
 .z2a-order strong{font-size:12px;color:#356047;white-space:nowrap}.z2a-order small{font-size:12px;color:#665a43;line-height:1.4}
 @media(max-width:350px){.z2a-hud{padding-left:5px;padding-right:5px;gap:4px}.z2a-hud .v075-status,.z2a-hud .action-hud{gap:3px;font-size:12px}.z2a-hud .v075-status>span{padding:0}.z2a-hud .action-hud .field-clock{font-size:12px}}
+
+/* Z2a2 authored heraldic/cookware UI, no platform emoji in live HUD. */
+.z2a2-icon{width:20px;height:20px;display:inline-block;vertical-align:middle;flex:none;pointer-events:none;overflow:visible}
+.z2a-hud .z2a2-icon{width:20px;height:20px;color:#e8c783}
+.z2a-hud .v075-status>span,.z2a-hud .action-hud .field-clock{display:flex;align-items:center;gap:3px;font-variant-numeric:tabular-nums}
+.z2a-hud .v075-status #v075-served{display:grid;justify-items:start;align-content:center;gap:0;line-height:1.05}
+.z2a2-count,.z2a2-queue{display:flex;align-items:center;gap:3px;white-space:nowrap}
+.z2a2-queue{font-size:11px;color:#e8c783;line-height:1.1}.z2a2-queue .z2a2-icon{width:12px;height:12px}
+.z2a-hud button,.z2a-hud .v075-status button,.z2a-hud .action-hud button{background:linear-gradient(145deg,#475547,#263a30);border-color:#a28a59;box-shadow:inset 0 1px #e2c18c35,inset 0 -2px #18291f;display:inline-flex;align-items:center;justify-content:center;gap:4px}
+.z2a-hud button:active{background:#516351;box-shadow:inset 0 2px #10291f}
+.z2a-hud .z2a-ledger-btn .z2a2-icon,.z2a-hud .z2a-settings .z2a2-icon{width:25px;height:25px}
+.z2a-hud .action-hud .field-hp{display:flex;gap:3px}
+.z2a-hud .field-hp .z2a2-icon{width:21px;height:21px;color:#dc917a}
+.z2a-hud .field-hp .is-full{fill:#b85645;filter:drop-shadow(0 1px #3c2720)}
+.z2a-hud .field-hp .is-empty{fill:#27352d;color:#8e7162}
+.z2a-hud .field-hp.taking-hit .is-full{fill:#ffe0a3;color:#ffe0a3}
+.z2a-live .v075-goal,.z2a-live .v075-notification,.z2a-live .v082-shield-status,.z2a-live .v063-field-bento{align-items:center;gap:4px}
+.z2a-live .v075-goal .z2a2-icon,.z2a-live .v075-notification .z2a2-icon,.z2a-live .v082-shield-status .z2a2-icon,.z2a-live .v063-field-bento .z2a2-icon{width:16px;height:16px}
+.z2a-diner .v4d-service-guide{grid-template-columns:23px minmax(0,1fr);align-items:center;column-gap:6px;box-shadow:inset 0 1px #d0b77b30,0 2px 5px #0b17136b}
+.z2a-diner #z2a2-guide-icon{grid-row:1 / span 2;color:#edcc88}.z2a-diner #z2a2-guide-icon .z2a2-icon{width:22px;height:22px}
+.z2a-diner .v4d-service-guide small,.z2a-diner .v4d-service-guide i{grid-column:2}
+.z2a-live .field-skill,.z2a-diner .diner-special{background:radial-gradient(circle at 35% 23%,#846244,#49372a 68%,#38291f);border:2px solid #d9b677;box-shadow:inset 0 0 0 3px #28291e99,inset 0 1px #fff1bc55,0 3px 0 #34271e,0 4px 10px #0b211a99;color:#f3d9a2}
+.z2a-live .field-skill .z2a2-icon{width:29px;height:29px;filter:drop-shadow(0 1px #281c13)}
+.z2a-diner .diner-special{display:flex;flex-direction:column;align-items:center;justify-content:center;gap:0;width:58px;height:58px;padding:4px}
+.z2a-diner .diner-special>.z2a2-icon{width:26px;height:26px}.z2a-diner .diner-special small{display:flex;align-items:center;gap:1px;font-size:11px}.z2a-diner .diner-special small .z2a2-icon{width:12px;height:12px}
+.z2a-live .field-compact-dock .z2a2-icon{width:17px;height:17px;color:inherit}
+.z2a-live .field-compact-dock .game-btn{display:inline-flex;align-items:center;justify-content:center;gap:4px}
+.z2a2-count b,.z2a-hud .field-clock b{font-weight:750}
+.z2a-ledger-summary .z2a2-icon{width:16px;height:16px}
+@media(max-width:350px){.z2a-hud .z2a2-icon{width:17px;height:17px}.z2a-hud .field-hp .z2a2-icon{width:19px;height:19px}.z2a2-queue .z2a2-icon{width:11px;height:11px}.z2a-hud .v075-status>span{gap:2px}.z2a-hud .v075-status button{padding:0}.z2a2-queue{font-size:10px}}
