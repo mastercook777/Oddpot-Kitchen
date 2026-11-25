@@ -350,3 +350,15 @@
  .z2b-prep-work .kitchen-config-slot{padding:3px}.z2b-station-identity{min-width:68px;flex-basis:68px}.z2b-station-identity>.z2a3-art{width:23px;height:23px}
 }
 @media(max-height:620px){.z2b-bench{padding:5px 6px 7px}.z2b-bench-vessel .z2a3-art{width:48px;height:48px}.z2b-tray-slot{min-height:64px}.z2b-shell .v063-live-pan{min-height:105px}.z2b-shell .v014c-hearth{flex-basis:115px;min-height:115px}.z2b-shell .v014c-gauge{min-height:30px}.z2b-shell .v063-live-tray .v063-drop{min-height:49px}.z2b-shell .v063-live-msg{min-height:26px}}
+
+.z2b-stock-shortcut{position:absolute;right:7px;top:5px;min-height:44px;min-width:66px;display:flex;align-items:center;justify-content:center;gap:4px;padding:4px 8px;background:#273d30e8;border:1px solid #b39461;border-radius:7px;color:#f0e0b9;font-weight:700;font-size:12px}
+.z2b-stock-shortcut.risk{background:#6b4034e8;border-color:#e1a77c;color:#ffe4bc}
+.z2b-stock-shortcut .z2a3-art{width:19px;height:19px}
+.z2b-menu-board .v014-menu-value>*{border:0;border-radius:0;font-variant-numeric:tabular-nums}
+.z2b-shell .z2b-last-cook summary{font-size:11px;min-height:24px;cursor:pointer}
+.z2b-shell .z2b-last-cook small{font-size:11px;padding-top:4px}
+.z2b-prep-work .kitchen-config-slot{flex-wrap:nowrap}
+.z2b-prep-work .kitchen-config-slot .kitchen-choice button{max-width:none}
+.z2b-prep-work .kitchen-prep-card .prep-item{min-height:45px}
+.z2b-shell .v063-live-tray .v063-drop small{font-size:11px}
+@media(max-width:380px){.z2b-vessels .v063-vessel:has(+.v063-vessel +.v063-vessel),.z2b-vessels:has(.v063-vessel:nth-child(3)) .v063-vessel{flex-direction:column}.z2b-vessels:has(.v063-vessel:nth-child(3)) .v063-vessel small{display:none}}
