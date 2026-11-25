@@ -97,7 +97,8 @@ test('four-direction POT stance and renderer keep a recognisable lower held pot'
  assert.doesNotMatch(source,/text\(c,'🍲',17,-10/);
  const app=readFileSync(new URL('../src/app.js',import.meta.url),'utf8');
  assert.match(app,/fieldWeaponChoices\(game\)/);
- assert.match(app,/data-weapon="\$\{type\}"/);
+ assert.match(app,/data-weapon="\$\{q.type\}"/);
+ assert.match(app,/q.type===selected/);
 });
 
 test('kitchen POT station rendering and refit controls are preserved independently',()=>{

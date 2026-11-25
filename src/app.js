@@ -268,7 +268,7 @@ function z2c2Departure(routes,lowStock){
   <span class="z2c2-map-origin">${cloud?'从码头启程':'食堂门口'}</span>
  </section>
  <section class="z2c2-rack" aria-label="上路厨具"><div class="z2c2-rack-head"><b>带哪件厨具上路？</b><small>点选器物</small></div><div class="z2c2-tools">${choices.map(q=>`<button data-weapon="${q.type}" class="z2c2-tool ${q.type===selected?'chosen':''}" aria-pressed="${q.type===selected}" aria-label="${z2c2WeaponText(q.type,q.level).name} Lv${q.level}">${z2bCookIcon(q.type)}<span>${z2c2WeaponText(q.type,q.level).name}</span><small>Lv.${q.level}${q.type===selected?' · 已带上':''}</small></button>`).join('')}</div>${info?`<div class="z2c2-tool-flavor">${info.flavor}</div>`:''}</section>
- <details class="z2c2-travel-notes"><summary>翻开旅行笔记</summary><div>${routes.map(r=>`<p><b>${r.name}</b> · ${esc(r.subtitle)}${/risk/.test(r.id)&&!cloud?' · 第三段挑战'+bossHint(region).boss+'，预留背包格':''}</p>`).join('')}${info?`<p><b>${info.name}</b> · ${w.fitted?(['左','右','中'][w.slotIndex]||'')+'厨位装配':'背包备用'} · ${info.stats}</p>`:''}<p>三段行程，可随时返回。生态决定主要产物，不保证指定食材掉落。库存少于6份时标为偏低。</p></div></details>
+ <details class="z2c2-travel-notes"><summary>翻开旅行笔记</summary><div>${routes.map(r=>`<p><b>${r.name}</b> · ${esc(r.subtitle)}${/risk/.test(r.id)&&!cloud?' · 第三段挑战'+bossHint(region).boss+'，预留背包格':''}</p>`).join('')}${info?`<p><b>${info.name}</b> · ${w.fitted?(['左','右','中'][w.slotIndex]||'')+'厨位装配':'背包备用'} · ${info.stats}</p>`:''}<p>${cloud?'三段航路，可随时返港。':'三段路，可随时回店。'}生态决定主要产物，不保证指定食材掉落。库存少于6份时标为偏低。</p></div></details>
  </div></div>`;
 }
 
