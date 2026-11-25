@@ -1154,6 +1154,35 @@
  touch-action:auto;
 }
 
+/* Z1 mobile input contract: game text is not document text. The actual
+   gesture surfaces own native gestures, not the entire page. */
+#app,#app .game-shell,#app .game-shell *{
+ -webkit-user-select:none;
+ user-select:none;
+ -webkit-touch-callout:none;
+ -webkit-user-drag:none;
+ -webkit-tap-highlight-color:transparent;
+}
+#app :is(input,textarea,select,[contenteditable]:not([contenteditable="false"]),[data-allow-selection]),
+#app :is([contenteditable]:not([contenteditable="false"]),[data-allow-selection]) *{
+ -webkit-user-select:text!important;
+ user-select:text!important;
+ -webkit-touch-callout:default!important;
+ -webkit-user-drag:auto;
+ touch-action:auto;
+}
+#app .is-diner-playing .diner-world,
+#app .is-diner-playing .diner-canvas,
+#app .is-diner-playing .diner-float-stick,
+#app .is-diner-playing .diner-float-knob,
+#app [data-live-pan]{
+ touch-action:none;
+}
+#app :is(button,a,summary,[role="button"]){touch-action:manipulation;}
+#app :is(.sheet-body,.book-list,.route-panel,.v063-setup,.menu-scene,.kitchen-prep-card,.report-scene,.kitchen-upgrade-card){overscroll-behavior:contain;touch-action:pan-y;}
+#app .target-scroller{touch-action:pan-x;}
+#app :is(.floating-joystick,.diner-float-stick){pointer-events:none;}
+
 /* v0.8.4 : HP flashes only on a real unblocked hit. Gameplay Canvas
    owns red vignette/knockback; this CSS highlights actual heart loss. */
 .game-shell.is-field-playing .field-hp.taking-hit{
@@ -10180,7 +10209,7 @@ let message='今天会有怎样的客人上门呢？';
 let overlay='',bookTab='recipes',recipeType='WOK',bookRegion='current',tileSelected=null,selectedOrderId=null;let servicePanel='';
 let selectedIngredients=activeWorld(game)==='cloud'?['cloud_rice','chicken']:['chicken','chili'],selectedMethod='stir';
 let walking=null,drag=null,selectedRegion=activeWorld(game)==='cloud'?'cloud':'forest';let livePanPointer=null;
-const stick={x:0,y:0,pointer:null,originX:0,originY:0};const keys=new Set();let lastFrame=0,lastSave=0;let gameClock=0;let serviceTickAt=0;const touched=new Map();
+const stick={x:0,y:0,pointer:null,originX:0,originY:0,phase:null};const gestureTouches=new Set();const keys=new Set();let lastFrame=0,lastSave=0;let gameClock=0;let serviceTickAt=0;const touched=new Map();
 const app=document.getElementById('app');
 const esc=s=>String(s??'').replaceAll('&','&amp;').replaceAll('<','&lt;').replaceAll('>','&gt;').replaceAll('"','&quot;');
 const b=(act,text,klass='',disabled=false)=>`<button class="game-btn ${klass}" data-act="${act}" ${disabled?'disabled':''}>${text}</button>`;
@@ -10210,7 +10239,7 @@ function guideMarkup(){
 }
 function shell(stage,dock){
  const walk=game.phase==='service'&&game.service?.walkable,home=game.phase==='forecast';
- return `<div class="game-shell ${activeWorld(game)==='cloud'?'world-cloud':''} ${walk?'v075-game-shell':''} ${home?'v076-home-shell':''} ${game.phase==='field'&&game.field?.action?'is-field-playing':''}">${hud()}${guideMarkup()}<main class="stage ${game.phase}${game.cook?' wok-active':''}">${stage}${playablePhase()?sceneNotice():''}</main>${playablePhase()||home?'':toast()}${walk||home?'':`<nav class="dock">${dock}</nav>`}${overlayMarkup()}</div>`;
+ return `<div class="game-shell ${activeWorld(game)==='cloud'?'world-cloud':''} ${walk?'v075-game-shell is-diner-playing':''} ${home?'v076-home-shell':''} ${game.phase==='field'&&game.field?.action?'is-field-playing':''}">${hud()}${guideMarkup()}<main class="stage ${game.phase}${game.cook?' wok-active':''}">${stage}${playablePhase()?sceneNotice():''}</main>${playablePhase()||home?'':toast()}${walk||home?'':`<nav class="dock">${dock}</nav>`}${overlayMarkup()}</div>`;
 }
 function earnedPromotions(){
  return Object.keys(CREW_ROLES).map(role=>({role,name:crewRoleName(game,role),promotion:crewPromotion(game,role)}))
@@ -10699,6 +10728,7 @@ function render(){
  const sheet=app.querySelector('.sheet-body');if(sheet)sheet.scrollTop=prevSheetScroll;
  const scroller=app.querySelector(stageScrollSelector);if(scroller)scroller.scrollTop=prevStageScroll;
  // Preserve the on-screen floating stick when a second finger uses the skill.
+ if(stick.pointer!==null&&(!playingGameGestures()||stick.phase!==game.phase))releaseStick();
  if(stick.pointer!==null){const pad=app.querySelector('#field-stick, #diner-stick'),knob=app.querySelector('#field-stick-knob, #diner-stick-knob');if(pad){pad.classList.add('active');pad.style.left=stick.originX+'px';pad.style.top=stick.originY+'px';}if(knob)knob.style.transform=`translate(${stick.x*54}px,${stick.y*54}px)`;}
  save(game);
 }
@@ -10829,7 +10859,7 @@ app.addEventListener('pointerup',e=>{if(!drag)return;const from=drag;drag=null;i
 document.addEventListener('keydown',e=>{if(((game.phase==='field'&&game.field&&!game.field.activeEvent)||(game.phase==='service'&&game.service?.walkable))&&!overlay){const map={ArrowUp:[0,-1],ArrowDown:[0,1],ArrowLeft:[-1,0],ArrowRight:[1,0],w:[0,-1],s:[0,1],a:[-1,0],d:[1,0]};if(map[e.key]){e.preventDefault();keys.add(e.key)}}});
 setInterval(()=>{if(document.hidden||overlay)return;if(game.phase==='service'&&game.service&&!game.service.walkable&&!game.service.paused&&!game.service.done&&!game.service.breakAt){tick(game,1);serviceTickAt=performance.now();if(game.service.done)message='今晚的顾客已经全部处理完毕，可以查看日报。';else if(game.service.breakAt){servicePanel='event';message='突发经营事件！请选择应对方案，或改菜单、备菜。';}render()}},750);
 document.addEventListener('keyup',e=>keys.delete(e.key));
-document.addEventListener('visibilitychange',()=>{if(document.hidden){if(walking){clearInterval(walking);walking=null}if(game.phase==='service'&&game.service&&!game.service.paused){game.service.paused=true;game.service.clockAccumulator=0;releaseStick();message='已自动暂停营业，返回后继续。'}save(game)}else if(game.phase==='service'&&game.service?.walkable){render()}});
+document.addEventListener('visibilitychange',()=>{if(document.hidden){releaseStick();livePanPointer=null;keys.clear();if(walking){clearInterval(walking);walking=null}if(game.phase==='service'&&game.service&&!game.service.paused){game.service.paused=true;game.service.clockAccumulator=0;releaseStick();message='已自动暂停营业，返回后继续。'}save(game)}else if(game.phase==='service'&&game.service?.walkable){render()}});
 render();
 
 // The simulation and visual rendering are decoupled: canvas runs each frame,
@@ -10947,46 +10977,51 @@ function frame(now){const delta=Math.min(.045,(now-(lastFrame||now))/1000);lastF
  requestAnimationFrame(frame);
 }
 requestAnimationFrame(frame);
-// Safari selection may start on the *lower dock* when a thumb lands beside
-// its instruction text. Both the playfield and the unused dock background are
-// gameplay joystick surfaces, but none of their actionable buttons are.
+// Z1: one selection policy for every game surface, including restaurant.
+function editableGameTarget(target){return !!target?.closest?.('input,textarea,select,[contenteditable]:not([contenteditable="false"]),[data-allow-selection]');}
 function fieldGestureSurface(target){
  if(!target?.closest)return false;
- if(target.closest('button,select,input,textarea,[contenteditable="true"],.field-event,.sheet,.modal'))return false;
+ if(target.closest('button,select,input,textarea,[contenteditable],[data-allow-selection],.field-event,.sheet,.modal,[role="dialog"],a,summary'))return false;
  return !!target.closest('.action-forest,.action-field-dock');
 }
-function playingFieldGestures(){return game.phase==='field'&&!!game.field?.action&&!game.field.finished&&game.field.segmentStatus!=='choice'&&!overlay;}
-function clearThumbSelection(){
- const selected=window.getSelection?.();
- if(selected&&!selected.isCollapsed)selected.removeAllRanges();
+function dinerGestureSurface(target){
+ return !!target?.closest?.('.diner-world')&&!target.closest('button,select,input,textarea,[contenteditable],[data-allow-selection],[data-seat],[data-station],.sheet,.modal,[role="dialog"],a,summary');
 }
-// Only cancel iOS native gestures while the expedition joystick owns a finger.
-// Never steal touches from the two bottom action buttons or a dialog.
+function playingFieldGestures(){return game.phase==='field'&&!!game.field?.action&&!game.field.finished&&!game.field.activeEvent&&game.field.segmentStatus!=='choice'&&!overlay;}
+function playingDinerGestures(){const v=game.service;return game.phase==='service'&&!!v?.walkable&&!v.paused&&!v.breakAt&&!v.done&&!game.cook&&!overlay;}
+function playingGameGestures(){return playingFieldGestures()||playingDinerGestures();}
+function panGestureSurface(target){return game.phase==='research'&&game.cook?.mode==='v063-live'&&!overlay&&!!target?.closest?.('[data-live-pan]')&&!target.closest('button,select,input,textarea,a,[contenteditable],[data-allow-selection],.sheet,[role="dialog"]');}
+function clearThumbSelection(){
+ const selected=window.getSelection?.();if(!selected||selected.isCollapsed)return;
+ const node=n=>n?.nodeType===1?n:n?.parentElement;
+ const a=node(selected.anchorNode),b=node(selected.focusNode);
+ if((app.contains(a)||app.contains(b))&&!editableGameTarget(a)&&!editableGameTarget(b))selected.removeAllRanges();
+}
+// Cancel native long-press only for fingers that START on a gesture surface.
+// A second finger on a skill, dialog, input or scroll list stays native.
 app.addEventListener('touchstart',e=>{
- if(!playingFieldGestures()||!fieldGestureSurface(e.target))return;
- if(e.cancelable)e.preventDefault();
- clearThumbSelection();
+ for(const touch of e.changedTouches||[]){const target=touch.target||e.target;
+  if((playingFieldGestures()&&fieldGestureSurface(target))||(playingDinerGestures()&&dinerGestureSurface(target))||panGestureSurface(target))gestureTouches.add(touch.identifier);
+ }
+ if(!Array.from(e.changedTouches||[]).some(t=>gestureTouches.has(t.identifier)))return;
+ if(e.cancelable)e.preventDefault();clearThumbSelection();
 },{passive:false});
 app.addEventListener('touchmove',e=>{
- if(!playingFieldGestures()||stick.pointer===null)return;
- if(e.cancelable)e.preventDefault();
+ if(stick.pointer===null&&!livePanPointer&&!gestureTouches.size)return;
+ if(!Array.from(e.changedTouches||[]).some(t=>gestureTouches.has(t.identifier)))return;
+ if(e.cancelable)e.preventDefault();clearThumbSelection();
 },{passive:false});
-app.addEventListener('selectstart',e=>{
- if(game.phase==='field'&&game.field?.action&&!e.target.closest?.('input,textarea,[contenteditable="true"]'))e.preventDefault();
-});
-app.addEventListener('contextmenu',e=>{
- if(game.phase==='field'&&game.field?.action&&!e.target.closest?.('input,textarea,[contenteditable="true"]'))e.preventDefault();
-});
-app.addEventListener('dragstart',e=>{
- if(game.phase==='field'&&game.field?.action)e.preventDefault();
-});
-document.addEventListener('selectionchange',()=>{
- if(playingFieldGestures()&&stick.pointer!==null)clearThumbSelection();
-});
+for(const name of ['touchend','touchcancel'])app.addEventListener(name,e=>{for(const t of e.changedTouches||[])gestureTouches.delete(t.identifier);},{passive:true});
+function suppressGameSelection(e){if(!editableGameTarget(e.target)){if(e.cancelable)e.preventDefault();clearThumbSelection();}}
+app.addEventListener('selectstart',suppressGameSelection,true);
+app.addEventListener('contextmenu',suppressGameSelection,true);
+app.addEventListener('dragstart',suppressGameSelection,true);
+document.addEventListener('selectionchange',()=>{if(stick.pointer!==null||livePanPointer||gestureTouches.size)clearThumbSelection();});
 // Floating analog: anchored at finger-down anywhere on the forest canvas.
 // Pointer capture stays on #app, which does not get replaced during scene updates.
 function releaseStick(){
- stick.pointer=null;stick.x=stick.y=0;
+ const pointer=stick.pointer;stick.pointer=null;stick.phase=null;stick.x=stick.y=0;gestureTouches.clear();
+ if(pointer!==null){try{if(app.hasPointerCapture(pointer))app.releasePointerCapture(pointer);}catch{}clearThumbSelection();}
  const el=app.querySelector('#field-stick, #diner-stick');if(el){el.classList.remove('active');el.style.left='-100px';el.style.top='-100px';}
  const knob=app.querySelector('#field-stick-knob, #diner-stick-knob');if(knob)knob.style.transform='translate(0px,0px)';
 }
@@ -10997,33 +11032,35 @@ function updateStick(e){
  if(knob)knob.style.transform=`translate(${v.knobX}px,${v.knobY}px)`;
 }
 app.addEventListener('pointerdown',e=>{
- const serviceReady=game.phase==='service'&&game.service?.walkable&&!game.service.paused&&!game.service.breakAt&&!game.service.done;
- const fieldReady=game.phase==='field'&&game.field?.action&&!game.field.finished&&!game.field.activeEvent&&game.field.segmentStatus!=='choice';
+ const serviceReady=playingDinerGestures(),fieldReady=playingFieldGestures();
  if(!(serviceReady||fieldReady)||overlay||stick.pointer!==null)return;
  // The scene is the input surface. Do not steal events from active buttons or dialogs.
- if(!(serviceReady?e.target.closest('.diner-world'):fieldGestureSurface(e.target))||e.target.closest('.field-event,button,select,[data-seat],[data-station]'))return;
- e.preventDefault();clearThumbSelection();stick.pointer=e.pointerId;stick.originX=e.clientX;stick.originY=e.clientY;
+ if(!(serviceReady?dinerGestureSurface(e.target):fieldGestureSurface(e.target))||e.button!==0)return;
+ if(e.cancelable)e.preventDefault();clearThumbSelection();stick.pointer=e.pointerId;stick.phase=game.phase;stick.originX=e.clientX;stick.originY=e.clientY;
  const pad=app.querySelector('#field-stick, #diner-stick');if(pad){pad.classList.add('active');pad.style.left=e.clientX+'px';pad.style.top=e.clientY+'px';}
  try{app.setPointerCapture(e.pointerId)}catch{}
  updateStick(e);
 },{passive:false});
 app.addEventListener('pointermove',e=>{
- if(stick.pointer!==e.pointerId)return;e.preventDefault();updateStick(e);
+ if(stick.pointer!==e.pointerId)return;if(!playingGameGestures()||stick.phase!==game.phase){releaseStick();return;}if(e.cancelable)e.preventDefault();updateStick(e);
 },{passive:false});
 for(const name of ['pointerup','pointercancel','lostpointercapture'])app.addEventListener(name,e=>{if(stick.pointer===e.pointerId)releaseStick();});
-window.addEventListener('blur',releaseStick);
+window.addEventListener('blur',()=>{releaseStick();livePanPointer=null;keys.clear();});
+window.addEventListener('pointerup',e=>{if(stick.pointer===e.pointerId)releaseStick();});
+window.addEventListener('pointercancel',e=>{if(stick.pointer===e.pointerId)releaseStick();if(livePanPointer?.id===e.pointerId)livePanPointer=null;});
 
 // Cooking gestures are optional alternatives to the two action buttons.
 app.addEventListener('pointerdown',e=>{
- const pan=e.target.closest('[data-live-pan]');
- if(!pan||game.cook?.mode!=='v063-live')return;
+ if(!panGestureSurface(e.target)||livePanPointer)return;
+ if(e.cancelable)e.preventDefault();clearThumbSelection();
  livePanPointer={id:e.pointerId,x:e.clientX,y:e.clientY,travel:0,lastX:e.clientX,lastY:e.clientY};
-},{passive:true});
+},{passive:false});
 app.addEventListener('pointermove',e=>{
  if(!livePanPointer||livePanPointer.id!==e.pointerId)return;
+ if(e.cancelable)e.preventDefault();
  livePanPointer.travel+=Math.hypot(e.clientX-livePanPointer.lastX,e.clientY-livePanPointer.lastY);
  livePanPointer.lastX=e.clientX;livePanPointer.lastY=e.clientY;
-},{passive:true});
+},{passive:false});
 app.addEventListener('pointerup',e=>{
  const p=livePanPointer;if(!p||p.id!==e.pointerId)return;
  livePanPointer=null;
@@ -11031,4 +11068,4 @@ app.addEventListener('pointerup',e=>{
  const type=game.cook?.vessel==='WOK'?(dy<-38&&Math.abs(dx)<145?'toss':p.travel>75?'flip':null):
    (p.travel>95&&Math.hypot(dx,dy)<80?'gentle':dy>45?'reduce':null);
  if(type&&performLiveAction(game,type))note('掌勺动作已记录，看看出锅会有什么新风味。');
-},{passive:true});</script></body></html>
+},{passive:false});</script></body></html>
