@@ -87,7 +87,7 @@ test('all visible game versions, entrypoint and offline build are aligned',()=>{
  const html=src('../index.html'),script=src('../scripts/build-standalone.py'),
  app=src('../src/app.js'),pkg=JSON.parse(src('../package.json'));
  assert.equal(pkg.version,'0.15.0-alpha.11');
- assert.match(html,/Oddpot Kitchen v0\.16-Y\.\d+(?:[a-z]\d*)?/);
+ assert.match(html,/Oddpot Kitchen v0\.16-[YZ]\.\d+(?:[a-z]\d*)?/);
  assert.match(html,/coreVersion:\s*['"]0\.15\.0-alpha\.11['"]/);
  assert.match(html,/id="oddpot-build-label"/);
  assert.match(html,/app\.js\?v=0\.15\.0-alpha\.11/);

@@ -26,7 +26,7 @@ const dwell=(s,secs)=>{for(let t=0;t<secs;t+=.04)advanceWalkableInteraction(s,.0
 test('package, main website, and in-game visible brand agree on current release v0.15.0-alpha.11',()=>{
  const pkg=JSON.parse(read('../package.json')),html=read('../index.html');
  assert.equal(pkg.version,'0.15.0-alpha.11');
- assert.match(html,/<title>怪味食堂 · Oddpot Kitchen v0\.16-Y\.\d+(?:[a-z]\d*)?<\/title>/);
+ assert.match(html,/<title>怪味食堂 · Oddpot Kitchen v0\.16-[YZ]\.\d+(?:[a-z]\d*)?<\/title>/);
  assert.match(html,/coreVersion:\s*['"]0\.15\.0-alpha\.11['"]/);
  assert.match(html,/id="oddpot-build-label"/);
  assert.match(app,/ODDPOT · v0\.15\.0-alpha\.11/);
