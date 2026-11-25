@@ -40,6 +40,12 @@ const ingredientChoices=()=>Object.entries(ING).filter(([id])=>activeWorld(game)
  ['cloud_rice','sky_moss','storm_egg','sour_bell','gale_core','chicken','onion'].includes(id)||(game.inventory[id]||0)>0:
  !['cloud_rice','sky_moss','storm_egg','sour_bell','gale_core'].includes(id)||(game.inventory[id]||0)>0);
 
+const z2bPhase=()=>['research','menu','prep'].includes(game.phase);
+const z2bCookIcon=type=>z2a2Icon(({WOK:'wok',POT:'pot',GRILL:'grill',STEAM:'steam'})[type]||'cook');
+const z2bMethod=()=>({stir:'WOK',stew:'POT',steam:'STEAM',grill:'GRILL'})[selectedMethod]||'WOK';
+function z2bDishArt(ids,type){return `<span class="z2b-dish-art" aria-hidden="true"><span class="z2b-dish-vessel">${z2bCookIcon(type)}</span><span class="z2b-dish-food">${(ids||[]).map(id=>ingredientIconHtml(id,20)).join('')}</span></span>`;}
+function z2bVesselButtons(){const k=ensureKitchen(game);return [['stir','WOK','翻炒 · 颠勺',true],['stew','POT','轻搅 · 收汁',true],['steam','STEAM','封笼 · 排汽',k.steamerOwned],['grill','GRILL','翻面 · 刷料',k.grillOwned]].filter(x=>x[3]).map(([method,type,caption])=>`<button class="v063-vessel ${selectedMethod===method?'chosen':''}" data-act="method:${method}" aria-pressed="${selectedMethod===method}">${z2bCookIcon(type)}<span><b>${cookName(type)}</b><small>${caption}</small></span></button>`).join('');}
+function z2bSelectedTray(){return Array.from({length:3},(_,i)=>{const id=selectedIngredients[i];return id?`<button data-ingredient="${id}" class="z2b-tray-slot filled" aria-label="移除${esc(onlyName(id))}">${ingredientIconHtml(id,36)}<b>${esc(onlyName(id))}</b><small>×${game.inventory[id]||0}</small><i aria-hidden="true">−</i></button>`:'<span class="z2b-tray-slot empty"><i>＋</i><small>空食材位</small></span>';}).join('');}
 function z2a2Health(hp){return Array.from({length:3},(_,i)=>z2a2Icon('heart',i<hp?'is-full':'is-empty')).join('');}
 function hud(){
  if(game.phase==='service'&&game.service?.walkable){const v=game.service,complete=v.orders.filter(o=>o.status==='served').length,total=v.orders.length,waiting=v.orders.filter(o=>o.status==='waiting'&&o.arrival<=v.time).length;return `<header class="z2a-hud z2a-service-hud"><div class="v075-status" aria-label="餐厅营业状态">
@@ -51,6 +57,7 @@ function hud(){
   </div>
 </header>`;}
  if(game.phase==='field'&&game.field?.action&&game.field.segmentStatus!=='choice'){const f=game.field;return `<header class="z2a-hud z2a-field-hud"><div class="action-hud" aria-label="探索状态"><span class="field-hp" data-hp="${f.hp}" aria-label="生命 ${f.hp}/3">${z2a2Health(f.hp)}</span><button data-act="field-bag" class="field-bag-chip" aria-label="查看野外背包">${z2a2Icon('bag')} <b id="field-bag-count">${fieldBagSlotsUsed(f)}/${f.capacity||8}</b></button><span class="field-clock" id="field-clock">${z2a2Icon('route')} <b id="z2a2-clock-value">${f.segmentIndex||1}/3 · ${Math.floor(f.elapsed)}s</b></span></div><button type="button" class="z2a-settings hud-gear" data-act="settings" aria-label="设置">${z2a2Icon('gear')}</button></header>`;}
+ if(z2bPhase())return `<header class="z2a-hud z2b-hud"><div class="z2b-phase-title">${z2a2Icon(game.phase==='research'?'cook':game.phase==='menu'?'menu':'home')}<span><b>${phaseLabels[game.phase]}</b><small>第 ${totalBusinessDay(game)} 天</small></span></div><span class="z2b-coins">${z2a2Icon('coin')} <b>${game.coins}</b></span><button class="hud-gear" data-act="settings" aria-label="设置">${z2a2Icon('gear')}</button></header>`;
  const home=game.phase==='forecast';
  const step=journey.indexOf(game.phase);
  return `<div class="hud ${home?'v076-home-hud':''}"><div class="brand"><span class="logo" aria-hidden="true">🍳</span><div><strong>怪味食堂</strong><small>第 ${totalBusinessDay(game)} 天 · ${tableCapacity(game)} 座</small></div></div><div class="hud-meta"><span aria-label="金币">🪙 ${game.coins}</span><span aria-label="声望">⭐ ${game.reputation}</span></div><button class="hud-gear" data-act="settings" aria-label="设置">⚙</button></div><div class="day-strip ${home?'v076-home-day':''}" aria-label="当前阶段：${phaseLabels[game.phase]}"><b>${phaseLabels[game.phase]}</b><div class="v014-journey" aria-hidden="true">${journey.slice(0,7).map((phase,i)=>`<i class="${i===step?'current':i<step?'passed':''}"></i>`).join('')}</div><span class="day-phase">${step<5?'☀ 白天':'☾ 夜晚'}</span></div>`;
@@ -65,7 +72,7 @@ function guideMarkup(){
 }
 function shell(stage,dock){
  const walk=game.phase==='service'&&game.service?.walkable,home=game.phase==='forecast',fieldLive=game.phase==='field'&&game.field?.action&&game.field.segmentStatus!=='choice';
- return `<div class="game-shell ${activeWorld(game)==='cloud'?'world-cloud':''} ${walk?'v075-game-shell is-diner-playing z2a-live z2a-diner':''} ${fieldLive?'z2a-live z2a-field':''} ${home?'v076-home-shell':''} ${game.phase==='field'&&game.field?.action?'is-field-playing':''}">${hud()}${guideMarkup()}<main class="stage ${game.phase}${game.cook?' wok-active':''}">${stage}${playablePhase()?sceneNotice():''}</main>${playablePhase()||home?'':toast()}${walk||home?'':`<nav class="dock">${dock}</nav>`}${overlayMarkup()}</div>`;
+ return `<div class="game-shell ${activeWorld(game)==='cloud'?'world-cloud':''} ${walk?'v075-game-shell is-diner-playing z2a-live z2a-diner':''} ${fieldLive?'z2a-live z2a-field':''} ${home?'v076-home-shell':''} ${z2bPhase()?'z2b-shell z2b-'+game.phase:''} ${game.phase==='field'&&game.field?.action?'is-field-playing':''}">${hud()}${guideMarkup()}<main class="stage ${game.phase}${game.cook?' wok-active':''}">${stage}${playablePhase()?sceneNotice():''}</main>${playablePhase()||home?'':toast()}${walk||home?'':`<nav class="dock">${dock}</nav>`}${overlayMarkup()}</div>`;
 }
 function earnedPromotions(){
  return Object.keys(CREW_ROLES).map(role=>({role,name:crewRoleName(game,role),promotion:crewPromotion(game,role)}))
@@ -402,14 +409,14 @@ function research(){const c=game.cook;
    const featured=candidate&&(activeWorld(game)!=='cloud'||chapterRecipeAvailable(game,candidate))?candidate:null;
   const r=featured?RECIPES[featured]:null;
   const last=game.lastCook&&game.lastCook.events?game.lastCook:null;
-  return [`<div class="v063-setup">
-    <div class="v063-setup-title"><strong>🔥 做一道自己的菜</strong><small>挑锅具和 2–3 种食材，亲手决定火候</small></div>
-    <div class="v063-vessels"><button class="v063-vessel ${selectedMethod==='stir'?'chosen':''}" data-act="method:stir">🍳 炒锅<br><small>翻炒 · 颠勺</small></button><button class="v063-vessel ${selectedMethod==='stew'?'chosen':''}" data-act="method:stew">🍲 深锅<br><small>轻搅 · 收汁</small></button>${ensureKitchen(game).steamerOwned?`<button class="v063-vessel ${selectedMethod==='steam'?'chosen':''}" data-act="method:steam">♨️ 云汽蒸笼<br><small>封笼 · 排汽</small></button>`:''}${ensureKitchen(game).grillOwned?`<button class="v063-vessel ${selectedMethod==='grill'?'chosen':''}" data-act="method:grill">🍢 烤架<br><small>翻面 · 刷香料</small></button>`:''}</div>
-    <div class="v063-label">选 2–3 种食材 <small>${selectedIngredients.length}/3</small></div>
-    <div class="v063-food-picker">${ingredientChoices().map(([id,ing])=>`<button data-ingredient="${id}" class="${selectedIngredients.includes(id)?'picked':''}" ${!game.inventory[id]&&!selectedIngredients.includes(id)?'disabled':''}><span>${ingredientIconHtml(id,24)}</span><b>${ing.name}</b><small>×${game.inventory[id]||0}</small></button>`).join('')}</div>
+  return [`<div class="v063-setup z2b-workbench">
+     <div class="z2b-bench"><div class="z2b-bench-title"><span>研发工作台</span><small>${selectedIngredients.length}/3 食材</small></div><div class="z2b-bench-vessel">${z2bCookIcon(z2bMethod())}<span>${cookName(z2bMethod())}</span></div><div class="z2b-selected-tray" aria-label="已选食材">${z2bSelectedTray()}</div></div>
+     <div class="v063-vessels z2b-vessels">${z2bVesselButtons()}</div>
+     <div class="v063-label z2b-pantry-head">食材架 <small>轻点取用 · 已选 ${selectedIngredients.length}/3</small></div>
+    <div class="v063-food-picker z2b-pantry">${ingredientChoices().map(([id,ing])=>`<button data-ingredient="${id}" class="${selectedIngredients.includes(id)?'picked':''}" aria-pressed="${selectedIngredients.includes(id)}" ${!game.inventory[id]&&!selectedIngredients.includes(id)?'disabled':''}><span>${ingredientIconHtml(id,24)}</span><b>${ing.name}</b><small>×${game.inventory[id]||0}</small></button>`).join('')}</div>
     <div class="v063-recipe-clue">${r?`这道可能是 <strong>${esc(r.name)}</strong> · ${r.method==='steam'?'蒸笼':r.station==='GRILL'?'烤架':r.station==='WOK'?'炒锅':'深锅'}${game.recipes[featured]?`<small>已有版本 ${recipeCraftSnapshot(game,featured).price} 金币 · ${r.time+(recipeCraftSnapshot(game,featured).timeDelta||0)} 秒；起锅后看新工艺差异</small>`:'<small>第一次做成后才能上架</small>'}`:selectedMethod==='grill'?'烤架有十道精选搭配；选对食材，翻面让正反两面熟透。':activeWorld(game)==='cloud'?'云港需要本地食材搭配进口食材；原店旧菜不能在这里直接研发。':'换个食材组合，看看会做出什么菜。'}</div>
     ${last?`<div class="v063-last-result ${last.sellable?'ok':'fail'}"><b>${last.sellable?'✅ 研发成功':'❌ 研发失败'}：${esc(last.recipeName||'料理')}</b><small>${last.sellable?`${esc(last.styleLabel)} · ${esc(last.affinityLabel)} · 品质 ${last.quality}`:esc(last.reason)}${last.sellable?' · 已记入工艺图鉴':' · 原料已消耗，未收录'}</small></div>`:''}
-  </div>`,`<div class="action-row">${b('start-research','🔥 亲手下料，开始研发','primary wide',selectedIngredients.length<2||!canUse(game,selectedIngredients)||(activeWorld(game)==='cloud'&&!featured))}${b('book','📖 工艺图鉴','secondary')}${b('to-menu','去上架 →','secondary')}</div>`];
+  </div>`,`<div class="action-row">${b('start-research',z2a2Icon('cook')+' 开锅研发','primary wide',selectedIngredients.length<2||!canUse(game,selectedIngredients)||(activeWorld(game)==='cloud'&&!featured))}${b('book',z2a2Icon('ledger')+' 图鉴','secondary')}${b('to-menu','去上架 '+z2a2Icon('next'),'secondary')}</div>`];
  }
  
  if(c){const heat=previewHeat(c);const board=c.tiles.map((t,i)=>`<button class="wok-tile ${t?'filled':''} ${tileSelected===i?'active':''} ${t&&heat[i]>ING[t.id].hi?'too-hot':''}" data-tile="${i}">${t?`<span>${ingredientIconHtml(t.id,28)}</span><b>${t.heat}</b><small>→${heat[i]}</small>`:`<small>${[1,2,1,2,3,2,1,2,1][i]}</small>`}</button>`).join('');return [
@@ -527,9 +534,10 @@ function render(){
  // Restoring horizontal chip position prevents the target selector from snapping
  // back to the first ingredient on every tap; same for an open reference sheet.
  const prevTargetScroll=app.querySelector('.target-scroller')?.scrollLeft||0;
+ const prevPantryScroll=app.querySelector('.z2b-pantry')?.scrollTop||0;
  const prevSheetScroll=app.querySelector('.sheet-body')?.scrollTop||0;
  const prevMarketingOpen=app.querySelector('.v014-marketing')?.open||false;
- const stageScrollSelector='.route-panel,.v063-setup,.menu-scene,.kitchen-prep-card,.report-scene,.kitchen-upgrade-card';
+ const stageScrollSelector='.route-panel,.v063-setup,.menu-scene,.z2b-prep-work,.kitchen-prep-card,.report-scene,.kitchen-upgrade-card';
  const prevStageScroll=app.querySelector('.stage')?.classList.contains(game.phase)?app.querySelector(stageScrollSelector)?.scrollTop||0:0;
  const [stage,dock]=({forecast,field,research,menu,prep,service,report,upgrade}[game.phase])();
  app.innerHTML=shell(stage,dock);
@@ -549,6 +557,7 @@ function render(){
  }
  if(overlay==='book'&&bookTab==='guests')drawGuestPortraits(app);
  if(overlay==='crew')drawCrewPortraits(app);
+ const pantry=app.querySelector('.z2b-pantry');if(pantry)pantry.scrollTop=prevPantryScroll;
  const target=app.querySelector('.target-scroller');if(target)target.scrollLeft=prevTargetScroll;
  const sheet=app.querySelector('.sheet-body');if(sheet)sheet.scrollTop=prevSheetScroll;
  const scroller=app.querySelector(stageScrollSelector);if(scroller)scroller.scrollTop=prevStageScroll;
