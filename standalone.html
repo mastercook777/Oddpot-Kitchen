@@ -1812,6 +1812,37 @@
 .z2c2-map[data-z2c3-active] .z2c2-region{background:#553b26e8;color:#f1d9a7;border-color:#b48b54;box-shadow:0 2px #39291c}
 .z2c2-map[data-z2c3-active] .z2c2-region.current{background:#36593eea;border-color:#edc67b;box-shadow:0 0 0 1px #d7a55e}
 
+/* Z2c4: one ecology viewport per region, independent strategy cards, live chef. */
+.z2c-home .v016-home .v016-world-actions .v016-door.z2c2-threshold{width:120px;height:48px;min-height:44px;display:flex;flex-direction:row;gap:4px;justify-content:center;padding:4px 7px;border:2px solid #f2d28b;border-radius:9px;background:linear-gradient(#c58e45,#9b602f);box-shadow:0 4px #50311d,inset 0 2px #ffe4a6a0;color:#fff3ce;text-shadow:0 2px #694124;font-size:13px}
+.z2c-home .v016-world-actions .z2c2-threshold span{font-size:13px;font-weight:900}.z2c-home .v016-world-actions .z2c2-threshold .z2a3-art{width:24px;height:24px;flex:none}
+.z2c-home .v016-world-actions .z2c2-threshold i{font-size:20px;font-style:normal;line-height:1}
+.z2c-home .v016-home .v016-world-actions .v016-door.z2c2-threshold:active{filter:brightness(1.12);box-shadow:0 1px #50311d,inset 0 2px #69412488;transform:translate(-50%,-50%)}
+.z2c-home .v016-home .v016-world-actions .v016-door.z2c2-threshold:not([data-y2b-anchor]){top:87%}
+.z2c2-expedition .z2c2-map,.z2c2-expedition .z2c2-map[data-z2c3-active]{height:clamp(210px,63vw,280px);min-height:0;max-height:none;aspect-ratio:auto;flex:none;border:2px solid #a18255;border-radius:5px;box-shadow:0 3px #2b3027}
+.z2c2-expedition .z2c2-map .z2c3-render{visibility:hidden}.z2c2-expedition .z2c2-map[data-z2c3-active] .z2c3-render{visibility:visible}
+.z2c2-expedition .z2c2-map-caption,.z2c2-expedition .z2c2-map[data-z2c3-active] .z2c2-map-caption{top:25%;font-size:11px;text-shadow:0 1px 2px #241b17}
+.z2c2-expedition .z2c2-map-regions{top:3%;gap:5px;left:3%;right:3%}.z2c2-expedition .z2c2-region{min-height:44px;font-size:12px}
+.z2c4-ecology{position:absolute;left:0;right:0;bottom:0;padding:5px 7px;display:flex;align-items:center;gap:5px;background:linear-gradient(transparent,#273b2bef 45%);color:#fff1ce;text-shadow:0 1px #172c20;font-size:11px}
+.z2c4-ecology small{font-size:10px;color:#e3c890;white-space:nowrap}.z2c4-ecology span{font-weight:750}
+.z2c4-routes{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:7px;flex:none}
+.z2c4-route-card{display:flex;flex-direction:column;justify-content:center;align-items:flex-start;gap:3px;min-height:70px;padding:5px 7px;text-align:left;color:#f6e5c2;background:linear-gradient(#536b47,#3c533b);border:1px solid #b4ac79;border-radius:5px;box-shadow:0 3px #263b2c,inset 0 1px #d2c38c55}
+.z2c4-route-card.danger{background:linear-gradient(#956644,#674630);border-color:#c3a074;box-shadow:0 3px #422e26,inset 0 1px #e6c18a55}
+.z2c4-route-head{display:flex;align-items:center;gap:3px;width:100%;font-size:13px}.z2c4-route-head .z2a3-art{width:23px;height:23px}.z2c4-route-head i{margin-left:auto;font-style:normal;font-size:19px;color:#f3d6a2}
+.z2c4-route-food{display:flex;gap:3px;height:21px;align-items:center}.z2c4-route-card small{font-size:10px;color:#f0d8aa;white-space:normal}
+.z2c4-route-card:active,.z2c4-tool-list .z2c2-tool:active{filter:brightness(1.12);transform:none}
+.z2c2-rack.z2c4-loadout{background:linear-gradient(110deg,#394b3a,#3b3025);border:1px solid #9f8055;padding:5px 6px;box-shadow:0 2px #233226}
+.z2c4-loadout-head{display:flex;justify-content:space-between;font-size:12px;color:#f2d6a3;padding:0 2px 4px}.z2c4-loadout-head small{font-size:10px}
+.z2c4-loadout-body{display:grid;grid-template-columns:minmax(0,1.05fr) minmax(0,1fr);gap:7px;align-items:stretch}
+.z2c4-hero{position:relative;isolation:isolate;height:192px;min-width:0;overflow:hidden;border-radius:4px;background:radial-gradient(ellipse at 50% 60%,#6c7850,#293e32 75%);border:1px solid #9c895c}
+.z2c4-hero .z2c3-render{z-index:-1;visibility:hidden}.z2c4-hero[data-z2c3-active] .z2c3-render{visibility:visible}.z2c4-hero[data-z2c3-active] .z2c4-hero-fallback{visibility:hidden}
+.z2c4-hero-fallback{display:flex;flex-direction:column;align-items:center;justify-content:center;height:100%;gap:7px;color:#f1d7a5;font-size:11px}.z2c4-hero-fallback .z2a3-art{width:62px;height:62px}
+.z2c4-tool-list{display:flex;flex-direction:column;justify-content:center;gap:3px;min-width:0}
+.z2c4-tool-list .z2c2-tool{display:flex;flex-direction:row;align-items:center;justify-content:flex-start;gap:4px;min-height:44px;flex:none;padding:3px 5px;background:#483a2b;border:1px solid #8c704c;border-radius:4px;text-align:left}
+.z2c4-tool-list .z2c2-tool.chosen{background:#4c6744;border-color:#eac379;box-shadow:inset 0 0 0 1px #bd9b61}
+.z2c4-tool-list .z2c2-tool .z2a3-art{width:26px;height:26px;flex:none}.z2c4-tool-list .z2c2-tool span{display:flex;flex-direction:column;gap:1px;font-size:11px;white-space:normal}.z2c4-tool-list .z2c2-tool small{font-size:10px;color:#e9c994}.z2c4-tool-list .z2c2-tool i{font-style:normal;color:#f1cd8a;margin-left:auto;font-size:13px}
+@media(max-width:350px){.z2c4-hero{height:192px}.z2c4-loadout-body{gap:4px}.z2c4-tool-list .z2c2-tool{padding:3px}.z2c4-tool-list .z2c2-tool .z2a3-art{width:23px;height:23px}.z2c4-route-card{padding:4px 5px}.z2c4-route-head{font-size:12px}}
+@media(prefers-reduced-motion:reduce){.z2c2-threshold,.z2c4-route-card,.z2c4-tool-list .z2c2-tool{transition:none!important}}
+
 .v014b-grill-unlock{display:grid;gap:8px;margin:12px 0;padding:14px;border:2px solid #d8a867;border-radius:18px;background:#3d5e49;color:#fff0c7}
 .v014b-grill-unlock strong{font-size:18px}
 .v014b-grill-unlock small{line-height:1.35;color:#e7e2c6}
@@ -6323,6 +6354,15 @@ const ECOLOGY_ENCOUNTERS={
  ember:{base:3,mix:['pepper','boar','steam_crab']},oasis:{base:2,mix:['steam_crab','chicken']},
  cloud:{base:2,mix:['gust_moth','chicken']},cloud_roost:{base:3,mix:['gust_moth','gust_moth','chicken']}
 };
+
+ // Read-only preview of actual encounter ecology at both regional route entrances.
+function departureEcologyZ2c4(region){
+ const entries=region==='cloud'?[['cloud_dock','cloud_safe'],['cloud_roost','cloud_risk']]:region==='spring'?[['hot_spring_shallows','spring_safe'],['ember_edge','spring_risk']]:[['herb_path','safe'],['old_tree_edge','risk']];
+ const biomes=entries.map(([zone,route])=>getFieldBiome(zone,route));
+ const enemies=[...new Set(biomes.flatMap(b=>ECOLOGY_ENCOUNTERS[b.style].mix))];
+ const resources=biomes.map(b=>b.resources.slice().sort((a,b)=>b[1]-a[1]).slice(0,3).map(q=>q[0]));
+ return {enemies,resources,styles:biomes.map(b=>b.style),routes:entries.map(e=>e[1])};
+}
 const ecologyDist=(a,b)=>Math.hypot(a.x-b.x,a.y-b.y);
 const ecologyHash=n=>{let h=n>>>0;h=Math.imul(h^(h>>>16),0x45d9f3b);h=Math.imul(h^(h>>>16),0x45d9f3b);return (h^(h>>>16))>>>0;};
 function ecologyHasSight(f,a,b,padding=0){
@@ -10912,7 +10952,7 @@ function managedFreightPanel(){
  (st.enabled?'<button data-act="managed-freight:off" '+(!st.canConfigure?'disabled':'')+'>暂停后续发车</button>':'')+freight+'</section>';
 }
 
-function z2c2Door(){return '<button type="button" class="v016-door z2c2-threshold" data-act="to-field" aria-label="走出食堂，整装出发">'+z2a2Icon('route')+'<span>门外小路</span></button>';}
+function z2c2Door(){return '<button type="button" class="v016-door z2c2-threshold" data-act="to-field" aria-label="走出食堂，整装出发">'+z2a2Icon('route')+'<span>整装出发</span><i aria-hidden="true">›</i></button>';}
 function z2c2MapArt(region){
  const tree=(x,y,k=1)=>'<g transform="translate('+x+' '+y+') scale('+k+')"><path d="M-3 8H3V22H-3Z" fill="#846044"/><path d="M0 -23L-15 4H-8L-19 15H19L8 4H15Z" fill="#41634d" stroke="#314d41" stroke-width="1.2"/><path d="M0 -23L-15 4H0L-10 15H0Z" fill="#759267"/></g>';
  const rock=(x,y,k=1)=>'<g transform="translate('+x+' '+y+') scale('+k+')"><path d="M-22 12L-9 -19 4 -25 21 8 13 17H-14Z" fill="#a77e61" stroke="#7d5c4a" stroke-width="1.2"/><path d="M-9 -19L4 -25 1 9 -14 17 -22 12Z" fill="#d3ad80"/><path d="M1 9L21 8 13 17H-14Z" fill="#8d6652"/></g>';
@@ -10931,7 +10971,7 @@ function z2c2WeaponText(type,level){
 function z2c2Departure(routes,lowStock){
  const cloud=activeWorld(game)==='cloud',region=cloud?'cloud':selectedRegion==='spring'?'spring':'forest';
  const regions=cloud?[['cloud','云港浮岛']]:[['forest','晨露森林'],['spring','热泉峡谷']];
- const supplies=region==='forest'?[['cabbage','garlic','mushroom'],['chicken','beef']]:region==='spring'?[['potato','onion','chili'],['chili','beef']]:[['cloud_rice','sky_moss','sour_bell'],['storm_egg','sky_moss']];
+ const eco=departureEcologyZ2c4(region),supplies=eco.resources,enemyNames={"chicken":"鸡怪","boar":"铁角野牛","sporeling":"孢怪","steam_crab":"蒸汽蟹","pepper":"椒怪","gust_moth":"风蛾"};
  const choices=fieldWeaponChoices(game),selected=selectedFieldWeaponType(game),w=choices.find(q=>q.type===selected)||choices[0];
  const info=w?z2c2WeaponText(w.type,w.level):null;
  return `<div class="forest-scene route-scene z2c2-expedition"><div class="route-panel z2c2-scroll">
@@ -10940,10 +10980,10 @@ function z2c2Departure(routes,lowStock){
   ${z2c2MapArt(region)}
   <div class="z2c2-map-regions" role="group" aria-label="选择探索地区">${regions.map(([id,name])=>cloud?`<span class="z2c2-region current">${name}</span>`:`<button class="z2c2-region ${id===region?'current':''}" data-region="${id}" aria-pressed="${id===region}">${name}</button>`).join('')}</div>
   <div class="z2c2-map-caption">${region==='forest'?'草甸、溪流与古树之间':region==='spring'?'热雾、矿泉与赤焰岩层':'浮岛、风道与雷羽巢缘'}</div>
-  ${routes.map((r,i)=>`<button class="z2c2-map-stop ${/risk/.test(r.id)?'danger':'gather'}" data-route="${r.id}" aria-label="${esc(r.name)} · ${esc(r.subtitle)}"><span class="z2c2-stop-seal">${z2a2Icon(/risk/.test(r.id)?'wok':'route')}</span><b>${r.name}</b><span class="z2c2-stop-food">${supplies[i].map(id=>ingredientIconHtml(id,23)).join('')}</span><small>${/risk/.test(r.id)?'深入 · 战斗':'沿路 · 寻材'}</small></button>`).join('')}
-  <span class="z2c2-map-origin">${cloud?'从码头启程':'食堂门口'}</span>
+  <div class="z2c4-ecology" aria-label="本地区可能遭遇"><small>可能遭遇</small><span>${eco.enemies.map(id=>enemyNames[id]||id).join(' · ')}</span></div>
  </section>
- <section class="z2c2-rack" aria-label="上路厨具"><div class="z2c2-rack-head"><b>带哪件厨具上路？</b><small>点选器物</small></div><div class="z2c2-tools">${choices.map(q=>`<button data-weapon="${q.type}" class="z2c2-tool ${q.type===selected?'chosen':''}" aria-pressed="${q.type===selected}" aria-label="${z2c2WeaponText(q.type,q.level).name} Lv${q.level}">${z2bCookIcon(q.type)}<span>${z2c2WeaponText(q.type,q.level).name}</span><small>Lv.${q.level}${q.type===selected?' · 已带上':''}</small></button>`).join('')}</div>${info?`<div class="z2c2-tool-flavor">${info.flavor}</div>`:''}</section>
+ <div class="z2c4-routes" role="group" aria-label="选择当前地区路线">${routes.map((r,i)=>`<button class="z2c4-route-card ${/risk/.test(r.id)?'danger':'gather'}" data-route="${r.id}" aria-label="${esc(r.name)} · ${esc(r.subtitle)}"><div class="z2c4-route-head">${z2a2Icon(/risk/.test(r.id)?'wok':'route')}<b>${r.name}</b><i aria-hidden="true">›</i></div><span class="z2c4-route-food">${supplies[i].map(id=>ingredientIconHtml(id,20)).join('')}</span><small>${/risk/.test(r.id)?'敌人更多 · 战利品':'采集为主 · 仍有敌人'}</small></button>`).join('')}</div>
+ <section class="z2c2-rack z2c4-loadout" aria-label="上路厨具"><div class="z2c4-loadout-head"><b>今日装备</b><small>点选切换</small></div><div class="z2c4-loadout-body"><div class="z2c4-hero" aria-label="当前主角装备预览"><div class="z2c4-hero-fallback">${w?z2bCookIcon(w.type):''}<small>${info?.name||''} Lv.${w?.level||1}</small></div></div><div class="z2c2-tools z2c4-tool-list">${choices.map(q=>`<button data-weapon="${q.type}" data-weapon-level="${q.level}" class="z2c2-tool ${q.type===selected?'chosen':''}" aria-pressed="${q.type===selected}" aria-label="${z2c2WeaponText(q.type,q.level).name} Lv${q.level}">${z2bCookIcon(q.type)}<span>${z2c2WeaponText(q.type,q.level).name}<small>Lv.${q.level}</small></span><i aria-hidden="true">${q.type===selected?'✓':'›'}</i></button>`).join('')}</div></div>${info?`<div class="z2c2-tool-flavor">${info.flavor}</div>`:''}</section>
  <details class="z2c2-travel-notes"><summary>翻开旅行笔记</summary><div>${routes.map(r=>`<p><b>${r.name}</b> · ${esc(r.subtitle)}${/risk/.test(r.id)&&!cloud?' · 第三段挑战'+bossHint(region).boss+'，预留背包格':''}</p>`).join('')}${info?`<p><b>${info.name}</b> · ${w.fitted?(['左','右','中'][w.slotIndex]||'')+'厨位装配':'背包备用'} · ${info.stats}</p>`:''}<p>${cloud?'三段航路，可随时返港。':'三段路，可随时回店。'}生态决定主要产物，不保证指定食材掉落。库存少于6份时标为偏低。</p></div></details>
  </div></div>`;
 }
@@ -11244,6 +11284,7 @@ function render(){
  const prevStageScroll=app.querySelector('.stage')?.classList.contains(game.phase)?app.querySelector(stageScrollSelector)?.scrollTop||0:0;
  const [stage,dock]=({forecast,field,research,menu,prep,service,report,upgrade}[game.phase])();
  app.innerHTML=shell(stage,dock);
+ globalThis.__oddpotDepartureRenderer?.rebind?.(app);
  if(game.phase==='upgrade'&&portalAvailable(game))app.querySelector('.upgrade-card')?.insertAdjacentHTML('afterbegin',portalPanel());
  if(game.phase==='upgrade'&&activeWorld(game)==='cloud')app.querySelector('.upgrade-card')?.insertAdjacentHTML('afterbegin',`<section class="v014b-grill-unlock"><strong>♨️ 云汽蒸笼 · 云港特有厨具</strong><small>${game.cloudProgress?.explored?'使用深锅厨位，但通过封笼与排汽研发独立的蒸制菜谱。':'先完成一次云港探索并带回食材，才能向港口匠人订制。'}</small>${game.kitchen.steamerOwned?'<span>已购入 · 探索可携带，成长页还可升至 Lv2</span>':b('buy-steamer','购入蒸笼 · '+STEAMER_COST+' 金币','secondary',!steamerAvailable(game))}</section>`);
  if(prevLastCookOpen&&game.phase==='research')app.querySelector('.z2b-last-cook')?.setAttribute('open','');

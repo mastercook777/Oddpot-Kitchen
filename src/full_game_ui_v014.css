@@ -479,3 +479,34 @@
 @media(max-height:650px){.z2c2-map[data-z2c3-active]{aspect-ratio:320/270;max-height:300px}.z2c2-tools[data-z2c3-active],.z2c2-tools[data-z2c3-active] .z2c2-tool{min-height:108px}}
 .z2c2-map[data-z2c3-active] .z2c2-region{background:#553b26e8;color:#f1d9a7;border-color:#b48b54;box-shadow:0 2px #39291c}
 .z2c2-map[data-z2c3-active] .z2c2-region.current{background:#36593eea;border-color:#edc67b;box-shadow:0 0 0 1px #d7a55e}
+
+/* Z2c4: one ecology viewport per region, independent strategy cards, live chef. */
+.z2c-home .v016-home .v016-world-actions .v016-door.z2c2-threshold{width:120px;height:48px;min-height:44px;display:flex;flex-direction:row;gap:4px;justify-content:center;padding:4px 7px;border:2px solid #f2d28b;border-radius:9px;background:linear-gradient(#c58e45,#9b602f);box-shadow:0 4px #50311d,inset 0 2px #ffe4a6a0;color:#fff3ce;text-shadow:0 2px #694124;font-size:13px}
+.z2c-home .v016-world-actions .z2c2-threshold span{font-size:13px;font-weight:900}.z2c-home .v016-world-actions .z2c2-threshold .z2a3-art{width:24px;height:24px;flex:none}
+.z2c-home .v016-world-actions .z2c2-threshold i{font-size:20px;font-style:normal;line-height:1}
+.z2c-home .v016-home .v016-world-actions .v016-door.z2c2-threshold:active{filter:brightness(1.12);box-shadow:0 1px #50311d,inset 0 2px #69412488;transform:translate(-50%,-50%)}
+.z2c-home .v016-home .v016-world-actions .v016-door.z2c2-threshold:not([data-y2b-anchor]){top:87%}
+.z2c2-expedition .z2c2-map,.z2c2-expedition .z2c2-map[data-z2c3-active]{height:clamp(210px,63vw,280px);min-height:0;max-height:none;aspect-ratio:auto;flex:none;border:2px solid #a18255;border-radius:5px;box-shadow:0 3px #2b3027}
+.z2c2-expedition .z2c2-map .z2c3-render{visibility:hidden}.z2c2-expedition .z2c2-map[data-z2c3-active] .z2c3-render{visibility:visible}
+.z2c2-expedition .z2c2-map-caption,.z2c2-expedition .z2c2-map[data-z2c3-active] .z2c2-map-caption{top:25%;font-size:11px;text-shadow:0 1px 2px #241b17}
+.z2c2-expedition .z2c2-map-regions{top:3%;gap:5px;left:3%;right:3%}.z2c2-expedition .z2c2-region{min-height:44px;font-size:12px}
+.z2c4-ecology{position:absolute;left:0;right:0;bottom:0;padding:5px 7px;display:flex;align-items:center;gap:5px;background:linear-gradient(transparent,#273b2bef 45%);color:#fff1ce;text-shadow:0 1px #172c20;font-size:11px}
+.z2c4-ecology small{font-size:10px;color:#e3c890;white-space:nowrap}.z2c4-ecology span{font-weight:750}
+.z2c4-routes{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:7px;flex:none}
+.z2c4-route-card{display:flex;flex-direction:column;justify-content:center;align-items:flex-start;gap:3px;min-height:70px;padding:5px 7px;text-align:left;color:#f6e5c2;background:linear-gradient(#536b47,#3c533b);border:1px solid #b4ac79;border-radius:5px;box-shadow:0 3px #263b2c,inset 0 1px #d2c38c55}
+.z2c4-route-card.danger{background:linear-gradient(#956644,#674630);border-color:#c3a074;box-shadow:0 3px #422e26,inset 0 1px #e6c18a55}
+.z2c4-route-head{display:flex;align-items:center;gap:3px;width:100%;font-size:13px}.z2c4-route-head .z2a3-art{width:23px;height:23px}.z2c4-route-head i{margin-left:auto;font-style:normal;font-size:19px;color:#f3d6a2}
+.z2c4-route-food{display:flex;gap:3px;height:21px;align-items:center}.z2c4-route-card small{font-size:10px;color:#f0d8aa;white-space:normal}
+.z2c4-route-card:active,.z2c4-tool-list .z2c2-tool:active{filter:brightness(1.12);transform:none}
+.z2c2-rack.z2c4-loadout{background:linear-gradient(110deg,#394b3a,#3b3025);border:1px solid #9f8055;padding:5px 6px;box-shadow:0 2px #233226}
+.z2c4-loadout-head{display:flex;justify-content:space-between;font-size:12px;color:#f2d6a3;padding:0 2px 4px}.z2c4-loadout-head small{font-size:10px}
+.z2c4-loadout-body{display:grid;grid-template-columns:minmax(0,1.05fr) minmax(0,1fr);gap:7px;align-items:stretch}
+.z2c4-hero{position:relative;isolation:isolate;height:192px;min-width:0;overflow:hidden;border-radius:4px;background:radial-gradient(ellipse at 50% 60%,#6c7850,#293e32 75%);border:1px solid #9c895c}
+.z2c4-hero .z2c3-render{z-index:-1;visibility:hidden}.z2c4-hero[data-z2c3-active] .z2c3-render{visibility:visible}.z2c4-hero[data-z2c3-active] .z2c4-hero-fallback{visibility:hidden}
+.z2c4-hero-fallback{display:flex;flex-direction:column;align-items:center;justify-content:center;height:100%;gap:7px;color:#f1d7a5;font-size:11px}.z2c4-hero-fallback .z2a3-art{width:62px;height:62px}
+.z2c4-tool-list{display:flex;flex-direction:column;justify-content:center;gap:3px;min-width:0}
+.z2c4-tool-list .z2c2-tool{display:flex;flex-direction:row;align-items:center;justify-content:flex-start;gap:4px;min-height:44px;flex:none;padding:3px 5px;background:#483a2b;border:1px solid #8c704c;border-radius:4px;text-align:left}
+.z2c4-tool-list .z2c2-tool.chosen{background:#4c6744;border-color:#eac379;box-shadow:inset 0 0 0 1px #bd9b61}
+.z2c4-tool-list .z2c2-tool .z2a3-art{width:26px;height:26px;flex:none}.z2c4-tool-list .z2c2-tool span{display:flex;flex-direction:column;gap:1px;font-size:11px;white-space:normal}.z2c4-tool-list .z2c2-tool small{font-size:10px;color:#e9c994}.z2c4-tool-list .z2c2-tool i{font-style:normal;color:#f1cd8a;margin-left:auto;font-size:13px}
+@media(max-width:350px){.z2c4-hero{height:192px}.z2c4-loadout-body{gap:4px}.z2c4-tool-list .z2c2-tool{padding:3px}.z2c4-tool-list .z2c2-tool .z2a3-art{width:23px;height:23px}.z2c4-route-card{padding:4px 5px}.z2c4-route-head{font-size:12px}}
+@media(prefers-reduced-motion:reduce){.z2c2-threshold,.z2c4-route-card,.z2c4-tool-list .z2c2-tool{transition:none!important}}
