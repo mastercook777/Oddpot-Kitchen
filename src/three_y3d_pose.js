@@ -61,7 +61,7 @@ export function forkTwoHandPose(f,t=0){
  let v=idle,phase='idle',axialLocked=false;
  if(m?.type==='GRILL'){
   const u=ease(Math.min(1,m.p/.105))*ease(Math.min(1,(1-m.p)/.16));
-  v=blend(idle,axial(ready+.05-.025*Math.sin(m.p*40)),u);phase='flame';axialLocked=u>.9999;
+  const shot=axial(ready+.05-.025*Math.sin(m.p*40));axialLocked=u>.9999;v=axialLocked?shot:blend(idle,shot,u);phase='flame';
  }else if(p!==null){
   if(p<.14){v=blend(idle,axial(back),ease(p/.14));phase='chamber';}
   else if(p<.43){v=axial(back+(front-back)*ease((p-.14)/.29));phase='thrust';axialLocked=true;}
