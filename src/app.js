@@ -260,7 +260,7 @@ function z2c2Departure(routes,lowStock){
  const info=w?z2c2WeaponText(w.type,w.level):null;
  return `<div class="forest-scene route-scene z2c2-expedition"><div class="route-panel z2c2-scroll">
  <section class="v013h-supply-hint z2c2-note" aria-label="经营备料提示"><div class="z2c2-note-pin"></div><div><b>今日备料便笺</b><span>${lowStock.length?'菜单库存偏低 · 先找这些食材':'库存相对充足，今天不妨寻找新味道。'}</span></div>${lowStock.length?`<div class="z2c2-note-food">${lowStock.map(id=>`<span>${ingredientIconHtml(id,22)} ${esc(ING[id].name)} <small>${game.inventory[id]||0}份</small></span>`).join('')}</div>`:''}</section>
- <section class="z2c2-map" aria-label="食堂周边旅行示意地图">
+ <section class="z2c2-map" data-departure-region="${region}" aria-label="食堂周边旅行示意地图">
   ${z2c2MapArt(region)}
   <div class="z2c2-map-regions" role="group" aria-label="选择探索地区">${regions.map(([id,name])=>cloud?`<span class="z2c2-region current">${name}</span>`:`<button class="z2c2-region ${id===region?'current':''}" data-region="${id}" aria-pressed="${id===region}">${name}</button>`).join('')}</div>
   <div class="z2c2-map-caption">${region==='forest'?'草甸、溪流与古树之间':region==='spring'?'热雾、矿泉与赤焰岩层':'浮岛、风道与雷羽巢缘'}</div>
@@ -841,12 +841,13 @@ function advanceFrame(now){const delta=Math.min(.045,(now-(lastFrame||now))/1000
   }
  }
  const notice=app.querySelector('#ingame-notice');if(notice&&now>flashUntil)notice.hidden=true;
- const forest=app.querySelector('#forest-canvas'),diner=app.querySelector('#diner-canvas'),research3d=globalThis.__oddpotY4bRenderer;
+ const forest=app.querySelector('#forest-canvas'),diner=app.querySelector('#diner-canvas'),research3d=globalThis.__oddpotY4bRenderer,departure3d=globalThis.__oddpotDepartureRenderer;
  // Release inactive contexts before the next scene allocates its context.
  if(!forest)globalThis.__oddpotY3Renderer?.leave();if(!diner)globalThis.__oddpotY2Renderer?.leave();if(game.phase!=='research')research3d?.leave();
  if(forest)safeSceneFrame('forest',()=>drawField(forest,game,gameClock));
  if(diner)safeSceneFrame('diner',()=>drawDiner(diner,game,gameClock,restaurantSimTime(now)));
  if(game.phase==='research')safeSceneFrame('research',()=>research3d?.draw(app,game,researchPreviewCache,now));
+ if(game.phase==='field'&&!game.field)safeSceneFrame('departure',()=>departure3d?.draw(app,game,now));else departure3d?.leave();
  for(const [name,present] of [['forest',!!forest],['diner',!!diner],['research',game.phase==='research']])if(!present){const key='frame-'+name;sceneFrameErrors.delete(key);if(globalThis.__oddpotBuild?.sceneErrors)delete globalThis.__oddpotBuild.sceneErrors[key];}
  if(now-lastSave>1400&&(game.phase==='field'||['v063-live','v014c-grill'].includes(game.cook?.mode)||game.phase==='service'&&game.service?.walkable)){save(game);lastSave=now}
 }
