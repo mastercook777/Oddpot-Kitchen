@@ -53,7 +53,7 @@ export function createWeaponRig(T,hero,rounded){
   basket.rotation.x=-arms[0].rotation.x;basket.rotation.z=-arms[0].rotation.z;
   if(p.type==='WOK'){const m=meleePose(f,t);body.rotation.x=m.lean;body.rotation.y=m.yaw;applyArm(T,hero.rig,0,m.hand,[-1,-.2,-.3],m.direction);applyArm(T,hero.rig,1,m.shield,[1,-.2,-.3]);spatula.rotation.set(0,0,0);shield.rotation.set(m.guard?-.13:.18,0,m.guard?-.10:.30);}
   else if(p.type==='POT'&&(!(f.attackFx?.ttl>0)||skillMotion(f))){const m=potIdlePose(f,t);applyArm(T,hero.rig,0,m.hand,[-1,-.2,-.25],m.direction);applyArm(T,hero.rig,1,m.pot,[1,-.2,-.3]);ladle.rotation.set(0,0,0);pot.rotation.set(0,0,0);const g=gaitPose(f,t);body.rotation.x=g.lean;body.rotation.y=g.yaw;}
-  else if(p.type==='GRILL'){const m=forkTwoHandPose(f,t);forkPose=m;body.rotation.x=m.lean;body.rotation.y=m.yaw;
+  else if(p.type==='GRILL'){const m=forkTwoHandPose(f,t);forkPose=m;body.rotation.x=m.lean;body.rotation.y=m.yaw;if(m.axialLocked){body.rotation.z=0;body.position.y=0;}
    applyArm(T,hero.rig,0,m.right,[-1,-.5,-.2],m.direction);applyArm(T,hero.rig,1,m.left,[1,-.5,-.2],m.direction);
    fork.position.set(...m.right);fork.quaternion.setFromUnitVectors(new T.Vector3(0,-1,0),new T.Vector3(...m.direction));
   }else if(p.type==='STEAM'&&(!(f.attackFx?.ttl>0)||skillMotion(f))){const m=otherToolPose(f,t);body.rotation.x=m.lean;body.rotation.y=m.yaw;applyArm(T,hero.rig,0,m.right,[-1,-.3,-.2],m.direction);applyArm(T,hero.rig,1,m.left,[1,-.3,-.2]);basket.rotation.set(0,0,0);}
