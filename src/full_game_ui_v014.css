@@ -242,3 +242,123 @@
 .z2a-diner .diner-special small .z2a3-art{width:13px;height:13px}
 .z2a-diner #z2a2-guide-icon .z2a3-art{width:23px;height:23px}
 @media(max-width:350px){.z2a-hud .z2a3-art{width:18px;height:18px}.z2a-hud .field-hp .z2a3-art{width:19px;height:19px}.z2a-hud .z2a2-queue .z2a3-art{width:11px;height:11px}.z2a-hud .z2a-ledger-btn .z2a3-art,.z2a-hud .z2a-settings .z2a3-art{width:25px;height:25px}}
+
+/* Z2b: Hearthcraft kitchen workbench, paper dish tickets and a split prep room.
+   The underlying inputs, 3D mounts, recipes, stock and kitchen rules stay unchanged. */
+.z2b-shell .z2b-hud{display:flex;justify-content:space-between;min-height:calc(50px + env(safe-area-inset-top));gap:8px}
+.z2b-phase-title{display:flex;align-items:center;gap:7px;flex:1;min-width:0}
+.z2b-phase-title>.z2a3-art{width:30px;height:30px}
+.z2b-phase-title span{display:grid;gap:1px;line-height:1.15}
+.z2b-phase-title b{font-size:15px;color:#f6e3b8}.z2b-phase-title small{font-size:11px;color:#c8bda2}
+.z2b-coins{display:flex;align-items:center;gap:4px;font-variant-numeric:tabular-nums;font-size:13px}
+.z2b-shell .dock{flex:none;min-height:calc(52px + env(safe-area-inset-bottom));padding:5px 8px calc(5px + env(safe-area-inset-bottom));gap:4px}
+.z2b-shell .dock .action-row{display:flex;flex-wrap:nowrap;gap:5px;margin:0;min-height:44px}
+.z2b-shell .dock .game-btn{display:inline-flex;align-items:center;justify-content:center;gap:4px;min-height:44px;font-size:13px;padding:5px 8px;white-space:nowrap}
+.z2b-shell .dock .game-btn .z2a3-art{width:19px;height:19px}
+.z2b-shell .game-toast{flex:none;min-height:0;max-height:32px;font-size:11px;padding:3px 9px;line-height:1.3}
+.z2b-shell .v063-workbench,.z2b-shell .z2b-workbench{padding:7px 9px;gap:6px;overflow-y:auto;overscroll-behavior:contain;touch-action:pan-y;min-height:0;background:radial-gradient(ellipse at 50% 18%,#3b5340,#20382c 75%)}
+.z2b-bench{flex:none;position:relative;display:grid;grid-template-columns:minmax(68px,1fr) minmax(0,2.65fr);gap:4px 7px;padding:7px 7px 10px;border:2px solid #a77c4c;border-radius:9px;background:repeating-linear-gradient(0deg,#805a3e 0px,#805a3e 24px,#6c4934 25px,#966c49 27px);box-shadow:inset 0 2px #e5b67655,0 4px #402e24}
+.z2b-bench-title{grid-column:1/-1;display:flex;justify-content:space-between;align-items:center;font-size:13px;color:#fff0cc;font-weight:800;text-shadow:0 1px #402a20}
+.z2b-bench-title small{font-size:11px;font-weight:500;color:#f3d7a5}
+.z2b-bench-vessel{display:grid;align-content:center;justify-items:center;gap:2px;padding:3px;background:radial-gradient(ellipse,#d3a973,#9d744c 69%,#674a37 70%,#674a37 76%,transparent 77%);color:#fff0cc;font-size:12px;text-shadow:0 1px #3d2b21}
+.z2b-bench-vessel .z2a3-art{width:62px;height:62px;filter:drop-shadow(0 4px 2px #422b26)}
+.z2b-selected-tray{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:4px;background:#412f25;border:2px solid #bd9160;border-radius:7px;padding:4px;box-shadow:inset 0 1px 5px #1f2119}
+.z2b-tray-slot{position:relative;display:flex;flex-direction:column;align-items:center;justify-content:center;min-height:77px;min-width:0;padding:3px 1px;border-radius:5px;border:1px solid #9f7e52;background:#d4b384;color:#443525;gap:1px}
+.z2b-tray-slot.filled{background:radial-gradient(ellipse,#f5e4b9,#c3a274);box-shadow:inset 0 0 0 2px #ede0b24d}
+.z2b-tray-slot.filled:active{transform:translateY(1px);background:#bfa073}
+.z2b-tray-slot b{font-size:10px;line-height:1.15;max-width:100%;overflow-wrap:anywhere}
+.z2b-tray-slot small{font-size:10px}.z2b-tray-slot.filled i{position:absolute;right:3px;top:2px;color:#7c422e;font-size:12px;font-style:normal;font-weight:bold}
+.z2b-tray-slot.empty{border:1px dashed #ad8e64;background:#6b4f38;color:#e0c298}.z2b-tray-slot.empty i{font-size:21px;font-style:normal}
+.z2b-shell .z2b-vessels{display:flex;gap:5px;flex:none}
+.z2b-shell .z2b-vessels .v063-vessel{flex:1;display:flex;align-items:center;justify-content:center;gap:3px;min-width:0;min-height:48px;padding:4px 3px;border-radius:6px;border:1px solid #927f58;background:#2b4436;box-shadow:0 2px #172d22}
+.z2b-shell .z2b-vessels .v063-vessel.chosen{border:2px solid #efc58b;background:#6e4d33;box-shadow:inset 0 1px #e3b17466,0 2px #392b23}
+.z2b-vessels .v063-vessel>.z2a3-art{width:28px;height:28px}
+.z2b-vessels .v063-vessel span{display:grid;line-height:1.12;min-width:0}.z2b-vessels .v063-vessel b{font-size:12px}.z2b-vessels .v063-vessel small{font-size:9px;white-space:nowrap}
+.z2b-shell .z2b-pantry-head{margin:0;padding:2px 2px 0;color:#f6e3b8;font-size:13px}
+.z2b-shell .z2b-pantry{flex:1 1 auto;min-height:66px;overflow-y:auto;overscroll-behavior:contain;touch-action:pan-y;grid-template-columns:repeat(4,minmax(0,1fr));align-content:start;gap:4px;padding:4px;background:#4b3729;border:2px solid #b38a59;border-radius:6px;box-shadow:inset 0 2px 5px #221e17}
+.z2b-shell .z2b-pantry button{min-height:58px;border:1px solid #a88d62;border-radius:5px;background:linear-gradient(#d4b68a,#b88d62);box-shadow:inset 0 1px #ffebc3aa,0 2px #32271d;color:#3f3025;padding:3px 1px}
+.z2b-shell .z2b-pantry button b,.z2b-shell .z2b-pantry button small{color:#493526;font-size:11px}
+.z2b-shell .z2b-pantry button.picked{border:2px solid #f3ce84;background:linear-gradient(#b6c39c,#8caa80)}
+.z2b-shell .v063-recipe-clue{flex:none;min-height:34px;margin:0;padding:5px 8px;border:1px solid #b79c6a;border-radius:5px;background:#d7bd8f;color:#49382b;font-size:12px}
+.z2b-shell .v063-recipe-clue strong{color:#443326}.z2b-shell .v063-recipe-clue small{color:#5e4e3d;font-size:11px}
+.z2b-shell .v063-last-result{padding:5px 6px;font-size:11px;max-height:none}
+.z2b-shell .v063-live-scene{padding:7px 8px 5px;gap:5px}
+.z2b-shell .v063-live-head{font-size:13px}.z2b-shell .v063-live-head .z2a3-art{width:23px;height:23px}
+.z2b-shell .v063-live-pan{flex:1;min-height:120px;max-height:none;border-radius:9px;border:2px solid #aa8050;background-color:#59422e}
+.z2b-shell .v063-live-msg{min-height:34px;font-size:12px}
+.z2b-shell .v063-live-tray .v063-drop{min-height:56px}
+.z2b-shell .v063-live-tray{gap:5px}
+.z2b-shell .v063-live-actions,.z2b-shell .v014c-dock{gap:3px}
+.z2b-shell .v063-live-actions .action-row .game-btn,.z2b-shell .v014c-dock .action-row .game-btn{min-width:0;flex:1;padding:5px 4px}
+.z2b-shell .v014c-grill-scene{width:100%;height:100%;min-height:0;display:flex;flex-direction:column;justify-content:flex-start;overflow-y:auto;padding:7px 9px;gap:4px}
+.z2b-shell .v014c-grill-head{flex:none;margin:0}.z2b-shell .v014c-grill-head strong{font-size:15px}
+.z2b-shell .v014c-hearth{flex:1 0 135px;min-height:135px;max-height:330px}
+.z2b-shell .v014c-gauges,.z2b-shell .v014c-status,.z2b-shell .v014c-tray{flex:none;margin:3px 0}
+.z2b-shell .v014c-tray button,.z2b-shell .v014c-lanes button{min-height:44px}
+.z2b-menu-board{justify-content:flex-start!important;gap:9px!important;padding:12px 10px!important;background:repeating-linear-gradient(0deg,#59432e 0px,#654b31 42px,#483426 43px,#483426 45px)}
+.z2b-menu-board .menu-title{display:flex;align-items:center;gap:5px;text-shadow:0 1px #31231a;font-size:16px}
+.z2b-menu-board .menu-title small{margin-left:auto;color:#e2c798;font-size:11px;font-weight:500}
+.z2b-menu-board .menu-blackboard{border:6px ridge #ae8050;border-radius:6px;background:radial-gradient(ellipse,#385246,#213c30);padding:8px;gap:7px;box-shadow:0 5px #392a20,inset 0 0 14px #16261b}
+.z2b-menu-board .menu-line{position:relative;gap:6px;min-height:72px;padding:8px 5px;border:1px solid #a28356;border-radius:4px;background:linear-gradient(165deg,#f3e3ba,#d9bc8e);color:#493525;box-shadow:0 2px #15281d,inset 0 1px #fff2d3}
+.z2b-menu-board .menu-line:before{content:'';position:absolute;top:3px;left:50%;width:4px;height:4px;border-radius:50%;background:#96754a;box-shadow:0 1px #fff0c7}
+.z2b-menu-board .menu-line strong{color:#483525;font-size:14px;line-height:1.15}
+.z2b-menu-board .menu-line small{color:#6a5540;font-size:11px}
+.z2b-menu-board .menu-num{color:#87633d;font-size:10px}
+.z2b-menu-board .v014-menu-value{display:flex;flex-wrap:wrap;gap:3px 5px;align-items:center;font-size:11px}
+.z2b-menu-board .v014-menu-value b,.z2b-menu-board .v014-menu-value em,.z2b-menu-board .v014-menu-value i{color:#543d29;background:transparent;padding:0;font-size:11px;white-space:nowrap}
+.z2b-menu-board .v014-menu-value i.shortage{color:#a23629;font-weight:800}
+.z2b-menu-board .v014-menu-value .z2a3-art{width:13px;height:13px}
+.z2b-dish-art{display:inline-flex;position:relative;width:62px;height:46px;flex:none;align-items:flex-end;justify-content:center;border-radius:6px;background:radial-gradient(ellipse at 50% 63%,#c3a171 0%,#b28a5b 60%,transparent 62%);overflow:hidden}
+.z2b-dish-vessel{position:absolute;top:0;left:2px}.z2b-dish-vessel .z2a3-art{width:24px;height:24px}
+.z2b-dish-food{display:flex;align-items:center;justify-content:center;gap:0;max-width:100%;padding:0 2px 3px}
+.z2b-dish-food img{margin-left:-2px;filter:drop-shadow(0 2px 1px #63492e77)}
+.z2b-menu-board .menu-switch .z2a3-art{width:19px;height:19px}
+.z2b-menu-board .synergy-box,.z2b-menu-board .v010-premium-entry,.z2b-menu-board .v014-menu-notes{background:#2c4437;border:1px solid #b18c5c;border-radius:5px;color:#f4e2bc}
+.z2b-menu-group{display:flex;align-items:center;gap:5px;margin:10px 0 3px;color:#735334;font-size:13px}.z2b-menu-group .z2a3-art{width:24px;height:24px}
+.z2b-prep-layout{height:100%;min-height:0;display:flex;flex-direction:column;gap:0;overflow:hidden}
+.z2b-prep-scene{flex:0 0 43%;min-height:135px;position:relative;overflow:hidden;border-bottom:3px solid #b28a57;background:#61472e}
+.z2b-prep-scene .diner-world{height:100%;width:100%}
+.z2b-prep-caption{position:absolute;left:7px;top:7px;background:#25372be8;color:#f1dfb6;border:1px solid #be9b62;border-radius:5px;padding:4px 7px;font-size:11px;pointer-events:none}
+.z2b-prep-caption .z2a3-art{width:16px;height:16px}
+.z2b-prep-work{flex:1;min-height:0;overflow-y:auto;overflow-x:hidden;overscroll-behavior:contain;touch-action:pan-y;background:linear-gradient(#344737,#20382c);padding:6px 8px}
+.z2b-shell .stage.prep .kitchen-prep-card{position:static!important;inset:auto!important;max-height:none!important;width:100%;padding:0;background:none;border:0;border-radius:0;box-shadow:none;overflow:visible;transform:none}
+.z2b-prep-work .kitchen-prep-card h2{font-size:15px;margin:1px 0 5px;color:#f5e0b6}
+.z2b-prep-work .kitchen-config-head{font-size:12px;padding:4px 7px;margin:0 0 5px;background:#263b30;border:1px solid #b69c6c;border-radius:4px}
+.z2b-prep-work .kitchen-config-slots{display:grid;gap:5px;margin:0}
+.z2b-prep-work .kitchen-config-slot{display:flex;align-items:center;gap:4px;min-width:0;padding:4px;background:#5b4834;border:1px solid #ad8b58;border-radius:5px}
+.z2b-station-identity{display:flex;align-items:center;gap:2px;min-width:77px;flex:0 0 77px}
+.z2b-station-identity>.z2a3-art{width:28px;height:28px}
+.z2b-station-identity span{display:grid;line-height:1.1}.z2b-station-identity b{font-size:11px}.z2b-station-identity small{font-size:10px;color:#edce9c}
+.z2b-prep-work .kitchen-choice{display:flex;flex:1;min-width:0;gap:3px}
+.z2b-prep-work .kitchen-choice button{flex:1;min-width:44px;min-height:44px;padding:3px 1px;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:0;background:#354a3b;border:1px solid #9c956c;border-radius:4px}
+.z2b-prep-work .kitchen-choice button.active{border:2px solid #efc889;background:#9c7547}
+.z2b-prep-work .kitchen-choice button .z2a3-art{width:22px;height:22px}
+.z2b-prep-work .kitchen-choice button small{font-size:10px;line-height:1.05;color:#fff0ca}
+.z2b-prep-work .kitchen-pressure,.z2b-prep-work .kitchen-refit{font-size:11px;margin:5px 0;line-height:1.3;color:#e6d2a9}
+.z2b-prep-work .prep-divider{margin:9px 0 4px;font-size:13px;color:#f0d5a4}
+.z2b-prep-work .prep-items{display:grid;grid-template-columns:1fr;gap:4px}
+.z2b-prep-work .prep-item{display:flex;align-items:center;gap:6px;text-align:left;padding:4px 7px;background:#ded0a5;color:#493727;border:1px solid #b38d5b;border-radius:5px;min-height:45px}
+.z2b-prep-work .prep-item div{flex:1;display:grid;line-height:1.2}.z2b-prep-work .prep-item div b{font-size:12px}.z2b-prep-work .prep-item div small{font-size:11px;color:#6a533c}.z2b-prep-work .prep-item strong{color:#476f47}
+.z2b-prep-work .prep-item .z2b-dish-art{height:38px}
+.z2b-prep-work .staff-open-prep,.z2b-prep-work .v095-stock-action,.z2b-prep-work .v12-star-invite button{min-height:44px}
+.z2b-prep-work .v014-marketing summary,.z2b-menu-board .v014-menu-notes summary{min-height:44px;display:flex;align-items:center}
+@media(max-width:350px){
+ .z2b-bench-vessel .z2a3-art{width:48px;height:48px}.z2b-tray-slot{min-height:65px}.z2b-tray-slot img{width:30px;height:30px}
+ .z2b-vessels .v063-vessel{flex-direction:column}.z2b-vessels .v063-vessel>.z2a3-art{width:23px;height:23px}.z2b-vessels .v063-vessel small{display:none}
+ .z2b-shell .dock .game-btn{font-size:12px;padding:4px 5px}.z2b-shell .dock .game-btn .z2a3-art{width:16px;height:16px}
+ .z2b-menu-board .menu-line{gap:3px}.z2b-menu-board .z2b-dish-art{width:50px}.z2b-menu-board .z2b-dish-food img{width:17px;height:17px}
+ .z2b-prep-work .kitchen-config-slot{padding:3px}.z2b-station-identity{min-width:68px;flex-basis:68px}.z2b-station-identity>.z2a3-art{width:23px;height:23px}
+}
+@media(max-height:620px){.z2b-bench{padding:5px 6px 7px}.z2b-bench-vessel .z2a3-art{width:48px;height:48px}.z2b-tray-slot{min-height:64px}.z2b-shell .v063-live-pan{min-height:105px}.z2b-shell .v014c-hearth{flex-basis:115px;min-height:115px}.z2b-shell .v014c-gauge{min-height:30px}.z2b-shell .v063-live-tray .v063-drop{min-height:49px}.z2b-shell .v063-live-msg{min-height:26px}}
+
+.z2b-stock-shortcut{position:absolute;right:7px;top:5px;min-height:44px;min-width:66px;display:flex;align-items:center;justify-content:center;gap:4px;padding:4px 8px;background:#273d30e8;border:1px solid #b39461;border-radius:7px;color:#f0e0b9;font-weight:700;font-size:12px}
+.z2b-stock-shortcut.risk{background:#6b4034e8;border-color:#e1a77c;color:#ffe4bc}
+.z2b-stock-shortcut .z2a3-art{width:19px;height:19px}
+.z2b-menu-board .v014-menu-value>*{border:0;border-radius:0;font-variant-numeric:tabular-nums}
+.z2b-shell .z2b-last-cook summary{font-size:11px;min-height:24px;cursor:pointer}
+.z2b-shell .z2b-last-cook small{font-size:11px;padding-top:4px}
+.z2b-prep-work .kitchen-config-slot{flex-wrap:nowrap}
+.z2b-prep-work .kitchen-config-slot .kitchen-choice button{max-width:none}
+.z2b-prep-work .kitchen-prep-card .prep-item{min-height:45px}
+.z2b-shell .v063-live-tray .v063-drop small{font-size:11px}
+@media(max-width:380px){.z2b-vessels .v063-vessel:has(+.v063-vessel +.v063-vessel),.z2b-vessels:has(.v063-vessel:nth-child(3)) .v063-vessel{flex-direction:column}.z2b-vessels:has(.v063-vessel:nth-child(3)) .v063-vessel small{display:none}}
