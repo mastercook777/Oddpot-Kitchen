@@ -743,7 +743,7 @@ export function drawDinerDoorway(c,s,t,w,h){
   for(let i=0;i<5;i++)line(c,L+i*W*.23,T+H*.80,L+i*W*.23,T+H,'#526f8299',2);
   queue.slice(0,4).forEach((o,i)=>pixelActor(c,o.segment,L+W*(.20+i*.205),T+H*.77,DINER_ACTOR_SCALE*.82,{walk:0}));
   c.fillStyle='#294e68cb';c.fillRect(L+6,T+6,94,22);text(c,'☁ 等位 '+queue.length,L+51,T+17,'#fff6dd',11);
-  drawOutdoorQueueChatter(c,queue,t,L,T,W,H);c.strokeStyle='#e4d4aa';c.lineWidth=4;c.strokeRect(L+2,T+2,W-4,H-4);c.restore();
+  if(!s.service?.walkable)drawOutdoorQueueChatter(c,queue,t,L,T,W,H);c.strokeStyle='#e4d4aa';c.lineWidth=4;c.strokeRect(L+2,T+2,W-4,H-4);c.restore();
   return {queue:queue.length,weather:'breeze'};
  }
  c.save();
@@ -786,7 +786,7 @@ export function drawDinerDoorway(c,s,t,w,h){
  c.font='bold 11px system-ui';c.textBaseline='middle';
  c.fillStyle='#193a32c9';c.fillRect(L+6,T+6,Math.min(W-12,queue.length?94:102),22);
  text(c,(weather==='rain'?'☔':weather==='mist'?'☁️':weather==='breeze'?'🍃':'☀️')+' 等位 '+queue.length,L+51,T+17,'#fff0cc',11);
- drawOutdoorQueueChatter(c,queue,t,L,T,W,H);
+ if(!s.service?.walkable)drawOutdoorQueueChatter(c,queue,t,L,T,W,H);
  // Door threshold and open-frame mullions sit above the outdoor strip.
  c.strokeStyle='#d7b07b';c.lineWidth=4;c.strokeRect(L+2,T+2,W-4,H-4);
  c.fillStyle='#79563d';c.fillRect(L+W*.475,T+H*.03,W*.05,H*.13);
