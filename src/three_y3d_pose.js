@@ -40,12 +40,37 @@ export function meleePose(f,t=0){
  return {active,p,guard,hand,direction:unit(direction),shield,yaw,lean:skill?.type==='WOK'?.08:active?.025+Math.sin(p*Math.PI)*.035:g.lean};
 }
 export function potIdlePose(f,t=0){const g=gaitPose(f,t),m=skillMotion(f);let hand=[-.40,.51+g.rightY,.075+g.rightZ*.76],direction=[-.38,-.65,.65+g.rightZ],pot=[.42,.465+g.leftY*.7,.05+g.leftZ*.6];if(m?.type==='POT'){const u=Math.sin(Math.PI*Math.min(1,m.p*1.8));hand=lerp(hand,[-.31,.68,.23],u);direction=lerp(direction,[-.10,.50,.86],u);pot=lerp(pot,[.36,.60,.19],u*.85);}return {hand,direction:unit(direction),pot};}
+// One rigid shaft, two reachable grip targets in body coordinates. The
+// same fixed .30 separation is retained through gait, chamber and thrust.
+export function forkTwoHandPose(f,t=0){
+ const g=gaitPose(f,t),m=skillMotion(f),fx=f.attackFx;
+ const p=fx?.forkThrust&&fx.ttl>0?clamp(1-fx.ttl/(fx.duration||.30)):null;
+ const idle={center:[0,.625+g.rightY*.35,.175+g.rightZ*.18],dir:[.87,.46,.18],lean:g.lean,yaw:g.yaw*.45};
+ const chamber={center:[-.025,.57,.055],dir:[.76,.08,.65],lean:.025,yaw:-.55};
+ const contact={center:[.025,.645,.14],dir:[.65,.015,.76],lean:.16,yaw:-Math.atan2(.65,.76)};
+ const brace={center:[.015,.61,.115],dir:[.65,.08,.76],lean:.105,yaw:-Math.atan2(.65,.76)};
+ const blend=(a,b,u)=>({center:lerp(a.center,b.center,u),dir:unit(lerp(unit(a.dir),unit(b.dir),u)),lean:a.lean+(b.lean-a.lean)*u,yaw:a.yaw+(b.yaw-a.yaw)*u});
+ let v=idle,phase='idle';
+ if(m?.type==='GRILL'){
+  const u=ease(Math.min(1,m.p*9))*ease(Math.min(1,(1-m.p)*4));
+  v=blend(idle,brace,u);v.center[2]-=.022*Math.sin(m.p*36)*u;phase='flame';
+ }else if(p!==null){
+  if(p<.14){v=blend(idle,chamber,ease(p/.14));phase='chamber';}
+  else if(p<.38){v=blend(chamber,contact,ease((p-.14)/.24));phase='thrust';}
+  else {v=blend(contact,idle,ease((p-.38)/.62));phase='recover';}
+ }
+ const d=unit(v.dir),offset=mul(d,.15),center=v.center.slice(),shoulders=[[-.265,.685,0],[.265,.685,0]];
+ // Project the common center onto each arm's reach ball; never independently
+ // clamp the hands (that would detach one from the rigid shaft).
+ for(let i=0;i<12;i++)for(let j=0;j<2;j++){
+  const sign=j?1:-1,hand=add(center,mul(offset,sign)),delta=sub(hand,shoulders[j]),len=norm(delta),max=.15+Math.hypot(.125,.015)-.004;
+  if(len>max){const corrected=add(shoulders[j],mul(delta,max/len));const c=sub(corrected,mul(offset,sign));for(let k=0;k<3;k++)center[k]=c[k];}
+ }
+ return {right:sub(center,offset),left:add(center,offset),direction:d,lean:v.lean,yaw:v.yaw,phase};
+}
 export function otherToolPose(f,t=0){
  const g=gaitPose(f,t),m=skillMotion(f),type=f.weapon?.type;
- if(type==='GRILL'){
-  const u=m?.type==='GRILL'?Math.sin(Math.PI*m.p):0;
-  return {right:[-.34,.53+g.rightY*.6+u*.08,.17+g.rightZ*.44+u*.06],left:[.22,.54+g.rightY*.6+u*.08,.19+g.rightZ*.44+u*.04],direction:unit([0,-.35+u*.32,1]),lean:g.lean+u*.12,yaw:g.yaw*.5};
- }
+ if(type==='GRILL')return forkTwoHandPose(f,t);
  const u=m?.type==='STEAM'?Math.sin(Math.PI*m.p):0;
  return {right:[-.25,.52+g.rightY*.35+u*.13,.20+u*.05],left:[.25,.52+g.rightY*.35+u*.13,.20+u*.05],lean:g.lean+u*.04,yaw:g.yaw*.4};
 }
