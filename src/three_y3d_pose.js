@@ -42,31 +42,39 @@ export function meleePose(f,t=0){
 export function potIdlePose(f,t=0){const g=gaitPose(f,t),m=skillMotion(f);let hand=[-.40,.51+g.rightY,.075+g.rightZ*.76],direction=[-.38,-.65,.65+g.rightZ],pot=[.42,.465+g.leftY*.7,.05+g.leftZ*.6];if(m?.type==='POT'){const u=Math.sin(Math.PI*Math.min(1,m.p*1.8));hand=lerp(hand,[-.31,.68,.23],u);direction=lerp(direction,[-.10,.50,.86],u);pot=lerp(pot,[.36,.60,.19],u*.85);}return {hand,direction:unit(direction),pot};}
 // One rigid shaft, two reachable grip targets in body coordinates. The
 // same fixed .30 separation is retained through gait, chamber and thrust.
+// Horizontal lance frame. All three strike stages share the SAME orientation.
+// The legal interval is the intersection of both shoulder reach spheres along
+// the shaft, so the drive cannot turn into a downward arc via IK correction.
+export function forkAxialFrame(){
+ const direction=unit([.89,0,.456]),center=[0,.64,.11],offset=mul(direction,.15),max=.15+Math.hypot(.125,.015)-.006;
+ let lo=-Infinity,hi=Infinity;
+ for(let j=0;j<2;j++){const shoulder=[j?.265:-.265,.685,0],v=sub(add(center,mul(offset,j?1:-1)),shoulder),along=dot(v,direction),perp=dot(v,v)-along*along,h=Math.sqrt(Math.max(0,max*max-perp));lo=Math.max(lo,-along-h);hi=Math.min(hi,-along+h);}
+ return {direction,center,lo,hi,yaw:-Math.atan2(direction[0],direction[2])};
+}
 export function forkTwoHandPose(f,t=0){
  const g=gaitPose(f,t),m=skillMotion(f),fx=f.attackFx;
- const p=fx?.forkThrust&&fx.ttl>0?clamp(1-fx.ttl/(fx.duration||.30)):null;
- const idle={center:[0,.625+g.rightY*.35,.175+g.rightZ*.18],dir:[.87,.46,.18],lean:g.lean,yaw:g.yaw*.45};
- const chamber={center:[-.025,.57,.055],dir:[.76,.08,.65],lean:.025,yaw:-.55};
- const contact={center:[.025,.645,.14],dir:[.65,.015,.76],lean:.16,yaw:-Math.atan2(.65,.76)};
- const brace={center:[.015,.61,.115],dir:[.65,.08,.76],lean:.105,yaw:-Math.atan2(.65,.76)};
- const blend=(a,b,u)=>({center:lerp(a.center,b.center,u),dir:unit(lerp(unit(a.dir),unit(b.dir),u)),lean:a.lean+(b.lean-a.lean)*u,yaw:a.yaw+(b.yaw-a.yaw)*u});
- let v=idle,phase='idle';
+ const p=fx?.forkThrust&&fx.ttl>0?clamp(1-fx.ttl/(fx.duration||.30)):null,frame=forkAxialFrame();
+ const idle={center:[0,.625+g.rightY*.35,.175+g.rightZ*.18],dir:unit([.87,.46,.18]),lean:g.lean,yaw:g.yaw*.45};
+ const axial=x=>({center:add(frame.center,mul(frame.direction,clamp(x,frame.lo,frame.hi))),dir:frame.direction,lean:0,yaw:frame.yaw});
+ const back=frame.lo+.009,front=frame.hi-.009,ready=(back+front)*.5;
+ const blend=(a,b,u)=>({center:lerp(a.center,b.center,u),dir:unit(lerp(a.dir,b.dir,u)),lean:a.lean+(b.lean-a.lean)*u,yaw:a.yaw+(b.yaw-a.yaw)*u});
+ let v=idle,phase='idle',axialLocked=false;
  if(m?.type==='GRILL'){
-  const u=ease(Math.min(1,m.p*9))*ease(Math.min(1,(1-m.p)*4));
-  v=blend(idle,brace,u);v.center[2]-=.022*Math.sin(m.p*36)*u;phase='flame';
+  const u=ease(Math.min(1,m.p/.105))*ease(Math.min(1,(1-m.p)/.16));
+  const shot=axial(ready+.05-.025*Math.sin(m.p*40));axialLocked=u>.9999;v=axialLocked?shot:blend(idle,shot,u);phase='flame';
  }else if(p!==null){
-  if(p<.14){v=blend(idle,chamber,ease(p/.14));phase='chamber';}
-  else if(p<.38){v=blend(chamber,contact,ease((p-.14)/.24));phase='thrust';}
-  else {v=blend(contact,idle,ease((p-.38)/.62));phase='recover';}
+  if(p<.14){v=blend(idle,axial(back),ease(p/.14));phase='chamber';}
+  else if(p<.43){v=axial(back+(front-back)*ease((p-.14)/.29));phase='thrust';axialLocked=true;}
+  else if(p<.53){v=axial(front);phase='extension';axialLocked=true;}
+  else if(p<.85){v=axial(front+(back-front)*ease((p-.53)/.32));phase='recover';axialLocked=true;}
+  else{v=blend(axial(back),idle,ease((p-.85)/.15));phase='settle';}
  }
  const d=unit(v.dir),offset=mul(d,.15),center=v.center.slice(),shoulders=[[-.265,.685,0],[.265,.685,0]];
- // Project the common center onto each arm's reach ball; never independently
- // clamp the hands (that would detach one from the rigid shaft).
- for(let i=0;i<12;i++)for(let j=0;j<2;j++){
+ if(!axialLocked)for(let i=0;i<12;i++)for(let j=0;j<2;j++){
   const sign=j?1:-1,hand=add(center,mul(offset,sign)),delta=sub(hand,shoulders[j]),len=norm(delta),max=.15+Math.hypot(.125,.015)-.004;
   if(len>max){const corrected=add(shoulders[j],mul(delta,max/len));const c=sub(corrected,mul(offset,sign));for(let k=0;k<3;k++)center[k]=c[k];}
  }
- return {right:sub(center,offset),left:add(center,offset),direction:d,lean:v.lean,yaw:v.yaw,phase};
+ return {right:sub(center,offset),left:add(center,offset),direction:d,lean:v.lean,yaw:v.yaw,phase,axialLocked};
 }
 export function otherToolPose(f,t=0){
  const g=gaitPose(f,t),m=skillMotion(f),type=f.weapon?.type;

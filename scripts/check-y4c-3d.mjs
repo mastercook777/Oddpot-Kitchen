@@ -28,7 +28,7 @@ for(const [width,height] of [[320,568],[375,667],[390,844]]){
   if(hz)await page.waitForFunction(()=>Number(document.querySelector('canvas[data-oddpot-forest="3d"]')?.dataset.telegraphCount)>0,null,{timeout:10000});
   await page.screenshot({path:out+'/'+zoneId+'-'+width+'.png'});const spring=page.locator('canvas[data-oddpot-forest="3d"]');
   assert.equal(await page.evaluate(()=>document.documentElement.dataset.oddpotForest3d),'active');assert.equal(await spring.getAttribute('data-biome'),zoneId);assert.equal(await spring.getAttribute('data-region'),'spring');
-  assert.match(await page.locator('#oddpot-build-label').textContent(),/v0\.16-Y\.5c2/);
+  assert.match(await page.locator('#oddpot-build-label').textContent(),/v0\.16-Y\.5c3/);
  }
  // Y5c: actual player input triggers both new abilities in two real routes.
  if(width===375)for(const [type,route] of [['WOK','safe'],['POT','spring_safe'],['GRILL','safe']]){
@@ -37,9 +37,9 @@ for(const [width,height] of [[320,568],[375,667],[390,844]]){
   await load(f);await page.waitForFunction(()=>document.documentElement.dataset.oddpotForest3d==='active',null,{timeout:20000});
   if(type==='GRILL'){const grip=Number(await page.locator('canvas[data-oddpot-forest="3d"]').getAttribute('data-fork-grip-error'));assert.ok(grip<.0001,'both actual world-space grips on rigid fork');await page.screenshot({path:out+'/fork-idle-'+width+'.png'});}
   await page.locator('[data-act="skill"]').click();await page.waitForFunction(type=>document.querySelector('canvas[data-oddpot-forest="3d"]')?.dataset.skillKind===type,type,{timeout:5000,polling:'raf'});
-  if(type==='POT'||type==='GRILL'){await page.waitForFunction(type=>{const c=document.querySelector('canvas[data-oddpot-forest="3d"]');return Number(c?.dataset.fluidCount)>0&&c.dataset.fluidKinds.includes(type==='POT'?'potErupt':'flame');},type,{timeout:5000,polling:'raf'});if(type==='GRILL')assert.ok(Number(await page.locator('canvas[data-oddpot-forest="3d"]').getAttribute('data-fork-grip-error'))<.0001);}
+  if(type==='POT'||type==='GRILL'){await page.waitForFunction(type=>{const c=document.querySelector('canvas[data-oddpot-forest="3d"]');return Number(c?.dataset.fluidCount)>0&&c.dataset.fluidKinds.includes(type==='POT'?'potErupt':'flame');},type,{timeout:5000,polling:'raf'});if(type==='GRILL'){const c=page.locator('canvas[data-oddpot-forest="3d"]');assert.ok(Number(await c.getAttribute('data-fork-grip-error'))<.0001);assert.equal(await c.getAttribute('data-fire-volume'),'1');await page.waitForFunction(()=>document.querySelector('canvas[data-oddpot-forest="3d"]')?.dataset.forkAxial==='1');const axis=(await c.getAttribute('data-fork-axis')).split(',').map(Number);assert.ok(Math.abs(axis[1])<.001,'spray shaft horizontal');}}
   await page.screenshot({path:out+'/skill-'+type+'-'+width+'.png'});
-  if(type==='GRILL'){q.attackCd=0;await load(f);await page.waitForFunction(()=>{const c=document.querySelector('canvas[data-oddpot-forest="3d"]');return c?.dataset.forkPhase==='thrust'&&c.dataset.fluidKinds.includes('thrust');},null,{timeout:10000,polling:'raf'});assert.ok(Number(await page.locator('canvas[data-oddpot-forest="3d"]').getAttribute('data-fork-grip-error'))<.0001);await page.screenshot({path:out+'/fork-thrust-'+width+'.png'});}
+  if(type==='GRILL'){q.attackCd=0;await load(f);await page.waitForFunction(()=>{const c=document.querySelector('canvas[data-oddpot-forest="3d"]');return c?.dataset.forkAxial==='1'&&['thrust','extension'].includes(c.dataset.forkPhase)&&c.dataset.fluidKinds.includes('thrust');},null,{timeout:10000,polling:'raf'});assert.ok(Number(await page.locator('canvas[data-oddpot-forest="3d"]').getAttribute('data-fork-grip-error'))<.0001);const axis=(await page.locator('canvas[data-oddpot-forest="3d"]').getAttribute('data-fork-axis')).split(',').map(Number);assert.ok(Math.abs(axis[1])<.001,'real shaft horizontal at extension');await page.screenshot({path:out+'/fork-thrust-'+width+'.png'});}
  }
  assert.deepEqual(errors,[]);await page.close();
 }

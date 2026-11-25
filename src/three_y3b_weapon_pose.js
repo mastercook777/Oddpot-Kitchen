@@ -1,5 +1,5 @@
 // Y3b: grip-bound cookware, driven exclusively by existing attack timelines.
-import {meleePose,potIdlePose,otherToolPose,forkTwoHandPose,skillMotion,gaitPose,applyArm} from './three_y3d_pose.js?v=y5c2';
+import {meleePose,potIdlePose,otherToolPose,forkTwoHandPose,skillMotion,gaitPose,applyArm} from './three_y3d_pose.js?v=y5c3';
 const clamp=x=>Math.min(1,Math.max(0,x));
 // Deliberate windup, contact and recovery: contact is immediate in the existing sim.
 export function weaponPose(f){
@@ -40,7 +40,7 @@ export function createWeaponRig(T,hero,rounded){
  cylinder(fork,iron,0,-.70,0,.047,.044,.17);
  box(fork,iron,0,-.78,0,.27,.065,.065);box(fork,copper,0,-.74,0,.14,.035,.075);
  for(const x of [-.10,0,.10]){box(fork,iron,x,-.89,0,.045,.22,.045);const tip=mesh(fork,new T.ConeGeometry(.035,.09,4),edge,x,-1.025,0);tip.rotation.z=Math.PI;}
- const forkRear=group(fork),forkFront=group(fork);forkFront.position.y=-.30;
+ const forkRear=group(fork),forkFront=group(fork);forkFront.position.y=-.30;const forkTip=group(fork);forkTip.position.y=-1.07;let forkPose=null;
  // Both hands support a single basket; second hand has no duplicated object.
  const [basket,support]=sets.STEAM;basket.position.set(.29,-.09,.10);
  for(let i=0;i<2;i++){cylinder(basket,bamboo,0,i*.115,0,.25,.25,.115);cylinder(basket,wood,0,i*.115-.052,0,.26,.26,.025);}
@@ -53,10 +53,10 @@ export function createWeaponRig(T,hero,rounded){
   basket.rotation.x=-arms[0].rotation.x;basket.rotation.z=-arms[0].rotation.z;
   if(p.type==='WOK'){const m=meleePose(f,t);body.rotation.x=m.lean;body.rotation.y=m.yaw;applyArm(T,hero.rig,0,m.hand,[-1,-.2,-.3],m.direction);applyArm(T,hero.rig,1,m.shield,[1,-.2,-.3]);spatula.rotation.set(0,0,0);shield.rotation.set(m.guard?-.13:.18,0,m.guard?-.10:.30);}
   else if(p.type==='POT'&&(!(f.attackFx?.ttl>0)||skillMotion(f))){const m=potIdlePose(f,t);applyArm(T,hero.rig,0,m.hand,[-1,-.2,-.25],m.direction);applyArm(T,hero.rig,1,m.pot,[1,-.2,-.3]);ladle.rotation.set(0,0,0);pot.rotation.set(0,0,0);const g=gaitPose(f,t);body.rotation.x=g.lean;body.rotation.y=g.yaw;}
-  else if(p.type==='GRILL'){const m=forkTwoHandPose(f,t);body.rotation.x=m.lean;body.rotation.y=m.yaw;
+  else if(p.type==='GRILL'){const m=forkTwoHandPose(f,t);forkPose=m;body.rotation.x=m.lean;body.rotation.y=m.yaw;if(m.axialLocked){body.rotation.z=0;body.position.y=0;}
    applyArm(T,hero.rig,0,m.right,[-1,-.5,-.2],m.direction);applyArm(T,hero.rig,1,m.left,[1,-.5,-.2],m.direction);
    fork.position.set(...m.right);fork.quaternion.setFromUnitVectors(new T.Vector3(0,-1,0),new T.Vector3(...m.direction));
   }else if(p.type==='STEAM'&&(!(f.attackFx?.ttl>0)||skillMotion(f))){const m=otherToolPose(f,t);body.rotation.x=m.lean;body.rotation.y=m.yaw;applyArm(T,hero.rig,0,m.right,[-1,-.3,-.2],m.direction);applyArm(T,hero.rig,1,m.left,[1,-.3,-.2]);basket.rotation.set(0,0,0);}
- },forkGripError(){if(!fork.visible)return null;hero.root.updateMatrixWorld(true);return Math.max(forkRear.getWorldPosition(new T.Vector3()).distanceTo(grips[0].getWorldPosition(new T.Vector3())),forkFront.getWorldPosition(new T.Vector3()).distanceTo(grips[1].getWorldPosition(new T.Vector3())));},bladeWorld(){hero.root.updateMatrixWorld(true);return {base:bladeBase.getWorldPosition(new T.Vector3()),tip:bladeTip.getWorldPosition(new T.Vector3())};
+ },forkWorld(){if(!fork.visible)return null;hero.root.updateMatrixWorld(true);const rear=forkRear.getWorldPosition(new T.Vector3()),tip=forkTip.getWorldPosition(new T.Vector3());return {rear,tip,axis:tip.clone().sub(rear).normalize(),phase:forkPose?.phase||'idle',locked:!!forkPose?.axialLocked};},forkGripError(){if(!fork.visible)return null;hero.root.updateMatrixWorld(true);return Math.max(forkRear.getWorldPosition(new T.Vector3()).distanceTo(grips[0].getWorldPosition(new T.Vector3())),forkFront.getWorldPosition(new T.Vector3()).distanceTo(grips[1].getWorldPosition(new T.Vector3())));},bladeWorld(){hero.root.updateMatrixWorld(true);return {base:bladeBase.getWorldPosition(new T.Vector3()),tip:bladeTip.getWorldPosition(new T.Vector3())};
  }};
 }
