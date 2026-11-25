@@ -28,7 +28,7 @@ for(const [width,height] of [[320,568],[375,667],[390,844]]){
   if(hz)await page.waitForFunction(()=>Number(document.querySelector('canvas[data-oddpot-forest="3d"]')?.dataset.telegraphCount)>0,null,{timeout:10000});
   await page.screenshot({path:out+'/'+zoneId+'-'+width+'.png'});const spring=page.locator('canvas[data-oddpot-forest="3d"]');
   assert.equal(await page.evaluate(()=>document.documentElement.dataset.oddpotForest3d),'active');assert.equal(await spring.getAttribute('data-biome'),zoneId);assert.equal(await spring.getAttribute('data-region'),'spring');
-  assert.match(await page.locator('#oddpot-build-label').textContent(),/v0\.16-Y\.5b2/);
+  assert.match(await page.locator('#oddpot-build-label').textContent(),/v0\.16-Y\.5c/);
  }
  assert.deepEqual(errors,[]);await page.close();
 }
