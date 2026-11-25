@@ -4,7 +4,7 @@ import {makeChefY2} from './three_y2b_chef.js?v=y5c';
 import {makeBladeTrail} from './three_y3d_trail.js';
 import {createWeaponRig} from './three_y3b_weapon_pose.js?v=y5c';
 import {enemyHitVisual,pickupVisual} from './three_y3b_feedback.js';
-import {makeFieldFx3D,makeTelegraphLayer} from './three_y3c_fx.js?v=y5b2';
+import {makeFieldFx3D,makeTelegraphLayer} from './three_y3c_fx.js?v=y5c';
 import {fieldTilePath,hazardPhase} from './field_rules_v011a.js';
 const ANGLE=Math.PI*55/180, SINE=Math.sin(ANGLE), COS=Math.cos(ANGLE);
 export const FOREST_ZONES=Object.freeze({herb_path:'meadow',glow_mushroom:'glow',old_tree_edge:'roots',forest_garden:'garden',forest_secret:'glow',spore_gate:'roots',spore_roots:'roots'});
