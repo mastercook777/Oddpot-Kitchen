@@ -362,3 +362,42 @@
 .z2b-prep-work .kitchen-prep-card .prep-item{min-height:45px}
 .z2b-shell .v063-live-tray .v063-drop small{font-size:11px}
 @media(max-width:380px){.z2b-vessels .v063-vessel:has(+.v063-vessel +.v063-vessel),.z2b-vessels:has(.v063-vessel:nth-child(3)) .v063-vessel{flex-direction:column}.z2b-vessels:has(.v063-vessel:nth-child(3)) .v063-vessel small{display:none}}
+
+/* Z2c1: the money on hand is L1; the detailed ledger remains L3. */
+.z2a-service-hud #v075-wallet{color:#ffe3a5;gap:2px;flex:none;font-variant-numeric:tabular-nums}
+.z2a-service-hud #v075-wallet b{font-size:14px;font-weight:850}
+.z2a-service-hud #v075-wallet .z2a3-art{width:20px;height:20px;flex:none}
+.z2a-service-hud .v075-status{gap:3px}
+.z2a-service-hud .v075-status button{padding:0;min-width:44px;width:44px}
+@media(max-width:350px){.z2a-service-hud .v075-status{gap:2px;font-size:11px}.z2a-service-hud #v075-wallet b{font-size:12px}.z2a-service-hud #v075-wallet .z2a3-art{width:16px;height:16px}.z2a-service-hud .v075-status>span{gap:1px;padding:0}}
+/* Single-strip morning/route HUD; no extra banner or scene overlay. */
+.z2c-hud{justify-content:space-between}
+.z2c-hud .z2b-phase-title{min-width:0;flex:1}
+.z2c-hud .z2b-phase-title b{font-size:15px;white-space:nowrap}
+.z2c-hud .z2b-phase-title small{font-size:11px;white-space:nowrap}
+.z2c-hud .z2c-resource{display:flex;gap:2px;align-items:center;color:#f7dfaa;font-size:13px;font-variant-numeric:tabular-nums;white-space:nowrap}
+.z2c-hud .z2c-resource .z2a3-art{width:20px;height:20px}
+.z2c-hud .hud-gear{padding:0;min-width:44px}
+@media(max-width:350px){.z2c-hud .z2b-phase-title>.z2a3-art{width:24px;height:24px}.z2c-hud .z2c-resource{font-size:12px}.z2c-hud .z2c-resource .z2a3-art{width:17px;height:17px}}
+.z2c-home .v016-notice{border-bottom:1px solid #b08c55;background:linear-gradient(90deg,#44352a,#302f26);padding:7px 10px}
+.z2c-home .v016-notice strong{font-size:14px}
+.z2c-home .v016-notice small{font-size:11px}
+.z2c-home .v076-home-shortcuts button .z2a3-art,.z2c-home .v076-home-primary .z2a3-art{width:20px;height:20px;vertical-align:middle;flex:none}
+.z2c-home .v076-home-shortcuts button{min-height:44px}
+.z2c-home .v076-home-primary{min-height:44px}
+.z2c-route .ux-route .route-panel{padding:9px 10px 12px;gap:6px}
+.z2c-route .route-intro{padding:5px 9px;border:1px solid #a38455;border-radius:5px;background:#44382b;color:#f4ddb0;box-shadow:inset 0 1px #e7c28b33}
+.z2c-route .route-intro .ux-kicker{color:#d0ba91}
+.z2c-route .route-intro h2{font-size:18px;color:#ffe1a4}
+.z2c-route .ux-route .region-tabs button{min-height:44px}
+.z2c-route .v08-weapon-pick{min-height:44px}
+.z2c-route .v08-weapon-pick .z2a3-art{width:24px;height:24px;vertical-align:middle;margin-right:3px}
+.z2c-route .route-card .route-emoji{display:grid;place-items:center;width:43px;height:43px;border:1px solid #9d8055;border-radius:50%;background:#365947;box-shadow:inset 0 0 0 2px #e4c17d44;flex:none}
+.z2c-route .route-card .route-emoji .z2a3-art{width:31px;height:31px}
+.z2c-route .route-card.route-risk .route-emoji{background:#79503b}
+.z2c-route .ux-route .route-card{border-radius:5px;min-height:72px;background:linear-gradient(105deg,#f3e2b9,#d9bf92);box-shadow:0 3px #2a3024,inset 0 0 0 2px #f9e8c455}
+.z2c-route .ux-route .route-card.route-risk{background:linear-gradient(105deg,#f0d7ad,#d3a87a)}
+.z2c-route .route-card>b .z2a3-art{width:18px;height:18px}
+.z2c-route .v08-branch-card .z2a3-art,.z2c-route .v08-home-choice .z2a3-art,.z2c-route .dock .z2a3-art{width:20px;height:20px;vertical-align:middle}
+.z2c-route .dock .game-btn{min-height:44px}
+@media(max-width:350px){.z2c-route .route-card .route-emoji{width:35px;height:35px}.z2c-route .route-card .route-emoji .z2a3-art{width:25px;height:25px}}
