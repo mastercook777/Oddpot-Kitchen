@@ -10,3 +10,7 @@ test('shared loader deduplicates pending imports, retries a rejected URL, and re
 test('exhausted loader does not spin; manual reset restores finite budget',async()=>{
  let calls=0;const l=createRetryLoader([()=>{calls++;throw Error('offline')}],{delay:0});await l.tryLoad();assert.ok(l.exhausted);await l.tryLoad();assert.equal(calls,1);l.reset();await l.tryLoad();assert.equal(calls,2);
 });
+test('timed out engine import releases the pending slot and late success remains usable',async()=>{
+ let resolve;const l=createRetryLoader([()=>new Promise(r=>resolve=r),()=>Promise.resolve({engine:'alternate'})],{delay:0,timeout:5});
+ assert.equal(await l.tryLoad(),null);assert.equal(l.pending,null);resolve({engine:'late'});await Promise.resolve();await Promise.resolve();assert.equal((await l.tryLoad()).engine,'late');
+});
