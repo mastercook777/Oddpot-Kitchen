@@ -23,7 +23,7 @@ export function startActionField(s){
  const f=s.field;if(!f||f.action)return false;
  f.action=true;f.pos={...(f.spawn||{x:4.5,y:9.4})};f.x=f.pos.x;f.y=f.pos.y;
  f.elapsed=0;f.harvestProgress=0;f.harvestNode=null;f.attackCd=0;f.skillCd??=0;f.damageCd=0;f.guardTime??=0;f.shieldCharge??=(f.weapon?.type==='WOK');f.shieldCooldown??=0;f.shieldFlash??=0;f.activeEvent=null;
- f.impactFx=[];f.combatJolt=0;f.skillOrigin=null;f.steamMist=null;f.projectiles=[];f.playerProjectiles=[];f.attackFx=null;f.skillFx=0;f.hurtFx=0;f.hitFlash=0;f.hitShake=0;f.hitDir=null;f.popFx=[];f.facing={x:0,y:-1};f.moving=false;f.actionMessage='移动寻找食材。靠近目标会自动采集。';f.actionMessageTTL=4;
+ f.impactFx=[];f.combatJolt=0;f.skillOrigin=null;f.potBurst=null;f.steamMist=null;f.projectiles=[];f.playerProjectiles=[];f.attackFx=null;f.skillFx=0;f.hurtFx=0;f.hitFlash=0;f.hitShake=0;f.hitDir=null;f.popFx=[];f.facing={x:0,y:-1};f.moving=false;f.actionMessage='移动寻找食材。靠近目标会自动采集。';f.actionMessageTTL=4;
  const profile=f.biome||{},mix=profile.enemyMix||[f.region==='spring'?'pepper':'chicken'];
  const risk=/risk/.test(f.route),wave=f.segmentIndex||1;
  // Encounter composition, count and spawn rotate with the run seed and zone,
@@ -125,6 +125,20 @@ function advancePlayerProjectiles(s,dt){
  }
  f.playerProjectiles=(f.playerProjectiles||[]).filter(p=>!p.hit);
 }
+// A locked ground eruption is not a projectile. It uses the old empowered
+// bomb's travel delay, radius, damage and cover rules; normal shots are unchanged.
+export function advancePotBurst(s,dt){
+ const f=s.field,b=f.potBurst;if(!b)return false;
+ b.time+=dt;if(b.time+1e-8<b.delay)return false;
+ f.potBurst=null;
+ for(const e of f.enemies||[]){
+  if(e.hp>0&&dist(b,e)<=b.radius&&clearLineOfFire(f,b,e)){
+   damageEnemy(s,e,2,'pot_skill',b);e.slowTime=Math.max(e.slowTime||0,.8);
+  }
+ }
+ queueFieldImpact(f,{kind:'burst',x:b.x,y:b.y,radius:b.radius,strong:true,ttl:.48,duration:.48});
+ return true;
+}
 const WOK_SHIELD_RECHARGE=8;
 function shieldAttackIsFrontal(f,attacker){
  if(!attacker||!Number.isFinite(attacker.x)||!Number.isFinite(attacker.y))return false;
@@ -144,7 +158,7 @@ function hurt(s,amount=1,source='enemy',attacker=null){
    else {f.shieldCharge=false;f.shieldCooldown=WOK_SHIELD_RECHARGE;}
    f.shieldFlash=.55;f.damageCd=.38;
    f.popFx??=[];f.popFx.push({x:f.pos.x,y:f.pos.y-.2,text:parry?'完美格挡!':'盾牌挡住!',ttl:.82,color:'#faffb8'});
-   pushMsg(f,parry?'🛡️ 锅盖反击成功！':'🛡️ 锅盖自动抵挡！8 秒后恢复防护。');
+   pushMsg(f,parry?'🛡️ 旋风斩格挡成功！':'🛡️ 锅盖自动抵挡！8 秒后恢复防护。');
    return true;
   }
  }
@@ -193,8 +207,8 @@ export function useFieldSkill(s){
  const f=s.field;if(s.phase!=='field'||!f?.action||f.skillCd>0||f.finished||f.segmentStatus==='choice'||f.activeEvent)return false;
  if(f.weapon?.type==='STEAM'){
   startSteamMist(f);
-  f.skillCd=6.5;f.skillFx=.42;
-  f.skillOrigin={x:f.steamMist.x,y:f.steamMist.y,type:'STEAM'};
+  f.skillCd=6.5;f.skillFx=.58;
+  f.skillOrigin={x:f.steamMist.x,y:f.steamMist.y,type:'STEAM',duration:.58};
   pushMsg(f,'☁️ 凝雾结界！在当前位置留下减速雾域，持续 '+f.steamMist.duration+' 秒。');
   return true;
  }
@@ -203,20 +217,21 @@ export function useFieldSkill(s){
   const facing={x:(f.facing?.x||0)/length,y:(f.facing?.y??-1)/length};
   const hits=f.enemies.filter(e=>e.hp>0&&inForkFlameCone(f.pos,facing,e,f.weapon?.level)&&clearLineOfFire(f,f.pos,e));
   for(const e of hits)damageEnemy(s,e,FORK_FLAME.damage,'fork_flame');
-  f.skillCd=6.5;f.skillFx=.85;f.skillOrigin={...f.pos,type:'GRILL',dx:facing.x,dy:facing.y,level:f.weapon?.level||1};
+  f.skillCd=6.5;f.skillFx=.85;f.skillOrigin={...f.pos,type:'GRILL',duration:.85,dx:facing.x,dy:facing.y,level:f.weapon?.level||1};
   f.attackFx={ttl:.38,duration:.38,dx:facing.x,dy:facing.y,forkFlame:true,x:f.pos.x,y:f.pos.y};
   pushMsg(f,'🔥 烤叉喷焰！扇区命中 '+hits.length+' 个敌人。');return true;
  }
  if(f.weapon?.type==='POT'){
   const target=f.enemies.filter(e=>e.hp>0&&dist(f.pos,e)<=3.9&&clearLineOfFire(f,f.pos,e))
    .sort((a,b)=>dist(f.pos,a)-dist(f.pos,b))[0];
-  if(!target){pushMsg(f,'高压汤锅：附近没有可瞄准的敌人。');return false;}
-  potLaunch(f,target,2,f.weapon?.level>1?1.25:1.1,.8);f.skillCd=6.5;f.skillFx=.42;f.skillOrigin={...f.pos,type:'POT'};
+  if(!target){pushMsg(f,'沸汤爆裂：附近没有可瞄准的敌人。');return false;}
+  const delay=f.weapon?.level>1?.30:.38,radius=f.weapon?.level>1?1.25:1.1,duration=delay+.48;
   const d=dist(f.pos,target)||1;f.facing={x:(target.x-f.pos.x)/d,y:(target.y-f.pos.y)/d};
-  f.attackFx={ttl:.24,duration:.24,dx:f.facing.x,dy:f.facing.y,pot:true};
-  pushMsg(f,'🍲 高压汤锅！投出强化洋葱炸弹。');return true;
+  f.potBurst={x:target.x,y:target.y,time:0,delay,radius,dx:f.facing.x,dy:f.facing.y};
+  f.skillCd=6.5;f.skillFx=duration;f.skillOrigin={x:target.x,y:target.y,type:'POT',duration,delay,radius,casterX:f.pos.x,casterY:f.pos.y,dx:f.facing.x,dy:f.facing.y};
+  pushMsg(f,'🍲 沸汤爆裂！锁定地面，喷发高压蒸汽。');return true;
  }
- f.skillCd=6.5;f.skillFx=.42;f.skillOrigin={...f.pos,type:'WOK'};f.guardTime=f.weapon?.level>1?.70:.45;
+ f.skillCd=6.5;f.skillFx=.48;f.skillOrigin={...f.pos,type:'WOK',duration:.48,dx:f.facing?.x??0,dy:f.facing?.y??-1,radius:1.85};f.guardTime=f.weapon?.level>1?.70:.45;
  let hits=0;
  for(const e of f.enemies){
   if(e.hp<=0||dist(f.pos,e)>1.85||!clearLineOfFire(f,f.pos,e))continue;
@@ -226,7 +241,7 @@ export function useFieldSkill(s){
   }
   hits++;
  }
- pushMsg(f,hits?'🛡️ 锅盖反击！击退 '+hits+' 个敌人':'🛡️ 举起锅盖！短暂防御迎面攻击。');
+ pushMsg(f,hits?'🌀 旋风斩！击退 '+hits+' 个敌人':'🌀 旋风斩！短暂防御迎面攻击。');
  return true;
 }
 export function resolveFieldEvent(s,choice){const f=s.field;if(f?.nodes?.some(n=>n.key===f.activeEvent&&['merchant','traveler','ecology'].includes(n.kind)))return resolveSpecialFieldEvent(s,choice);if(!f?.action||!f.activeEvent||f.finished)return false;const n=f.nodes.find(n=>n.key===f.activeEvent);if(!n||n.claimed)return false;let label='';if(choice==='trade'){
@@ -329,7 +344,7 @@ export function stepActionField(s,axisX,axisY,dt){
  }
  stepBossZones(f,dt,(amount,source,attacker)=>hurt(s,amount,source,attacker));
  for(const p of f.projectiles){p.x+=p.vx*dt;p.y+=p.vy*dt;p.life-=dt;if(dist(f.pos,p)<(p.windSheet?.38:.28)){p.life=0;hurt(s,1,p.source||'pepper',{x:p.ownerX??p.x,y:p.ownerY??p.y});if(p.windSheet){const speed=Math.hypot(p.vx,p.vy)||1,next={x:f.pos.x-p.vy/speed*.26*(p.side||1),y:f.pos.y+p.vx/speed*.26*(p.side||1)};if(!blocked(f,next,.18)){f.pos=next;f.x=next.x;f.y=next.y;}}}}f.projectiles=f.projectiles.filter(p=>p.life>0&&!blocked(f,p,0));
- advancePlayerProjectiles(s,dt);
+ advancePlayerProjectiles(s,dt);advancePotBurst(s,dt);
  if(f.attackCd<=0){
   const isPot=f.weapon?.type==='POT',isFork=f.weapon?.type==='GRILL',isSteam=f.weapon?.type==='STEAM';
   const range=isPot?3.5:isFork?(f.weapon?.level>1?2.35:2.1):isSteam?steamPulseStats(f.weapon?.level).range:1.25;
