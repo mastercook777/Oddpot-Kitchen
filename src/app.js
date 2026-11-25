@@ -60,7 +60,7 @@ function hud(){
  if(game.phase==='field'&&game.field?.action&&game.field.segmentStatus!=='choice'){const f=game.field;return `<header class="z2a-hud z2a-field-hud"><div class="action-hud" aria-label="探索状态"><span class="field-hp" data-hp="${f.hp}" aria-label="生命 ${f.hp}/3">${z2a2Health(f.hp)}</span><button data-act="field-bag" class="field-bag-chip" aria-label="查看野外背包">${z2a2Icon('bag')} <b id="field-bag-count">${fieldBagSlotsUsed(f)}/${f.capacity||8}</b></button><span class="field-clock" id="field-clock">${z2a2Icon('route')} <b id="z2a2-clock-value">${f.segmentIndex||1}/3 · ${Math.floor(f.elapsed)}s</b></span></div><button type="button" class="z2a-settings hud-gear" data-act="settings" aria-label="设置">${z2a2Icon('gear')}</button></header>`;}
  if(z2bPhase())return `<header class="z2a-hud z2b-hud"><div class="z2b-phase-title">${z2a2Icon(game.phase==='research'?'cook':game.phase==='menu'?'menu':'home')}<span><b>${phaseLabels[game.phase]}</b><small>第 ${totalBusinessDay(game)} 天</small></span></div><span class="z2b-coins">${z2a2Icon('coin')} <b>${game.coins}</b></span><button class="hud-gear" data-act="settings" aria-label="设置">${z2a2Icon('gear')}</button></header>`;
  const home=game.phase==='forecast';
- if(home||game.phase==='field')return `<header class="z2a-hud z2c-hud"><div class="z2b-phase-title">${z2a2Icon(home?'home':'route')}<span><b>${home?'开店前':'出门取材'}</b><small>第 ${totalBusinessDay(game)} 天${home?' · '+tableCapacity(game)+' 座':''}</small></span></div><span class="z2c-resource" aria-label="当前金币 ${game.coins}">${z2a2Icon('coin')} <b>${game.coins}</b></span>${home?`<span class="z2c-resource" aria-label="声望 ${game.reputation}">${z2a2Icon('rep')} <b>${game.reputation}</b></span>`:`<span class="z2c-resource" aria-label="背包容量">${z2a2Icon('bag')} <b>${game.bagSlots||8}</b></span>`}<button class="hud-gear" data-act="settings" aria-label="设置">${z2a2Icon('gear')}</button></header>`;
+ if(home||game.phase==='field')return `<header class="z2a-hud z2c-hud"><div class="z2b-phase-title">${z2a2Icon(home?'home':'route')}<span><b>${home?'清晨 · 食堂':game.field?'旅途岔路':'门前整装'}</b><small>第 ${totalBusinessDay(game)} 天${home?' · '+tableCapacity(game)+' 座':''}</small></span></div><span class="z2c-resource" aria-label="当前金币 ${game.coins}">${z2a2Icon('coin')} <b>${game.coins}</b></span>${home?`<span class="z2c-resource" aria-label="声望 ${game.reputation}">${z2a2Icon('rep')} <b>${game.reputation}</b></span>`:`<span class="z2c-resource" aria-label="背包容量">${z2a2Icon('bag')} <b>${game.bagSlots||8}</b></span>`}<button class="hud-gear" data-act="settings" aria-label="设置">${z2a2Icon('gear')}</button></header>`;
  const step=journey.indexOf(game.phase);
  return `<div class="hud ${home?'v076-home-hud':''}"><div class="brand"><span class="logo" aria-hidden="true">🍳</span><div><strong>怪味食堂</strong><small>第 ${totalBusinessDay(game)} 天 · ${tableCapacity(game)} 座</small></div></div><div class="hud-meta"><span aria-label="金币">🪙 ${game.coins}</span><span aria-label="声望">⭐ ${game.reputation}</span></div><button class="hud-gear" data-act="settings" aria-label="设置">⚙</button></div><div class="day-strip ${home?'v076-home-day':''}" aria-label="当前阶段：${phaseLabels[game.phase]}"><b>${phaseLabels[game.phase]}</b><div class="v014-journey" aria-hidden="true">${journey.slice(0,7).map((phase,i)=>`<i class="${i===step?'current':i<step?'passed':''}"></i>`).join('')}</div><span class="day-phase">${step<5?'☀ 白天':'☾ 夜晚'}</span></div>`;
 }
@@ -235,6 +235,43 @@ function managedFreightPanel(){
  '<div class="v015-ferry-packs">'+routes+'</div>'+
  (st.enabled?'<button data-act="managed-freight:off" '+(!st.canConfigure?'disabled':'')+'>暂停后续发车</button>':'')+freight+'</section>';
 }
+
+function z2c2Door(){return '<button type="button" class="v016-door z2c2-threshold" data-act="to-field" aria-label="走出食堂，整装出发">'+z2a2Icon('route')+'<span>门外小路</span></button>';}
+function z2c2MapArt(region){
+ const tree=(x,y,k=1)=>'<g transform="translate('+x+' '+y+') scale('+k+')"><path d="M-3 8H3V22H-3Z" fill="#846044"/><path d="M0 -23L-15 4H-8L-19 15H19L8 4H15Z" fill="#41634d" stroke="#314d41" stroke-width="1.2"/><path d="M0 -23L-15 4H0L-10 15H0Z" fill="#759267"/></g>';
+ const rock=(x,y,k=1)=>'<g transform="translate('+x+' '+y+') scale('+k+')"><path d="M-22 12L-9 -19 4 -25 21 8 13 17H-14Z" fill="#a77e61" stroke="#7d5c4a" stroke-width="1.2"/><path d="M-9 -19L4 -25 1 9 -14 17 -22 12Z" fill="#d3ad80"/><path d="M1 9L21 8 13 17H-14Z" fill="#8d6652"/></g>';
+ const isle=(x,y,k=1)=>'<g transform="translate('+x+' '+y+') scale('+k+')"><path d="M-43 0Q-35 20 0 40Q32 18 43 0Z" fill="#768b91" stroke="#556a7a"/><path d="M-43 0Q-36 -17 0 -19Q32 -18 43 0Q5 20 -43 0Z" fill="#afc49a" stroke="#748f79"/><path d="M-22 4Q-5 -8 25 -2" fill="none" stroke="#f3dba7" stroke-width="4" stroke-linecap="round"/></g>';
+ const f=region==='forest',h=region==='spring',cloud=region==='cloud';
+ const landscape=cloud?[isle(52,103,.95),isle(249,93,1.1),isle(160,185,1.05),isle(153,53,.6),'<path d="M0 60Q42 39 80 60T160 60T240 60T320 60M0 145Q42 124 80 145T160 145T240 145T320 145" fill="none" stroke="#eff0d9" stroke-width="8" opacity=".7"/>'].join(''):
+ h?'<path d="M178 26Q287 2 320 58V166Q250 194 183 152Q148 98 178 26Z" fill="#ba8a65" stroke="#936e51"/><path d="M0 110Q58 66 129 110T205 189L0 216Z" fill="#b2ad7a"/><path d="M24 99Q42 72 76 80T118 103Q90 126 57 118T24 99ZM215 119Q246 102 275 118T288 143Q252 159 221 143Z" fill="#7faeae" stroke="#d8e6c3" stroke-width="5"/>'+[[214,57,.85],[264,77,1.1],[288,116,.7],[180,109,.65],[25,62,.7],[111,59,.9]].map(a=>rock(...a)).join('')+'<path d="M60 84q-12 -10 1 -20m22 19q11 -9 0 -20m165 52q-12 -13 1 -25" fill="none" stroke="#f5e9cf" stroke-width="3" stroke-linecap="round"/>':
+ '<path d="M0 42Q67 10 136 55T230 32L320 51V160Q252 196 194 142T0 189Z" fill="#a8b47b" stroke="#8d9c6c"/><path d="M0 102Q92 61 170 111T320 83" fill="none" stroke="#679c9a" stroke-width="13"/><path d="M0 102Q92 61 170 111T320 83" fill="none" stroke="#bed1b2" stroke-width="7"/>'+[[21,56,1],[51,48,.8],[91,66,1.1],[132,54,.8],[236,44,.9],[273,53,1.15],[304,71,.8],[217,112,.8],[291,139,1],[25,147,.65],[122,133,.7]].map(a=>tree(...a)).join('')+'<g stroke="#7b8c5d" stroke-width="2" fill="none"><path d="M30 115L72 130M25 121L67 137M20 127L62 144"/></g><g fill="#ae7055" stroke="#f4ddb1"><path d="M230 129q13 -17 26 0Z"/><path d="M249 136q11 -15 22 0Z"/></g>';
+ return '<svg class="z2c2-map-art" viewBox="0 0 320 240" preserveAspectRatio="none" aria-hidden="true"><defs><pattern id="z2c2-paper" width="13" height="13" patternUnits="userSpaceOnUse"><path d="M0 4L13 1M2 13L9 9" stroke="#8c6848" stroke-opacity=".09" stroke-width=".6"/></pattern></defs><rect width="320" height="240" fill="'+(cloud?'#c4d8d5':'#e3cfa0')+'"/><rect x="7" y="7" width="306" height="226" rx="4" fill="none" stroke="#997b52" stroke-dasharray="2 4"/>'+landscape+'<rect width="320" height="240" fill="url(#z2c2-paper)"/><g fill="none" stroke-linecap="round"><path d="M160 217Q147 190 107 172T65 119" stroke="#f7e3b1" stroke-width="7"/><path d="M160 217Q147 190 107 172T65 119" stroke="#536f4a" stroke-width="2.6" stroke-dasharray="3 6"/><path d="M160 217Q176 190 221 164T254 115" stroke="#f7e3b1" stroke-width="7"/><path d="M160 217Q176 190 221 164T254 115" stroke="#a85b45" stroke-width="2.6" stroke-dasharray="3 6"/></g><g transform="translate(160 211)"><path d="M-12 4V-7H12V4Z" fill="#e7c68b" stroke="#72513c"/><path d="M-16 -7L0 -19 16 -7Z" fill="#975b43" stroke="#72513c"/><path d="M-3 4V-4H3V4" fill="#69503a"/></g><g transform="translate(293 211)" stroke="#8e7350" fill="none"><circle r="11"/><path d="M0 -15V15M-15 0H15M0 -11L4 0 0 3 -4 0Z" fill="#8e7350"/></g></svg>';
+}
+function z2c2WeaponText(type,level){
+ const names={WOK:['炒锅剑盾','贴身挥击 · 锅盖护身'],POT:['炖锅投弹','远程抛投 · 范围爆裂'],GRILL:['烤叉','长柄突刺 · 扇形喷焰'],STEAM:['云汽蒸笼','云汽脉冲 · 减速控场']};
+ const stats={WOK:level>1?'挥击 0.62 秒 · 格挡 0.70 秒':'挥击 0.70 秒 · 格挡 0.45 秒',POT:level>1?'投弹 0.30 秒 · 爆炸半径 0.75 格':'投弹 0.38 秒 · 爆炸半径 0.65 格',GRILL:level>1?'前刺 0.72 秒 · 喷焰 3.0 格':'前刺 0.88 秒 · 喷焰 2.7 格',STEAM:level>1?'云汽脉冲 1.9 格 · 减速雾域 3.4 秒':'云汽脉冲 1.6 格 · 减速雾域 2.8 秒'};
+ return {name:names[type]?.[0]||type,flavor:names[type]?.[1]||'',stats:stats[type]||''};
+}
+function z2c2Departure(routes,lowStock){
+ const cloud=activeWorld(game)==='cloud',region=cloud?'cloud':selectedRegion==='spring'?'spring':'forest';
+ const regions=cloud?[['cloud','云港浮岛']]:[['forest','晨露森林'],['spring','热泉峡谷']];
+ const supplies=region==='forest'?[['cabbage','garlic','mushroom'],['chicken','beef']]:region==='spring'?[['potato','onion','chili'],['chili','beef']]:[['cloud_rice','sky_moss','sour_bell'],['storm_egg','sky_moss']];
+ const choices=fieldWeaponChoices(game),selected=selectedFieldWeaponType(game),w=choices.find(q=>q.type===selected)||choices[0];
+ const info=w?z2c2WeaponText(w.type,w.level):null;
+ return `<div class="forest-scene route-scene z2c2-expedition"><div class="route-panel z2c2-scroll">
+ <section class="v013h-supply-hint z2c2-note" aria-label="经营备料提示"><div class="z2c2-note-pin"></div><div><b>今日备料便笺</b><span>${lowStock.length?'菜单库存偏低 · 先找这些食材':'库存相对充足，今天不妨寻找新味道。'}</span></div>${lowStock.length?`<div class="z2c2-note-food">${lowStock.map(id=>`<span>${ingredientIconHtml(id,22)} ${esc(ING[id].name)} <small>${game.inventory[id]||0}份</small></span>`).join('')}</div>`:''}</section>
+ <section class="z2c2-map" aria-label="食堂周边旅行示意地图">
+  ${z2c2MapArt(region)}
+  <div class="z2c2-map-regions" role="group" aria-label="选择探索地区">${regions.map(([id,name])=>cloud?`<span class="z2c2-region current">${name}</span>`:`<button class="z2c2-region ${id===region?'current':''}" data-region="${id}" aria-pressed="${id===region}">${name}</button>`).join('')}</div>
+  <div class="z2c2-map-caption">${region==='forest'?'草甸、溪流与古树之间':region==='spring'?'热雾、矿泉与赤焰岩层':'浮岛、风道与雷羽巢缘'}</div>
+  ${routes.map((r,i)=>`<button class="z2c2-map-stop ${/risk/.test(r.id)?'danger':'gather'}" data-route="${r.id}" aria-label="${esc(r.name)} · ${esc(r.subtitle)}"><span class="z2c2-stop-seal">${z2a2Icon(/risk/.test(r.id)?'wok':'route')}</span><b>${r.name}</b><span class="z2c2-stop-food">${supplies[i].map(id=>ingredientIconHtml(id,23)).join('')}</span><small>${/risk/.test(r.id)?'深入 · 战斗':'沿路 · 寻材'}</small></button>`).join('')}
+  <span class="z2c2-map-origin">${cloud?'从码头启程':'食堂门口'}</span>
+ </section>
+ <section class="z2c2-rack" aria-label="上路厨具"><div class="z2c2-rack-head"><b>带哪件厨具上路？</b><small>点选器物</small></div><div class="z2c2-tools">${choices.map(q=>`<button data-weapon="${q.type}" class="z2c2-tool ${q.type===selected?'chosen':''}" aria-pressed="${q.type===selected}" aria-label="${z2c2WeaponText(q.type,q.level).name} Lv${q.level}">${z2bCookIcon(q.type)}<span>${z2c2WeaponText(q.type,q.level).name}</span><small>Lv.${q.level}${q.type===selected?' · 已带上':''}</small></button>`).join('')}</div>${info?`<div class="z2c2-tool-flavor">${info.flavor}</div>`:''}</section>
+ <details class="z2c2-travel-notes"><summary>翻开旅行笔记</summary><div>${routes.map(r=>`<p><b>${r.name}</b> · ${esc(r.subtitle)}${/risk/.test(r.id)&&!cloud?' · 第三段挑战'+bossHint(region).boss+'，预留背包格':''}</p>`).join('')}${info?`<p><b>${info.name}</b> · ${w.fitted?(['左','右','中'][w.slotIndex]||'')+'厨位装配':'背包备用'} · ${info.stats}</p>`:''}<p>${cloud?'三段航路，可随时返港。':'三段路，可随时回店。'}生态决定主要产物，不保证指定食材掉落。库存少于6份时标为偏低。</p></div></details>
+ </div></div>`;
+}
+
 function forecast(){
  const plan=serviceDayPlan(game);
  const stock=Object.values(game.inventory).reduce((sum,n)=>sum+n,0);
@@ -257,24 +294,24 @@ function forecast(){
       <button type="button" class="v016-book" data-act="book" aria-label="翻开料理图鉴">料理笔记</button>
       <button type="button" class="v016-bento" data-act="bento">便当${bentoReady?' ✓':''}</button>
       <button type="button" class="v016-crew" data-act="crew">伙伴</button>
-      <button type="button" class="v076-home-primary v016-door" data-act="to-field">出门取材 ${z2a2Icon('next')}</button>
+      ${z2c2Door()}
      </div>
     </section>
     ${milestone?'<div class="v016-milestone">'+milestone+'</div>':''}
-    <div class="v016-foot"><span>边境食堂 · 开店前</span><span>点击场景物件互动</span></div>
+    <div class="v016-foot"><span>边境食堂 · 开店前</span><span>门外天色正好</span></div>
    </div>`,'' ];
  }
  return [`
- <div class="v076-home">
-  <section class="v076-mission" aria-label="今日营业目标">
+ <div class="v076-home v016-home z2c2-cloud-home">
+  <section class="v076-mission v016-notice" aria-label="今日营业目标">
     <div class="v076-mission-meta"><span>店门口的今日告示</span><span>预计 ${plan.count} 位客人</span></div>
     <h1>${esc(title)}</h1>
     <p>${z2a2Icon('target')} ${esc(plan.goal.label)}</p>
     <details><summary>看看今晚的安排</summary><small>${brief}</small></details>
   </section>
   ${starInvite()}${portalPanel()}
-  <section class="v076-preview" aria-label="餐厅当前布局">
-    ${restaurantView(false)}
+  <section class="v076-preview v016-scene" aria-label="云港食堂 · 点击门槛出发">
+    ${restaurantView(false)}<div class="v016-world-actions" aria-label="门口互动">${z2c2Door()}</div>
   </section>
   <section class="v076-home-controls" aria-label="开店前可用操作">
     <div class="v076-home-resources"><strong>今天先备料</strong><span>🎒 ${stock} 份 · 市场 ${Object.keys(market.goods).length} 款</span></div>
@@ -283,8 +320,7 @@ function forecast(){
       <button type="button" data-act="bento">${z2a2Icon('bento')} 便当${bentoReady?' ✓':''}</button>
       <button type="button" data-act="book">${z2a2Icon('ledger')} 图鉴</button>
     </div>
-    <button type="button" class="v076-home-primary" data-act="to-field">${z2a2Icon('route')} 出门取材 ${z2a2Icon('next')}</button>
-  </section>
+   </section>
  </div>`,'' ];
 }
 function bossHint(region){
@@ -298,19 +334,7 @@ function field(){
  if(!f){
   const activeRoutes=activeWorld(game)==='cloud'?[{id:'cloud_safe',name:'顺风采集',emoji:'☁️',subtitle:'云谷米、浮苔叶与酸铃果'},{id:'cloud_risk',name:'雷羽狩猎',emoji:'⚡',subtitle:'雷羽巢缘 · 高风险取得雷羽蛋'}]:selectedRegion==='forest'?ROUTES:[{id:'spring_safe',name:'采集路线',emoji:'♨',subtitle:'热泉水岸 · 土豆、洋葱和火椒优先'},{id:'spring_risk',name:'狩猎路线',emoji:'🌋',subtitle:'熔岩兽群 · 椒怪、蟹群与战斗战利品'}];
   const lowStock=[...new Set((game.menu||[]).flatMap(id=>RECIPES[id]?.ids||[]))].filter(id=>(game.inventory[id]||0)<6);
-  const stockHint=lowStock.length?'当前菜单库存偏低（少于6份）：'+lowStock.map(id=>ING[id].name).join('、'):'当前菜单食材储备相对充足';
-  return [
- `<div class="forest-scene route-scene ux-route">${activeWorld(game)==='cloud'?cloudBackdrop():forestBackdrop()}<div class="route-panel">
-   <div class="route-intro"><span class="ux-kicker">${activeWorld(game)==='cloud'?'云港浮岛 · 空中航线':'食堂外的两条路'}</span><h2>今天去哪找食材？</h2></div>
-   <div class="v013h-supply-hint" aria-label="经营备料提示">${z2a2Icon('bag')} ${esc(stockHint)}<details><summary>取材规则</summary><small>各生态有不同的主要产物；路线选择不保证指定食材掉落。</small></details></div>
-   <div class="ux-field-label"><strong>探索区域</strong></div>
-   <div class="region-tabs" role="group" aria-label="探索区域">${activeWorld(game)==='cloud'?'<button class="current" disabled>云港浮岛</button>':`<button data-region="forest" class="${selectedRegion==='forest'?'current':''}" aria-pressed="${selectedRegion==='forest'}">晨露森林</button><button data-region="spring" class="${selectedRegion==='spring'?'current':''}" aria-pressed="${selectedRegion==='spring'}">热泉峡谷</button>`}</div>
-   <div class="ux-field-label"><strong>带一件厨具</strong></div>
-   <div class="v08-weapon-picks">${fieldWeaponChoices(game).map(({type,level,slotIndex,fitted})=>`<button class="v08-weapon-pick ${selectedFieldWeaponType(game)===type?'chosen':''}" data-weapon="${type}" aria-pressed="${selectedFieldWeaponType(game)===type}">${z2bCookIcon(type)} ${type==='STEAM'?'蒸笼控场':type==='GRILL'?'烤叉':type==='WOK'?'炒锅剑盾':'炖锅投弹'} · Lv${level}<small>${fitted?`${slotIndex===0?'左':slotIndex===1?'右':'中'}厨位装配`:'背包备用'} · ${type==='STEAM'?(level>1?'云汽脉冲 1.9 格 · 减速雾域 3.4 秒':'云汽脉冲 1.6 格 · 减速雾域 2.8 秒'):type==='GRILL'?(level>1?'前刺 0.72 秒 · 喷焰 3.0 格':'前刺 0.88 秒 · 喷焰 2.7 格'):type==='WOK'?(level>1?'挥击 0.62 秒 · 格挡 0.70 秒':'挥击 0.70 秒 · 格挡 0.45 秒'):(level>1?'投弹 0.30 秒 · 爆炸半径 0.75 格':'投弹 0.38 秒 · 爆炸半径 0.65 格')}</small></button>`).join('')}</div>
-   <div class="ux-field-label"><strong>选择路线出发</strong></div>
-   <div class="route-options">${activeRoutes.map(r=>`<button class="route-card ${/risk/.test(r.id)?'route-risk':'route-safe'}" data-route="${r.id}"><span class="route-emoji" aria-hidden="true">${z2a2Icon(/risk/.test(r.id)?'wok':'route')}</span><div><strong>${r.name}</strong><small>${r.subtitle}${/risk/.test(r.id)&&activeWorld(game)!=='cloud'?` · 第三段挑战${bossHint(selectedRegion).boss}，为奖励留背包格`:''}</small></div><span class="route-risk-label">${/risk/.test(r.id)?'战斗':'采集'}</span><b aria-hidden="true">${z2a2Icon('next')}</b></button>`).join('')}</div>
-  </div></div>`,
- `<div class="dock-head"><span>${activeWorld(game)==='cloud'?'三段航路 · 可随时返港':'三段路 · 可随时回店'}</span><span>背包 ${game.bagSlots||8} 格</span></div><div class="action-row">${b('bento',z2a2Icon('bento')+' 便当','secondary')}${b('skip-field','先去研发','secondary wide')}</div>`]
+  return [z2c2Departure(activeRoutes,lowStock),`<div class="action-row">${b('bento',z2a2Icon('bento')+' 带上便当','secondary')}${b('skip-field',z2a2Icon('cook')+' 先回灶台试菜','secondary wide')}</div>`];
  }
  if(f.segmentStatus==='choice'){
   const boss=bossHint(f.region),slots=fieldBagSlotsUsed(f),full=slots>=f.capacity;

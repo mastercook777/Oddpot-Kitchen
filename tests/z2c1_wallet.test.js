@@ -10,5 +10,5 @@ test('Z2c1 wallet is the current total, not shift revenue, and preserves live co
 test('Z2c1 morning and non-live route use a single compact HUD with real resources',()=>{
  const g={phase:'forecast',coins:92,reputation:7,bagSlots:8};
  const home=render(g);assert.match(home,/z2c-hud/);assert.match(home,/第 2 天 · 4 座/);assert.match(home,/当前金币 92/);assert.match(home,/声望 7/);assert.doesNotMatch(home,/day-strip/);
- g.phase='field';const route=render(g);assert.match(route,/出门取材/);assert.match(route,/背包容量/);assert.doesNotMatch(route,/day-strip/);
+ g.phase='field';const route=render(g);assert.match(route,/门前整装/);assert.match(route,/背包容量/);assert.doesNotMatch(route,/day-strip/);
 });
