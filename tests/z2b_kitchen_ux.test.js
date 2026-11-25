@@ -1,7 +1,8 @@
 import test from 'node:test';import assert from 'node:assert/strict';import {readFileSync} from 'node:fs';
 import {ING,RECIPES} from '../src/data.js';
 import {z2a2Icon} from '../src/ui_icons_z2a2.js';
-import {ingredientIconHtml} from '../src/ingredient_icons_v011g.js';
+// Test markup bindings without requiring browser-only raster Canvas generation.
+const ingredientIconHtml=id=>Object.hasOwn(ING,id)?'<img data-ingredient-icon="'+id+'">':'';
 const read=p=>readFileSync(new URL('../'+p,import.meta.url),'utf8'),app=read('src/app.js'),css=read('src/full_game_ui_v014.css'),three=read('src/three_y2_diner.js');
 function fixture(selected,method,kitchen){
  const game={inventory:{chicken:5,chili:2,mushroom:3},phase:'research',kitchen};
