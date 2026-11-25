@@ -1,6 +1,6 @@
 import {a21AtlasReady,a21Sprite,a21Tile} from './hearth_assets_v016a21.js?v=0.16-a21';
 import {fieldHitPose,fieldAttackPose} from './field_hit_response_v011h.js?v=0.12.0-alpha.1';
-import {drawFieldHitEffects} from './field_effects_v011e2.js?v=0.12.0-alpha.1';
+import {drawFieldHitEffects} from './field_effects_v011e2.js?v=y5c';
 import {drawEcologyWarning} from './field_ecology_v011b2.js';
 import {drawPixelMiniBoss,drawMiniBossWarning,drawBossZones} from './field_bosses_v011g.js';
 import {isHybridFieldArt,drawHybridFieldGround,drawHybridFieldObstacle,drawHybridFieldHazard,drawHybridFieldAtmosphere} from './field_hybrid_biomes_v011f.js?v=0.12.0-alpha.1';
@@ -279,6 +279,7 @@ export function drawField(canvas,s,clock){const size=setCanvas(canvas);if(!size|
   if(!three)drawHybridFieldAtmosphere(c,f,clock);
   if(!three)for(const p of f.projectiles||[]){if(smoothFx)drawFieldProjectile(c,p);else if(herbPixelArt)drawHerbPixelProjectile(c,p);else {circle(c,p.x,p.y,.12,'#ef9c4e');circle(c,p.x,p.y,.05,'#ffe5a3')}}
  if(!three)for(const p of f.playerProjectiles||[]){
+  if(p.eruption){const q=Math.min(1,p.time/p.duration);c.save();c.strokeStyle='#bcefd1';c.lineWidth=.07;c.globalAlpha=.55+.45*q;c.beginPath();c.arc(p.targetX,p.targetY,p.radius,0,Math.PI*2);c.stroke();c.beginPath();c.arc(p.targetX,p.targetY,p.radius*(.25+.75*q),0,Math.PI*2);c.stroke();c.restore();continue;}
   const arc=Math.sin(Math.PI*Math.min(1,p.time/p.duration))*.37;
   if(smoothFx){drawFieldProjectile(c,p,'player');continue;}
   if(herbPixelArt){drawHerbPixelProjectile(c,{x:p.x,y:p.y-arc},'player');continue;}
