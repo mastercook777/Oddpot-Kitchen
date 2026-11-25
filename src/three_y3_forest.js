@@ -1,3 +1,4 @@
+import {makeLandscapeY5d,landscapeSeed} from './three_y5d_landscape.js?v=y5d';
 // Y3a: read-only 3D forest. No physics, inventory or combat simulation.
 import {roundedFactory} from './three_y1_models.js?v=y1';
 import {makeChefY2} from './three_y2b_chef.js?v=y3d';
@@ -52,7 +53,7 @@ function createForest(T){
  function place(p,x,y,height=0){p.position.set(x,height,y/SINE);}
  function random(i){return ((Math.imul(i+1729,1664525)+1013904223)>>>0)%10007/10007;}
  function branch(p,a,b,r1,r2,m){const u=new T.Vector3(...a),v=new T.Vector3(...b),d=v.clone().sub(u),q=u.clone().add(v).multiplyScalar(.5),o=cyl(p,m,q.x,q.y,q.z,r1,r2,d.length(),9);o.quaternion.setFromUnitVectors(new T.Vector3(0,1,0),d.normalize());return o;}
- let terrain=null,mapKey='',treeCrowns=[],vents=[],pools=[],nodePool=new Map(),enemyPool=new Map(),uniqueTerrain=[],ambient=null,theme=THEMES.meadow,style='meadow',zone='herb_path';const glow=material('#85e2cc');glow.emissive.set('#4ebda8');glow.emissiveIntensity=.85;const cap=material('#8881bd'),oldBark=material('#685349'),hazardMat=material('#b69ac1');
+ let terrain=null,mapKey='',treeCrowns=[],vents=[],pools=[],nodePool=new Map(),enemyPool=new Map(),uniqueTerrain=[],ambient=null,landscape=null,theme=THEMES.meadow,style='meadow',zone='herb_path';const glow=material('#85e2cc');glow.emissive.set('#4ebda8');glow.emissiveIntensity=.85;const cap=material('#8881bd'),oldBark=material('#685349'),hazardMat=material('#b69ac1');
  const mineral=material('#e3d6ae'),basalt=material('#50464a'),basaltLight=material('#7d6660'),sulfur=material('#d9b758'),water=material('#74c9be',.24,.16),crystal=material('#88d8cf',.27,.12),ember=material('#e68441');ember.emissive.set('#db4b22');ember.emissiveIntensity=1.4;crystal.emissive.set('#276a63');crystal.emissiveIntensity=.25;
  const isSpring=()=>Object.values(SPRING_ZONES).includes(style);
  const pickupGeo=new T.RingGeometry(.80,1,40);pickupGeo.rotateX(-Math.PI/2);const pickupInner=new T.RingGeometry(.94,1,40);pickupInner.rotateX(-Math.PI/2);
@@ -69,29 +70,22 @@ function createForest(T){
   if(style==='roots'&&i%3!==2){const h=1.3+random(i*13)*.8;branch(p,[0,0,0],[.14,h,0],.20,.32,oldBark);for(let j=0;j<5;j++){const a=j*1.256;branch(p,[0,.32,0],[Math.cos(a)*.47,.025,Math.sin(a)*.47],.075,.15,oldBark);}for(const k of [-1,1])branch(p,[.09,h*.6,0],[k*.42,h+.23,.15],.045,.12,oldBark);ball(p,cap,.23,.28,.24,.22,.09,.19);return;}
   if(style==='garden'&&i%3===0){for(let j=0;j<4;j++){const a=j*1.57;ball(p,leaves[j],Math.cos(a)*.24,.27,Math.sin(a)*.24,.30,.25,.30);ball(p,gold,Math.cos(a)*.27,.40,Math.sin(a)*.27,.065,.065,.065,false);}return;}
   if(i%5===2){for(let j=0;j<3;j++){const a=mesh(p,rock,j===0?stone:stone2,(j-1)*.22,.22+j*.025,(j%2)*.16);a.scale.set(.36-j*.06,.27+j*.06,.34-j*.05);a.rotation.y=i*.73+j;}ball(p,moss,-.10,.36,.05,.27,.07,.20);return;}
-  const h=1.0+random(i*7)*.38;branch(p,[0,0,0],[.08,h,0],.13,.20,bark);for(let j=0;j<5;j++){const a=j*Math.PI*2/5;branch(p,[0,.20,0],[Math.cos(a)*.38,.015,Math.sin(a)*.38],.045,.095,bark);}
+  const seed=landscapeSeed({biome:{zoneId:zone}})%10007,variant=(i+seed)%4,h=1.12+random(i*7+seed)*.68+(variant===0?.35:0),lean=(random(i*19+seed)-.5)*.26;branch(p,[0,0,0],[lean,h,0],.12,.21,bark);for(let j=0;j<5;j++){const a=j*Math.PI*2/5;branch(p,[0,.20,0],[Math.cos(a)*.38,.015,Math.sin(a)*.38],.045,.095,bark);}
   for(const k of [-1,1])branch(p,[.03,h*.62,0],[k*.29,h+.18,.07],.07,.10,barkLight);
-  const crown=group(p,.05,h,0);for(let j=0;j<7;j++){const a=j*2.4,r=j===0?0:.31+random(i+j*31)*.15;ball(crown,leaves[(i+j)%4],Math.cos(a)*r,.20+random(i*53+j)*.24,Math.sin(a)*r,.40+random(j*11+i)*.09,.37,.42);}
-  ball(crown,leaves[3],-.10,.55,-.09,.43,.33,.40);treeCrowns.push({crown,x:o.x+.5,y:o.y+.5});
+  const crown=group(p,lean,h,0);const spread=variant===0?.90:variant===1?1.10:1.0;
+  for(let j=0;j<8;j++){const a=j*2.399+i*.71,r=j===0?0:(.27+random(i+j*31+seed)*.15)*spread;const q=ball(crown,leaves[(i+j)%4],Math.cos(a)*r,.13+random(i*53+j+seed)*.34,Math.sin(a)*r,(.34+random(j*11+i)*.12)*spread,.25+random(i*13+j)*.13,.37*spread);q.rotation.y=a;q.rotation.z=.18*Math.sin(a);}
+  for(let j=0;j<3;j++)ball(crown,leaves[(j+2)%4],(j-1)*.18,.49+j*.07,(j%2)*.13,.33*spread,.24,.32*spread);
+  for(let j=0;j<3;j++){const a=j*2.399+i;const x=Math.cos(a)*.26,z=Math.sin(a)*.26;ball(p,moss,x,.075,z,.14,.045,.12,false);}
+  treeCrowns.push({crown,x:o.x+.5,y:o.y+.5,h});
  }
  function rebuild(f,key){if(terrain)scene.remove(terrain);for(const r of uniqueTerrain)r.dispose();uniqueTerrain=[];terrain=group(scene);treeCrowns=[];vents=[];pools=[];mapKey=key;
   style=field3DTheme(f)||'meadow';theme=THEMES[style];zone=f.biome?.zoneId||'herb_path';scene.background.set(theme.sky);sun.color.set(theme.light);hemi.color.set(style==='glow'||style==='oasis'?'#c7f2eb':style==='ember'?'#ffd5b3':'#f0ead1');leaves.forEach((m,i)=>m.color.set(theme.leaf[i]));grasses.forEach((m,i)=>m.color.set(theme.grass[i]));element.dataset.biome=zone;element.dataset.theme=style;element.dataset.region=isSpring()?'spring':'forest';
-  const mw=f.worldW,mh=f.worldH;const groundGeo=new T.PlaneGeometry(mw+4,(mh+4)/SINE),groundMat=material(theme.floor);uniqueTerrain.push(groundGeo,groundMat);const ground=mesh(terrain,groundGeo,groundMat,mw/2,-.025,mh/2/SINE,false);ground.rotation.x=-Math.PI/2;
-  // Broad subtle organic patches, not tiled checkerboards. Vertex colors follow deterministic positions.
-  const geo=new T.PlaneGeometry(mw,mh/SINE,Math.ceil(mw*2),Math.ceil(mh*2));geo.rotateX(-Math.PI/2);const pos=geo.attributes.position,colors=[],c=new T.Color();
-  for(let i=0;i<pos.count;i++){let x=pos.getX(i),z=pos.getZ(i);let q=.5+.22*Math.sin(x*.63+z*.39)+.14*Math.cos(z*.93-x*.48)+.08*Math.sin(x*2.5+z*1.4);c.setHSL(theme.hue+q*.022,isSpring()?(style==='steam'?.06:.19)+q*.08:style==='roots'?.13+q*.07:.27+q*.09,(style==='spring'?.51:style==='oasis'?.47:style==='steam'?.31:style==='ember'?.22:style==='glow'?.27:style==='roots'?.28:.37)+q*.12);colors.push(c.r,c.g,c.b);}
-  geo.setAttribute('color',new T.Float32BufferAttribute(colors,3));const terrainMat=new T.MeshStandardMaterial({vertexColors:true,roughness:1});uniqueTerrain.push(geo,terrainMat);mesh(terrain,geo,terrainMat,mw/2,0,mh/2/SINE,false);
-  const goal=(f.nodes||[]).find(n=>n.key==='target');const route=goal?fieldTilePath(f,f.spawn||f.pos,goal,{avoidHazards:true}):[];
-  if(route.length>1){const pathGeo=new T.CircleGeometry(.5,14),pathMat=material(theme.soil);uniqueTerrain.push(pathGeo,pathMat);const pathMesh=new T.InstancedMesh(pathGeo,pathMat,route.length*2);uniqueTerrain.push(pathMesh);const d=new T.Object3D();let j=0;
-   for(const [i,q] of route.entries()){d.position.set(q.x,.008,q.y/SINE);d.rotation.set(-Math.PI/2,0,random(i*57)*.25);d.scale.set(.86+random(i*71)*.19,1.40/SINE,1);d.updateMatrix();pathMesh.setMatrixAt(j++,d.matrix);d.position.set(q.x+(i%2?.22:-.22),.009,q.y/SINE+.12);d.scale.set(.35,.42,1);d.updateMatrix();pathMesh.setMatrixAt(j++,d.matrix);}pathMesh.receiveShadow=true;terrain.add(pathMesh);
-  }
-  for(let i=0;i<22;i++){const side=i%2,x=side?mw+.40:-.40,z=(Math.floor(i/2)+.5)*mh/11/SINE;if(isSpring()){const q=mesh(terrain,rock,style==='ember'?basalt:mineral,x,.16,z,false);q.scale.set(.63,.26+random(i*13)*.45,.8);}else ball(terrain,leaves[(i+1)%4],x,-.13,z,.60,.43+random(i*13)*.30,.83,false);if(i%3===0){const o=mesh(terrain,rock,stone2,x,.13,z,false);o.scale.set(.36,.28,.40);}}
-  // Outer landscape terraces: outside the playable field, no fake collision.
-  for(let i=0;i<16;i++){const x=(i+.5)*mw/16,z=(i%2?mh/SINE+.84:-.84),p=group(terrain,x,0,z);
-   if(isSpring()){for(let j=0;j<3;j++){const q=mesh(p,rock,style==='ember'?basalt:j%2?basaltLight:mineral,(j-1)*.21,.20+j*.13,(j%2)*.26,false);q.scale.set(.38,.24+j*.10,.52);q.rotation.y=i*.81+j;}if(style==='ember')branch(p,[-.26,.18,.03],[.23,.30,.13],.035,.03,ember);}
-   else{for(let j=0;j<3;j++){ball(p,leaves[(i+j)%4],(j-1)*.25,.13+j*.12,0,.40,.28+j*.10,.44,false);}if(i%3===0){branch(p,[-.38,.08,.05],[.36,.09,.15],.11,.14,bark);ball(p,barkLight,.36,.09,.15,.04,.10,.10,false);}}
-  }
-  (f.obstacles||[]).forEach((o,i)=>tree(terrain,o,i));
+  const mw=f.worldW,mh=f.worldH,goal=(f.nodes||[]).find(n=>n.key==='target');
+  const route=goal?fieldTilePath(f,f.spawn||f.pos,goal,{avoidHazards:true}):[];
+  landscape=makeLandscapeY5d(T,terrain,f,style,route,SINE);uniqueTerrain.push(...landscape.resources);
+  element.dataset.landscape='y5d';for(const [k,v] of Object.entries(landscape.stats))element.dataset['landscape'+k[0].toUpperCase()+k.slice(1)]=String(v);
+  // Hot spring/oasis obstacle basins are already rendered by the new layer.
+  if(style!=='spring'&&style!=='oasis')(f.obstacles||[]).forEach((o,i)=>tree(terrain,o,i));
   // Only existing hazard cells: never introduce collision or an extra damage tile.
   for(const hz of f.hazards||[]){
    const p=group(terrain);place(p,hz.x+.5,hz.y+.5);
@@ -109,32 +103,8 @@ function createForest(T){
    const dropMat=new T.MeshBasicMaterial({color:hot?'#ffbb63':spore?'#e3b9ff':'#b8f4ef',transparent:true,opacity:.8,depthWrite:false});uniqueTerrain.push(dropMat);
    for(let j=0;j<8;j++){const o=ball(jet,dropMat,0,0,0,.025,.06,.025,false);o.receiveShadow=false;drops.push(o);}vents.push({hz,jet,bubbles,drops,dropMat});
   }
-  if(isSpring())for(let j=0;j<5;j++){
-   const p=group(terrain,j%2?mw+.70:-.70,0,(j+1)*mh/6/SINE);
-   if(style==='spring'||style==='oasis'){ball(p,mineral,0,-.03,0,.69,.09,1.05,false);ball(p,water,0,.035,0,.56,.025,.85,false);const ripple=mesh(p,pickupGeo,new T.MeshBasicMaterial({color:'#dffdf3',transparent:true,opacity:.5,depthWrite:false,side:T.DoubleSide}),0,.07,0,false);uniqueTerrain.push(ripple.material);pools.push(ripple);}
-   else {for(let k=0;k<3;k++){const q=mesh(p,rock,basalt,(k-1)*.22,.35+k*.15,0);q.scale.set(.4,.5+k*.2,.37);}if(style==='ember')branch(p,[0,.05,-.4],[.12,.08,.6],.055,.04,ember);}
-  }
-  // Distinct landmark silhouettes at the real map edge, out of walkable bounds.
-  if(style==='glow'){for(let j=0;j<5;j++){const p=group(terrain,-.45,0,(j+1)*mh/6/SINE);const h=.8+j%3*.4;cyl(p,cream,0,h*.45,0,.12,.19,h*.9);ball(p,cap,0,h,0,.53,.22,.52);ball(p,glow,0,h-.10,0,.40,.07,.40);}}
-  if(style==='roots'){const p=group(terrain,mw*.5,0,-.35);branch(p,[-1.8,.04,0],[-.55,1.9,0],.30,.46,oldBark);branch(p,[1.8,.04,0],[.55,1.9,0],.30,.46,oldBark);branch(p,[-.55,1.9,0],[.55,1.9,0],.33,.33,oldBark);for(let j=0;j<5;j++)ball(p,cap,-1+j*.5,1.90,0,.23,.12,.19);}
-  if(style==='garden'){for(let i=0;i<8;i++){const p=group(terrain,mw+.24,0,(i+1)*mh/9/SINE);box(p,bark,0,.13,0,.40,.26,.64);for(let j=0;j<3;j++)ball(p,leaves[(i+j)%4],0,.34,-.20+j*.20,.17,.17,.16);}}
-  // Decorative scenery is sourced from existing non-collision scenery cells.
-  const props=f.scenery||[],matrix=new T.Matrix4(),dummy=new T.Object3D();
-  if(!isSpring())for(let variant=0;variant<3;variant++){const pts=props.filter((p,i)=>i%3===variant);if(!pts.length)continue;const grassGeo=new T.ConeGeometry(.095,.26,5),g=new T.InstancedMesh(grassGeo,grasses[variant],pts.length*3);uniqueTerrain.push(grassGeo,g);let j=0;for(const p of pts){for(let k=0;k<3;k++){dummy.position.set(p.x+(k-1)*.08,.12,p.y/SINE+(k%2)*.08);dummy.rotation.set(.12*(k-1),random(j)*6.28,(k-1)*.18);dummy.scale.setScalar((p.scale||1)*.7);dummy.updateMatrix();g.setMatrixAt(j++,dummy.matrix);}}g.receiveShadow=true;terrain.add(g);}
-  for(const [i,p] of props.entries())if(!isSpring()&&i%9===0){const flower=group(terrain);place(flower,p.x,p.y);cyl(flower,green,0,.12,0,.018,.024,.24,7);for(let j=0;j<5;j++)ball(flower,i%2?cream:purple,Math.cos(j*1.26)*.064,.24,Math.sin(j*1.26)*.064,.048,.026,.048,false);ball(flower,gold,0,.26,0,.035,.024,.035,false);}
-  // Layered low-profile decor: existing non-collision scenery cells only.
-  // Small, muted silhouettes are deliberately unlike glowing harvest nodes.
-  const leafGeo=new T.SphereGeometry(1,7,5),pebbleGeo=new T.IcosahedronGeometry(1,0),leafMat=material(isSpring()?style==='ember'?'#986b53':'#c3b49b':'#a89b61'),pebbleMat=material(isSpring()?'#a39b8c':'#9b9f87');
-  uniqueTerrain.push(leafGeo,pebbleGeo,leafMat,pebbleMat);
-  const decor=props.filter((p,i)=>i%2===0),leafMesh=new T.InstancedMesh(leafGeo,leafMat,decor.length*3),pebbles=new T.InstancedMesh(pebbleGeo,pebbleMat,decor.length*2);
-  uniqueTerrain.push(leafMesh,pebbles);let li=0,pi=0;
-  for(const [i,p] of decor.entries()){
-   for(let j=0;j<3;j++){dummy.position.set(p.x+(random(i*11+j)-.5)*.45,.018,p.y/SINE+(random(i*19+j)-.5)*.48);dummy.rotation.set(0,random(i*7+j)*6.28,0);dummy.scale.set(.12,.012,.047);dummy.updateMatrix();leafMesh.setMatrixAt(li++,dummy.matrix);}
-   for(let j=0;j<2;j++){dummy.position.set(p.x+(j-.5)*.21,.038,p.y/SINE+.22);dummy.rotation.set(.2,i*.73+j,0);dummy.scale.set(.065,.047,.085);dummy.updateMatrix();pebbles.setMatrixAt(pi++,dummy.matrix);}
-   if(isSpring()&&i%5===0){const p2=group(terrain);place(p2,p.x,p.y);for(let j=0;j<3;j++)ball(p2,style==='ember'?basalt:style==='oasis'?crystal:sulfur,(j-1)*.09,.045,j*.04,.08,.05+j*.02,.07,false);}
-   if(!isSpring()&&i%5===0){const shrub=group(terrain);place(shrub,p.x,p.y);for(let j=0;j<4;j++){const a=j*2.4;ball(shrub,leaves[(i+j)%4],Math.cos(a)*.13,.12+(.03*j),Math.sin(a)*.13,.16,.13,.16,false);}}
-  }
-  terrain.add(leafMesh,pebbles);
+  // Retain themed landmark behind map; groundcover is instanced by Y5d.
+  if(style==='roots'){const p=group(terrain,mw*.5,0,-1.05/SINE);branch(p,[-1.8,.04,0],[-.55,1.9,0],.30,.46,oldBark);branch(p,[1.8,.04,0],[.55,1.9,0],.30,.46,oldBark);branch(p,[-.55,1.9,0],[.55,1.9,0],.33,.33,oldBark);for(let j=0;j<5;j++)ball(p,cap,-1+j*.5,1.90,0,.23,.12,.19);}
   const dustGeo=new T.SphereGeometry(.018,6,4),dustMat=new T.MeshBasicMaterial({color:'#fff2bc',transparent:true,opacity:.52,depthWrite:false});ambient=new T.InstancedMesh(dustGeo,dustMat,32);uniqueTerrain.push(dustGeo,dustMat,ambient);terrain.add(ambient);
   // No stale nodes or enemies survive a segment change.
   for(const pool of [nodePool,enemyPool])for(const item of pool.values()){actors.remove(item);for(const m of [...(item.userData.flashMats||[]),...(item.userData.ownedMats||[])])m.dispose();for(const g of item.userData.ownedGeos||[])g.dispose();}nodePool.clear();enemyPool.clear();
@@ -192,7 +162,8 @@ function createForest(T){
   const rw=Math.max(1,Math.round(w*Math.min(devicePixelRatio||1,1.35))),rh=Math.max(1,Math.round(h*Math.min(devicePixelRatio||1,1.35)));if(rw!==lastW||rh!==lastH){renderer.setSize(rw,rh,false);lastW=rw;lastH=rh;}
   const key=[f.worldW,f.worldH,f.biome?.zoneId,f.biome?.encounterSeed,f.segmentIndex,(f.obstacles||[]).map(o=>o.x+','+o.y).join(';')].join('|');if(key!==mapKey)rebuild(f,key);
   const v=y3CameraFrame(cam,w,h,sx,sy),center=y3Ground(v.x,v.y);camera.left=-v.halfW;camera.right=v.halfW;camera.top=v.halfH;camera.bottom=-v.halfH;camera.position.set(center.x,SINE*20,center.z+COS*20);camera.lookAt(center.x,0,center.z);camera.updateProjectionMatrix();
-  for(const [i,q] of treeCrowns.entries()){q.crown.visible=!(f.pos.y<q.y&&q.y-f.pos.y<1.20&&Math.abs(f.pos.x-q.x)<.74);q.crown.rotation.z=Math.sin(t*.65+i*.73)*.025;}
+  for(const [i,q] of treeCrowns.entries()){q.crown.visible=!(f.pos.y<q.y&&q.y-f.pos.y<(q.h||1.2)*.92&&Math.abs(f.pos.x-q.x)<.86);q.crown.rotation.z=Math.sin(t*.65+i*.73)*.025;}
+  landscape?.update(t);
   for(const [i,v] of vents.entries()){const p=springVentVisual(v.hz,f.elapsed,f.biome);v.jet.visible=true;
    for(const [j,o] of v.bubbles.entries()){const q=ventParticlePose(p,j,f.elapsed+i*.19);o.position.set(q.x,q.y,q.z);o.quaternion.copy(camera.quaternion);o.scale.set(q.scale*2.5,q.scale*3.2,1);o.material.uniforms.opacity.value=q.opacity;o.material.uniforms.time.value=f.elapsed;}
    v.dropMat.opacity=p.active?.85:p.warning?.48:0;for(const [j,o] of v.drops.entries()){const u=(j*.137+f.elapsed*2.6)%1,a=j*2.399;o.visible=p.active||p.warning;o.position.set(Math.cos(a)*u*.34,.06+Math.sin(Math.PI*u)*(p.active?.35+p.jet*.8:.13),Math.sin(a)*u*.34);o.scale.set(.022,.036+.035*(1-u),.022);}}
