@@ -69,12 +69,12 @@ test('up to two short lines and smooth finite fade, no flashing CSS bubble',()=>
  assert.ok(speechOpacity(a)<speechOpacity(b));
  assert.ok(speechOpacity(c)<speechOpacity(b));
 });
-test('official new canvas paints bounded speech and hides duplicate head icons',()=>{
+test('live canvas replaces order text and speech with state icons; real dialogue available in ledger',()=>{
  const scene=src('../src/scenes_v04.js');
  assert.match(scene,/selectDiningSpeech\(v\?\.orders\|\|\[\],t,2\)/);
  assert.match(scene,/drawGuestSpeech077\(c,cue,speaker,w,h\)/);
  assert.match(scene,/const speaking=new Set\(visibleSpeech\.map\(q=>q\.id\)\)/);
- assert.match(scene,/if\(!speaking\.has\(o\.id\)/);
+ assert.match(scene,/z2aDrawMark\(c,X,Y-34,z2aOrderMark\(o,t\),w,h\)/);assert.match(scene,/const speechCues=v\?\[\]:selectDiningSpeech/);assert.match(src('../src/app.js'),/overlay==='service-ledger'/);
  assert.match(scene,/Plates remain on the ACTUAL table/i);
  assert.match(scene,/if\(v\?\.walkable\|\|!v\)\{\s*const y2=globalThis\.__oddpotY2Renderer;\s*if\(y2&&y2\.draw\(canvas,s,t,w,h,restaurantActorsV075\)\)return;\s*drawRestaurantV075\(c,s,t,w,h\);return;\s*\}/);
 });
