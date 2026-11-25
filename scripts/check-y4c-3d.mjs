@@ -38,7 +38,7 @@ for(const [width,height] of [[320,568],[375,667],[390,844]]){
   if(hz)await page.waitForFunction(()=>Number(document.querySelector('canvas[data-oddpot-forest="3d"]')?.dataset.telegraphCount)>0,null,{timeout:10000});
   await page.screenshot({path:out+'/'+zoneId+'-'+width+'.png'});const spring=page.locator('canvas[data-oddpot-forest="3d"]');
   assert.equal(await page.evaluate(()=>document.documentElement.dataset.oddpotForest3d),'active');assert.equal(await spring.getAttribute('data-biome'),zoneId);assert.equal(await spring.getAttribute('data-region'),'spring');assert.equal(await spring.getAttribute('data-landscape'),'y5d');assert.ok(Number(await spring.getAttribute('data-landscape-vertices'))>5000);assert.ok(Number(await spring.getAttribute('data-landscape-batches'))<=20);if(['hot_spring_shallows','steam_lake','spring_market'].includes(zoneId))assert.ok(Number(await spring.getAttribute('data-landscape-pools'))>=5);else assert.ok(Number(await spring.getAttribute('data-landscape-outcrops'))>0);
-  assert.match(await page.locator('#oddpot-build-label').textContent(),/v0\.16-Y\.6/);
+  assert.match(await page.locator('#oddpot-build-label').textContent(),/v0\.16-Y\.6a/);
  }
  // Y5c: actual player input triggers both new abilities in two real routes.
  if(width===375)for(const [type,route] of [['WOK','safe'],['POT','spring_safe'],['GRILL','safe']]){
