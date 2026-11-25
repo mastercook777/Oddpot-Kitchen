@@ -53,7 +53,7 @@ function createForest(T){
  function place(p,x,y,height=0){p.position.set(x,height,y/SINE);}
  function random(i){return ((Math.imul(i+1729,1664525)+1013904223)>>>0)%10007/10007;}
  function branch(p,a,b,r1,r2,m){const u=new T.Vector3(...a),v=new T.Vector3(...b),d=v.clone().sub(u),q=u.clone().add(v).multiplyScalar(.5),o=cyl(p,m,q.x,q.y,q.z,r1,r2,d.length(),9);o.quaternion.setFromUnitVectors(new T.Vector3(0,1,0),d.normalize());return o;}
- let terrain=null,mapKey='',treeCrowns=[],vents=[],pools=[],nodePool=new Map(),enemyPool=new Map(),uniqueTerrain=[],ambient=null,landscape=null,theme=THEMES.meadow,style='meadow',zone='herb_path';const glow=material('#85e2cc');glow.emissive.set('#4ebda8');glow.emissiveIntensity=.85;const cap=material('#8881bd'),oldBark=material('#685349'),hazardMat=material('#b69ac1');
+ let terrain=null,mapKey='',treeCrowns=[],vents=[],pools=[],nodePool=new Map(),enemyPool=new Map(),uniqueTerrain=[],ambient=null,landscape=null,layoutSeed=0,theme=THEMES.meadow,style='meadow',zone='herb_path';const glow=material('#85e2cc');glow.emissive.set('#4ebda8');glow.emissiveIntensity=.85;const cap=material('#8881bd'),oldBark=material('#685349'),hazardMat=material('#b69ac1');
  const mineral=material('#e3d6ae'),basalt=material('#50464a'),basaltLight=material('#7d6660'),sulfur=material('#d9b758'),water=material('#74c9be',.24,.16),crystal=material('#88d8cf',.27,.12),ember=material('#e68441');ember.emissive.set('#db4b22');ember.emissiveIntensity=1.4;crystal.emissive.set('#276a63');crystal.emissiveIntensity=.25;
  const isSpring=()=>Object.values(SPRING_ZONES).includes(style);
  const pickupGeo=new T.RingGeometry(.80,1,40);pickupGeo.rotateX(-Math.PI/2);const pickupInner=new T.RingGeometry(.94,1,40);pickupInner.rotateX(-Math.PI/2);
@@ -70,7 +70,7 @@ function createForest(T){
   if(style==='roots'&&i%3!==2){const h=1.3+random(i*13)*.8;branch(p,[0,0,0],[.14,h,0],.20,.32,oldBark);for(let j=0;j<5;j++){const a=j*1.256;branch(p,[0,.32,0],[Math.cos(a)*.47,.025,Math.sin(a)*.47],.075,.15,oldBark);}for(const k of [-1,1])branch(p,[.09,h*.6,0],[k*.42,h+.23,.15],.045,.12,oldBark);ball(p,cap,.23,.28,.24,.22,.09,.19);return;}
   if(style==='garden'&&i%3===0){for(let j=0;j<4;j++){const a=j*1.57;ball(p,leaves[j],Math.cos(a)*.24,.27,Math.sin(a)*.24,.30,.25,.30);ball(p,gold,Math.cos(a)*.27,.40,Math.sin(a)*.27,.065,.065,.065,false);}return;}
   if(i%5===2){for(let j=0;j<3;j++){const a=mesh(p,rock,j===0?stone:stone2,(j-1)*.22,.22+j*.025,(j%2)*.16);a.scale.set(.36-j*.06,.27+j*.06,.34-j*.05);a.rotation.y=i*.73+j;}ball(p,moss,-.10,.36,.05,.27,.07,.20);return;}
-  const seed=landscapeSeed({biome:{zoneId:zone}})%10007,variant=(i+seed)%4,h=1.12+random(i*7+seed)*.68+(variant===0?.35:0),lean=(random(i*19+seed)-.5)*.26;branch(p,[0,0,0],[lean,h,0],.12,.21,bark);for(let j=0;j<5;j++){const a=j*Math.PI*2/5;branch(p,[0,.20,0],[Math.cos(a)*.38,.015,Math.sin(a)*.38],.045,.095,bark);}
+  const seed=layoutSeed%10007,variant=(i+seed)%4,h=1.12+random(i*7+seed)*.68+(variant===0?.35:0),lean=(random(i*19+seed)-.5)*.26;branch(p,[0,0,0],[lean,h,0],.12,.21,bark);for(let j=0;j<5;j++){const a=j*Math.PI*2/5;branch(p,[0,.20,0],[Math.cos(a)*.38,.015,Math.sin(a)*.38],.045,.095,bark);}
   for(const k of [-1,1])branch(p,[.03,h*.62,0],[k*.29,h+.18,.07],.07,.10,barkLight);
   const crown=group(p,lean,h,0);const spread=variant===0?.90:variant===1?1.10:1.0;
   for(let j=0;j<8;j++){const a=j*2.399+i*.71,r=j===0?0:(.27+random(i+j*31+seed)*.15)*spread;const q=ball(crown,leaves[(i+j)%4],Math.cos(a)*r,.13+random(i*53+j+seed)*.34,Math.sin(a)*r,(.34+random(j*11+i)*.12)*spread,.25+random(i*13+j)*.13,.37*spread);q.rotation.y=a;q.rotation.z=.18*Math.sin(a);}
@@ -82,10 +82,10 @@ function createForest(T){
   style=field3DTheme(f)||'meadow';theme=THEMES[style];zone=f.biome?.zoneId||'herb_path';scene.background.set(theme.sky);sun.color.set(theme.light);hemi.color.set(style==='glow'||style==='oasis'?'#c7f2eb':style==='ember'?'#ffd5b3':'#f0ead1');leaves.forEach((m,i)=>m.color.set(theme.leaf[i]));grasses.forEach((m,i)=>m.color.set(theme.grass[i]));element.dataset.biome=zone;element.dataset.theme=style;element.dataset.region=isSpring()?'spring':'forest';
   const mw=f.worldW,mh=f.worldH,goal=(f.nodes||[]).find(n=>n.key==='target');
   const route=goal?fieldTilePath(f,f.spawn||f.pos,goal,{avoidHazards:true}):[];
-  landscape=makeLandscapeY5d(T,terrain,f,style,route,SINE);uniqueTerrain.push(...landscape.resources);
+  layoutSeed=landscapeSeed(f);landscape=makeLandscapeY5d(T,terrain,f,style,route,SINE);uniqueTerrain.push(...landscape.resources);
   element.dataset.landscape='y5d';for(const [k,v] of Object.entries(landscape.stats))element.dataset['landscape'+k[0].toUpperCase()+k.slice(1)]=String(v);
   // Hot spring/oasis obstacle basins are already rendered by the new layer.
-  if(style!=='spring'&&style!=='oasis')(f.obstacles||[]).forEach((o,i)=>tree(terrain,o,i));
+  if(!isSpring())(f.obstacles||[]).forEach((o,i)=>tree(terrain,o,i));
   // Only existing hazard cells: never introduce collision or an extra damage tile.
   for(const hz of f.hazards||[]){
    const p=group(terrain);place(p,hz.x+.5,hz.y+.5);
