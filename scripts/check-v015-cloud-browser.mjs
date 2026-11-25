@@ -68,8 +68,8 @@ try{
   await page.screenshot({path:`${out}/steamer-${width}.png`});
   bought.phase='research';await open(bought);
   await page.locator('[data-act="method:steam"]').click();
-  for(const id of ['cloud_rice','chicken'])await page.locator(`[data-ingredient="${id}"]`).click();
-  for(const id of ['cloud_rice','chicken'])await page.locator(`[data-ingredient="${id}"]`).click();
+  for(const id of ['cloud_rice','chicken'])await page.locator(`.z2b-pantry [data-ingredient="${id}"]`).click();
+  for(const id of ['cloud_rice','chicken'])await page.locator(`.z2b-pantry [data-ingredient="${id}"]`).click();
   await page.locator('[data-act="start-research"]').click();
   for(const id of ['cloud_rice','chicken'])await page.locator(`[data-live-drop="${id}"]`).click();
   await page.locator('[data-act="live-action:seal"]').click();

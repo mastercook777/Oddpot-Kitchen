@@ -86,7 +86,10 @@ for(const [width,height] of [[320,568],[375,667],[390,844]]){
  if(width===375){
   const home=newGame(15742);home.onboarding.enabled=false;home.phase='forecast';let release;const gate=new Promise(r=>release=r);
   await load(home,gate);
-  try{await page.waitForFunction(()=>globalThis.__oddpotBuild?.boot==='ready',null,{timeout:20000});assert.equal(await page.locator('canvas[data-guest-count]').count(),0,'game boot independent of delayed optional module');}
+  try{await page.waitForFunction(()=>globalThis.__oddpotBuild?.boot==='ready',null,{timeout:20000});assert.equal(await page.locator('canvas[data-guest-count]').count(),0,'game boot independent of delayed optional module');
+   // A transient 2D paint fault before the delayed 3D module arrives must not stop future frames.
+   await page.evaluate(()=>{const original=CanvasRenderingContext2D.prototype.clearRect;window.__z2brFault=false;CanvasRenderingContext2D.prototype.clearRect=function(...args){if(this.canvas.id==='diner-canvas'&&!window.__z2brFault){window.__z2brFault=true;CanvasRenderingContext2D.prototype.clearRect=original;throw Error('injected transient diner paint fault');}return original.apply(this,args);};});
+   await page.waitForFunction(()=>window.__z2brFault===true,null,{timeout:4000});}
   finally{release();}
   await page.waitForFunction(()=>document.documentElement.dataset.oddpot3d==='active',null,{timeout:20000});
   await page.evaluate(()=>window.__y6aTransitionToken='one-document');
