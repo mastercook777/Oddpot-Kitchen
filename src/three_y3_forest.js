@@ -1,7 +1,7 @@
 // Y3a: read-only 3D forest. No physics, inventory or combat simulation.
 import {roundedFactory} from './three_y1_models.js?v=y1';
 import {makeChefY2} from './three_y2b_chef.js?v=y3d';
-import {makeBladeTrail} from './three_y3d_trail.js';
+import {makeBladeTrail} from './three_y3d_trail.js?v=y5c';
 import {createWeaponRig} from './three_y3b_weapon_pose.js?v=y5c';
 import {skillMotion} from './three_y3d_pose.js?v=y5c';
 import {enemyHitVisual,pickupVisual} from './three_y3b_feedback.js';
