@@ -5,8 +5,9 @@ try{for(let i=0;i<60;i++){try{if((await fetch(url)).ok)break;}catch{}await wait(
 browser=await chromium.launch({headless:true,executablePath:process.env.CHROME_PATH||'/usr/bin/google-chrome',args:['--no-sandbox','--disable-dev-shm-usage','--use-angle=swiftshader','--enable-unsafe-swiftshader']});
 for(const [width,height] of [[320,568],[375,667],[390,844]]){
  let page;const errors=[];
- async function load(s){if(page)await page.close();page=await browser.newPage({viewport:{width,height},deviceScaleFactor:2,isMobile:true,hasTouch:true});page.on('pageerror',e=>errors.push(e.message));page.on('console',m=>{if(m.type()==='warning'||m.type()==='error')console.log('browser',m.text());if(/Shader Error|VALIDATE_STATUS|GL_INVALID_OPERATION.*program/i.test(m.text()))errors.push(m.text());});
+ async function load(s,gate=null){if(page)await page.close();page=await browser.newPage({viewport:{width,height},deviceScaleFactor:2,isMobile:true,hasTouch:true});page.on('pageerror',e=>errors.push(e.message));page.on('console',m=>{if(m.type()==='warning'||m.type()==='error')console.log('browser',m.text());if(/Shader Error|VALIDATE_STATUS|GL_INVALID_OPERATION.*program/i.test(m.text()))errors.push(m.text());});
  await page.route('https://cdn.jsdelivr.net/npm/three@0.170.0/build/**',async route=>{const name=new URL(route.request().url()).pathname.split('/').at(-1);if(!/^three[.a-z]+\.js$/.test(name))return route.abort();await route.fulfill({status:200,contentType:'text/javascript',headers:{'access-control-allow-origin':'*'},body:await readFile('node_modules/three/build/'+name,'utf8')});});
+ if(gate)await page.route(/\/src\/three_y2_diner\.js\?v=y6a(?:&.*)?$/,async route=>{await gate;await route.continue();});
  await page.addInitScript(s=>localStorage.setItem('oddpot-prototype-v04',JSON.stringify(s)),s);await page.goto(url+'?render=3d',{waitUntil:'domcontentloaded'});}
  const s=newGame(15742);s.onboarding.enabled=false;s.phase='service';s.crew.helper.hired=true;s.dining.tableCount=width===320?2:width===375?3:4;assert.ok(createService(s,{walkable:true}));setServicePaused(s,false);for(let i=0;i<9;i++)tick(s,1);
  // Controlled test-only queue: force future guests to arrive while real seats remain occupied.
@@ -56,6 +57,19 @@ for(const [width,height] of [[320,568],[375,667],[390,844]]){
   if(type==='POT'||type==='GRILL'){await page.waitForFunction(type=>{const c=document.querySelector('canvas[data-oddpot-forest="3d"]');return Number(c?.dataset.fluidCount)>0&&c.dataset.fluidKinds.includes(type==='POT'?'potErupt':'flame');},type,{timeout:5000,polling:'raf'});if(type==='GRILL'){const c=page.locator('canvas[data-oddpot-forest="3d"]');assert.ok(Number(await c.getAttribute('data-fork-grip-error'))<.0001);assert.equal(await c.getAttribute('data-fire-volume'),'1');await page.waitForFunction(()=>document.querySelector('canvas[data-oddpot-forest="3d"]')?.dataset.forkAxial==='1');const axis=(await c.getAttribute('data-fork-axis')).split(',').map(Number);assert.ok(Math.abs(axis[1])<.001,'spray shaft horizontal');}}
   await page.screenshot({path:out+'/skill-'+type+'-'+width+'.png'});
   if(type==='GRILL'){q.attackCd=0;await load(f);await page.waitForFunction(()=>{const c=document.querySelector('canvas[data-oddpot-forest="3d"]');return c?.dataset.forkAxial==='1'&&['thrust','extension'].includes(c.dataset.forkPhase)&&c.dataset.fluidKinds.includes('thrust');},null,{timeout:10000,polling:'raf'});assert.ok(Number(await page.locator('canvas[data-oddpot-forest="3d"]').getAttribute('data-fork-grip-error'))<.0001);const axis=(await page.locator('canvas[data-oddpot-forest="3d"]').getAttribute('data-fork-axis')).split(',').map(Number);assert.ok(Math.abs(axis[1])<.001,'real shaft horizontal at extension');await page.screenshot({path:out+'/fork-thrust-'+width+'.png'});}
+ }
+ if(width===375){
+  const home=newGame(15742);home.onboarding.enabled=false;home.phase='forecast';let release;const gate=new Promise(r=>release=r);
+  await load(home,gate);
+  try{await page.waitForFunction(()=>globalThis.__oddpotBuild?.boot==='ready',null,{timeout:20000});assert.equal(await page.locator('canvas[data-guest-count]').count(),0,'game boot independent of delayed optional module');}
+  finally{release();}
+  await page.waitForFunction(()=>document.documentElement.dataset.oddpot3d==='active',null,{timeout:20000});
+  await page.evaluate(()=>window.__y6aTransitionToken='one-document');
+  await page.locator('[data-act="to-field"]').first().click();
+  await page.locator('[data-act="skip-field"]').first().click();
+  await page.locator('[data-act="start-research"]').first().click();
+  await page.waitForFunction(()=>document.documentElement.dataset.oddpotResearch3d==='active',null,{timeout:20000});
+  assert.equal(await page.evaluate(()=>window.__y6aTransitionToken),'one-document');assert.equal(await page.locator('canvas[data-guest-count]').count(),0);await page.screenshot({path:out+'/y6a-home-to-research.png'});
  }
  assert.deepEqual(errors,[]);await page.close();
 }
