@@ -52,6 +52,7 @@ function hud(){
     <span id="v075-wave" aria-label="营业波次">${z2a2Icon('moon')} <b>${Math.min(v.wave+1,3)}/3</b></span>
     <span id="v075-served" aria-label="上菜及等位"><span class="z2a2-count">${z2a2Icon('plate')} <b>${complete}/${total}</b></span>${waiting?`<small class="z2a2-queue">${z2a2Icon('queue')} 等位 ${waiting}</small>`:''}</span>
     <span id="v075-energy" aria-label="主厨精力">${z2a2Icon('energy')} <b>${v.hero?.energy??6}/${v.hero?.maxEnergy??6}</b></span>
+    <span id="v075-wallet" aria-label="当前金币 ${game.coins}">${z2a2Icon('coin')} <b>${game.coins}</b></span>
     <button type="button" class="z2a-ledger-btn" data-act="service-ledger" aria-label="营业账册">${z2a2Icon('ledger')}</button>
     <button type="button" data-act="toggle-service" ${v.breakAt||v.done?'disabled':''} aria-label="${v.paused?'继续营业':'暂停营业'}">${z2a2Icon(v.paused?'play':'pause')}</button>
   </div>
@@ -59,6 +60,7 @@ function hud(){
  if(game.phase==='field'&&game.field?.action&&game.field.segmentStatus!=='choice'){const f=game.field;return `<header class="z2a-hud z2a-field-hud"><div class="action-hud" aria-label="探索状态"><span class="field-hp" data-hp="${f.hp}" aria-label="生命 ${f.hp}/3">${z2a2Health(f.hp)}</span><button data-act="field-bag" class="field-bag-chip" aria-label="查看野外背包">${z2a2Icon('bag')} <b id="field-bag-count">${fieldBagSlotsUsed(f)}/${f.capacity||8}</b></button><span class="field-clock" id="field-clock">${z2a2Icon('route')} <b id="z2a2-clock-value">${f.segmentIndex||1}/3 · ${Math.floor(f.elapsed)}s</b></span></div><button type="button" class="z2a-settings hud-gear" data-act="settings" aria-label="设置">${z2a2Icon('gear')}</button></header>`;}
  if(z2bPhase())return `<header class="z2a-hud z2b-hud"><div class="z2b-phase-title">${z2a2Icon(game.phase==='research'?'cook':game.phase==='menu'?'menu':'home')}<span><b>${phaseLabels[game.phase]}</b><small>第 ${totalBusinessDay(game)} 天</small></span></div><span class="z2b-coins">${z2a2Icon('coin')} <b>${game.coins}</b></span><button class="hud-gear" data-act="settings" aria-label="设置">${z2a2Icon('gear')}</button></header>`;
  const home=game.phase==='forecast';
+ if(home||game.phase==='field')return `<header class="z2a-hud z2c-hud"><div class="z2b-phase-title">${z2a2Icon(home?'home':'route')}<span><b>${home?'开店前':'出门取材'}</b><small>第 ${totalBusinessDay(game)} 天${home?' · '+tableCapacity(game)+' 座':''}</small></span></div><span class="z2c-resource" aria-label="当前金币 ${game.coins}">${z2a2Icon('coin')} <b>${game.coins}</b></span>${home?`<span class="z2c-resource" aria-label="声望 ${game.reputation}">${z2a2Icon('rep')} <b>${game.reputation}</b></span>`:`<span class="z2c-resource" aria-label="背包容量">${z2a2Icon('bag')} <b>${game.bagSlots||8}</b></span>`}<button class="hud-gear" data-act="settings" aria-label="设置">${z2a2Icon('gear')}</button></header>`;
  const step=journey.indexOf(game.phase);
  return `<div class="hud ${home?'v076-home-hud':''}"><div class="brand"><span class="logo" aria-hidden="true">🍳</span><div><strong>怪味食堂</strong><small>第 ${totalBusinessDay(game)} 天 · ${tableCapacity(game)} 座</small></div></div><div class="hud-meta"><span aria-label="金币">🪙 ${game.coins}</span><span aria-label="声望">⭐ ${game.reputation}</span></div><button class="hud-gear" data-act="settings" aria-label="设置">⚙</button></div><div class="day-strip ${home?'v076-home-day':''}" aria-label="当前阶段：${phaseLabels[game.phase]}"><b>${phaseLabels[game.phase]}</b><div class="v014-journey" aria-hidden="true">${journey.slice(0,7).map((phase,i)=>`<i class="${i===step?'current':i<step?'passed':''}"></i>`).join('')}</div><span class="day-phase">${step<5?'☀ 白天':'☾ 夜晚'}</span></div>`;
 }
@@ -72,7 +74,7 @@ function guideMarkup(){
 }
 function shell(stage,dock){
  const walk=game.phase==='service'&&game.service?.walkable,home=game.phase==='forecast',fieldLive=game.phase==='field'&&game.field?.action&&game.field.segmentStatus!=='choice';
- return `<div class="game-shell ${activeWorld(game)==='cloud'?'world-cloud':''} ${walk?'v075-game-shell is-diner-playing z2a-live z2a-diner':''} ${fieldLive?'z2a-live z2a-field':''} ${home?'v076-home-shell':''} ${z2bPhase()?'z2b-shell z2b-'+game.phase:''} ${game.phase==='field'&&game.field?.action?'is-field-playing':''}">${hud()}${guideMarkup()}<main class="stage ${game.phase}${game.cook?' wok-active':''}">${stage}${playablePhase()?sceneNotice():''}</main>${playablePhase()||home?'':toast()}${walk||home?'':`<nav class="dock">${dock}</nav>`}${overlayMarkup()}</div>`;
+ return `<div class="game-shell ${activeWorld(game)==='cloud'?'world-cloud':''} ${walk?'v075-game-shell is-diner-playing z2a-live z2a-diner':''} ${fieldLive?'z2a-live z2a-field':game.phase==='field'?'z2c-route':''} ${home?'v076-home-shell z2c-home':''} ${z2bPhase()?'z2b-shell z2b-'+game.phase:''} ${game.phase==='field'&&game.field?.action?'is-field-playing':''}">${hud()}${guideMarkup()}<main class="stage ${game.phase}${game.cook?' wok-active':''}">${stage}${playablePhase()?sceneNotice():''}</main>${playablePhase()||home?'':toast()}${walk||home?'':`<nav class="dock">${dock}</nav>`}${overlayMarkup()}</div>`;
 }
 function earnedPromotions(){
  return Object.keys(CREW_ROLES).map(role=>({role,name:crewRoleName(game,role),promotion:crewPromotion(game,role)}))
@@ -255,7 +257,7 @@ function forecast(){
       <button type="button" class="v016-book" data-act="book" aria-label="翻开料理图鉴">料理笔记</button>
       <button type="button" class="v016-bento" data-act="bento">便当${bentoReady?' ✓':''}</button>
       <button type="button" class="v016-crew" data-act="crew">伙伴</button>
-      <button type="button" class="v076-home-primary v016-door" data-act="to-field">出门取材 <span aria-hidden="true">↗</span></button>
+      <button type="button" class="v076-home-primary v016-door" data-act="to-field">出门取材 ${z2a2Icon('next')}</button>
      </div>
     </section>
     ${milestone?'<div class="v016-milestone">'+milestone+'</div>':''}
@@ -267,7 +269,7 @@ function forecast(){
   <section class="v076-mission" aria-label="今日营业目标">
     <div class="v076-mission-meta"><span>店门口的今日告示</span><span>预计 ${plan.count} 位客人</span></div>
     <h1>${esc(title)}</h1>
-    <p><span aria-hidden="true">🎯</span> ${esc(plan.goal.label)}</p>
+    <p>${z2a2Icon('target')} ${esc(plan.goal.label)}</p>
     <details><summary>看看今晚的安排</summary><small>${brief}</small></details>
   </section>
   ${starInvite()}${portalPanel()}
@@ -277,11 +279,11 @@ function forecast(){
   <section class="v076-home-controls" aria-label="开店前可用操作">
     <div class="v076-home-resources"><strong>今天先备料</strong><span>🎒 ${stock} 份 · 市场 ${Object.keys(market.goods).length} 款</span></div>
     <div class="v076-home-shortcuts">
-      <button type="button" data-act="stock"><span aria-hidden="true">🧺</span> 采购</button>
-      <button type="button" data-act="bento"><span aria-hidden="true">🍱</span> 便当${bentoReady?' ✓':''}</button>
-      <button type="button" data-act="book"><span aria-hidden="true">📖</span> 图鉴</button>
+      <button type="button" data-act="stock">${z2a2Icon('bag')} 采购</button>
+      <button type="button" data-act="bento">${z2a2Icon('bento')} 便当${bentoReady?' ✓':''}</button>
+      <button type="button" data-act="book">${z2a2Icon('ledger')} 图鉴</button>
     </div>
-    <button type="button" class="v076-home-primary" data-act="to-field">${activeWorld(game)==='cloud'?'☁️':'🌲'} 出门取材 <span aria-hidden="true">→</span></button>
+    <button type="button" class="v076-home-primary" data-act="to-field">${z2a2Icon('route')} 出门取材 ${z2a2Icon('next')}</button>
   </section>
  </div>`,'' ];
 }
@@ -300,15 +302,15 @@ function field(){
   return [
  `<div class="forest-scene route-scene ux-route">${activeWorld(game)==='cloud'?cloudBackdrop():forestBackdrop()}<div class="route-panel">
    <div class="route-intro"><span class="ux-kicker">${activeWorld(game)==='cloud'?'云港浮岛 · 空中航线':'食堂外的两条路'}</span><h2>今天去哪找食材？</h2></div>
-   <div class="v013h-supply-hint" aria-label="经营备料提示">🎒 ${esc(stockHint)}<details><summary>取材规则</summary><small>各生态有不同的主要产物；路线选择不保证指定食材掉落。</small></details></div>
+   <div class="v013h-supply-hint" aria-label="经营备料提示">${z2a2Icon('bag')} ${esc(stockHint)}<details><summary>取材规则</summary><small>各生态有不同的主要产物；路线选择不保证指定食材掉落。</small></details></div>
    <div class="ux-field-label"><strong>探索区域</strong></div>
    <div class="region-tabs" role="group" aria-label="探索区域">${activeWorld(game)==='cloud'?'<button class="current" disabled>云港浮岛</button>':`<button data-region="forest" class="${selectedRegion==='forest'?'current':''}" aria-pressed="${selectedRegion==='forest'}">晨露森林</button><button data-region="spring" class="${selectedRegion==='spring'?'current':''}" aria-pressed="${selectedRegion==='spring'}">热泉峡谷</button>`}</div>
    <div class="ux-field-label"><strong>带一件厨具</strong></div>
-   <div class="v08-weapon-picks">${fieldWeaponChoices(game).map(({type,level,slotIndex,fitted})=>`<button class="v08-weapon-pick ${selectedFieldWeaponType(game)===type?'chosen':''}" data-weapon="${type}" aria-pressed="${selectedFieldWeaponType(game)===type}">${type==='STEAM'?'♨️ 蒸笼控场':type==='GRILL'?'🍢 烤叉':type==='WOK'?'🛡️ 炒锅剑盾':'🍲 炖锅投弹'} · Lv${level}<small>${fitted?`${slotIndex===0?'左':slotIndex===1?'右':'中'}厨位装配`:'背包备用'} · ${type==='STEAM'?(level>1?'云汽脉冲 1.9 格 · 减速雾域 3.4 秒':'云汽脉冲 1.6 格 · 减速雾域 2.8 秒'):type==='GRILL'?(level>1?'前刺 0.72 秒 · 喷焰 3.0 格':'前刺 0.88 秒 · 喷焰 2.7 格'):type==='WOK'?(level>1?'挥击 0.62 秒 · 格挡 0.70 秒':'挥击 0.70 秒 · 格挡 0.45 秒'):(level>1?'投弹 0.30 秒 · 爆炸半径 0.75 格':'投弹 0.38 秒 · 爆炸半径 0.65 格')}</small></button>`).join('')}</div>
+   <div class="v08-weapon-picks">${fieldWeaponChoices(game).map(({type,level,slotIndex,fitted})=>`<button class="v08-weapon-pick ${selectedFieldWeaponType(game)===type?'chosen':''}" data-weapon="${type}" aria-pressed="${selectedFieldWeaponType(game)===type}">${z2bCookIcon(type)} ${type==='STEAM'?'蒸笼控场':type==='GRILL'?'烤叉':type==='WOK'?'炒锅剑盾':'炖锅投弹'} · Lv${level}<small>${fitted?`${slotIndex===0?'左':slotIndex===1?'右':'中'}厨位装配`:'背包备用'} · ${type==='STEAM'?(level>1?'云汽脉冲 1.9 格 · 减速雾域 3.4 秒':'云汽脉冲 1.6 格 · 减速雾域 2.8 秒'):type==='GRILL'?(level>1?'前刺 0.72 秒 · 喷焰 3.0 格':'前刺 0.88 秒 · 喷焰 2.7 格'):type==='WOK'?(level>1?'挥击 0.62 秒 · 格挡 0.70 秒':'挥击 0.70 秒 · 格挡 0.45 秒'):(level>1?'投弹 0.30 秒 · 爆炸半径 0.75 格':'投弹 0.38 秒 · 爆炸半径 0.65 格')}</small></button>`).join('')}</div>
    <div class="ux-field-label"><strong>选择路线出发</strong></div>
-   <div class="route-options">${activeRoutes.map(r=>`<button class="route-card ${/risk/.test(r.id)?'route-risk':'route-safe'}" data-route="${r.id}"><span class="route-emoji" aria-hidden="true">${r.emoji}</span><div><strong>${r.name}</strong><small>${r.subtitle}${/risk/.test(r.id)&&activeWorld(game)!=='cloud'?` · 第三段挑战${bossHint(selectedRegion).boss}，为奖励留背包格`:''}</small></div><span class="route-risk-label">${/risk/.test(r.id)?'战斗':'采集'}</span><b aria-hidden="true">›</b></button>`).join('')}</div>
+   <div class="route-options">${activeRoutes.map(r=>`<button class="route-card ${/risk/.test(r.id)?'route-risk':'route-safe'}" data-route="${r.id}"><span class="route-emoji" aria-hidden="true">${z2a2Icon(/risk/.test(r.id)?'wok':'route')}</span><div><strong>${r.name}</strong><small>${r.subtitle}${/risk/.test(r.id)&&activeWorld(game)!=='cloud'?` · 第三段挑战${bossHint(selectedRegion).boss}，为奖励留背包格`:''}</small></div><span class="route-risk-label">${/risk/.test(r.id)?'战斗':'采集'}</span><b aria-hidden="true">${z2a2Icon('next')}</b></button>`).join('')}</div>
   </div></div>`,
- `<div class="dock-head"><span>${activeWorld(game)==='cloud'?'三段航路 · 可随时返港':'三段路 · 可随时回店'}</span><span>背包 ${game.bagSlots||8} 格</span></div><div class="action-row">${b('bento','🍱 便当','secondary')}${b('skip-field','先去研发','secondary wide')}</div>`]
+ `<div class="dock-head"><span>${activeWorld(game)==='cloud'?'三段航路 · 可随时返港':'三段路 · 可随时回店'}</span><span>背包 ${game.bagSlots||8} 格</span></div><div class="action-row">${b('bento',z2a2Icon('bento')+' 便当','secondary')}${b('skip-field','先去研发','secondary wide')}</div>`]
  }
  if(f.segmentStatus==='choice'){
   const boss=bossHint(f.region),slots=fieldBagSlotsUsed(f),full=slots>=f.capacity;
@@ -316,11 +318,11 @@ function field(){
   <p>背包 ${slots}/${f.capacity} 格 · 生命 ${f.hp}/3 · ${f.weapon?.type||'WOK'} Lv${f.weapon?.level||1}</p>
   ${f.dangerCommitment&&f.region!=='cloud'?`<div class="v082-boss-promise">⚔️ 第三段必遇 ${boss.boss} · ${boss.icon}${boss.name} ×${boss.qty}</div>`:''}
   <div class="v08-branch-cards">${f.choices.map(c=>`<button class="v08-branch-card" data-branch="${c.choiceId}">
-  <strong>${c.danger?'⚔️':'🌿'} ${c.name}</strong><span>${c.description}</span>
+  <strong>${z2a2Icon(c.danger?'wok':'route')} ${c.name}</strong><span>${c.description}</span>
   <small>${c.danger?`狩猎深入 · 最终挑战 ${boss.boss}，击败可拾取 ${boss.name}`:'🌱 采集为主 · 普通食材与奇遇'}</small>
   </button>`).join('')}</div>
   ${full?`<div class="v082-bag-warning">🎒 背包已满！Boss 奖励需要空格。可从背包丢弃一格材料。</div><button class="v082-manage-bag" data-act="field-bag">整理背包</button>`:`<p class="v082-bag-reminder">🎒 建议为后续稀有食材保留至少 1 格。</p>`}
-  <button type="button" class="v08-home-choice" data-act="retreat">🏠 带着收获回饭店</button></div></div>`, ''];
+  <button type="button" class="v08-home-choice" data-act="retreat">${z2a2Icon('home')} 带着收获回饭店</button></div></div>`, ''];
  }
  const readyToFinish=f.nodes?.some(n=>n.key==='target'&&n.claimed)&&!(f.segmentIndex===3&&f.enemies?.some(e=>e.isBoss&&e.hp>0));
  const bag=Object.entries(f.bag).map(([id,n])=>`${ING[id].name}${n}`).join(' · ')||'空';

@@ -40,6 +40,7 @@ try{
    assert.ok(layout.shellBottom<=height+1&&layout.stageBottom<=height+1&&layout.stageHeight>120,`${phase} fits ${width}×${height}: ${JSON.stringify(layout)}`);
    if(width!==375&&['prep','report'].includes(phase))await page.screenshot({path:`${output}/${phase}-${width}.png`});
    if(phase==='forecast'){
+    assert.ok(await page.locator('.z2c-hud').isVisible());assert.equal(await page.locator('.day-strip').count(),0);assert.ok(await page.locator('.z2c-hud [data-game-icon="coin"]').isVisible());
     const scene=page.locator('.v016-scene');
     assert.equal(await scene.count(),1,'border home uses the scene-first layout');
     const rect=await scene.boundingBox();
@@ -54,7 +55,7 @@ try{
      await page.locator('[data-act="close-sheet"]').last().click();
     }
     await page.screenshot({path:`${output}/v016-home-${width}.png`});
-    await scene.locator('[data-act="to-field"]').click();
+    await scene.locator('[data-act="to-field"]').click();assert.ok(await page.locator('.z2c-hud').isVisible());assert.equal(await page.locator('.route-card .route-emoji svg').count(),2);
     assert.equal(await page.locator('.stage.field').count(),1,'door opens the real field preparation');
     assert.deepEqual(errors,[],`A1 home runtime errors at ${width}`);
     await page.close();
