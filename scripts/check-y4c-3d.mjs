@@ -5,14 +5,21 @@ try{for(let i=0;i<60;i++){try{if((await fetch(url)).ok)break;}catch{}await wait(
 browser=await chromium.launch({headless:true,executablePath:process.env.CHROME_PATH||'/usr/bin/google-chrome',args:['--no-sandbox','--disable-dev-shm-usage','--use-angle=swiftshader','--enable-unsafe-swiftshader']});
 for(const [width,height] of [[320,568],[375,667],[390,844]]){
  let page;const errors=[];
- async function load(s){if(page)await page.close();page=await browser.newPage({viewport:{width,height},deviceScaleFactor:2,isMobile:true,hasTouch:true});page.on('pageerror',e=>errors.push(e.message));page.on('console',m=>{if(m.type()==='warning'||m.type()==='error')console.log('browser',m.text());if(/Shader Error|VALIDATE_STATUS|GL_INVALID_OPERATION.*program/i.test(m.text()))errors.push(m.text());});
+ async function load(s,gate=null){if(page)await page.close();page=await browser.newPage({viewport:{width,height},deviceScaleFactor:2,isMobile:true,hasTouch:true});page.on('pageerror',e=>errors.push(e.message));page.on('console',m=>{if(m.type()==='warning'||m.type()==='error')console.log('browser',m.text());if(/Shader Error|VALIDATE_STATUS|GL_INVALID_OPERATION.*program/i.test(m.text()))errors.push(m.text());});
  await page.route('https://cdn.jsdelivr.net/npm/three@0.170.0/build/**',async route=>{const name=new URL(route.request().url()).pathname.split('/').at(-1);if(!/^three[.a-z]+\.js$/.test(name))return route.abort();await route.fulfill({status:200,contentType:'text/javascript',headers:{'access-control-allow-origin':'*'},body:await readFile('node_modules/three/build/'+name,'utf8')});});
+ if(gate)await page.route(/\/src\/three_y2_diner\.js\?v=y6a(?:&.*)?$/,async route=>{await gate;await route.continue();});
  await page.addInitScript(s=>localStorage.setItem('oddpot-prototype-v04',JSON.stringify(s)),s);await page.goto(url+'?render=3d',{waitUntil:'domcontentloaded'});}
  const s=newGame(15742);s.onboarding.enabled=false;s.phase='service';s.crew.helper.hired=true;s.dining.tableCount=width===320?2:width===375?3:4;assert.ok(createService(s,{walkable:true}));setServicePaused(s,false);for(let i=0;i<9;i++)tick(s,1);
  // Controlled test-only queue: force future guests to arrive while real seats remain occupied.
  const free=s.service.orders.filter(o=>o.tableId==null&&o.status==='waiting');for(const o of free)o.arrival=s.service.time;tick(s,1);const expectedQueue=s.service.orders.filter(o=>o.status==='waiting'&&o.arrival<=s.service.time).length;const ready=s.service.orders.find(o=>o.tableId!=null&&['queued','cooking','entering','ordering'].includes(o.status));assert.ok(ready,'fixture has a real seated order');Object.assign(ready,{status:'pickup',recipeId:ready.recipeId||'mushroom_stir',pickupAt:s.service.time});await load(s);
  await page.waitForFunction(()=>document.querySelector('canvas[data-phase="service"]')?.dataset.guestCount>0||document.documentElement.dataset.oddpot3d==='fallback',null,{timeout:20000}).catch(async e=>{await page.screenshot({path:out+'/diner-failure-'+width+'.png'});console.log('diagnostics',await page.locator('canvas').evaluateAll(cs=>cs.map(c=>({...c.dataset}))));throw e;});
  await page.screenshot({path:out+'/diner-'+width+'.png'});const canvas=page.locator('canvas[data-phase="service"]');const diagnostics=await canvas.evaluate(c=>({...c.dataset}));console.log('diner',width,JSON.stringify(diagnostics),'fixture',s.service.orders.map(o=>[o.id,o.status,o.tableId]));assert.ok(Number(diagnostics.visibleGuestCount)>0,'guest mesh projects into viewport');assert.ok(await page.locator('#v4d-service-guide').isVisible());assert.match(await page.locator('#v4d-guide-title').textContent(),/取餐/);assert.equal(Number(await canvas.getAttribute('data-table-count')),s.dining.tableCount);if(expectedQueue>0)assert.ok(Number(await canvas.getAttribute('data-queue-count'))>0,'real queue visible');if(width===320)assert.ok(expectedQueue>0,'two-table fixture has waiting guests');assert.equal(await canvas.getAttribute('data-phase'),'service');
+ if(width===375){
+  // Force actual WebGL loss on the live renderer; recover in the SAME page.
+  const token=await page.evaluate(()=>{window.__y6aPageToken='same-page';const c=document.querySelector('canvas[data-phase="service"]'),gl=c.getContext('webgl2'),ext=gl?.getExtension('WEBGL_lose_context');if(!ext)throw Error('WEBGL_lose_context unavailable');window.__y6aOldCanvas=c;ext.loseContext();return window.__y6aPageToken;});
+  await page.waitForFunction(()=>{const c=document.querySelector('canvas[data-phase="service"]');return c&&c!==window.__y6aOldCanvas&&document.documentElement.dataset.oddpot3d==='active';},null,{timeout:20000});
+  assert.equal(await page.evaluate(()=>window.__y6aPageToken),token);await page.screenshot({path:out+'/y6a-recovered-diner.png'});
+ }
  const carry=structuredClone(s);const order=carry.service.orders.find(o=>o.id===ready.id);order.status='carried';carry.service.hero.carryOrderId=order.id;await load(carry);await page.waitForFunction(()=>document.querySelector('canvas[data-guide="serve"]'),null,{timeout:20000});assert.match(await page.locator('#v4d-guide-title').textContent(),new RegExp('送至 '+(order.tableId+1)+' 号桌'));await page.screenshot({path:out+'/serve-'+width+'.png'});
  // Controlled presentation fixture: six real customer segments and three
  // serving states, frozen service clock to make the screenshot deterministic.
@@ -38,7 +45,7 @@ for(const [width,height] of [[320,568],[375,667],[390,844]]){
   if(hz)await page.waitForFunction(()=>Number(document.querySelector('canvas[data-oddpot-forest="3d"]')?.dataset.telegraphCount)>0,null,{timeout:10000});
   await page.screenshot({path:out+'/'+zoneId+'-'+width+'.png'});const spring=page.locator('canvas[data-oddpot-forest="3d"]');
   assert.equal(await page.evaluate(()=>document.documentElement.dataset.oddpotForest3d),'active');assert.equal(await spring.getAttribute('data-biome'),zoneId);assert.equal(await spring.getAttribute('data-region'),'spring');assert.equal(await spring.getAttribute('data-landscape'),'y5d');assert.ok(Number(await spring.getAttribute('data-landscape-vertices'))>5000);assert.ok(Number(await spring.getAttribute('data-landscape-batches'))<=20);if(['hot_spring_shallows','steam_lake','spring_market'].includes(zoneId))assert.ok(Number(await spring.getAttribute('data-landscape-pools'))>=5);else assert.ok(Number(await spring.getAttribute('data-landscape-outcrops'))>0);
-  assert.match(await page.locator('#oddpot-build-label').textContent(),/v0\.16-Y\.6/);
+  assert.match(await page.locator('#oddpot-build-label').textContent(),/v0\.16-Y\.6a/);
  }
  // Y5c: actual player input triggers both new abilities in two real routes.
  if(width===375)for(const [type,route] of [['WOK','safe'],['POT','spring_safe'],['GRILL','safe']]){
@@ -50,6 +57,19 @@ for(const [width,height] of [[320,568],[375,667],[390,844]]){
   if(type==='POT'||type==='GRILL'){await page.waitForFunction(type=>{const c=document.querySelector('canvas[data-oddpot-forest="3d"]');return Number(c?.dataset.fluidCount)>0&&c.dataset.fluidKinds.includes(type==='POT'?'potErupt':'flame');},type,{timeout:5000,polling:'raf'});if(type==='GRILL'){const c=page.locator('canvas[data-oddpot-forest="3d"]');assert.ok(Number(await c.getAttribute('data-fork-grip-error'))<.0001);assert.equal(await c.getAttribute('data-fire-volume'),'1');await page.waitForFunction(()=>document.querySelector('canvas[data-oddpot-forest="3d"]')?.dataset.forkAxial==='1');const axis=(await c.getAttribute('data-fork-axis')).split(',').map(Number);assert.ok(Math.abs(axis[1])<.001,'spray shaft horizontal');}}
   await page.screenshot({path:out+'/skill-'+type+'-'+width+'.png'});
   if(type==='GRILL'){q.attackCd=0;await load(f);await page.waitForFunction(()=>{const c=document.querySelector('canvas[data-oddpot-forest="3d"]');return c?.dataset.forkAxial==='1'&&['thrust','extension'].includes(c.dataset.forkPhase)&&c.dataset.fluidKinds.includes('thrust');},null,{timeout:10000,polling:'raf'});assert.ok(Number(await page.locator('canvas[data-oddpot-forest="3d"]').getAttribute('data-fork-grip-error'))<.0001);const axis=(await page.locator('canvas[data-oddpot-forest="3d"]').getAttribute('data-fork-axis')).split(',').map(Number);assert.ok(Math.abs(axis[1])<.001,'real shaft horizontal at extension');await page.screenshot({path:out+'/fork-thrust-'+width+'.png'});}
+ }
+ if(width===375){
+  const home=newGame(15742);home.onboarding.enabled=false;home.phase='forecast';let release;const gate=new Promise(r=>release=r);
+  await load(home,gate);
+  try{await page.waitForFunction(()=>globalThis.__oddpotBuild?.boot==='ready',null,{timeout:20000});assert.equal(await page.locator('canvas[data-guest-count]').count(),0,'game boot independent of delayed optional module');}
+  finally{release();}
+  await page.waitForFunction(()=>document.documentElement.dataset.oddpot3d==='active',null,{timeout:20000});
+  await page.evaluate(()=>window.__y6aTransitionToken='one-document');
+  await page.locator('[data-act="to-field"]').first().click();
+  await page.locator('[data-act="skip-field"]').first().click();
+  await page.locator('[data-act="start-research"]').first().click();
+  await page.waitForFunction(()=>document.documentElement.dataset.oddpotResearch3d==='active',null,{timeout:20000});
+  assert.equal(await page.evaluate(()=>window.__y6aTransitionToken),'one-document');assert.equal(await page.locator('canvas[data-guest-count]').count(),0);await page.screenshot({path:out+'/y6a-home-to-research.png'});
  }
  assert.deepEqual(errors,[]);await page.close();
 }

@@ -1,3 +1,4 @@
+import {createRecovery,sharedThree,visibleHost} from './three_y6a_recovery.js?v=y6a';
 import {makeLandscapeY5d,landscapeSeed} from './three_y5d_landscape.js?v=y5d';
 // Y3a: read-only 3D forest. No physics, inventory or combat simulation.
 import {roundedFactory} from './three_y1_models.js?v=y1';
@@ -20,14 +21,18 @@ export function y3Eligible(s){const f=s?.field;return s?.phase==='field'&&!!f?.a
 export function y3Ground(x,y){return {x,z:y/SINE};}
 export function y3CameraFrame(camera,w,h,sx=0,sy=0){const k=camera.scale;return {x:(w/2-camera.offsetX-sx)/k,y:(h/2-camera.offsetY-sy)/k,halfW:w/k/2,halfH:h/k/2};}
 export function y3Facing(facing){const x=facing?.x||0,y=facing?.y||0;return Math.abs(x)>Math.abs(y)?x<0?'left':'right':y<0?'back':'front';}
-let instance=null,loading=null,disabled=false,lib=null,epoch=0;
-function fail(e){disabled=true;leave();console.warn('Oddpot forest 3D fallback',e);document.documentElement.dataset.oddpotForest3d='fallback';}
-function leave(){if(!instance)return;epoch++;const old=instance;instance=null;old.dispose();if(!disabled)document.documentElement.dataset.oddpotForest3d='idle';}
+let instance=null,entered=false;const recovery=createRecovery();
+function state(v){document.documentElement.dataset.oddpotForest3d=v;}
+function release(){if(instance){const old=instance;instance=null;old.dispose();}}
+function leave(){if(!entered&&!instance)return;entered=false;release();recovery.reset();state('idle');}
+function fail(e){recovery.fail();release();console.warn('Oddpot forest 3D fallback',e);state('fallback');globalThis.__oddpotBuild?.sceneErrors&&(globalThis.__oddpotBuild.sceneErrors.forest=String(e));}
 export function enableY3(){
- globalThis.__oddpotY3Renderer={leave,draw(canvas,s,t,w,h,camera,sx,sy){
-  if(!y3Eligible(s)||disabled){if(instance)leave();return false;}
-  if(!lib){if(!loading){document.documentElement.dataset.oddpotForest3d='loading';loading=import('https://cdn.jsdelivr.net/npm/three@0.170.0/build/three.module.js').then(T=>{lib=T;}).catch(fail);}return false;}
-  try{if(!instance)instance=createForest(lib);instance.draw(canvas,s.field,t,w,h,camera,sx,sy);return true;}catch(e){fail(e);return false;}
+ state('idle');
+ globalThis.__oddpotY3Renderer={leave,retry(){release();recovery.reset();sharedThree.reset();state('idle');},draw(canvas,s,t,w,h,camera,sx,sy){
+  if(!y3Eligible(s)){leave();return false;}entered=true;
+  if(!visibleHost(canvas)||!recovery.canTry())return false;
+  const lib=sharedThree.value;if(!lib){sharedThree.tryLoad();state(sharedThree.exhausted?'fallback':'loading');return false;}
+  try{if(!instance)instance=createForest(lib);instance.draw(canvas,s.field,t,w,h,camera,sx,sy);recovery.success();return true;}catch(e){fail(e);return false;}
  }};
 }
 function createForest(T){
