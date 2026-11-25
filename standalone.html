@@ -1525,6 +1525,36 @@
 .z2a-order strong{font-size:12px;color:#356047;white-space:nowrap}.z2a-order small{font-size:12px;color:#665a43;line-height:1.4}
 @media(max-width:350px){.z2a-hud{padding-left:5px;padding-right:5px;gap:4px}.z2a-hud .v075-status,.z2a-hud .action-hud{gap:3px;font-size:12px}.z2a-hud .v075-status>span{padding:0}.z2a-hud .action-hud .field-clock{font-size:12px}}
 
+/* Z2a2 authored heraldic/cookware UI, no platform emoji in live HUD. */
+.z2a2-icon{width:20px;height:20px;display:inline-block;vertical-align:middle;flex:none;pointer-events:none;overflow:visible}
+.z2a-hud .z2a2-icon{width:20px;height:20px;color:#e8c783}
+.z2a-hud .v075-status>span,.z2a-hud .action-hud .field-clock{display:flex;align-items:center;gap:3px;font-variant-numeric:tabular-nums}
+.z2a-hud .v075-status #v075-served{display:grid;justify-items:start;align-content:center;gap:0;line-height:1.05}
+.z2a2-count,.z2a2-queue{display:flex;align-items:center;gap:3px;white-space:nowrap}
+.z2a2-queue{font-size:11px;color:#e8c783;line-height:1.1}.z2a2-queue .z2a2-icon{width:12px;height:12px}
+.z2a-hud button,.z2a-hud .v075-status button,.z2a-hud .action-hud button{background:linear-gradient(145deg,#475547,#263a30);border-color:#a28a59;box-shadow:inset 0 1px #e2c18c35,inset 0 -2px #18291f;display:inline-flex;align-items:center;justify-content:center;gap:4px}
+.z2a-hud button:active{background:#516351;box-shadow:inset 0 2px #10291f}
+.z2a-hud .z2a-ledger-btn .z2a2-icon,.z2a-hud .z2a-settings .z2a2-icon{width:25px;height:25px}
+.z2a-hud .action-hud .field-hp{display:flex;gap:3px}
+.z2a-hud .field-hp .z2a2-icon{width:21px;height:21px;color:#dc917a}
+.z2a-hud .field-hp .is-full{fill:#b85645;filter:drop-shadow(0 1px #3c2720)}
+.z2a-hud .field-hp .is-empty{fill:#27352d;color:#8e7162}
+.z2a-hud .field-hp.taking-hit .is-full{fill:#ffe0a3;color:#ffe0a3}
+.z2a-live .v075-goal,.z2a-live .v075-notification,.z2a-live .v082-shield-status,.z2a-live .v063-field-bento{align-items:center;gap:4px}
+.z2a-live .v075-goal .z2a2-icon,.z2a-live .v075-notification .z2a2-icon,.z2a-live .v082-shield-status .z2a2-icon,.z2a-live .v063-field-bento .z2a2-icon{width:16px;height:16px}
+.z2a-diner .v4d-service-guide{grid-template-columns:23px minmax(0,1fr);align-items:center;column-gap:6px;box-shadow:inset 0 1px #d0b77b30,0 2px 5px #0b17136b}
+.z2a-diner #z2a2-guide-icon{grid-row:1 / span 2;color:#edcc88}.z2a-diner #z2a2-guide-icon .z2a2-icon{width:22px;height:22px}
+.z2a-diner .v4d-service-guide small,.z2a-diner .v4d-service-guide i{grid-column:2}
+.z2a-live .field-skill,.z2a-diner .diner-special{background:radial-gradient(circle at 35% 23%,#846244,#49372a 68%,#38291f);border:2px solid #d9b677;box-shadow:inset 0 0 0 3px #28291e99,inset 0 1px #fff1bc55,0 3px 0 #34271e,0 4px 10px #0b211a99;color:#f3d9a2}
+.z2a-live .field-skill .z2a2-icon{width:29px;height:29px;filter:drop-shadow(0 1px #281c13)}
+.z2a-diner .diner-special{display:flex;flex-direction:column;align-items:center;justify-content:center;gap:0;width:58px;height:58px;padding:4px}
+.z2a-diner .diner-special>.z2a2-icon{width:26px;height:26px}.z2a-diner .diner-special small{display:flex;align-items:center;gap:1px;font-size:11px}.z2a-diner .diner-special small .z2a2-icon{width:12px;height:12px}
+.z2a-live .field-compact-dock .z2a2-icon{width:17px;height:17px;color:inherit}
+.z2a-live .field-compact-dock .game-btn{display:inline-flex;align-items:center;justify-content:center;gap:4px}
+.z2a2-count b,.z2a-hud .field-clock b{font-weight:750}
+.z2a-ledger-summary .z2a2-icon{width:16px;height:16px}
+@media(max-width:350px){.z2a-hud .z2a2-icon{width:17px;height:17px}.z2a-hud .field-hp .z2a2-icon{width:19px;height:19px}.z2a2-queue .z2a2-icon{width:11px;height:11px}.z2a-hud .v075-status>span{gap:2px}.z2a-hud .v075-status button{padding:0}.z2a2-queue{font-size:10px}}
+
 .v014b-grill-unlock{display:grid;gap:8px;margin:12px 0;padding:14px;border:2px solid #d8a867;border-radius:18px;background:#3d5e49;color:#fff0c7}
 .v014b-grill-unlock strong{font-size:18px}
 .v014b-grill-unlock small{line-height:1.35;color:#e7e2c6}
@@ -8910,22 +8940,127 @@ function a21Tile(c,id,x,y,w,h,sz){
  for(let yy=y;yy<y+h;yy+=sz)for(let xx=x;xx<x+w;xx+=sz)a21Sprite(c,id,xx,yy,sz,sz);
  c.restore();return true;
 }
+// Authored 24-unit game glyphs. One geometry vocabulary for DOM and Canvas.
+const Z2A2_ICONS=Object.freeze({
+ moon:['M16 3A9 9 0 1 0 21 17Q10 20 10 9Q11 5 16 3Z','M19 3V7M17 5H21'],
+ plate:['M3 17H21M5 15A7 7 0 0 1 19 15Z','M12 8V6M10 6H14M4 19H20'],
+ energy:['M13 2L5 14H11L10 22L19 9H13Z'],
+ ledger:['M3 5Q8 3 12 6Q16 3 21 5V19Q16 17 12 20Q8 17 3 19ZM12 6V20','M6 9H9M6 12H9M15 9H18M15 12H18'],
+ pause:['M7 5H10V19H7ZM14 5H17V19H14Z'],
+ play:['M8 5L19 12L8 19Z'],
+ queue:['M5 8A2.3 2.3 0 1 0 9.6 8A2.3 2.3 0 1 0 5 8ZM14 6A2.3 2.3 0 1 0 18.6 6A2.3 2.3 0 1 0 14 6Z','M3 20V16Q3 12 7 12Q11 12 11 16V20M13 18V13Q13 10 16 10Q20 10 20 14V18'],
+ heart:['M12 20L4.8 13Q1 9 4.5 5.8Q8 2.5 12 7Q16 2.5 19.5 5.8Q23 9 19.2 13Z'],
+ bag:['M8 7V5Q8 2 12 2Q16 2 16 5V7M5 8Q12 5 19 8L21 20Q12 23 3 20ZM7 12H17V18H7ZM12 8V12'],
+ route:['M4 18L10 10L14 14L20 5M16 5H20V9','M4 21L2 18L4 15L6 18ZM10 7L8 10L10 13L12 10Z'],
+ gear:['M10 3H14L15 6L18 6L20 9L18 12L20 15L18 18L15 18L14 21H10L9 18H6L4 15L6 12L4 9L6 6H9Z','M15 12A3 3 0 1 1 9 12A3 3 0 1 1 15 12Z'],
+ shield:['M12 3L20 6V12Q19 18 12 22Q5 18 4 12V6Z','M8 12L11 15L16 9'],
+ bento:['M4 7H20L21 18Q12 21 3 18ZM3 11H21M12 11V19','M9 4H15M12 4V7'],
+ target:['M12 3L21 12L12 21L3 12ZM12 7L17 12L12 17L7 12Z','M12 10V14M10 12H14'],
+ warn:['M12 3L22 20H2Z','M12 9V13M12 16V17'],
+ menu:['M5 3H19V21H5Z','M8 7H16M8 11H16M8 15H13'],
+ wait:['M7 3H17M7 21H17M8 3V6Q8 9 12 12Q16 15 16 18V21M16 3V6Q16 9 12 12Q8 15 8 18V21','M9 18L12 15L15 18'],
+ cutlery:['M6 3V10Q6 13 9 13V21M9 3V10M12 3V10Q12 13 9 13M18 3Q14 7 15 13H18V21'],
+ star:['M12 2L15 9L22 10L17 15L18 22L12 18L6 22L7 15L2 10L9 9Z','M9 12L11 14L15 10'],
+ cook:['M4 12H17Q16 19 10 19Q4 19 4 12ZM17 12L22 8','M7 9Q4 6 8 3M12 9Q9 6 13 3'],
+ carry:['M3 15H21M6 13A6 6 0 0 1 18 13M12 7V5M9 5H15','M5 18H19'],
+ wok:['M3 15Q6 22 13 18Q18 15 16 10L22 5','M2 11Q6 4 14 6M5 8Q10 1 18 5M9 11Q13 8 16 11'],
+ pot:['M5 10H19L17 21H7ZM3 10H21M8 7H16M12 4V7','M4 13H2M20 13H22M9 2L8 4M16 1L17 4'],
+ grill:['M4 20L17 7M15 4L20 9M11 8L16 13M7 12L12 17','M19 3Q20 5 22 5Q22 1 19 1Z'],
+ steam:['M4 12H20V19H4ZM3 15H21M7 22H17','M7 9Q4 6 8 3M12 9Q9 6 13 3M17 9Q14 6 18 3'],
+ soothe:['M12 18L5 11Q2 7 6 5Q9 3 12 7Q15 3 18 5Q22 7 19 11Z','M4 20H20'],
+ move:['M12 2V22M2 12H22M9 5L12 2L15 5M9 19L12 22L15 19M5 9L2 12L5 15M19 9L22 12L19 15'],
+ home:['M2 11L12 3L22 11M5 10V21H19V10M10 21V15H14V21'],
+ next:['M4 12H20M13 5L20 12L13 19'],
+ coin:['M12 3A9 9 0 1 0 12 21A9 9 0 1 0 12 3Z','M12 7L17 12L12 17L7 12Z'],
+ rep:['M12 3L15 9L21 10L16 14L17 21L12 17L7 21L8 14L3 10L9 9Z']
+});
+function z2a2Icon(name,cls=''){
+ const paths=Z2A2_ICONS[name];if(!paths)return '';
+ return '<svg class="z2a2-icon '+cls+'" data-game-icon="'+name+'" viewBox="0 0 24 24" aria-hidden="true" focusable="false" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round">'+paths.map(d=>'<path d="'+d+'"/>').join('')+'</svg>';
+}
+const z2a2PathCache=new Map();
+function z2a2DrawIcon(c,name,x,y,size,color){
+ const paths=Z2A2_ICONS[name];if(!paths||typeof Path2D==='undefined')return false;
+ let geom=z2a2PathCache.get(name);if(!geom){geom=paths.map(d=>new Path2D(d));z2a2PathCache.set(name,geom);}
+ c.save();c.translate(x-size/2,y-size/2);c.scale(size/24,size/24);c.strokeStyle=color;c.lineWidth=1.8;c.lineCap='round';c.lineJoin='round';for(const p of geom)c.stroke(p);c.restore();return true;
+}
+// Live dialogue is an ephemeral rendering plan, not another simulation.
+const z2a2Clamp=(v,a,b)=>Math.max(a,Math.min(b,v));
+function z2a2Overlap(a,b,p=0){return Math.max(0,Math.min(a.x+a.width+p,b.x+b.width+p)-Math.max(a.x-p,b.x-p))*Math.max(0,Math.min(a.y+a.height+p,b.y+b.height+p)-Math.max(a.y-p,b.y-p));}
+function z2a2Lines(text){const chars=Array.from(String(text||''));if(chars.length>18)chars.splice(17,chars.length-17,'…');if(chars.length<=9)return [chars.join('')];const cut=Math.ceil(chars.length/2);return [chars.slice(0,cut).join(''),chars.slice(cut).join('')];}
+function z2a2SpeechLayout(cues,anchors,w,h){
+ const byId=new Map(anchors.map(a=>[a.id,a])),out=[],areaLimit=w*h*.06;
+ let area=0;const ranked=cues.filter(q=>q?.text&&speechOpacity(q)>.025).slice().sort((a,b)=>b.priority-a.priority||String(a.id).localeCompare(String(b.id)));
+ for(const cue of ranked){
+  if(out.length>=2||out.length&&((out[0].cue.priority||0)<7||(cue.priority||0)<7))break;
+  const a=byId.get(cue.actorId??cue.staffRole??cue.id);if(!a||a.x<10||a.x>w-10||a.y<8||a.y>h-10)continue;
+  const lines=z2a2Lines(cue.text),width=Math.min(w-12,Math.max(62,Math.max(...lines.map(l=>Array.from(l).length))*12+16)),height=lines.length===1?25:39;
+  if(area+width*height>areaLimit)continue;
+  const candidates=[{x:a.x-width/2,y:a.y-height-12},{x:a.x-width-17,y:a.y-height*.75},{x:a.x+17,y:a.y-height*.75},{x:a.x-width*.75,y:a.y-height-12},{x:a.x-width*.25,y:a.y-height-12}];
+  let best=null;
+  for(const [i,q] of candidates.entries()){
+   const p={x:z2a2Clamp(q.x,6,Math.max(6,w-width-6)),y:z2a2Clamp(q.y,36,Math.max(36,h-height-52)),width,height};
+   if(out.some(o=>z2a2Overlap(o,p,4)>0))continue;
+   // Bodies are in the same projected coordinate space as the tail.
+   if(anchors.some(other=>z2a2Overlap(p,{x:other.x-(other.width||22)/2,y:other.y,width:other.width||22,height:other.height||27},2)>0))continue;
+   const baseX=z2a2Clamp(a.x,p.x+8,p.x+width-8),baseY=z2a2Clamp(a.y,p.y+7,p.y+height-7);
+   const choices=[{x:baseX,y:p.y},{x:baseX,y:p.y+height},{x:p.x,y:baseY},{x:p.x+width,y:baseY}].map(v=>({...v,d:Math.hypot(v.x-a.x,v.y-a.y)})).sort((a,b)=>a.d-b.d);
+   const edge=choices[0];if(edge.d>42||edge.d<3)continue;
+   const cost=edge.d+Math.abs(q.x-p.x)*.12+Math.abs(q.y-p.y)*.3+i*2;
+   if(!best||cost<best.cost)best={...p,cost,baseX:edge.x,baseY:edge.y,tipX:a.x,tipY:a.y,lines,cue,actorId:a.id};
+  }
+  if(best){out.push(best);area+=width*height;}
+ }
+ return out;
+}
+function z2a2LiveSpeech(s,t,anchors,w,h,allowOutside=true){
+ if(!s?.service?.walkable)return [];
+ const ids=new Set(anchors.map(a=>a.id)),v=s.service;
+ const guests=selectDiningSpeech(v.orders,t,2).filter(c=>ids.has(c.id));
+ let plan=z2a2SpeechLayout(guests,anchors,w,h);
+ if(!plan.length){
+  const staff=selectStaffSpeech(s,t,guests);
+  if(staff&&ids.has(staff.staffRole))plan=z2a2SpeechLayout([staff],anchors,w,h);
+ }
+ if(!plan.length&&allowOutside){
+  const q=selectOutdoorQueueSpeech(v.orders,t);
+  if(q&&ids.has(q.orderId))plan=z2a2SpeechLayout([{...q,actorId:q.orderId,priority:q.kind==='urgent'?8:2}],anchors,w,h);
+ }
+ return plan;
+}
+function z2a2DrawSpeech(c,p){
+ const cue=p.cue,alpha=speechOpacity(cue);if(alpha<=0)return;
+ const bad=cue.kind==='upset'||cue.kind==='urgent'||cue.kind==='review'&&['late','bad','quality','taste'].includes(cue.reviewType),staff=cue.kind==='staff';
+ const fill=bad?'#f6dcc2':staff?'#dfecd4':'#f6e9cb',stroke=bad?'#9d6551':staff?'#658b70':'#98794e',ink=bad?'#70392d':staff?'#304b3a':'#443525';
+ c.save();c.globalAlpha=Math.min(.96,alpha);c.fillStyle=fill;c.strokeStyle=stroke;c.lineWidth=1.15;
+ const dx=p.tipX-p.baseX,dy=p.tipY-p.baseY,d=Math.hypot(dx,dy)||1,nx=-dy/d*4,ny=dx/d*4;
+ c.beginPath();c.moveTo(p.baseX+nx,p.baseY+ny);c.lineTo(p.tipX,p.tipY);c.lineTo(p.baseX-nx,p.baseY-ny);c.closePath();c.fill();c.stroke();
+ c.beginPath();c.roundRect(p.x,p.y,p.width,p.height,6);c.fill();c.stroke();
+ c.strokeStyle='#fff7dd';c.lineWidth=.75;c.beginPath();c.moveTo(p.x+7,p.y+2.5);c.lineTo(p.x+p.width-7,p.y+2.5);c.stroke();
+ c.fillStyle=ink;c.font='600 12px system-ui';c.textBaseline='middle';c.textAlign='center';
+ for(const [i,line] of p.lines.entries())c.fillText(line,p.x+p.width/2,p.y+p.height/2+(i-(p.lines.length-1)/2)*15,p.width-10);
+ c.restore();
+}
 // Read-only Z2a status language shared by Canvas and WebGL.
 function z2aOrderMark(o,t=0){
  if(!o)return null;const st=o.status;
  if(st==='served'||st==='waiting'&&o.arrival>t)return null;
- if(st==='review')return {glyph:o.sat>=70?'✓':'!',label:o.sat>=70?'满意':'不满意',color:o.sat>=70?'#bce3ac':'#ffad92'};
- if(st==='left'||st==='rejected')return t-(o.leftAt??t)<1.1?{glyph:'!',label:'离席',color:'#ffad92'}:null;
- if(st==='eating')return {glyph:'·',label:'进食',color:'#f5dda1'};
+ if(st==='review')return {icon:o.sat>=70?'star':'warn',glyph:o.sat>=70?'✓':'!',label:o.sat>=70?'满意':'不满意',color:o.sat>=70?'#bce3ac':'#ffad92'};
+ if(st==='left'||st==='rejected')return t-(o.leftAt??t)<1.1?{icon:'warn',glyph:'!',label:'离席',color:'#ffad92'}:null;
+ if(st==='eating')return {icon:'cutlery',glyph:'·',label:'进食',color:'#f5dda1'};
  if(['ordering','queued','cooking','pickup','carried','delivering','flying','waiting','entering'].includes(st)){
   const urgent=Number.isFinite(o.patience)&&Number.isFinite(o.arrival)&&o.patience-(t-o.arrival)<=9;
   const info={ordering:['?','点餐'],queued:['…','等候'],cooking:['…','烹饪'],pickup:['↑','待上菜'],carried:['↑','送餐'],delivering:['↑','送餐'],flying:['↑','送餐'],waiting:['…','等位'],entering:['…','入店']}[st];
-  return {glyph:urgent?'!':info[0],label:urgent?info[1]+' · 催促':info[1],color:urgent?'#ffad92':st==='pickup'?'#ffdb89':'#e9e5cc'};
+  return {icon:urgent?'warn':({ordering:'menu',queued:'wait',cooking:'cook',pickup:'plate',carried:'carry',delivering:'carry',flying:'carry',waiting:'wait',entering:'queue'})[st],glyph:urgent?'!':info[0],label:urgent?info[1]+' · 催促':info[1],color:urgent?'#ffad92':st==='pickup'?'#ffdb89':'#e9e5cc'};
  }
  return null;
 }
 function z2aOrderStatus(o,t){return z2aOrderMark(o,t)?.label||({served:'已完成',left:'已离席',rejected:'未入座',waiting:'未到店'}[o.status]||'等待');}
-function z2aDrawMark(c,x,y,mark,w,h){if(!mark)return;const px=Math.max(9,Math.min(w-9,x)),py=Math.max(9,Math.min(h-9,y));c.save();c.fillStyle='#202f28e8';c.strokeStyle=mark.color;c.lineWidth=1;c.beginPath();c.arc(px,py,8,0,Math.PI*2);c.fill();c.stroke();c.fillStyle=mark.color;c.font='bold 12px system-ui';c.textAlign='center';c.textBaseline='middle';c.fillText(mark.glyph,px,py);c.restore();}
+function z2aDrawMark(c,x,y,mark,w,h){if(!mark)return;const px=Math.max(11,Math.min(w-11,x)),py=Math.max(11,Math.min(h-11,y));c.save();
+ c.fillStyle='#26382dee';c.strokeStyle=mark.color;c.lineWidth=1.05;c.beginPath();c.roundRect(px-10,py-10,20,20,5);c.fill();c.stroke();
+ if(!z2a2DrawIcon(c,mark.icon||'cook',px,py,15,mark.color)){c.fillStyle=mark.color;c.font='bold 12px system-ui';c.textAlign='center';c.textBaseline='middle';c.fillText(mark.glyph,px,py);}
+ c.restore();
+}
 // Lightweight procedural game graphics: original Canvas shapes, no art pack.
 const color={ink:'#24382a',leaf:'#386b43',soil:'#806044',stone:'#a6b392',cream:'#f4dfb0',gold:'#dfb873'};
 function rect(c,x,y,w,h,fill){c.fillStyle=fill;c.fillRect(x,y,w,h)}
@@ -9646,7 +9781,7 @@ function drawDinerDoorway(c,s,t,w,h){
   for(let i=0;i<5;i++)line(c,L+i*W*.23,T+H*.80,L+i*W*.23,T+H,'#526f8299',2);
   queue.slice(0,4).forEach((o,i)=>pixelActor(c,o.segment,L+W*(.20+i*.205),T+H*.77,DINER_ACTOR_SCALE*.82,{walk:0}));
   c.fillStyle='#294e68cb';c.fillRect(L+6,T+6,94,22);text(c,'☁ 等位 '+queue.length,L+51,T+17,'#fff6dd',11);
-  if(!s.service?.walkable)drawOutdoorQueueChatter(c,queue,t,L,T,W,H);c.strokeStyle='#e4d4aa';c.lineWidth=4;c.strokeRect(L+2,T+2,W-4,H-4);c.restore();
+  if(!s.service?.walkable||!selectDiningSpeech(s.service.orders,t,2).length&&!selectStaffSpeech(s,t,[]))drawOutdoorQueueChatter(c,queue,t,L,T,W,H);c.strokeStyle='#e4d4aa';c.lineWidth=4;c.strokeRect(L+2,T+2,W-4,H-4);c.restore();
   return {queue:queue.length,weather:'breeze'};
  }
  c.save();
@@ -9689,7 +9824,7 @@ function drawDinerDoorway(c,s,t,w,h){
  c.font='bold 11px system-ui';c.textBaseline='middle';
  c.fillStyle='#193a32c9';c.fillRect(L+6,T+6,Math.min(W-12,queue.length?94:102),22);
  text(c,(weather==='rain'?'☔':weather==='mist'?'☁️':weather==='breeze'?'🍃':'☀️')+' 等位 '+queue.length,L+51,T+17,'#fff0cc',11);
- if(!s.service?.walkable)drawOutdoorQueueChatter(c,queue,t,L,T,W,H);
+ if(!s.service?.walkable||!selectDiningSpeech(s.service.orders,t,2).length&&!selectStaffSpeech(s,t,[]))drawOutdoorQueueChatter(c,queue,t,L,T,W,H);
  // Door threshold and open-frame mullions sit above the outdoor strip.
  c.strokeStyle='#d7b07b';c.lineWidth=4;c.strokeRect(L+2,T+2,W-4,H-4);
  c.fillStyle='#79563d';c.fillRect(L+W*.475,T+H*.03,W*.05,H*.13);
@@ -10136,7 +10271,8 @@ function drawRestaurantV075(c,s,t,w,h){
  const workerActor=workerCue?actors.find(a=>a.id===workerCue.staffRole):null;
  const speechPlacements=placeRestaurantSpeech(visibleSpeech,workerCue,actors,w,h);
  for(const a of actors)a.speechPlacement=speechPlacements.get(a.id)||(workerCue&&a.id===workerCue.staffRole?speechPlacements.get(workerCue.id):null);
- const speaking=new Set(visibleSpeech.map(q=>q.id));
+ const dialogue=v?z2a2LiveSpeech(s,t,actors.map(a=>({id:a.id,x:x(a.x),y:y(a.y)-31,width:24,height:33})),w,h,false):[];
+ const speaking=new Set(dialogue.map(p=>p.actorId));
  for(const a of actors){
   const X=x(a.x),Y=y(a.y)+(a.order?.status==='eating'?Math.sin(t*5+Number(a.order.seatId||0))*.9:0);
   // No permanent player-foot overlay; interaction progress is on the action guide.
@@ -10169,11 +10305,12 @@ function drawRestaurantV075(c,s,t,w,h){
   }
   if(a.order){
    const o=a.order;
-   z2aDrawMark(c,X,Y-34,z2aOrderMark(o,t),w,h);
+   if(!speaking.has(o.id))z2aDrawMark(c,X,Y-43,z2aOrderMark(o,t),w,h);
   }
  }
  for(const cue of visibleSpeech){const speaker=speechActors.get(cue.id);if(speaker)drawGuestSpeech077(c,cue,speaker,w,h)}
  if(workerCue&&workerActor)drawStaffSpeech078(c,workerCue,workerActor,w,h);
+ for(const p of dialogue)z2a2DrawSpeech(c,p);
  if(!v){
   const reduced=globalThis.matchMedia?.('(prefers-reduced-motion: reduce)').matches||false;
   const cue=homeKitchenChatter(s,t,reduced),speaker=actors.find(a=>a.id===cue?.actor);
@@ -10272,16 +10409,17 @@ const ingredientChoices=()=>Object.entries(ING).filter(([id])=>activeWorld(game)
  ['cloud_rice','sky_moss','storm_egg','sour_bell','gale_core','chicken','onion'].includes(id)||(game.inventory[id]||0)>0:
  !['cloud_rice','sky_moss','storm_egg','sour_bell','gale_core'].includes(id)||(game.inventory[id]||0)>0);
 
+function z2a2Health(hp){return Array.from({length:3},(_,i)=>z2a2Icon('heart',i<hp?'is-full':'is-empty')).join('');}
 function hud(){
- if(game.phase==='service'&&game.service?.walkable){const v=game.service,complete=v.orders.filter(o=>o.status==='served').length,total=v.orders.length;return `<header class="z2a-hud z2a-service-hud"><div class="v075-status" aria-label="餐厅营业状态">
-    <span id="v075-wave">☾ ${Math.min(v.wave+1,3)}/3</span>
-    <span id="v075-served">🍽️ ${complete}/${total}</span>
-    <span id="v075-energy">⚡ ${v.hero?.energy??6}/${v.hero?.maxEnergy??6}</span>
-    <button type="button" class="z2a-ledger-btn" data-act="service-ledger" aria-label="营业账册">▤</button>
-    <button type="button" data-act="toggle-service" ${v.breakAt||v.done?'disabled':''} aria-label="${v.paused?'继续营业':'暂停营业'}">${v.paused?'▶':'Ⅱ'}</button>
+ if(game.phase==='service'&&game.service?.walkable){const v=game.service,complete=v.orders.filter(o=>o.status==='served').length,total=v.orders.length,waiting=v.orders.filter(o=>o.status==='waiting'&&o.arrival<=v.time).length;return `<header class="z2a-hud z2a-service-hud"><div class="v075-status" aria-label="餐厅营业状态">
+    <span id="v075-wave" aria-label="营业波次">${z2a2Icon('moon')} <b>${Math.min(v.wave+1,3)}/3</b></span>
+    <span id="v075-served" aria-label="上菜及等位"><span class="z2a2-count">${z2a2Icon('plate')} <b>${complete}/${total}</b></span>${waiting?`<small class="z2a2-queue">${z2a2Icon('queue')} 等位 ${waiting}</small>`:''}</span>
+    <span id="v075-energy" aria-label="主厨精力">${z2a2Icon('energy')} <b>${v.hero?.energy??6}/${v.hero?.maxEnergy??6}</b></span>
+    <button type="button" class="z2a-ledger-btn" data-act="service-ledger" aria-label="营业账册">${z2a2Icon('ledger')}</button>
+    <button type="button" data-act="toggle-service" ${v.breakAt||v.done?'disabled':''} aria-label="${v.paused?'继续营业':'暂停营业'}">${z2a2Icon(v.paused?'play':'pause')}</button>
   </div>
 </header>`;}
- if(game.phase==='field'&&game.field?.action&&game.field.segmentStatus!=='choice'){const f=game.field;return `<header class="z2a-hud z2a-field-hud"><div class="action-hud" aria-label="探索状态"><span class="field-hp" aria-label="体力">${'♥'.repeat(f.hp)}${'♡'.repeat(3-f.hp)}</span><button data-act="field-bag" class="field-bag-chip" aria-label="查看野外背包">🎒 <b id="field-bag-count">${fieldBagSlotsUsed(f)}/${f.capacity||8}</b></button><span class="field-clock" id="field-clock">${f.segmentIndex||1}/3 · ${Math.floor(f.elapsed)}s</span></div><button type="button" class="z2a-settings hud-gear" data-act="settings" aria-label="设置">⚙</button></header>`;}
+ if(game.phase==='field'&&game.field?.action&&game.field.segmentStatus!=='choice'){const f=game.field;return `<header class="z2a-hud z2a-field-hud"><div class="action-hud" aria-label="探索状态"><span class="field-hp" data-hp="${f.hp}" aria-label="生命 ${f.hp}/3">${z2a2Health(f.hp)}</span><button data-act="field-bag" class="field-bag-chip" aria-label="查看野外背包">${z2a2Icon('bag')} <b id="field-bag-count">${fieldBagSlotsUsed(f)}/${f.capacity||8}</b></button><span class="field-clock" id="field-clock">${z2a2Icon('route')} <b id="z2a2-clock-value">${f.segmentIndex||1}/3 · ${Math.floor(f.elapsed)}s</b></span></div><button type="button" class="z2a-settings hud-gear" data-act="settings" aria-label="设置">${z2a2Icon('gear')}</button></header>`;}
  const home=game.phase==='forecast';
  const step=journey.indexOf(game.phase);
  return `<div class="hud ${home?'v076-home-hud':''}"><div class="brand"><span class="logo" aria-hidden="true">🍳</span><div><strong>怪味食堂</strong><small>第 ${totalBusinessDay(game)} 天 · ${tableCapacity(game)} 座</small></div></div><div class="hud-meta"><span aria-label="金币">🪙 ${game.coins}</span><span aria-label="声望">⭐ ${game.reputation}</span></div><button class="hud-gear" data-act="settings" aria-label="设置">⚙</button></div><div class="day-strip ${home?'v076-home-day':''}" aria-label="当前阶段：${phaseLabels[game.phase]}"><b>${phaseLabels[game.phase]}</b><div class="v014-journey" aria-hidden="true">${journey.slice(0,7).map((phase,i)=>`<i class="${i===step?'current':i<step?'passed':''}"></i>`).join('')}</div><span class="day-phase">${step<5?'☀ 白天':'☾ 夜晚'}</span></div>`;
@@ -10334,7 +10472,7 @@ function overlayMarkup(){if(!overlay)return '';
  }else if(overlay==='service-ledger'){
   const v=game.service,goal=serviceGoalResult(v),warn=serviceSupplyStatus(game),t=restaurantSimTime(performance.now()),cues=selectDiningSpeech(v.orders,t,2),worker=selectStaffSpeech(game,t,cues),outside=selectOutdoorQueueSpeech(dinerQueueGuests(game,t),t);
   const waiting=v.orders.filter(o=>o.status==='waiting'&&o.arrival<=v.time).length,served=v.orders.filter(o=>o.status==='served').length;
-  body=`<h2>营业账册</h2><div class="z2a-ledger-summary"><b>第 ${totalBusinessDay(game)} 天 · ☾ ${Math.min(v.wave+1,3)}/3</b><span>🪙 ${game.coins} · ⭐ ${game.reputation}</span><span>已上菜 ${served}/${v.orders.length} · 等位 ${waiting} · ${v.time}s</span>${goal?`<span>🎯 ${esc(goal.label)} · ${goal.value}/${goal.target}</span>`:''}${warn.shortages.length?`<span class="z2a-warning">⚠ 原料不足：${[...new Set(warn.shortages.flatMap(q=>(q.missing||[]).map(m=>m.id)))].map(id=>esc(ING[id]?.name||id)).join('、')}</span>`:''}</div>
+  body=`<h2>营业账册</h2><div class="z2a-ledger-summary"><b>第 ${totalBusinessDay(game)} 天 · ${z2a2Icon('moon')} ${Math.min(v.wave+1,3)}/3</b><span>${z2a2Icon('coin')} ${game.coins} · ${z2a2Icon('rep')} ${game.reputation}</span><span>已上菜 ${served}/${v.orders.length} · 等位 ${waiting} · ${v.time}s</span>${goal?`<span>${z2a2Icon('target')} ${esc(goal.label)} · ${goal.value}/${goal.target}</span>`:''}${warn.shortages.length?`<span class="z2a-warning">${z2a2Icon('warn')} 原料不足：${[...new Set(warn.shortages.flatMap(q=>(q.missing||[]).map(m=>m.id)))].map(id=>esc(ING[id]?.name||id)).join('、')}</span>`:''}</div>
   <h3>客人订单</h3><div class="z2a-order-list">${v.orders.filter(o=>o.arrival<=v.time||o.status!=='waiting').map(o=>`<article class="z2a-order"><div><b>${esc(CUSTOMERS[o.segment]?.name||o.segment)}</b><span>${o.tableId!=null?(o.tableId+1)+'号桌':'店外'}</span></div><div><span>${esc(RECIPES[o.recipeId]?.name||'尚未点餐')}</span><strong>${esc(z2aOrderStatus(o,t))}</strong></div>${cues.find(c=>c.id===o.id)?`<small>「${esc(cues.find(c=>c.id===o.id).text)}」</small>`:''}</article>`).join('')||'<p>还没有客人到店。</p>'}</div>${worker?`<p class="sheet-lead">员工：${esc(worker.text)}</p>`:''}${outside?`<p class="sheet-lead">等位客人：${esc(outside.text)}</p>`:''}<button class="game-btn secondary" data-act="settings">设置</button><p class="sheet-lead">关闭账册继续营业。</p>`;
  }else if(overlay==='field-bag'){
   const f=game.field;
@@ -10549,8 +10687,8 @@ function field(){
  const readyToFinish=f.nodes?.some(n=>n.key==='target'&&n.claimed)&&!(f.segmentIndex===3&&f.enemies?.some(e=>e.isBoss&&e.hp>0));
  const bag=Object.entries(f.bag).map(([id,n])=>`${ING[id].name}${n}`).join(' · ')||'空';
  const event=f.activeEvent&&f.nodes.find(n=>n.key===f.activeEvent);
- return [`<div class="forest-scene action-forest"><canvas id="forest-canvas" class="forest-canvas"></canvas><div class="floating-joystick" id="field-stick" aria-hidden="true"><div class="floating-joystick-knob" id="field-stick-knob"></div></div><div class="field-action-notice" id="field-action-notice" hidden></div>${f.weapon?.type==='WOK'?`<div class="v082-shield-status" id="v082-shield-status" aria-label="锅盖被动防御状态">${f.shieldCharge!==false?'🛡 防御就绪':'🛡 蓄能 '+Math.ceil(f.shieldCooldown||0)+'s'}</div>`:''}${f.bento?`<div class="v063-field-bento">🍱 <span id="v063-bento-effect">${f.bento.used?"已触发":"待触发"}</span></div>`:""}<button data-act="skill" class="field-skill" aria-label="${f.weapon?.type==='GRILL'?'扇形火焰':f.weapon?.type==='POT'?'沸汤爆裂':f.weapon?.type==='STEAM'?'凝雾结界':'旋风斩'}"><span class="skill-glyph" aria-hidden="true">${f.weapon?.type==='GRILL'?'🍢':f.weapon?.type==='WOK'?'🌀':f.weapon?.type==='STEAM'?'☁️':'♨️'}</span><span class="skill-caption">${f.weapon?.type==='GRILL'?'喷焰':f.weapon?.type==='POT'?'爆裂':f.weapon?.type==='STEAM'?'凝雾':'旋风'}</span><span class="skill-cooldown" id="skill-cooldown" hidden></span></button>${event?(event.offer?specialEncounterHtml(game,event):`<div class="field-event"><strong>野外遭遇 · 流浪调味师</strong><p>你在野外遇见流浪调味师。本次机会只有一次，要交换还是继续赶路？</p><button data-event="trade">蘑菇 ×1 → 火椒 ×1（野外背包）</button><button data-event="forage">深入调查：损失生命，争取两份材料</button><button data-event="leave">绕开，保留现有收获</button></div>`):''}</div>`,
- `<div class="action-field-dock field-compact-dock"><span class="field-touch-tip" aria-label="按住场景拖动移动">↔ 移动</span>${readyToFinish?b('finish-segment',f.segmentIndex===3?'结束探索':'下一站','primary'):''}${b('retreat','回店','secondary')} </div>`]
+ return [`<div class="forest-scene action-forest"><canvas id="forest-canvas" class="forest-canvas"></canvas><div class="floating-joystick" id="field-stick" aria-hidden="true"><div class="floating-joystick-knob" id="field-stick-knob"></div></div><div class="field-action-notice" id="field-action-notice" hidden></div>${f.weapon?.type==='WOK'?`<div class="v082-shield-status" id="v082-shield-status" aria-label="锅盖被动防御状态">${z2a2Icon('shield')} <span id="z2a2-shield-value">${f.shieldCharge!==false?'就绪':'蓄能 '+Math.ceil(f.shieldCooldown||0)+'s'}</span></div>`:''}${f.bento?`<div class="v063-field-bento">${z2a2Icon('bento')} <span id="v063-bento-effect">${f.bento.used?"已触发":"待触发"}</span></div>`:""}<button data-act="skill" class="field-skill" aria-label="${f.weapon?.type==='GRILL'?'扇形火焰':f.weapon?.type==='POT'?'沸汤爆裂':f.weapon?.type==='STEAM'?'凝雾结界':'旋风斩'}"><span class="skill-glyph" aria-hidden="true">${z2a2Icon(({GRILL:'grill',WOK:'wok',STEAM:'steam',POT:'pot'})[f.weapon?.type]||'wok')}</span><span class="skill-caption">${f.weapon?.type==='GRILL'?'喷焰':f.weapon?.type==='POT'?'爆裂':f.weapon?.type==='STEAM'?'凝雾':'旋风'}</span><span class="skill-cooldown" id="skill-cooldown" hidden></span></button>${event?(event.offer?specialEncounterHtml(game,event):`<div class="field-event"><strong>野外遭遇 · 流浪调味师</strong><p>你在野外遇见流浪调味师。本次机会只有一次，要交换还是继续赶路？</p><button data-event="trade">蘑菇 ×1 → 火椒 ×1（野外背包）</button><button data-event="forage">深入调查：损失生命，争取两份材料</button><button data-event="leave">绕开，保留现有收获</button></div>`):''}</div>`,
+ `<div class="action-field-dock field-compact-dock"><span class="field-touch-tip" aria-label="按住场景拖动移动">${z2a2Icon('move')} 移动</span>${readyToFinish?b('finish-segment',z2a2Icon('next')+' '+(f.segmentIndex===3?'结束探索':'下一站'),'primary'):''}${b('retreat',z2a2Icon('home')+' 回店','secondary')} </div>`]
 }
 
 function forestBackdrop(){return `<div class="forest-cloud c1">🌲</div><div class="forest-cloud c2">🌲</div><div class="forest-cloud c3">🍄</div><div class="forest-cloud c4">🌿</div><div class="forest-cloud c5">🦬</div>`}
@@ -10714,9 +10852,9 @@ function service(){
  const end=v.done?'<div class="v075-finish"><h2>🌙 今日打烊</h2><p>成功上菜 '+complete+' / '+total+' · 厨房已经收工</p><button data-act="close">📊 查看经营日报</button></div>':'';
  const warn=serviceSupplyStatus(game);
  return [`<div class="scene-bg diner-bg service-scene v075-service">${restaurantView(true)}
-  <div id="v075-notification" class="v075-notification" ${warn.shortages.length?'':'hidden'}>⚠ 缺料 · 查账册</div>
-  ${goal?'<div class="v075-goal z2a-goal-indicator" title="'+esc(goal.label)+'">🎯 <b id="v075-goal">'+goal.value+'/'+goal.target+'</b></div>':''}
-  <div id="v4d-service-guide" class="v4d-service-guide" role="status"><b id="v4d-guide-title">靠近厨位</b><small id="v4d-guide-detail">拖动主厨开始工作</small><i id="v4d-guide-progress" hidden></i></div>
+  <div id="v075-notification" class="v075-notification" ${warn.shortages.length?'':'hidden'}>${z2a2Icon('warn')} 缺料 · 查账册</div>
+  ${goal?'<div class="v075-goal z2a-goal-indicator" title="'+esc(goal.label)+'">'+z2a2Icon('target')+' <b id="v075-goal">'+goal.value+'/'+goal.target+'</b></div>':''}
+  <div id="v4d-service-guide" class="v4d-service-guide" role="status"><span id="z2a2-guide-icon" data-kind="cook">${z2a2Icon('cook')}</span><b id="v4d-guide-title">靠近厨位</b><small id="v4d-guide-detail">拖动主厨开始工作</small><i id="v4d-guide-progress" hidden></i></div>
   ${modal}${paused}${end}</div>`,''];
 }
 function report(){const r=game.report;const lead=newRecipeLead(game);if(!r)return ['',''];return [`<div class="report-scene" aria-label="今日营业结算"><h2 class="report-header">${r.secondRating?.passed&&r.secondRating.stage===2?'✦✦ 获得第二枚万味星章！':r.secondRating?.passed?'✦ 二星首夜通过！':r.secondRating?'✦ 二星评鉴未达标':r.rating?.passed?'✦ 获得万味星章！':r.rating?'✦ 评鉴结束，下次再试':r.won?'🏆 击败爆炎厨王！':r.challenge?'🔥 爆炎厨王：挑战结束':'🌙 打烊啦，看看大家怎么说'}</h2><div class="report-stats"><div><small>今晚收入</small><b>🪙 ${r.revenue}</b></div><div><small>贡献利润</small><b>${r.profit}</b></div><div><small>成功上菜</small><b>${r.served}/${r.totalOrders||7}</b></div><div><small>平均满意</small><b>${r.sat}</b></div></div>${reportPromotionBanner()}${r.managedFreight?`<div class="v015-ferry"><strong>⛵ 旧店留守商船出发</strong><small>实际装运 ${r.managedFreight.total} 份边境食材，旧仓和运费已扣除。可在下一次云港采购中签收。</small></div>`:''}${r.salvage?.recovered?`<div class="v063-craft-report" aria-label="离席熟菜回收复盘"><strong>♻️ 熟菜回收与再利用</strong><span>回收 ${r.salvage.recovered} 份 · 再次上桌 ${r.salvage.reused} 份 · 打烊丢弃 ${r.salvage.expired} 份</span><small>只回收已出锅且未送到客人的普通料理，沿用原材料成本；不能跨营业日保存。</small></div>`:''}${r.orderedByDish&&Object.keys(r.orderedByDish).length?`<div class="v063-craft-report"><strong>📋 今日实际点单 / 售出</strong>${Object.entries(r.orderedByDish).sort((a,b)=>b[1]-a[1]).map(([id,n])=>`<div class="v063-craft-row"><b>${esc(RECIPES[id]?.name||id)}</b><small>点单 ${n} · 售出 ${r.byDish?.[id]?.count||0}${n>(r.byDish?.[id]?.count||0)?' · 留意缺料、等待或退单':''}</small></div>`).join('')}</div>`:''}${r.ferryEarned?`<div class="v015-ferry"><strong>🪁 获得航运委托 ×1</strong><small>来自原食堂今天的真实上菜；可在云港每日接收一批边境食材，研发跨世界料理。</small></div>`:''}${ratingReceipt(r)}${secondRatingReceipt(r)}${r.finance?`<div class="v12c-finance"><strong>🪙 经营账本 · 真实收支</strong><span>营业收入 ${r.revenue} · 食材估值 ${r.cost} · 宣传 ${r.finance.marketingCost} · 工资 ${r.finance.wage}</span><span>其他营业支出 ${(r.eventExpense||0)+(r.hospitalityCost||0)} · 经营利润 <b>${r.profit}</b></span><span>本日现金净变动（含采购与投资）<b>${r.finance.cashChange>=0?'+':''}${r.finance.cashChange}</b></span><small>${CAMPAIGNS[r.finance.campaignId]?.name||'自然营业'}：新增 ${r.finance.promotionGuests} 客 · 到店 ${r.finance.marketingArrived||0} · 成交 ${r.finance.marketingServed||0} 单 · 销售 ${r.finance.marketingRevenue||0} 金币</small><small>已付工资 ${r.finance.paid} · 结算后欠薪 ${r.finance.debt}</small></div>`:''}${r.kitchen?`<div class="kitchen-report"><strong>厨房复盘</strong>${r.kitchen.slots.map((slot,i)=>`<span>${['左','右','中'][i]} ${cookName(slot.type)} Lv.${slot.level} · ${r.kitchen.stats?.[['WOK','POT','CENTER'][i]]?.count||0} 单 · 节约 ${r.kitchen.stats?.[['WOK','POT','CENTER'][i]]?.secondsSaved||0} 秒</span>`).join('')}</div>`:''}${r.byCraft&&Object.keys(r.byCraft).length?`<div class="v063-craft-report"><strong>🥘 本晚工艺表现（实际销售）</strong>${Object.values(r.byCraft).map(x=>`<div class="v063-craft-row"><b>${esc(RECIPES[x.recipeId]?.name||'料理')} · ${esc(x.styleLabel)}</b><small>售出 ${x.count} 份 · 评价 ${Math.round(x.totalSat/x.count)} · 实收 ${x.revenue} 金币${x.revenue!==x.baseRevenue? '（相比基础 '+(x.revenue-x.baseRevenue>0?'+':'')+(x.revenue-x.baseRevenue)+'）':''}</small></div>`).join('')}</div>` :''}${r.staff?.crew&&(r.staff.crew.helper.hired||r.staff.crew.waiter.hired||r.staff.crew.helper2?.hired)?`<div class="staff-report"><b>员工今日贡献</b>${r.staff.crew.helper.hired?`<span>帮厨：参与 ${r.staff.stats.helperOrders} 单 · 实省 ${r.staff.stats.helperSeconds} 秒</span>`:''}${r.staff.crew.helper2?.hired?`<span>${crewRoleName(game,'helper2')}：参与 ${r.staff.stats.helper2Orders||0} 单 · 实省 ${r.staff.stats.helper2Seconds||0} 秒</span>`:''}${r.staff.crew.waiter.hired?`<span>跑堂：照顾 ${r.staff.stats.waiterOrders} 桌 · 额外耐心 ${r.staff.stats.waiterBonus} 秒 · 延误挽回 ${r.staff.stats.waiterSaved} 单</span>`:''}<small>员工餐食材成本 ${r.staff.foodCost} 金币（计入利润）</small></div>`:''}${r.growth?`<div class="v12c-growth-report"><b>🌟 员工成长</b>${Object.entries(r.growth.earned).map(([role,n])=>`<span>${crewRoleName(game,role)} · 工作经验 +${n} · Lv.${(game.crew?.[role]?.level||r.growth.after[role].level)}（累计 ${r.growth.after[role].xp}）</span>`).join('')}</div>`:''}${r.regularGuests?.length?`<div class="v010-regular-report">👥 今天认识或再见了：${r.regularGuests.slice(0,3).map(g=>esc(g.name)+(g.happyMeals>=2?' · 熟客':'')).join('、')}</div>`:''}${r.premium?.recipeId?`<div class="v010-premium-report"><strong>✨ 隐藏菜 · ${esc(RECIPES[r.premium.recipeId]?.name||'稀有料理')}</strong><span>限量 ${r.premium.limit} 份 · 接单 ${r.premium.ordered} · 完成 ${r.premium.sold} · 实收 ${r.premium.revenue} 金币</span></div>`:''}<div class="daily-goal-result"><b>今日任务：${r.goal?.label||'完成营业'}</b><span>${r.goal?`${r.goal.value}/${r.goal.target} · ${r.goal.success?'达成！口碑 +2':'未达成，下次再试'}`:'常规营业'}</span></div><div class="guest-verdict"><strong>💬 今日食客点评</strong><p>${r.suggested}</p></div>${r.guestReviews?.length?`<div class="guest-feedback-list"><strong>真实食客回访</strong>${r.guestReviews.slice(0,3).map(x=>`<div class="review-line"><span>${RECIPES[x.recipeId]?.name||'今日料理'}</span><span>“${esc(x.text)}” · ${x.sat}分</span></div>`).join('')}</div>`:''}${r.choices?.length?`<div class="v04-choices"><small>店长今日决策</small>${r.choices.map(c=>`<span>${c.type==='menu_swap'?`临时换菜：${RECIPES[c.before].name} → ${RECIPES[c.after].name}`:`第${c.wave}波：${({sign:activeWorld(game)==='cloud'?'码头主食推荐':'辣味招牌',kitchen:'整理后厨',steady:'稳定营业',soup:activeWorld(game)==='cloud'?'云织清润推荐':'温和推荐',assist:'临时帮厨',publicity:'试吃宣传'})[c.choice]||c.choice}`}</span>`).join('')}</div>`:''}${r.challenge?`<div class="boss-mini">厨王赛得分 <b>${r.challenge.score}</b> / 对手 70　${r.won?'🏆 获得猛火掌控':'未达标，下轮仍可挑战'}</div>`:''}${r.queue?`<section class="v12e-queue-report" aria-label="门外真实等位"><strong>🚪 门外等位与接待</strong><span>峰值 ${r.queue.peak} 位 · 等位后入店 ${r.queue.waited} 位 · 等位流失 ${r.queue.abandoned} 位</span><small>平均成功等位 ${r.queue.waited?Math.round(r.queue.waitSeconds/r.queue.waited):0} 秒 · 未入座 ${r.unseated} 位${r.queue.peak===0?' · 今晚没有形成排队':''}</small></section>`:''}<div class="v09-growth-report"><b>🏠 经营成长 · 第 ${r.absoluteDay||totalBusinessDay(game)} 天</b><span>食堂 ${r.tableCount||2} 桌 / ${(r.tableCount||2)*2} 席 · 今日等位高峰 ${r.queuePeak||0} 人 · 未能入座 ${r.unseated||0} 人</span><span>累计营业额 ${game.history.reduce((n,x)=>n+x.revenue,0)} 金币 · 累计招待 ${game.history.reduce((n,x)=>n+x.served,0)} 人</span></div><div class="recipe-lead"><small>🔎 顾客带来的研发灵感</small><strong>${lead?`“${lead.hint}”`:'目前的菜谱已经全部解锁！'}</strong>${lead?`<span>可尝试 ${lead.ingredients.map(id=>ingredientIconHtml(id,22)).join(' + ')}</span>`:''}</div></div>`,
@@ -10932,13 +11070,13 @@ function frame(now){const delta=Math.min(.045,(now-(lastFrame||now))/1000);lastF
   if(evt==='harvest'&&game.field?.nodes?.some(n=>n.key==='target'&&n.claimed)){releaseStick();render();}
   if(evt==='field_event'){message='在野外遇见流浪调味师：选择交换、调查或离开。';releaseStick();render()}
   else if(game.phase!=='field'){releaseStick();message='探索结束：只损失本次背包收获，原仓库安全。';render()}
-  else {const f=game.field;const hp=app.querySelector('.field-hp');if(hp){hp.textContent='♥'.repeat(f.hp)+'♡'.repeat(3-f.hp);hp.classList.toggle('taking-hit',(f.hitFlash||0)>0);}
+  else {const f=game.field;const hp=app.querySelector('.field-hp');if(hp){if(hp.dataset.hp!==String(f.hp)){hp.dataset.hp=String(f.hp);hp.innerHTML=z2a2Health(f.hp);hp.setAttribute('aria-label','生命 '+f.hp+'/3');}hp.classList.toggle('taking-hit',(f.hitFlash||0)>0);}
    const count=app.querySelector('#field-bag-count');if(count)count.textContent=fieldBagSlotsUsed(f)+'/'+(f.capacity||8);
-   const timer=app.querySelector('#field-clock');if(timer)timer.textContent=(f.segmentIndex||1)+'/3 · '+Math.floor(f.elapsed)+'s';const bento=app.querySelector('#v063-bento-effect');if(bento&&f.bento)bento.textContent=f.bento.used?'已触发':'待触发';
+   const timer=app.querySelector('#z2a2-clock-value');if(timer)timer.textContent=(f.segmentIndex||1)+'/3 · '+Math.floor(f.elapsed)+'s';const bento=app.querySelector('#v063-bento-effect');if(bento&&f.bento)bento.textContent=f.bento.used?'已触发':'待触发';
    const skill=app.querySelector('[data-act="skill"]');const cooldown=app.querySelector('#skill-cooldown');if(skill){skill.disabled=f.skillCd>0;skill.style.setProperty('--cooldown',(f.skillCd/6.5*100).toFixed(2)+'%');if(cooldown){cooldown.hidden=f.skillCd<=0;cooldown.textContent=f.skillCd>0?Math.ceil(f.skillCd)+'s':'';}}
    const shieldStatus=app.querySelector('#v082-shield-status');if(shieldStatus){
     shieldStatus.hidden=f.weapon?.type!=='WOK';
-    shieldStatus.textContent=f.shieldCharge!==false?'🛡 防御就绪':'🛡 蓄能 '+Math.ceil(f.shieldCooldown||0)+'s';
+    const shieldValue=shieldStatus.querySelector('#z2a2-shield-value');if(shieldValue)shieldValue.textContent=f.shieldCharge!==false?'就绪':'蓄能 '+Math.ceil(f.shieldCooldown||0)+'s';
     shieldStatus.classList.toggle('charging',f.shieldCharge===false);
    }
    const fieldNote=app.querySelector('#field-action-notice');if(fieldNote){fieldNote.hidden=!(f.actionMessageTTL>0);if(!fieldNote.hidden)fieldNote.textContent=f.elapsed<2?'移动 · 自动采集 / 攻击':f.actionMessage.slice(0,22);};
@@ -10962,11 +11100,11 @@ function frame(now){const delta=Math.min(.045,(now-(lastFrame||now))/1000);lastF
        else render();
      }
    }else if(h)h.moving=false;
-   const guide=dinerGuide(game),title=app.querySelector('#v4d-guide-title'),detail=app.querySelector('#v4d-guide-detail'),progress=app.querySelector('#v4d-guide-progress');if(title&&guide){const dish=RECIPES[guide.recipeId]?.name||'料理';title.textContent=guide.mode==='serve'?'送至 '+(guide.table+1)+' 号桌 · '+dish:guide.mode==='pickup'?'取餐 · '+dish:'靠近厨位';detail.textContent=guide.mode==='serve'?(guide.near?'停留片刻，自动上菜':'前往高亮桌位，靠近即可送餐'):guide.mode==='pickup'?(guide.near?'停留片刻，自动取餐':'前往左侧出餐台，靠近即可取餐'):'等待出锅，成品将标出取餐位置';detail.hidden=!(guide.near&&guide.mode!=='cook');if(progress){progress.hidden=!guide.near||guide.mode==='cook';progress.style.setProperty('--v4d-fill',Math.round(guide.progress*100)+'%');}}
+   const guide=dinerGuide(game),title=app.querySelector('#v4d-guide-title'),detail=app.querySelector('#v4d-guide-detail'),progress=app.querySelector('#v4d-guide-progress');if(title&&guide){const gi=app.querySelector('#z2a2-guide-icon'),kind=guide.mode==='serve'?'carry':guide.mode==='pickup'?'plate':'cook';if(gi&&gi.dataset.kind!==kind){gi.dataset.kind=kind;gi.innerHTML=z2a2Icon(kind);}const dish=RECIPES[guide.recipeId]?.name||'料理';title.textContent=guide.mode==='serve'?'送至 '+(guide.table+1)+' 号桌 · '+dish:guide.mode==='pickup'?'取餐 · '+dish:'靠近厨位';detail.textContent=guide.mode==='serve'?(guide.near?'停留片刻，自动上菜':'前往高亮桌位，靠近即可送餐'):guide.mode==='pickup'?(guide.near?'停留片刻，自动取餐':'前往左侧出餐台，靠近即可取餐'):'等待出锅，成品将标出取餐位置';detail.hidden=!(guide.near&&guide.mode!=='cook');if(progress){progress.hidden=!guide.near||guide.mode==='cook';progress.style.setProperty('--v4d-fill',Math.round(guide.progress*100)+'%');}}
    const skill=app.querySelector('#diner-special'),info=canMove?walkableSpecial(game):null;
    if(skill){
      skill.hidden=!info;
-     if(info){skill.textContent=info.icon+' ⚡'+info.energy;skill.disabled=!info.available;
+     if(info){const kind=info.kind==='burst'?'cook':'soothe',sig=kind+':'+info.energy;if(skill.dataset.iconSig!==sig){skill.dataset.iconSig=sig;skill.innerHTML=z2a2Icon(kind)+'<small>'+z2a2Icon('energy')+info.energy+'</small>';}skill.disabled=!info.available;
        skill.setAttribute('aria-label',info.kind==='burst'?'全力烹饪，消耗2点精力':'紧急安抚，消耗1点精力')}
    }
  }
