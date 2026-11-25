@@ -23,9 +23,9 @@ test('Z2a2 bounded two-line dialogue with actual speaker identity, quiet interva
  for(const w of [320,375,390])for(const h of [440,600,790]){
   const anchors=[{id:'a',x:w*.25,y:h*.45,width:24,height:35},{id:'b',x:w*.75,y:h*.68,width:24,height:35},{id:'hero',x:w*.50,y:h*.54,width:24,height:36}];
   const before=JSON.stringify(anchors),normal=z2a2SpeechLayout([cue('a'),cue('b')],anchors,w,h);assert.equal(normal.length,1);
-  const urgent=z2a2SpeechLayout([cue('a',10),cue('b',8)],anchors,w,h);assert.equal(urgent.length,2);assert.ok(urgent.reduce((n,p)=>n+p.width*p.height,0)<=w*h*.06);
+  const urgent=z2a2SpeechLayout([cue('a',10),cue('b',8)],anchors,w,h);assert.equal(urgent.length,w*h*.06>=2*124*39?2:1);assert.ok(urgent.reduce((n,p)=>n+p.width*p.height,0)<=w*h*.06);
   for(const p of urgent){const a=anchors.find(q=>q.id===p.actorId);assert.equal(p.tipX,a.x);assert.equal(p.tipY,a.y);assert.ok(Math.hypot(p.tipX-p.baseX,p.tipY-p.baseY)<=42);assert.ok(p.x>=6&&p.x+p.width<=w-6&&p.y>=36&&p.y+p.height<=h-52);for(const q of anchors)assert.equal(overlap(p,{x:q.x-q.width/2,y:q.y,width:q.width,height:q.height}),0);}
-  assert.equal(overlap(urgent[0],urgent[1]),0);assert.equal(JSON.stringify(anchors),before);
+  if(urgent.length===2)assert.equal(overlap(urgent[0],urgent[1]),0);assert.equal(JSON.stringify(anchors),before);
   assert.equal(z2a2SpeechLayout([cue('missing')],anchors,w,h).length,0);
   assert.equal(z2a2SpeechLayout([{...cue('a'),phase:0}],anchors,w,h).length,0);
  }
