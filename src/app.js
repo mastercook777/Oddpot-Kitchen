@@ -39,7 +39,7 @@ const ingredientChoices=()=>Object.entries(ING).filter(([id])=>activeWorld(game)
  !['cloud_rice','sky_moss','storm_egg','sour_bell','gale_core'].includes(id)||(game.inventory[id]||0)>0);
 
 function hud(){
- if(game.phase==='service'&&game.service?.walkable){const v=game.service,complete=v.orders.filter(o=>o.status==='served').length,total=v.orders.length;return `<header class="z2a-hud z2a-service-hud">${''}  <div class="v075-status" aria-label="餐厅营业状态">
+ if(game.phase==='service'&&game.service?.walkable){const v=game.service,complete=v.orders.filter(o=>o.status==='served').length,total=v.orders.length;return `<header class="z2a-hud z2a-service-hud"><div class="v075-status" aria-label="餐厅营业状态">
     <span id="v075-wave">☾ ${Math.min(v.wave+1,3)}/3</span>
     <span id="v075-served">🍽️ ${complete}/${total}</span>
     <span id="v075-energy">⚡ ${v.hero?.energy??6}/${v.hero?.maxEnergy??6}</span>
@@ -47,7 +47,7 @@ function hud(){
     <button type="button" data-act="toggle-service" ${v.breakAt||v.done?'disabled':''} aria-label="${v.paused?'继续营业':'暂停营业'}">${v.paused?'▶':'Ⅱ'}</button>
   </div>
 </header>`;}
- if(game.phase==='field'&&game.field?.action&&game.field.segmentStatus!=='choice'){const f=game.field;return `<header class="z2a-hud z2a-field-hud"><div class="action-hud" aria-label="探索状态"><span class="field-hp" aria-label="体力">${'♥'.repeat(f.hp)}${'♡'.repeat(3-f.hp)}</span><button data-act="field-bag" class="field-bag-chip" aria-label="查看野外背包">🎒 <b id="field-bag-count">${fieldBagSlotsUsed(f)}/${f.capacity||8}</b></button><span class="field-clock" id="field-clock">${f.segmentIndex||1}/3 · ${Math.floor(f.elapsed)}s</span></div><button type="button" class="z2a-settings" data-act="settings" aria-label="设置">⚙</button></header>`;}
+ if(game.phase==='field'&&game.field?.action&&game.field.segmentStatus!=='choice'){const f=game.field;return `<header class="z2a-hud z2a-field-hud"><div class="action-hud" aria-label="探索状态"><span class="field-hp" aria-label="体力">${'♥'.repeat(f.hp)}${'♡'.repeat(3-f.hp)}</span><button data-act="field-bag" class="field-bag-chip" aria-label="查看野外背包">🎒 <b id="field-bag-count">${fieldBagSlotsUsed(f)}/${f.capacity||8}</b></button><span class="field-clock" id="field-clock">${f.segmentIndex||1}/3 · ${Math.floor(f.elapsed)}s</span></div><button type="button" class="z2a-settings hud-gear" data-act="settings" aria-label="设置">⚙</button></header>`;}
  const home=game.phase==='forecast';
  const step=journey.indexOf(game.phase);
  return `<div class="hud ${home?'v076-home-hud':''}"><div class="brand"><span class="logo" aria-hidden="true">🍳</span><div><strong>怪味食堂</strong><small>第 ${totalBusinessDay(game)} 天 · ${tableCapacity(game)} 座</small></div></div><div class="hud-meta"><span aria-label="金币">🪙 ${game.coins}</span><span aria-label="声望">⭐ ${game.reputation}</span></div><button class="hud-gear" data-act="settings" aria-label="设置">⚙</button></div><div class="day-strip ${home?'v076-home-day':''}" aria-label="当前阶段：${phaseLabels[game.phase]}"><b>${phaseLabels[game.phase]}</b><div class="v014-journey" aria-hidden="true">${journey.slice(0,7).map((phase,i)=>`<i class="${i===step?'current':i<step?'passed':''}"></i>`).join('')}</div><span class="day-phase">${step<5?'☀ 白天':'☾ 夜晚'}</span></div>`;
@@ -100,7 +100,7 @@ function overlayMarkup(){if(!overlay)return '';
  }else if(overlay==='service-ledger'){
   const v=game.service,goal=serviceGoalResult(v),warn=serviceSupplyStatus(game),t=restaurantSimTime(performance.now()),cues=selectDiningSpeech(v.orders,t,2),worker=selectStaffSpeech(game,t,cues);
   const waiting=v.orders.filter(o=>o.status==='waiting'&&o.arrival<=v.time).length,served=v.orders.filter(o=>o.status==='served').length;
-  body=`<h2>营业账册</h2><div class="z2a-ledger-summary"><b>第 ${totalBusinessDay(game)} 天 · ☾ ${Math.min(v.wave+1,3)}/3</b><span>🪙 ${game.coins} · ⭐ ${game.reputation}</span><span>已上菜 ${served}/${v.orders.length} · 等位 ${waiting} · ${v.time}s</span>${goal?`<span>🎯 ${esc(goal.label)} · ${goal.value}/${goal.target}</span>`:''}${warn.shortages.length?`<span class="z2a-warning">⚠ 原料不足：${warn.shortages.map(q=>esc(ING[q.id||q.ingredientId||q]?.name||q.name||q.id||q)).join('、')}</span>`:''}</div>
+  body=`<h2>营业账册</h2><div class="z2a-ledger-summary"><b>第 ${totalBusinessDay(game)} 天 · ☾ ${Math.min(v.wave+1,3)}/3</b><span>🪙 ${game.coins} · ⭐ ${game.reputation}</span><span>已上菜 ${served}/${v.orders.length} · 等位 ${waiting} · ${v.time}s</span>${goal?`<span>🎯 ${esc(goal.label)} · ${goal.value}/${goal.target}</span>`:''}${warn.shortages.length?`<span class="z2a-warning">⚠ 原料不足：${[...new Set(warn.shortages.flatMap(q=>(q.missing||[]).map(m=>m.id)))].map(id=>esc(ING[id]?.name||id)).join('、')}</span>`:''}</div>
   <h3>客人订单</h3><div class="z2a-order-list">${v.orders.filter(o=>o.arrival<=v.time||o.status!=='waiting').map(o=>`<article class="z2a-order"><div><b>${esc(CUSTOMERS[o.segment]?.name||o.segment)}</b><span>${o.tableId!=null?(o.tableId+1)+'号桌':'店外'}</span></div><div><span>${esc(RECIPES[o.recipeId]?.name||'尚未点餐')}</span><strong>${esc(z2aOrderStatus(o,t))}</strong></div>${cues.find(c=>c.id===o.id)?`<small>「${esc(cues.find(c=>c.id===o.id).text)}」</small>`:''}</article>`).join('')||'<p>还没有客人到店。</p>'}</div>${worker?`<p class="sheet-lead">员工：${esc(worker.text)}</p>`:''}<button class="game-btn secondary" data-act="settings">设置</button><p class="sheet-lead">关闭账册继续营业。</p>`;
  }else if(overlay==='field-bag'){
   const f=game.field;
@@ -480,7 +480,7 @@ function service(){
  const end=v.done?'<div class="v075-finish"><h2>🌙 今日打烊</h2><p>成功上菜 '+complete+' / '+total+' · 厨房已经收工</p><button data-act="close">📊 查看经营日报</button></div>':'';
  const warn=serviceSupplyStatus(game);
  return [`<div class="scene-bg diner-bg service-scene v075-service">${restaurantView(true)}
-  <div id="v075-notification" class="v075-notification" ${warn.shortages.length?'':'hidden'}>⚠ 原料不足，部分订单可能无法制作</div>
+  <div id="v075-notification" class="v075-notification" ${warn.shortages.length?'':'hidden'}>⚠ 缺料 · 查账册</div>
   ${goal?'<div class="v075-goal z2a-goal-indicator" title="'+esc(goal.label)+'">🎯 <b id="v075-goal">'+goal.value+'/'+goal.target+'</b></div>':''}
   <div id="v4d-service-guide" class="v4d-service-guide" role="status"><b id="v4d-guide-title">靠近厨位</b><small id="v4d-guide-detail">拖动主厨开始工作</small><i id="v4d-guide-progress" hidden></i></div>
   ${modal}${paused}${end}</div>`,''];
