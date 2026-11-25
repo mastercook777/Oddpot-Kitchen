@@ -104,16 +104,16 @@ function clearLineOfFire(f,a,b){
  }
  return true;
 }
-function potLaunch(f,target,damage=1,radius=.65,slow=0){
+function potLaunch(f,target,damage=1,radius=.65,slow=0,eruption=false){
  f.playerProjectiles??=[];
- f.playerProjectiles.push({x:f.pos.x,y:f.pos.y,fromX:f.pos.x,fromY:f.pos.y,
-  targetX:target.x,targetY:target.y,time:0,duration:f.weapon?.level>1?.30:.38,damage,radius,slow,empowered:damage>1,level:f.weapon?.level||1});
+ f.playerProjectiles.push({x:eruption?target.x:f.pos.x,y:eruption?target.y:f.pos.y,fromX:f.pos.x,fromY:f.pos.y,
+  targetX:target.x,targetY:target.y,time:0,duration:f.weapon?.level>1?.30:.38,damage,radius,slow,empowered:damage>1,level:f.weapon?.level||1,...(eruption?{eruption:true}:{})});
 }
 function advancePlayerProjectiles(s,dt){
  const f=s.field;
  for(const p of f.playerProjectiles||[]){
   p.time+=dt;const factor=Math.min(1,p.time/p.duration);
-  p.x=p.fromX+(p.targetX-p.fromX)*factor;p.y=p.fromY+(p.targetY-p.fromY)*factor;
+  p.x=p.eruption?p.targetX:p.fromX+(p.targetX-p.fromX)*factor;p.y=p.eruption?p.targetY:p.fromY+(p.targetY-p.fromY)*factor;
   if(factor<1||p.hit)continue;
   p.hit=true;
   for(const e of f.enemies||[]){
@@ -121,7 +121,7 @@ function advancePlayerProjectiles(s,dt){
     damageEnemy(s,e,p.damage,p.empowered?'pot_skill':'pot',{x:p.targetX,y:p.targetY,dx:p.targetX-p.fromX,dy:p.targetY-p.fromY});if(p.slow>0)e.slowTime=Math.max(e.slowTime||0,p.slow);
    }
   }
-  queueFieldImpact(f,{kind:'burst',x:p.targetX,y:p.targetY,radius:p.radius,strong:!!p.empowered,ttl:p.empowered?.48:.34,duration:p.empowered?.48:.34});
+  queueFieldImpact(f,{kind:'burst',x:p.targetX,y:p.targetY,radius:p.radius,strong:!!p.empowered,eruption:!!p.eruption,ttl:p.eruption?.65:p.empowered?.48:.34,duration:p.eruption?.65:p.empowered?.48:.34});
  }
  f.playerProjectiles=(f.playerProjectiles||[]).filter(p=>!p.hit);
 }
@@ -194,7 +194,7 @@ export function useFieldSkill(s){
  if(f.weapon?.type==='STEAM'){
   startSteamMist(f);
   f.skillCd=6.5;f.skillFx=.42;
-  f.skillOrigin={x:f.steamMist.x,y:f.steamMist.y,type:'STEAM'};
+  f.skillOrigin={x:f.steamMist.x,y:f.steamMist.y,type:'STEAM',duration:.42};
   pushMsg(f,'☁️ 凝雾结界！在当前位置留下减速雾域，持续 '+f.steamMist.duration+' 秒。');
   return true;
  }
@@ -203,20 +203,20 @@ export function useFieldSkill(s){
   const facing={x:(f.facing?.x||0)/length,y:(f.facing?.y??-1)/length};
   const hits=f.enemies.filter(e=>e.hp>0&&inForkFlameCone(f.pos,facing,e,f.weapon?.level)&&clearLineOfFire(f,f.pos,e));
   for(const e of hits)damageEnemy(s,e,FORK_FLAME.damage,'fork_flame');
-  f.skillCd=6.5;f.skillFx=.85;f.skillOrigin={...f.pos,type:'GRILL',dx:facing.x,dy:facing.y,level:f.weapon?.level||1};
+  f.skillCd=6.5;f.skillFx=.85;f.skillOrigin={...f.pos,type:'GRILL',dx:facing.x,dy:facing.y,level:f.weapon?.level||1,duration:.85};
   f.attackFx={ttl:.38,duration:.38,dx:facing.x,dy:facing.y,forkFlame:true,x:f.pos.x,y:f.pos.y};
   pushMsg(f,'🔥 烤叉喷焰！扇区命中 '+hits.length+' 个敌人。');return true;
  }
  if(f.weapon?.type==='POT'){
   const target=f.enemies.filter(e=>e.hp>0&&dist(f.pos,e)<=3.9&&clearLineOfFire(f,f.pos,e))
    .sort((a,b)=>dist(f.pos,a)-dist(f.pos,b))[0];
-  if(!target){pushMsg(f,'高压汤锅：附近没有可瞄准的敌人。');return false;}
-  potLaunch(f,target,2,f.weapon?.level>1?1.25:1.1,.8);f.skillCd=6.5;f.skillFx=.42;f.skillOrigin={...f.pos,type:'POT'};
+  if(!target){pushMsg(f,'沸汤爆裂：附近没有可瞄准的敌人。');return false;}
+  potLaunch(f,target,2,f.weapon?.level>1?1.25:1.1,.8,true);f.skillCd=6.5;f.skillFx=.58;f.skillOrigin={...f.pos,type:'POT',duration:.58};
   const d=dist(f.pos,target)||1;f.facing={x:(target.x-f.pos.x)/d,y:(target.y-f.pos.y)/d};
   f.attackFx={ttl:.24,duration:.24,dx:f.facing.x,dy:f.facing.y,pot:true};
-  pushMsg(f,'🍲 高压汤锅！投出强化洋葱炸弹。');return true;
+  pushMsg(f,'🍲 沸汤爆裂！锁定落点，引发高压汤泉。');return true;
  }
- f.skillCd=6.5;f.skillFx=.42;f.skillOrigin={...f.pos,type:'WOK'};f.guardTime=f.weapon?.level>1?.70:.45;
+ f.skillCd=6.5;f.skillFx=.60;f.skillOrigin={...f.pos,type:'WOK',spin:true,duration:.60,dx:f.facing?.x||0,dy:f.facing?.y??-1};f.guardTime=f.weapon?.level>1?.70:.45;
  let hits=0;
  for(const e of f.enemies){
   if(e.hp<=0||dist(f.pos,e)>1.85||!clearLineOfFire(f,f.pos,e))continue;
@@ -226,7 +226,7 @@ export function useFieldSkill(s){
   }
   hits++;
  }
- pushMsg(f,hits?'🛡️ 锅盖反击！击退 '+hits+' 个敌人':'🛡️ 举起锅盖！短暂防御迎面攻击。');
+ pushMsg(f,hits?'🌀 旋风斩！击退 '+hits+' 个敌人':'🌀 旋风斩！短暂格挡迎面攻击。');
  return true;
 }
 export function resolveFieldEvent(s,choice){const f=s.field;if(f?.nodes?.some(n=>n.key===f.activeEvent&&['merchant','traveler','ecology'].includes(n.kind)))return resolveSpecialFieldEvent(s,choice);if(!f?.action||!f.activeEvent||f.finished)return false;const n=f.nodes.find(n=>n.key===f.activeEvent);if(!n||n.claimed)return false;let label='';if(choice==='trade'){
