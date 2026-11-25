@@ -28,7 +28,15 @@ for(const [width,height] of [[320,568],[375,667],[390,844]]){
   if(hz)await page.waitForFunction(()=>Number(document.querySelector('canvas[data-oddpot-forest="3d"]')?.dataset.telegraphCount)>0,null,{timeout:10000});
   await page.screenshot({path:out+'/'+zoneId+'-'+width+'.png'});const spring=page.locator('canvas[data-oddpot-forest="3d"]');
   assert.equal(await page.evaluate(()=>document.documentElement.dataset.oddpotForest3d),'active');assert.equal(await spring.getAttribute('data-biome'),zoneId);assert.equal(await spring.getAttribute('data-region'),'spring');
-  assert.match(await page.locator('#oddpot-build-label').textContent(),/v0\.16-Y\.5b2/);
+  assert.match(await page.locator('#oddpot-build-label').textContent(),/v0\.16-Y\.5c/);
+ }
+ // Y5c: actual player input triggers both new abilities in two real routes.
+ if(width===375)for(const [type,route] of [['WOK','safe'],['POT','spring_safe']]){
+  const f=newGame(15742);f.onboarding.enabled=false;f.phase='field';assert.ok(enterField(f,route));assert.ok(startActionField(f));const q=f.field;
+  q.weapon={...q.weapon,type,level:1};q.attackCd=999;q.damageCd=999;q.obstacles=[];q.hazards=[];q.enemies=[{id:'y5c-target',kind:'chicken',x:q.pos.x+.65,y:q.pos.y,hp:8,maxHp:8,cooldown:999,warning:0,phase:0}];
+  await load(f);await page.waitForFunction(()=>document.documentElement.dataset.oddpotForest3d==='active',null,{timeout:20000});
+  await page.locator('[data-act="skill"]').click();await page.waitForFunction(type=>document.querySelector('canvas[data-oddpot-forest="3d"]')?.dataset.skillKind===type,type,{timeout:5000,polling:'raf'});
+  await page.screenshot({path:out+'/skill-'+type+'-'+width+'.png'});
  }
  assert.deepEqual(errors,[]);await page.close();
 }
