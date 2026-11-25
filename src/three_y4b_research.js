@@ -1,3 +1,4 @@
+import {createRecovery,sharedThree,visibleHost} from './three_y6a_recovery.js?v=y6a';
 // Y4b read-only research presentation. All adjudication remains in the engine.
 import {roundedFactory} from './three_y1_models.js?v=y1';
 const clamp=(x,a=0,b=1)=>Math.min(b,Math.max(a,x));
@@ -25,19 +26,22 @@ export function receiptFrame(result){
  if(!result?.events)return null;
  return {type:result.vessel||'WOK',success:!!result.sellable,discovery:!!(result.sellable&&result.firstDiscovery),items:result.events.map((e,i)=>({id:e.id,x:Math.cos(i*2.4)*.52,z:Math.sin(i*2.4)*.44,y:0,rot:0,tone:result.doneness?.find(d=>d.id===e.id)?.label==='焦糊'?'bad':result.doneness?.find(d=>d.id===e.id)?.label==='熟透'?'good':'warming'}))};
 }
-let lib=null,loading=null,instance=null,disabled=false,lastAt=-Infinity,lastCook=null,lastHost=null;
-function fail(e){disabled=true;leave();console.warn('Oddpot research 3D fallback',e);document.documentElement.dataset.oddpotResearch3d='fallback';}
-function leave(){lastCook=null;lastHost=null;lastAt=-Infinity;if(instance){const old=instance;instance=null;old.dispose();}if(!disabled)document.documentElement.dataset.oddpotResearch3d='idle';}
+let instance=null,entered=false,lastAt=-Infinity,lastCook=null,lastHost=null;const recovery=createRecovery();
+function state(v){document.documentElement.dataset.oddpotResearch3d=v;}
+function release(){lastCook=null;lastHost=null;lastAt=-Infinity;if(instance){const old=instance;instance=null;old.dispose();}}
+function leave(){if(!entered&&!instance)return;entered=false;release();recovery.reset();state('idle');}
+function fail(e){recovery.fail();release();console.warn('Oddpot research 3D fallback',e);state('fallback');globalThis.__oddpotBuild?.sceneErrors&&(globalThis.__oddpotBuild.sceneErrors.research=String(e));}
 export function enableY4b(){
- loading=import('https://cdn.jsdelivr.net/npm/three@0.170.0/build/three.module.js').then(T=>{lib=T;}).catch(fail);
- globalThis.__oddpotY4bRenderer={draw(app,s,preview,now){
-  if(disabled||s.phase!=='research'){if(instance)leave();return;}
+ state('idle');
+ globalThis.__oddpotY4bRenderer={leave,retry(){release();recovery.reset();sharedThree.reset();state('idle');},draw(app,s,preview,now){
+  if(s.phase!=='research'){leave();return;}
   const cook=s.cook,live=['v063-live','v014c-grill'].includes(cook?.mode),result=!cook&&s.researchReceipt?s.lastCook:null;
   const host=live?app.querySelector(cook.mode==='v014c-grill'?'.v014c-hearth':'.v063-live-pan'):result?app.querySelector('.v063-receipt-head>span'):null;
-  if(!host){if(instance)leave();return;}if(!lib)return;
+  if(!host){leave();return;}entered=true;if(!visibleHost(host)||!recovery.canTry())return;
+  const lib=sharedThree.value;if(!lib){sharedThree.tryLoad();state(sharedThree.exhausted?'fallback':'loading');return;}
   const identity=cook||result,changed=lastCook!==identity||lastHost!==host;if(!changed&&now-lastAt<33)return;lastAt=now;lastCook=identity;lastHost=host;
   const frame=live?researchFrame(cook,preview):null,receipt=result?receiptFrame(result):null;if(!frame&&!receipt)return;
-  try{if(!instance)instance=makeWorkbench(lib);instance.draw(host,frame,receipt,s.lastCook,now);document.documentElement.dataset.oddpotResearch3d='active';}catch(e){fail(e);}
+  try{if(!instance)instance=makeWorkbench(lib);instance.draw(host,frame,receipt,s.lastCook,now);recovery.success();state('active');}catch(e){fail(e);}
  }};
 }
 function makeWorkbench(T){
