@@ -49,3 +49,32 @@
  -webkit-touch-callout:default;
  touch-action:auto;
 }
+
+/* Z1 mobile input contract: game text is not document text. The actual
+   gesture surfaces own native gestures, not the entire page. */
+#app,#app .game-shell,#app .game-shell *{
+ -webkit-user-select:none;
+ user-select:none;
+ -webkit-touch-callout:none;
+ -webkit-user-drag:none;
+ -webkit-tap-highlight-color:transparent;
+}
+#app :is(input,textarea,select,[contenteditable]:not([contenteditable="false"]),[data-allow-selection]),
+#app :is([contenteditable]:not([contenteditable="false"]),[data-allow-selection]) *{
+ -webkit-user-select:text!important;
+ user-select:text!important;
+ -webkit-touch-callout:default!important;
+ -webkit-user-drag:auto;
+ touch-action:auto;
+}
+#app .is-diner-playing .diner-world,
+#app .is-diner-playing .diner-canvas,
+#app .is-diner-playing .diner-float-stick,
+#app .is-diner-playing .diner-float-knob,
+#app [data-live-pan]{
+ touch-action:none;
+}
+#app :is(button,a,summary,[role="button"]){touch-action:manipulation;}
+#app :is(.sheet-body,.book-list,.route-panel,.v063-setup,.menu-scene,.kitchen-prep-card,.report-scene,.kitchen-upgrade-card){overscroll-behavior:contain;touch-action:pan-y;}
+#app .target-scroller{touch-action:pan-x;}
+#app :is(.floating-joystick,.diner-float-stick){pointer-events:none;}
