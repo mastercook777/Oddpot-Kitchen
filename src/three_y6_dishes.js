@@ -15,7 +15,7 @@ export function makeDishFactory(T,rounded,recipes){
  function create(parent,x,y,z){
   const root=group(parent,x,y,z),plate=mesh(root,plateGeo,ceramic),bowl=mesh(root,bowlGeo,ceramic),liquid=mesh(root,brothGeo,broth[0],0,.142,0),basket=mesh(root,basketGeo,wood,0,.048,0),br=mesh(root,basketRim,rim,0,.082,0);br.rotation.x=-Math.PI/2;
   const sticks=[-.076,.076].map(x=>mesh(root,stickGeo,skewer,x,.055,0)),pieces=Array.from({length:12},()=>{const p=group(root);return {p,main:mesh(p,sphere,cream),detail:mesh(p,sphere,cream),detail2:mesh(p,sphere,cream)};});
-  let prevId=null,prevPortion=null,stats={kind:'stir',count:0};
+  let prevId=Symbol('uninitialized'),prevPortion=null,stats={kind:'stir',count:0};
   function shape(o,p,method){
    const {main,detail,detail2}=o,kind=p.shape;
    o.p.position.set(p.x,p.y,p.z);o.p.rotation.y=p.angle;for(const m of [main,detail,detail2]){m.position.set(0,0,0);m.rotation.set(0,0,0);m.scale.setScalar(1);m.visible=m===main;m.geometry=sphere;m.material=materials[kind]||gold;}
