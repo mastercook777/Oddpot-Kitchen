@@ -10937,9 +10937,12 @@ function frame(now){const delta=Math.min(.045,(now-(lastFrame||now))/1000);lastF
   }
  }
  const notice=app.querySelector('#ingame-notice');if(notice&&now>flashUntil)notice.hidden=true;
- const forest=app.querySelector('#forest-canvas');if(forest)drawField(forest,game,gameClock);else globalThis.__oddpotY3Renderer?.leave();
- const diner=app.querySelector('#diner-canvas');if(diner)drawDiner(diner,game,gameClock,restaurantSimTime(now));else globalThis.__oddpotY2Renderer?.leave();
- const research3d=globalThis.__oddpotY4bRenderer;if(research3d)research3d.draw(app,game,researchPreviewCache,now);
+ const forest=app.querySelector('#forest-canvas'),diner=app.querySelector('#diner-canvas'),research3d=globalThis.__oddpotY4bRenderer;
+ // Release inactive contexts before the next scene allocates its context.
+ if(!forest)globalThis.__oddpotY3Renderer?.leave();if(!diner)globalThis.__oddpotY2Renderer?.leave();if(game.phase!=='research')research3d?.leave();
+ if(forest)drawField(forest,game,gameClock);
+ if(diner)drawDiner(diner,game,gameClock,restaurantSimTime(now));
+ if(game.phase==='research')research3d?.draw(app,game,researchPreviewCache,now);
  if(now-lastSave>1400&&(game.phase==='field'||['v063-live','v014c-grill'].includes(game.cook?.mode)||game.phase==='service'&&game.service?.walkable)){save(game);lastSave=now}
  requestAnimationFrame(frame);
 }
