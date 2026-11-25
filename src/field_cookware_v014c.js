@@ -104,8 +104,7 @@ export function drawForkFlameFx(c,f){
  // White-hot ignition lives near the fork, then a second wave curls off
  // the cone perimeter. Sparks travel outward and separate as it dissipates.
  c.globalAlpha=fade*.88;
- c.beginPath();c.ellipse(.28,0,.28+.12*Math.sin(wave)**2,.12,0,0,Math.PI*2);
- c.fillStyle='#fff0b4';c.fill();
+ c.beginPath();c.moveTo(.08,0);c.quadraticCurveTo(.29,-.12,.68+.08*Math.sin(wave),0);c.quadraticCurveTo(.29,.12,.08,0);c.fillStyle='#fff0b4';c.fill();
  for(let i=-4;i<=4;i++){
   const a=(i+.5)*half/5,travel=(.34+((p*1.7+i*13/17)%1)*.69)*reach;
   const xx=Math.cos(a)*travel,yy=Math.sin(a)*travel+Math.sin(wave+i*2)*.08;

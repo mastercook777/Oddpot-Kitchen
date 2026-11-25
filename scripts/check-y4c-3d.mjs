@@ -5,7 +5,7 @@ try{for(let i=0;i<60;i++){try{if((await fetch(url)).ok)break;}catch{}await wait(
 browser=await chromium.launch({headless:true,executablePath:process.env.CHROME_PATH||'/usr/bin/google-chrome',args:['--no-sandbox','--disable-dev-shm-usage','--use-angle=swiftshader','--enable-unsafe-swiftshader']});
 for(const [width,height] of [[320,568],[375,667],[390,844]]){
  let page;const errors=[];
- async function load(s){if(page)await page.close();page=await browser.newPage({viewport:{width,height},deviceScaleFactor:2,isMobile:true,hasTouch:true});page.on('pageerror',e=>errors.push(e.message));page.on('console',m=>{if(m.type()==='warning'||m.type()==='error')console.log('browser',m.text());});
+ async function load(s){if(page)await page.close();page=await browser.newPage({viewport:{width,height},deviceScaleFactor:2,isMobile:true,hasTouch:true});page.on('pageerror',e=>errors.push(e.message));page.on('console',m=>{if(m.type()==='warning'||m.type()==='error')console.log('browser',m.text());if(/Shader Error|VALIDATE_STATUS|GL_INVALID_OPERATION.*program/i.test(m.text()))errors.push(m.text());});
  await page.route('https://cdn.jsdelivr.net/npm/three@0.170.0/build/**',async route=>{const name=new URL(route.request().url()).pathname.split('/').at(-1);if(!/^three[.a-z]+\.js$/.test(name))return route.abort();await route.fulfill({status:200,contentType:'text/javascript',headers:{'access-control-allow-origin':'*'},body:await readFile('node_modules/three/build/'+name,'utf8')});});
  await page.addInitScript(s=>localStorage.setItem('oddpot-prototype-v04',JSON.stringify(s)),s);await page.goto(url+'?render=3d',{waitUntil:'domcontentloaded'});}
  const s=newGame(15742);s.onboarding.enabled=false;s.phase='service';s.crew.helper.hired=true;s.dining.tableCount=width===320?2:width===375?3:4;assert.ok(createService(s,{walkable:true}));setServicePaused(s,false);for(let i=0;i<9;i++)tick(s,1);
@@ -28,15 +28,18 @@ for(const [width,height] of [[320,568],[375,667],[390,844]]){
   if(hz)await page.waitForFunction(()=>Number(document.querySelector('canvas[data-oddpot-forest="3d"]')?.dataset.telegraphCount)>0,null,{timeout:10000});
   await page.screenshot({path:out+'/'+zoneId+'-'+width+'.png'});const spring=page.locator('canvas[data-oddpot-forest="3d"]');
   assert.equal(await page.evaluate(()=>document.documentElement.dataset.oddpotForest3d),'active');assert.equal(await spring.getAttribute('data-biome'),zoneId);assert.equal(await spring.getAttribute('data-region'),'spring');
-  assert.match(await page.locator('#oddpot-build-label').textContent(),/v0\.16-Y\.5c/);
+  assert.match(await page.locator('#oddpot-build-label').textContent(),/v0\.16-Y\.5c2/);
  }
  // Y5c: actual player input triggers both new abilities in two real routes.
- if(width===375)for(const [type,route] of [['WOK','safe'],['POT','spring_safe']]){
+ if(width===375)for(const [type,route] of [['WOK','safe'],['POT','spring_safe'],['GRILL','safe']]){
   const f=newGame(15742);f.onboarding.enabled=false;f.phase='field';assert.ok(enterField(f,route));assert.ok(startActionField(f));const q=f.field;
   q.weapon={...q.weapon,type,level:1};q.attackCd=999;q.damageCd=999;q.obstacles=[];q.hazards=[];q.enemies=[{id:'y5c-target',kind:'chicken',x:q.pos.x+.65,y:q.pos.y,hp:8,maxHp:8,cooldown:999,warning:0,phase:0}];
   await load(f);await page.waitForFunction(()=>document.documentElement.dataset.oddpotForest3d==='active',null,{timeout:20000});
+  if(type==='GRILL'){const grip=Number(await page.locator('canvas[data-oddpot-forest="3d"]').getAttribute('data-fork-grip-error'));assert.ok(grip<.0001,'both actual world-space grips on rigid fork');await page.screenshot({path:out+'/fork-idle-'+width+'.png'});}
   await page.locator('[data-act="skill"]').click();await page.waitForFunction(type=>document.querySelector('canvas[data-oddpot-forest="3d"]')?.dataset.skillKind===type,type,{timeout:5000,polling:'raf'});
+  if(type==='POT'||type==='GRILL'){await page.waitForFunction(type=>{const c=document.querySelector('canvas[data-oddpot-forest="3d"]');return Number(c?.dataset.fluidCount)>0&&c.dataset.fluidKinds.includes(type==='POT'?'potErupt':'flame');},type,{timeout:5000,polling:'raf'});if(type==='GRILL')assert.ok(Number(await page.locator('canvas[data-oddpot-forest="3d"]').getAttribute('data-fork-grip-error'))<.0001);}
   await page.screenshot({path:out+'/skill-'+type+'-'+width+'.png'});
+  if(type==='GRILL'){q.attackCd=0;await load(f);await page.waitForFunction(()=>{const c=document.querySelector('canvas[data-oddpot-forest="3d"]');return c?.dataset.forkPhase==='thrust'&&c.dataset.fluidKinds.includes('thrust');},null,{timeout:10000,polling:'raf'});assert.ok(Number(await page.locator('canvas[data-oddpot-forest="3d"]').getAttribute('data-fork-grip-error'))<.0001);await page.screenshot({path:out+'/fork-thrust-'+width+'.png'});}
  }
  assert.deepEqual(errors,[]);await page.close();
 }
