@@ -60,7 +60,7 @@ export function drawFieldSwipe(c,f){
 }
 export function drawFieldSkillWave(c,f){
  if(!(f.skillFx>0))return;
- const q=fieldFxClamp(f.skillFx/.42),p=1-q,o=f.skillOrigin||f.pos,pot=o.type==='POT'||!o.type&&f.weapon?.type==='POT';
+ const o=f.skillOrigin||f.pos,q=fieldFxClamp(f.skillFx/(o.duration||.42)),p=1-q,pot=o.type==='POT'||!o.type&&f.weapon?.type==='POT';
  c.save();c.globalAlpha=q;c.lineCap='round';
  if(pot){
   // Cast pressure hugs the caster. The damaging blast is at the landing point.
