@@ -64,8 +64,14 @@ export function drawFieldSkillWave(c,f){
  c.save();c.globalAlpha=q;c.lineCap='round';
  if(pot&&o.delay){const age=o.duration-f.skillFx,pre=age<o.delay,u=pre?age/o.delay:fieldFxClamp((age-o.delay)/.48),r=o.radius;
   fieldFxRing(c,o.x,o.y,r,'#cde8ca',.045);
-  if(pre){fieldFxRing(c,o.x,o.y,r*(1-u*.65),'#e9f6db',.07);for(let j=0;j<6;j++){const a=j*Math.PI/3+u;fieldFxEllipse(c,o.x+Math.cos(a)*r*.6,o.y+Math.sin(a)*r*.6,.06,.06+u*.05,'#e4f4d6');}}
-  else {for(let j=0;j<8;j++){const a=j*2.399;fieldFxEllipse(c,o.x+Math.cos(a)*r*u*.8,o.y+Math.sin(a)*r*u*.65-Math.sin(Math.PI*u)*.55,.10+u*.15,.13+u*.15,'#e9f6db');}}
+  if(pre){fieldFxRing(c,o.x,o.y,r*(1-u*.65),'#e9f6db',.04);for(let j=0;j<6;j++){const a=j*Math.PI/3+u,x=o.x+Math.cos(a)*r*.55,y=o.y+Math.sin(a)*r*.55;c.beginPath();c.moveTo(x,y);c.bezierCurveTo(x-.08,y-.06,x+.08,y-.17,x,y-.23-u*.18);c.strokeStyle='#d1ebe0';c.lineWidth=.025;c.stroke();}}
+  else {const rise=Math.sin(Math.PI*Math.min(1,u*1.35))*.92;
+   for(let j=0;j<7;j++){const a=j*2.399,x=o.x+Math.cos(a)*r*(.10+u*.52),y=o.y+Math.sin(a)*r*.20,h=.16+rise*(.68+j%3*.16);
+    const grad=c.createLinearGradient?.(x,y,x,y-h);if(grad?.addColorStop){grad.addColorStop(0,'rgba(213,246,233,.75)');grad.addColorStop(.40,'rgba(231,250,241,.55)');grad.addColorStop(1,'rgba(176,215,208,0)');}
+    c.beginPath();c.moveTo(x-.045,y);c.bezierCurveTo(x-.18,y-h*.25,x+.13,y-h*.63,x+Math.sin(a+u*4)*.24,y-h);c.bezierCurveTo(x+.18,y-h*.60,x+.09,y-h*.22,x+.045,y);c.closePath();c.fillStyle=grad?.addColorStop?grad:'rgba(213,246,233,.45)';c.fill();
+   }
+   for(let j=0;j<7;j++){const a=j*2.399,x=o.x+Math.cos(a)*r*(.1+u*.75),y=o.y+Math.sin(a)*r*u*.45-rise*.45;c.beginPath();c.moveTo(x,y);c.lineTo(x+Math.cos(a)*.08,y-.13);c.strokeStyle='#e1fff2';c.lineWidth=.022;c.stroke();}
+  }
  }else if(pot){
   // Cast pressure hugs the caster. The damaging blast is at the landing point.
   fieldFxRing(c,o.x,o.y,.20+p*.40,'#cde8ca',.05*q);
