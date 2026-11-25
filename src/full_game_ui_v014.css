@@ -156,3 +156,39 @@
 
 /* Milestone actions must remain reachable on small phones without covering the room. */
 .v016-home.has-milestone .v016-scene{flex:1 1 0;min-height:200px}
+
+/* Z2a live scenes: one edge rail, no stacked app chrome. */
+.z2a-live{--z-ink:#202d27;--z-line:#b9a278;--z-cream:#f7e9c9;--z-gold:#e9c47c;--z-safe:env(safe-area-inset-bottom,0px)}
+.z2a-hud{flex:0 0 auto;display:flex;align-items:center;gap:6px;min-height:calc(50px + env(safe-area-inset-top));padding:calc(3px + env(safe-area-inset-top)) 8px 3px;background:#23372c;color:var(--z-cream);border-bottom:1px solid #ac925e;z-index:10}
+.z2a-hud .v075-status,.z2a-hud .action-hud{position:static;inset:auto;display:flex;align-items:center;justify-content:space-between;gap:5px;flex:1;min-width:0;min-height:44px;padding:0;border:0;border-radius:0;box-shadow:none;background:none;font-size:13px;font-weight:800;white-space:nowrap;flex-wrap:nowrap;pointer-events:auto}
+.z2a-hud .v075-status>span{flex:0 1 auto;padding:0 3px}
+.z2a-hud button,.z2a-hud .v075-status button,.z2a-hud .action-hud button{min-width:44px;min-height:44px;height:44px;flex:none;padding:0 8px;color:var(--z-cream);background:#344a3a;border:1px solid #aa9b72;border-radius:8px;box-shadow:none;touch-action:manipulation;font-size:17px}
+.z2a-hud .v075-status button.z2a-ledger-btn{font-size:22px;color:var(--z-gold)}
+.z2a-hud .action-hud>*{border:0;background:none;box-shadow:none;border-radius:0;height:44px;min-width:0}
+.z2a-hud .action-hud .field-hp{min-width:0;padding:0;font-size:20px;letter-spacing:0;color:#ef9781}
+.z2a-hud .action-hud .field-bag-chip{min-width:66px;font-size:13px;padding:0 6px}
+.z2a-hud .action-hud .field-clock{min-width:0;padding:0 2px;font-size:13px}
+.z2a-live .v013j-guide{font-size:12px;padding:4px 8px;min-height:40px;max-height:85px}
+.z2a-live .v013j-guide button{min-width:44px;min-height:44px}
+.z2a-diner .v075-goal.z2a-goal-indicator{top:8px;left:8px;right:auto;width:max-content;padding:4px 7px;font-size:12px;background:#26392ce0}
+.z2a-diner .v075-notification{top:8px;left:auto;right:8px;max-width:72%;width:max-content;padding:5px 8px;font-size:12px}
+.z2a-diner .v4d-service-guide{left:50%;right:auto;transform:translateX(-50%);bottom:calc(8px + var(--z-safe));min-height:0;min-width:0;max-width:calc(100% - 105px);width:max-content;padding:6px 10px;gap:3px;border-radius:7px;background:#26362ce6}
+.z2a-diner .v4d-service-guide b{font-size:13px;line-height:1.25;overflow:hidden;white-space:nowrap;text-overflow:ellipsis}
+.z2a-diner .v4d-service-guide small{font-size:12px}.z2a-diner .v4d-service-guide small[hidden]{display:none}
+.z2a-diner .v075-service .diner-special{bottom:calc(8px + var(--z-safe));right:8px;min-width:48px;min-height:48px;border-radius:50%;background:#71513a;border:2px solid var(--z-gold);font-size:14px}
+.z2a-live .ingame-notice{top:36px;padding:5px 9px;max-width:calc(100% - 24px);font-size:12px;border-radius:7px}
+.z2a-field .stage.field:has(.action-forest)~.dock{min-height:calc(48px + var(--z-safe));height:calc(48px + var(--z-safe));padding:2px 8px calc(2px + var(--z-safe));border-top:1px solid #b7a278;gap:0;flex:0 0 auto}
+.z2a-field .field-compact-dock{height:44px;min-height:44px;gap:6px}
+.z2a-field .field-compact-dock .game-btn{min-width:70px;min-height:44px;padding:6px 10px;font-size:13px;border-radius:7px}
+.z2a-field .field-compact-dock .field-touch-tip{font-size:12px;white-space:nowrap}
+.z2a-field .action-forest .field-skill{width:64px;height:64px;right:9px;bottom:9px;border-width:2px;background:radial-gradient(circle at 35% 25%,#b98a57,#774b37 80%);box-shadow:0 3px 0 #4d3729,0 3px 8px #10251b77}
+.z2a-field .field-skill .skill-glyph{font-size:24px}.z2a-field .field-skill .skill-caption{font-size:12px}
+.z2a-field .v082-shield-status{top:8px;left:8px;right:auto;width:max-content;padding:4px 7px;font-size:12px}
+.z2a-field .v063-field-bento{top:8px;right:8px;left:auto;width:max-content;padding:4px 7px;font-size:12px}
+.z2a-field .field-action-notice{top:40px;padding:5px 9px;font-size:12px}
+.z2a-ledger-summary{display:grid;gap:7px;padding:12px;background:#f8ebcb;border:1px solid #c8ad7b;border-radius:8px;color:#3d3a2d;font-size:13px}
+.z2a-warning{color:#963d2d;font-weight:700}.z2a-order-list{display:grid;gap:6px;margin:8px 0 12px}
+.z2a-order{background:#fff4da;border:1px solid #c9b18a;border-radius:7px;padding:9px 10px;color:#3d372a;font-size:13px;display:grid;gap:5px}
+.z2a-order>div{display:flex;justify-content:space-between;gap:8px;align-items:baseline}.z2a-order>div>span:first-child{min-width:0;overflow-wrap:anywhere}
+.z2a-order strong{font-size:12px;color:#356047;white-space:nowrap}.z2a-order small{font-size:12px;color:#665a43;line-height:1.4}
+@media(max-width:350px){.z2a-hud{padding-left:5px;padding-right:5px;gap:4px}.z2a-hud .v075-status,.z2a-hud .action-hud{gap:3px;font-size:12px}.z2a-hud .v075-status>span{padding:0}.z2a-hud .action-hud .field-clock{font-size:12px}}
