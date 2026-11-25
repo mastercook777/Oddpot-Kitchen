@@ -54,8 +54,8 @@ try{
      assert.ok(await page.locator('.sheet').isVisible(),act+' uses the existing sheet');
      await page.locator('[data-act="close-sheet"]').last().click();
     }
-    await page.screenshot({path:`${output}/v016-home-${width}.png`});
-    await scene.locator('[data-act="to-field"]').click();assert.ok(await page.locator('.z2c-hud').isVisible());assert.equal(await page.locator('.route-card .route-emoji svg').count(),2);
+    const door=scene.locator('.z2c2-threshold');assert.ok(await door.isVisible());assert.equal(await scene.locator('.v076-home-primary').count(),0);assert.ok((await door.boundingBox()).height>=44);await page.screenshot({path:`${output}/z2c2-home-${width}.png`});
+    await scene.locator('[data-act="to-field"]').click();assert.ok(await page.locator('.z2c-hud').isVisible());assert.equal(await page.locator('.z2c2-map [data-route]').count(),2);assert.equal(await page.locator('.z2c2-map-art').count(),1);assert.equal(await page.locator('.region-tabs,.route-options').count(),0);const map=await page.locator('.z2c2-map').boundingBox();assert.ok(map.height>=layout.stageHeight*.35);await page.locator('[data-region="spring"]').click();assert.ok(await page.locator('[data-route="spring_safe"]').isVisible());await page.locator('[data-weapon="POT"]').click();assert.equal(await page.locator('[data-weapon="POT"]').getAttribute('aria-pressed'),'true');await page.screenshot({path:output+'/z2c2-expedition-'+width+'.png'});
     assert.equal(await page.locator('.stage.field').count(),1,'door opens the real field preparation');
     assert.deepEqual(errors,[],`A1 home runtime errors at ${width}`);
     await page.close();

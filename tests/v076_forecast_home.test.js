@@ -38,19 +38,19 @@ test('home is its own phase UI, without historical large message bar or old bott
 });
 test('each world home has one door action and one of each existing shortcut',()=>{
  const screen=app.slice(app.indexOf('function forecast(){'),app.indexOf('\nfunction field(){'));
- const marker='return [`\n <div class="v076-home">';
+ const marker='return [`\n <div class="v076-home v016-home z2c2-cloud-home">';
  const cloudStart=screen.indexOf(marker);
  assert.ok(cloudStart>0,'legacy cloud home remains distinct');
  const border=screen.slice(0,cloudStart),cloud=screen.slice(cloudStart);
  for(const world of [border,cloud]){
   for(const action of ['to-field','stock','bento','book']){
-   assert.equal((world.match(new RegExp('data-act="'+action+'"','g'))||[]).length,1);
+   assert.equal(action==='to-field'?(world.match(/z2c2Door\(\)/g)||[]).length:(world.match(new RegExp('data-act="'+action+'"','g'))||[]).length,1);
   }
  }
  assert.match(border,/v016-world-actions/);
  assert.match(border,/data-act="crew"/);
- assert.match(border,/v076-home-primary v016-door/);
- assert.match(cloud,/class="v076-home-primary"/);
+ assert.match(border,/z2c2Door\(\)/);
+ assert.match(cloud,/z2c2Door\(\)/);assert.match(app,/class="v016-door z2c2-threshold" data-act="to-field"/);
  assert.match(app,/if\(act==='to-field'\)\{nextPhase\(game,'field'\)/);
  assert.match(app,/if\(act==='book'\)\{bookTab='recipes';overlay='book';render\(\);return\}/);
  assert.match(app,/if\(act==='stock'\|\|act==='premium'\|\|act==='settings'/);

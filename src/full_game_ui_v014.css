@@ -401,3 +401,44 @@
 .z2c-route .v08-branch-card .z2a3-art,.z2c-route .v08-home-choice .z2a3-art,.z2c-route .dock .z2a3-art{width:20px;height:20px;vertical-align:middle}
 .z2c-route .dock .game-btn{min-height:44px}
 @media(max-width:350px){.z2c-route .route-card .route-emoji{width:35px;height:35px}.z2c-route .route-card .route-emoji .z2a3-art{width:25px;height:25px}}
+
+/* Z2c2: world threshold, cartography, and a physical equipment rack. */
+.z2c-home .v016-notice{position:relative;margin:7px 11px 6px;padding:8px 12px;background:linear-gradient(105deg,#e5d0a1,#c4a575);color:#463325;border:1px solid #8b6243;border-radius:3px;box-shadow:0 2px #271f18,inset 0 0 0 2px #f9e5b455}
+.z2c-home .v016-notice:before{content:'';position:absolute;left:50%;top:-4px;width:8px;height:8px;border-radius:50%;background:#a67d47;box-shadow:inset 0 1px #f9e1a3,0 1px 2px #5d3a27}
+.z2c-home .v016-notice strong{color:#533b26;font-size:15px}.z2c-home .v016-notice small{color:#644d35}
+.z2c-home .v016-home .v016-world-actions .v016-door.z2c2-threshold{left:50%;top:92%;bottom:auto;transform:translate(-50%,-50%);min-width:44px;width:86px;min-height:44px;height:54px;padding:0;display:flex;flex-direction:column;justify-content:center;gap:0;border:0;background:transparent;box-shadow:none;color:#fff1c5;font-size:11px;line-height:1.05;text-shadow:0 2px 2px #1b1710,1px 0 #1b1710,-1px 0 #1b1710}
+.z2c-home .v016-world-actions .z2c2-threshold .z2a3-art{width:31px;height:31px;filter:drop-shadow(0 2px 2px #2d2215)}
+.z2c-home .v016-world-actions .z2c2-threshold span{font-size:11px;white-space:nowrap}
+.z2c-home .v016-home .v016-world-actions .z2c2-threshold:active{transform:translate(-50%,-50%) scale(.95)}
+.z2c2-cloud-home .v076-preview{min-height:220px}
+.z2c-home .z2c2-cloud-home .v016-world-actions .z2c2-threshold{top:89%}
+.z2c2-cloud-home .v076-home-shortcuts button{font-size:11px}
+.z2c2-expedition{background:radial-gradient(ellipse at 30% 10%,#4e6650,#263c30 70%);display:flex;min-height:0}
+.z2c2-scroll{width:100%;height:100%;min-height:0;overflow:auto;overflow-x:hidden;overscroll-behavior:contain;touch-action:pan-y;padding:8px 10px 12px;display:flex;flex-direction:column;gap:8px;box-sizing:border-box}
+.z2c2-note{position:relative;display:flex;flex-direction:column;gap:4px;flex:none;background:linear-gradient(100deg,#e8d6ae,#c9ad7e);border:1px solid #96704d;border-radius:3px;color:#483a2a;padding:7px 10px 7px 16px;box-shadow:0 2px #263025;line-height:1.25}
+.z2c2-note-pin{position:absolute;top:9px;left:5px;width:6px;height:6px;border-radius:50%;background:#a87b46;box-shadow:0 1px #65472e}
+.z2c2-note b{display:block;font-size:12px;color:#64482c}.z2c2-note span{font-size:12px}.z2c2-note-food{display:flex;flex-wrap:wrap;gap:3px 8px}.z2c2-note-food span{display:inline-flex;align-items:center;gap:3px;font-size:11px}.z2c2-note-food small{color:#79543a}
+.z2c2-map{position:relative;isolation:isolate;flex:none;width:100%;aspect-ratio:320/252;min-height:220px;max-height:360px;background:#d6ba83;border:3px solid #9b7047;border-radius:5px;overflow:hidden;box-shadow:0 3px #293027,inset 0 0 0 2px #eacb8c}
+.z2c2-map-art{position:absolute;inset:0;width:100%;height:100%;z-index:-1}
+.z2c2-map-regions{position:absolute;left:5%;right:5%;top:3%;display:flex;justify-content:space-between;gap:9px}
+.z2c2-region{display:flex;align-items:center;justify-content:center;min-height:44px;min-width:44px;padding:3px 10px;color:#443724;background:#ead9b2ed;border:1px solid #9c7a53;border-radius:3px;font-weight:850;font-size:13px;box-shadow:0 2px #86694866}
+.z2c2-region.current{background:#3c5c47;color:#fff0c7;border-color:#e9cb90;box-shadow:0 0 0 2px #8d6d46}
+.z2c2-map-caption{position:absolute;top:25%;left:0;right:0;text-align:center;color:#4c4734;font-size:11px;font-weight:750;text-shadow:0 1px #f4e5b8}
+.z2c2-map-stop{position:absolute;top:45%;width:43%;min-height:90px;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:2px;padding:3px 2px;color:#3f3426;background:linear-gradient(145deg,#f2e1b4e8,#dfc592e8);border:1px solid #8e754e;border-radius:6px;box-shadow:0 2px #66543766;font-size:13px;line-height:1.1;touch-action:manipulation}
+.z2c2-map-stop.gather{left:4%;border-color:#69805b}.z2c2-map-stop.danger{right:4%;background:linear-gradient(145deg,#f3d6b0ee,#d1a67cee);border-color:#a3674c}
+.z2c2-stop-seal{display:grid;place-items:center;position:absolute;top:-20px;left:calc(50% - 19px);width:38px;height:38px;background:#536e4e;border:2px solid #d9c28f;border-radius:50%;box-shadow:0 2px #62513b}.z2c2-map-stop.danger .z2c2-stop-seal{background:#945f48}
+.z2c2-stop-seal .z2a3-art{width:27px;height:27px}.z2c2-map-stop>b{margin-top:16px;font-size:13px}.z2c2-stop-food{display:flex;align-items:center;justify-content:center;gap:3px}.z2c2-stop-food img,.z2c2-stop-food canvas{width:23px;height:23px}.z2c2-map-stop small{font-size:10px;color:#69533b}
+.z2c2-map-origin{position:absolute;bottom:3%;left:50%;transform:translateX(-50%);color:#443522;background:#e4c993d9;padding:2px 5px;font-size:10px;white-space:nowrap}
+.z2c2-rack{flex:none;background:repeating-linear-gradient(0deg,#795436 0px,#795436 22px,#69462e 23px,#795436 25px);border:2px solid #a78254;border-radius:4px;padding:5px 6px;box-shadow:inset 0 0 0 1px #402d22,0 2px #182a22;color:#f2dfb3}
+.z2c2-rack-head{display:flex;justify-content:space-between;align-items:center;padding:0 3px 4px;font-size:12px}.z2c2-rack-head small{font-size:10px;color:#e0c49c}
+.z2c2-tools{display:flex;gap:5px;align-items:stretch}
+.z2c2-tool{flex:1;min-width:0;min-height:65px;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:2px;background:#382e2355;border:1px solid #aa835755;border-radius:3px;color:#f7e6c3;padding:2px;line-height:1.1}
+.z2c2-tool.chosen{background:#4b5e3c;border:1px solid #f0c784;box-shadow:inset 0 0 0 1px #b9a06f}
+.z2c2-tool .z2a3-art{width:35px;height:35px;filter:drop-shadow(0 2px 1px #33261f)}.z2c2-tool span{font-size:11px;font-weight:750;white-space:nowrap}.z2c2-tool small{font-size:10px;color:#ecd3a6}
+.z2c2-tool-flavor{font-size:11px;text-align:center;padding:4px 2px 0;color:#f6d6a0}
+.z2c2-travel-notes{flex:none;color:#ddc79e;font-size:12px;padding:0 6px}.z2c2-travel-notes summary{min-height:32px;display:list-item;padding:7px 0;cursor:pointer}.z2c2-travel-notes p{margin:5px 0;line-height:1.4}
+.z2c2-expedition~.game-toast{display:none}
+.z2c-route:has(.z2c2-expedition)>.game-toast{display:none}
+.z2c-route:has(.z2c2-expedition) .dock{min-height:0;padding:4px 8px calc(4px + env(safe-area-inset-bottom))}
+.z2c-route:has(.z2c2-expedition) .dock .game-btn{display:flex;align-items:center;justify-content:center;gap:4px;font-size:12px;background:#354838;border:1px solid #a68a5e;box-shadow:0 2px #213023}
+@media(max-width:350px){.z2c2-scroll{padding:6px;gap:6px}.z2c2-map{min-height:218px}.z2c2-region{padding:3px 6px;font-size:12px}.z2c2-tool .z2a3-art{width:30px;height:30px}.z2c2-tool span{font-size:10px}.z2c2-map-stop{min-height:84px}}
