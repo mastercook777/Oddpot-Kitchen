@@ -1,4 +1,4 @@
-import {z2a2DrawIcon} from './ui_icons_z2a2.js?v=z2a2';
+import {z2a2DrawIcon} from './ui_icons_z2a2.js?v=z2a3';
 // Read-only Z2a status language shared by Canvas and WebGL.
 export function z2aOrderMark(o,t=0){
  if(!o)return null;const st=o.status;
@@ -15,7 +15,7 @@ export function z2aOrderMark(o,t=0){
 }
 export function z2aOrderStatus(o,t){return z2aOrderMark(o,t)?.label||({served:'已完成',left:'已离席',rejected:'未入座',waiting:'未到店'}[o.status]||'等待');}
 export function z2aDrawMark(c,x,y,mark,w,h){if(!mark)return;const px=Math.max(11,Math.min(w-11,x)),py=Math.max(11,Math.min(h-11,y));c.save();
- c.fillStyle='#26382dee';c.strokeStyle=mark.color;c.lineWidth=1.05;c.beginPath();c.roundRect(px-10,py-10,20,20,5);c.fill();c.stroke();
- if(!z2a2DrawIcon(c,mark.icon||'cook',px,py,15,mark.color)){c.fillStyle=mark.color;c.font='bold 12px system-ui';c.textAlign='center';c.textBaseline='middle';c.fillText(mark.glyph,px,py);}
+ c.fillStyle=mark.icon==='warn'?'#693a31ee':mark.icon==='star'?'#355d49ee':mark.icon==='pickup'||mark.icon==='plate'?'#665035ee':'#26382dee';c.strokeStyle=mark.color;c.lineWidth=1.05;c.beginPath();c.roundRect(px-10,py-10,20,20,5);c.fill();c.stroke();
+ if(!z2a2DrawIcon(c,mark.icon||'cook',px,py,18,mark.color)){c.fillStyle=mark.color;c.font='bold 12px system-ui';c.textAlign='center';c.textBaseline='middle';c.fillText(mark.glyph,px,py);}
  c.restore();
 }
