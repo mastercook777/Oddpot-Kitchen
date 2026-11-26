@@ -56,3 +56,12 @@ test('Z2d2 keeps original preparation and live camera presets',()=>{
   assert.deepEqual(y2CameraFrame('prep',w,h,layout),{view:'kitchen-preview',half:Math.max(5.6/aspect,3.65),aspect,position:[5,15,16],target:[5,0,4.2]});
  }
 });
+
+test('Z2d3a closing and growth are eligible even when a cached caller passes ended service',()=>{
+ const service={walkable:true,done:true,orders:[{id:'old'}]};
+ for(const phase of ['report','upgrade']){assert.equal(y2Eligible({phase,service,activeWorld:'hearth'}),true);assert.equal(y2Eligible({phase,service,activeWorld:'cloud'}),false);}
+ assert.equal(y2Eligible({phase:'prep',service}),false);
+ const renderer=readFileSync(new URL('../src/three_y2_diner.js',import.meta.url),'utf8'),app=readFileSync(new URL('../src/app.js',import.meta.url),'utf8');
+ assert.match(renderer,/if\(\['report','upgrade'\].includes\(s\?\.phase\)&&s.service\)s=\{\.\.\.s,service:null\};/);
+ assert.match(app,/scenes_v04\.js\?v=z2d3a/);
+});
