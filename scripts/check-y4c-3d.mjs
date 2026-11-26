@@ -1,10 +1,14 @@
 import {chromium} from 'playwright';import assert from 'node:assert/strict';import {spawn} from 'node:child_process';import {mkdir,readFile} from 'node:fs/promises';import {newGame,createService,setServicePaused,tick,beginLiveResearch,dropLiveIngredient,enterField,buildFieldMap} from '../src/engine.js';import {startActionField} from '../src/field_v04.js';
 // Actual Three.js transforms, all eight equipment/level pairs on the new hero.
 import * as T from 'three';
-import {makeChefZ2c7} from '../src/three_z2c7_chef_portrait.js';
+import {makeChefZ2c9} from '../src/three_z2c9_kett.js';
+import {makeChefZ2c9b} from '../src/three_z2c9b_kett.js';
 import {roundedFactory} from '../src/three_y1_models.js';
 import {createWeaponRig} from '../src/three_y3b_weapon_pose.js';
-const hero=makeChefZ2c7(T,roundedFactory(T)),heroRig=createWeaponRig(T,hero,roundedFactory(T));let maxForkError=0,poseSamples=0;
+const hero=makeChefZ2c9b(T,roundedFactory(T));let maxForkError=0,poseSamples=0;
+const featureNames=new Set();hero.root.traverse(o=>{if(o.name)featureNames.add(o.name)});for(const name of ['kett-hair-lock-0','kett-hair-lock-3','kett-cap-curl','kett-squared-face','kett-grin','kett-jacket','kett-scarf-tail','kett-apron-red-hem','kett-satchel','kett-eye-lid','kett-eye-white','kett-teeth-band'])assert.ok(featureNames.has(name),name);
+hero.root.updateMatrixWorld(true);const bounds=new T.Box3().setFromObject(hero.root);assert.ok(bounds.min.y>=-.08&&bounds.max.y<1.9,'hero vertical bounds '+bounds.min.y+' '+bounds.max.y);
+const heroRig=createWeaponRig(T,hero,roundedFactory(T));
 for(const type of ['WOK','POT','GRILL','STEAM'])for(const level of [1,2])for(let i=0;i<=30;i++){
  const t=poseSamples/30;hero.update(t,type,level);heroRig.update({weapon:{type,level},moving:false,facing:{x:0,y:1}},t);hero.root.updateMatrixWorld(true);
  assert.ok(heroRig.masteryParts()>0=== (level===2),type+' '+level);
@@ -12,7 +16,7 @@ for(const type of ['WOK','POT','GRILL','STEAM'])for(const level of [1,2])for(let
  if(type==='GRILL'){const e=heroRig.forkGripError();assert.ok(Number.isFinite(e)&&e<.02,'fork grip error '+e);maxForkError=Math.max(maxForkError,e);}
  poseSamples++;
 }
-console.log('Z2c8 actual Three rig samples',poseSamples,'max fork grip error',maxForkError);
+console.log('Z2c9b actual Three rig samples',poseSamples,'max fork grip error',maxForkError);
 const url='http://127.0.0.1:5189/',out='docs/screenshots/y4c-3d';await mkdir(out,{recursive:true});
 const server=spawn(process.execPath,['node_modules/vite/bin/vite.js','--host','127.0.0.1','--port','5189','--strictPort'],{stdio:'ignore'});const wait=ms=>new Promise(r=>setTimeout(r,ms));let browser;
 try{for(let i=0;i<60;i++){try{if((await fetch(url)).ok)break;}catch{}await wait(250);}
@@ -24,9 +28,9 @@ const artStats=await atelier.locator('.sample').evaluateAll(cards=>cards.map(c=>
 assert.ok(artStats.every(a=>a.pixels>35&&a.colors>=3&&a.shapes>=2),JSON.stringify(artStats));assert.deepEqual(artErrors,[]);await atelier.screenshot({path:out+'/z2a3-icon-atelier.png',fullPage:true});await atelier.close();
 const heroPage=await browser.newPage({viewport:{width:390,height:844},deviceScaleFactor:2,isMobile:true,hasTouch:true});const heroErrors=[];heroPage.on('pageerror',e=>heroErrors.push(e.message));
 await heroPage.route('https://cdn.jsdelivr.net/npm/three@0.170.0/build/**',async route=>{const name=new URL(route.request().url()).pathname.split('/').at(-1);if(!/^three[.a-z]+\\.js$/.test(name))return route.abort();await route.fulfill({status:200,contentType:'text/javascript',headers:{'access-control-allow-origin':'*'},body:await readFile('node_modules/three/build/'+name,'utf8')});});
-await heroPage.goto(url+'hero-atelier.html');await heroPage.waitForFunction(()=>document.querySelector('#status')?.textContent.includes('Z2c7 · 静态'),null,{timeout:20000});
+await heroPage.goto(url+'hero-atelier.html');await heroPage.waitForFunction(()=>document.querySelector('#status')?.textContent.includes('Z2c9b · 静态'),null,{timeout:20000});
 assert.equal(await heroPage.locator('#stage canvas').count(),1);
-for(const [model,label] of [[0,'Z2c5'],[1,'Z2c6'],[2,'Z2c7']]){await heroPage.locator('[data-model="'+model+'"]').click();await heroPage.waitForFunction(s=>document.querySelector('#status')?.textContent.startsWith(s),label);await heroPage.screenshot({path:out+'/hero-atelier-'+label+'.png'});}
+for(const [model,label] of [[0,'Z2c5'],[1,'Z2c6'],[2,'Z2c7'],[3,'Z2c9'],[4,'Z2c9b']]){await heroPage.locator('[data-model="'+model+'"]').click();await heroPage.waitForFunction(s=>document.querySelector('#status')?.textContent.startsWith(s+' ·'),label);await heroPage.screenshot({path:out+'/hero-atelier-'+label+'.png'});}
 for(const angle of [0,90,180,45]){await heroPage.locator('[data-angle="'+angle+'"]').click();await heroPage.waitForFunction(a=>document.querySelector('#status')?.textContent.endsWith(a+'°'),angle);}
 await heroPage.locator('#idle').click();await heroPage.waitForFunction(()=>document.querySelector('#status')?.textContent.includes('Idle'));await heroPage.locator('#idle').click();
 assert.deepEqual(heroErrors,[]);await heroPage.close();
