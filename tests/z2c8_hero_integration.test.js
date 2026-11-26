@@ -16,10 +16,10 @@ test('loadout appraisal has smooth endpoints, bounded values and tool-specific e
 test('departure uses new hero and existing rig with actual level and version marker',()=>{
  const src=readFileSync(new URL('../src/three_z2c3_departure.js',import.meta.url),'utf8');
  const index=readFileSync(new URL('../index.html',import.meta.url),'utf8');
- assert.match(src,/makeChefZ2c9\(T,rounded\)/);
+ assert.match(src,/makeChefZ2c7\(T,rounded\)/);
  assert.match(src,/hero.update\(t,type,level\);rig.update/);
  assert.match(src,/createWeaponRig\(T,hero,rounded\)/);
- assert.match(src,/dataset.portrait='z2c9'/);
- assert.match(index,/v0\.16-Z\.2c9/);
- assert.match(index,/three_z2c3_departure\.js\?v=z2c9/);
+ assert.match(src,/dataset.portrait='z2c8'/);
+ assert.match(index,/v0\.16-Z\.2c8/);
+ assert.match(index,/three_z2c3_departure\.js\?v=z2c8/);
 });
