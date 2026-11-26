@@ -3,7 +3,7 @@ import {createRecovery,sharedThree,visibleHost} from './three_y6a_recovery.js?v=
 import {makeLandscapeY5d,landscapeSeed} from './three_y5d_landscape.js?v=y5d';
 // Y3a: read-only 3D forest. No physics, inventory or combat simulation.
 import {roundedFactory} from './three_y1_models.js?v=y1';
-import {makeChefY2} from './three_y2b_chef.js?v=y3d';
+import {makeChefY2} from './three_y2b_chef.js?v=z2c12';
 import {makeBladeTrail} from './three_y3d_trail.js?v=y5c3';
 import {createWeaponRig} from './three_y3b_weapon_pose.js?v=z2c4';
 import {skillMotion} from './three_y3d_pose.js?v=y5c3';
