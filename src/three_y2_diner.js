@@ -7,7 +7,7 @@ import {RECIPES,CUSTOMERS} from './data.js';
 import {selectDiningSpeech,selectStaffSpeech} from './diner_ambience_v077.js';
 import {homeKitchenChatter} from './home_kitchen_v013j.js';
 import {roundedFactory} from './three_y1_models.js?v=y1';
-import {makeChefY2} from './three_y2b_chef.js?v=y3d';
+import {makeChefY2} from './three_y2b_chef.js?v=z2c12';
 import {dinerAction,createServiceRig} from './three_y4a_service.js?v=y6';
 import {DINER_TIMING} from './engine.js?v=0.15.0-alpha.11-y4d';
 import {mealLife} from './three_y6_life.js?v=y6';
