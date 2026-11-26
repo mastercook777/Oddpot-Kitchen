@@ -82,7 +82,7 @@ for(const [width,height] of [[320,568],[375,667],[390,844]]){
  let page;const errors=[];
  async function load(s,gate=null){if(page)await page.close();page=await browser.newPage({viewport:{width,height},deviceScaleFactor:2,isMobile:true,hasTouch:true});page.on('pageerror',e=>errors.push(e.message));page.on('console',m=>{if(m.type()==='warning'||m.type()==='error')console.log('browser',m.text());if(/Shader Error|VALIDATE_STATUS|GL_INVALID_OPERATION.*program/i.test(m.text()))errors.push(m.text());});
  await page.route('https://cdn.jsdelivr.net/npm/three@0.170.0/build/**',async route=>{const name=new URL(route.request().url()).pathname.split('/').at(-1);if(!/^three[.a-z]+\.js$/.test(name))return route.abort();await route.fulfill({status:200,contentType:'text/javascript',headers:{'access-control-allow-origin':'*'},body:await readFile('node_modules/three/build/'+name,'utf8')});});
- if(gate)await page.route(/\/src\/three_y2_diner\.js\?v=z2d2(?:&.*)?$/,async route=>{await gate;await route.continue();});
+ if(gate)await page.route(/\/src\/three_y2_diner\.js\?v=z2d3a(?:&.*)?$/,async route=>{await gate;await route.continue();});
  await page.addInitScript(s=>localStorage.setItem('oddpot-prototype-v04',JSON.stringify(s)),s);await page.goto(url+'?render=3d',{waitUntil:'domcontentloaded'});}
  // Growth preview must render actual geometry and update after a real purchase.
  const growth=newGame(15742);growth.onboarding.enabled=false;growth.phase='upgrade';growth.day=3;growth.reputation=2;growth.coins=500;
@@ -124,8 +124,10 @@ for(const [width,height] of [[320,568],[375,667],[390,844]]){
  }
  const prep=newGame(15742);prep.onboarding.enabled=false;prep.phase='prep';await load(prep);await page.waitForFunction(()=>document.querySelector('canvas[data-view="kitchen-preview"]')?.dataset.phase==='prep',null,{timeout:20000});const prepLayout=await page.locator('.z2b-prep-layout').evaluate(el=>{const a=el.querySelector('.z2b-prep-scene').getBoundingClientRect(),b=el.querySelector('.z2b-prep-work').getBoundingClientRect();return {height:a.height,ratio:a.height/el.getBoundingClientRect().height,disjoint:a.bottom<=b.top+1};});assert.ok(prepLayout.height>=135&&prepLayout.ratio>=.40&&prepLayout.disjoint,JSON.stringify(prepLayout));await page.screenshot({path:out+'/z2b-prep-'+width+'.png'});
  const closing=newGame(15742);closing.onboarding.enabled=false;closing.phase='service';assert.ok(createService(closing,{walkable:true}));setServicePaused(closing,false);
- for(let t=0;t<160&&!closing.service.done;t++){if(closing.service.breakAt)resumeBreak(closing);tick(closing,1);}assert.ok(closing.service.done);assert.ok(closeService(closing));
+ for(let t=0;t<160&&!closing.service.done;t++){if(closing.service.breakAt)resumeBreak(closing);tick(closing,1);}assert.ok(closing.service.done);
  await load(closing);
+ await page.waitForFunction(()=>document.querySelector('canvas[data-phase="service"]')&&document.documentElement.dataset.oddpot3d==='active',null,{timeout:20000});
+ await page.locator('.v075-finish [data-act="close"]').click();
  await page.waitForFunction(()=>document.querySelector('.z2d2-report-stage canvas[data-view="report-preview"]')?.dataset.phase==='report',null,{timeout:20000});
  const reportCanvas=page.locator('.z2d2-report-stage canvas[data-view="report-preview"]'),reportBox=await reportCanvas.boundingBox(),ledgerBox=await page.locator('.z2d2-report-layout .z2c10-ledger').boundingBox();
  assert.ok(reportBox.height>=100&&reportBox.y+reportBox.height<=ledgerBox.y+1);assert.equal(await reportCanvas.getAttribute('data-order-count'),'0');assert.equal(await reportCanvas.getAttribute('data-guest-count'),'0');
