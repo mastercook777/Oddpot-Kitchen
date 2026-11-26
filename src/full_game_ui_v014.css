@@ -593,3 +593,6 @@
 .z2d2-view-switch button[aria-pressed="true"]{background:#b58c55;color:#392b1e;border-color:#f2d7a1}
 .z2d2-view-switch button:focus-visible{outline:2px solid #ffe8b8;outline-offset:-3px}
 @media(max-width:350px){.stage.report .z2d2-report-layout>.z2c10-ledger{padding:9px 8px 16px}}
+
+/* The camera switch has no meaning in the original 2D fallback. */
+html:not([data-oddpot3d="active"]) .z2d2-view-switch{display:none}
