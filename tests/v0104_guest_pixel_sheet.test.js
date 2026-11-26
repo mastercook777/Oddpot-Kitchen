@@ -73,7 +73,13 @@ test('book guest art is gated by same genuine-seen state, with no loss of relati
 test('separate sheet header reserves full close target and does not overlay tabs or scroll',()=>{
  const app=readFileSync(new URL('../src/app.js',import.meta.url),'utf8');
  const css=readFileSync(new URL('../src/kitchen_050.css',import.meta.url),'utf8');
- assert.match(app,/sheet \$\{overlay==='book'\?'v104-book-sheet':''\}/);
+ assert.match(app,/sheet z2c13-sheet \$\{kind==='book'\?'v104-book-sheet':''\}/);
+ assert.match(app,/aria-labelledby="z2c13-sheet-title"/);
+ assert.match(app,/\$\{nav\}<div class="sheet-body"/);
+ const current=readFileSync(new URL('../src/full_game_ui_v014.css',import.meta.url),'utf8');
+ assert.match(current,/\.z2c13-sheet \.sheet-header\{[^}]*height:57px/);
+ assert.match(current,/\.z2c13-sheet \.sheet-close\{[^}]*min-width:44px;min-height:44px/);
+ assert.match(current,/\.z2c13-sheet \.sheet-body\{[^}]*min-height:0;[^}]*overflow:auto/);
  assert.match(app,/data-book-tab="recipes"/);
  assert.match(app,/data-book-tab="guests"/);
  assert.match(app,/data-act="close-sheet"/);
