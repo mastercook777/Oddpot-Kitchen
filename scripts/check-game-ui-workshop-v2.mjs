@@ -9,7 +9,7 @@ let browser;try{
  let ready=false;for(let i=0;i<60;i++){try{if((await fetch(url)).ok){ready=true;break}}catch{}await new Promise(r=>setTimeout(r,250));}assert.ok(ready);
  browser=await chromium.launch({headless:true,executablePath:process.env.CHROME_PATH||'/usr/bin/google-chrome',args:['--no-sandbox','--disable-dev-shm-usage','--enable-webgl','--use-gl=angle','--use-angle=swiftshader','--enable-unsafe-swiftshader']});
  for(const [width,height] of [[320,568],[375,667],[390,844]]){
-  const p=await browser.newPage({viewport:{width,height},isMobile:true,hasTouch:true});const errors=[];p.on('pageerror',e=>errors.push(e.message));
+  const p=await browser.newPage({viewport:{width,height},isMobile:true,hasTouch:true});const errors=[];p.on('pageerror',e=>{errors.push(e.message);console.log('PAGE ERROR',e.message)});p.on('console',m=>{if(m.type()==='warning'||m.type()==='error')console.log('BROWSER',m.text().slice(0,500))});
   await p.route('https://cdn.jsdelivr.net/npm/three@0.170.0/build/**',async route=>{const name=new URL(route.request().url()).pathname.split('/').at(-1);if(!/^three[.a-z]+\.js$/.test(name))return route.abort();await route.fulfill({contentType:'text/javascript',headers:{'access-control-allow-origin':'*'},body:await readFile('node_modules/three/build/'+name,'utf8')});});
   await p.addInitScript(()=>localStorage.setItem('oddpot-prototype-v04','workshop-v2-must-not-touch'));
   await p.goto(url);const act=id=>p.locator('#dock [data-act="'+id+'"], #hotspots [data-act="'+id+'"], #play-controls [data-act="'+id+'"], #window-content [data-act="'+id+'"], #hud [data-act="'+id+'"], #map-label [data-act="'+id+'"], #equipment [data-act="'+id+'"]').first();
@@ -18,7 +18,7 @@ let browser;try{
   const shot=async n=>p.screenshot({path:out+'/'+n+'-'+width+'.png'});
   await mode('morning');await p.waitForFunction(()=>document.documentElement.dataset.oddpot3d==='active',null,{timeout:20000});await shot('morning');
   await act('stock').click();await fit();await p.keyboard.press('Escape');await mode('morning');
-  await act('departure').click();await mode('departure');await p.waitForFunction(()=>document.documentElement.dataset.oddpotDeparture3d==='active',null,{timeout:20000});await shot('departure');
+  await act('departure').click();await mode('departure');try{await p.waitForFunction(()=>document.documentElement.dataset.oddpotDeparture3d==='active',null,{timeout:20000})}catch(e){console.log('departure debug',await p.evaluate(()=>({ds:{...document.documentElement.dataset},scene:document.getElementById('world').dataset.scene,hosts:[...document.querySelectorAll('#departure-host,.z2c2-map,.z2c4-hero')].map(el=>({class:el.className,hidden:el.hidden,w:el.clientWidth,h:el.clientHeight,display:getComputedStyle(el).display})),hud:document.getElementById('hud').textContent})));await shot('departure-failure');throw e}await shot('departure');
   await act('region:spring').click();await act('weapon:POT').click();await act('region:forest').click();await act('depart').click();await mode('field');
   await p.waitForFunction(()=>document.documentElement.dataset.oddpotForest3d==='active',null,{timeout:20000});await shot('field');await act('field-bag').click();await fit();await p.keyboard.press('Escape');await act('retreat').click();await fit();await shot('harvest');await act('research-enter').click();await mode('research');await fit();
   // Choose actual owned ingredients and cook using the original rules.
