@@ -562,6 +562,49 @@ function upgrade(){
  return [`<div class="z2c11-growth-layout"><section class="z2c11-growth-scene" aria-label="当前真实餐厅预览">${restaurantView(false)}<div class="z2c11-scene-caption">${z2a2Icon('home')} <b>${game.dining?.tableCount||2} 桌 · ${tableCapacity(game)} 席</b><span>${z2a2Icon('cook')} ${k.thirdUnlocked?3:2} 厨位</span></div></section><div class="z2c11-growth-work"><div class="upgrade-card kitchen-upgrade-card"><h2>${z2a2Icon('home')} 扩建工坊</h2><section class="z2c11-growth-group" aria-label="空间扩建"><h3>餐厅与后厨</h3>${roomUpgradePanel()}<div class="v13a-bundle-panel" aria-label="第三厨位与第二帮厨组合扩建"><strong>${k.thirdUnlocked?`✓ 中央厨位与${crewRoleName(game,'helper2')}已到岗`:`🔥 后厨扩编 · 中央厨位＋${crewRoleName(game,'helper2')}`}</strong><small>${k.thirdUnlocked?'中央炉可独立接单；下一次备餐配置锅具、员工餐及两名帮厨的岗位。':`同时增加真实第三炉与帮厨${crewRoleName(game,'helper2')}；首星和第四桌后解锁。`}</small>${k.thirdUnlocked?'<span>已完成扩建</span>':b('third-kitchen-bundle','扩建＋雇佣 · '+THIRD_KITCHEN_BUNDLE_COST+' 金币','primary wide',!thirdKitchenBundleAvailable(game))}</div>${(activeWorld(game)==='cloud'?game.cloudProgress?.stars||0:game.chapterProgress?.stars||0)>=2?`<div class="v014b-grill-unlock"><strong>🍢 双面烤架与烤叉</strong><small>${k.grillOwned?'已拥有 · 备餐时任意厨位可装烤架，探索可选烤叉':'十道精选烤菜 · 任意厨位真实接单 · 探索新增穿刺武器'}</small>${k.grillOwned?'<span>已购入</span>':b('buy-grill','购入组合 · '+GRILL_COST+' 金币','secondary',!grillAvailable(game))}</div>`:''}</section><section class="z2c11-growth-group" aria-label="厨具强化"><div class="upgrade-feature z2c11-history">${z2a2Icon('ledger')} 累计收入 ${(game.history||[]).reduce((n,x)=>n+x.revenue,0)} · 招待 ${(game.history||[]).reduce((n,x)=>n+x.served,0)} 位</div><h3 class="v014-upgrade-label">${z2a2Icon('cook')} 厨具强化</h3>${['WOK','POT',...(k.grillOwned?['GRILL']:[]),...(activeWorld(game)==='cloud'&&k.steamerOwned?['STEAM']:[])].map(type=>{const level=k.mastery[type],cost=cookwareUpgradeCost(game,type),name=type==='WOK'?'炒锅':type==='POT'?'炖锅':type==='STEAM'?'云汽蒸笼':'烤架';const gain=type==='WOK'?'挥击 0.70→0.62 秒 · 格挡 0.45→0.70 秒':type==='POT'?'投弹 0.38→0.30 秒 · 爆炸 0.65→0.75 格':type==='STEAM'?'云汽涌流 1.6→1.9 格 · 凝雾结界 2.8→3.4 秒':'前刺 0.88→0.72 秒 · 喷焰 2.7→3.0 格';return `<div class="kitchen-upgrade-row"><div><strong>${name} · 全店共享 Lv.${level}</strong><small>${level>=2?'✓ 已生效 · 每单 -2 秒 · '+gain:'每单 -2 秒 · '+gain}</small></div>${b(`upgrade-kitchen:${type}`,cost===null?'已满级':`${cost} 金币升级`, 'secondary',cost===null||game.coins<cost)}</div>`}).join('')}</section><section class="z2c11-growth-group" aria-label="行囊扩容"><h3>${z2a2Icon('bag')} 行囊扩容</h3><div class="upgrade-feature">背包 ${game.bagSlots||8}/12 格 · ${bagUpgradePrice(game)===null?'已满级':`扩容 ${bagUpgradePrice(game)} 金币`}</div>${b('upgrade-bag','增加背包 2 格','secondary',bagUpgradePrice(game)===null||game.coins<bagUpgradePrice(game))}</section><details class="v014-upgrade-notes"><summary>升级规则</summary><p>厨位决定产能，厨具等级全店共享。换装同类厨具不会重复收费。${game.tech?'猛火掌控已解锁':'赢得厨王赛后解锁猛火掌控'}。</p></details></div></div></div>`,
  `<div class="action-row">${b('next-day','开始营业第 '+(totalBusinessDay(game)+1)+' 天','primary wide')}</div>`]
 }
+// Z2d.1: DOM-only focus state; never persisted with the game.
+const drawerFocusable='button,input,select,textarea,a[href],summary,[tabindex]';
+let drawerReturnFocus=null,drawerClickFocus=null;
+function drawerControls(root){
+ return Array.from(root?.querySelectorAll(drawerFocusable)||[]).filter(el=>el.tabIndex>=0&&!el.matches(':disabled')&&el.getClientRects().length>0);
+}
+function drawerFocusKey(el){
+ if(!el)return null;
+ return JSON.stringify([el.tagName,...Array.from(el.attributes).filter(a=>a.name.startsWith('data-')||['id','name','href','type','aria-label'].includes(a.name)).map(a=>[a.name,a.value]).sort()]);
+}
+function drawerFocusSnapshot(root,el){
+ if(!root||!el||!root.contains(el)||!el.matches(drawerFocusable))return null;
+ const key=drawerFocusKey(el),matches=Array.from(root.querySelectorAll(drawerFocusable)).filter(e=>drawerFocusKey(e)===key);
+ return {key,index:matches.indexOf(el)};
+}
+function drawerFindFocus(root,snapshot){
+ if(!root||!snapshot||snapshot.index<0)return null;
+ const candidate=Array.from(root.querySelectorAll(drawerFocusable)).filter(e=>drawerFocusKey(e)===snapshot.key)[snapshot.index];
+ return drawerControls(root).includes(candidate)?candidate:null;
+}
+function drawerFocusAfterRender(previousKind,previousFocus,origin){
+ const shell=app.querySelector('.game-shell'),sheet=app.querySelector('.z2c13-sheet');
+ if(sheet){
+  if(!previousKind)drawerReturnFocus=origin;
+  for(const child of shell.children)if(child!==sheet&&!child.classList.contains('sheet-backdrop'))child.inert=true;
+  const target=previousKind===sheet.dataset.sheetKind?drawerFindFocus(sheet,previousFocus):null;
+  (target||sheet.querySelector('.sheet-close'))?.focus({preventScroll:true});
+ }else if(previousKind){
+  drawerFindFocus(shell,drawerReturnFocus)?.focus({preventScroll:true});
+  drawerReturnFocus=null;
+ }
+}
+function drawerTab(e,sheet,active){
+ if(e.key!=='Tab'||!sheet)return false;
+ const controls=drawerControls(sheet);
+ if(!controls.length){e.preventDefault();return true;}
+ const first=controls[0],last=controls[controls.length-1];
+ if(!controls.includes(active)||(e.shiftKey?active===first:active===last)){
+  e.preventDefault();(e.shiftKey?last:first).focus({preventScroll:true});return true;
+ }
+ return false;
+}
+
 function render(){
  if(walking&&(!game.field||game.phase!=='field')){clearInterval(walking);walking=null;}
  // Restoring horizontal chip position prevents the target selector from snapping
@@ -569,6 +612,10 @@ function render(){
  const prevTargetScroll=app.querySelector('.target-scroller')?.scrollLeft||0;
  const prevPantryScroll=app.querySelector('.z2b-pantry')?.scrollTop||0;
  const previousSheet=app.querySelector('.z2c13-sheet');
+ const previousKind=previousSheet?.dataset.sheetKind;
+ const previousFocus=previousSheet?(drawerClickFocus||drawerFocusSnapshot(previousSheet,document.activeElement)):null;
+ const origin=previousSheet?null:(drawerClickFocus||drawerFocusSnapshot(app.querySelector('.game-shell'),document.activeElement));
+ drawerClickFocus=null;
  const prevSheetScroll=previousSheet?.dataset.sheetKind===(overlay.startsWith('menu:')?'menu':overlay)?app.querySelector('.sheet-body')?.scrollTop||0:0;
  if(overlay&&stick.pointer!==null)releaseStick();
  if(overlay)keys.clear();
@@ -603,6 +650,7 @@ function render(){
  const target=app.querySelector('.target-scroller');if(target)target.scrollLeft=prevTargetScroll;
  const sheet=app.querySelector('.sheet-body');if(sheet)sheet.scrollTop=prevSheetScroll;
  const scroller=app.querySelector(stageScrollSelector);if(scroller)scroller.scrollTop=prevStageScroll;
+ drawerFocusAfterRender(previousKind,previousFocus,origin);
  // Preserve the on-screen floating stick when a second finger uses the skill.
  if(stick.pointer!==null&&(!playingGameGestures()||stick.phase!==game.phase))releaseStick();
  if(stick.pointer!==null){const pad=app.querySelector('#field-stick, #diner-stick'),knob=app.querySelector('#field-stick-knob, #diner-stick-knob');if(pad){pad.classList.add('active');pad.style.left=stick.originX+'px';pad.style.top=stick.originY+'px';}if(knob)knob.style.transform=`translate(${stick.x*54}px,${stick.y*54}px)`;}
@@ -684,6 +732,8 @@ function action(act){
  if(act==='next-day'){advanceDay(game);note('🌅 新的一天！客人偏好与探索路线在变化。');return}
 }
 app.addEventListener('click',e=>{
+ const focusRoot=app.querySelector('.z2c13-sheet')||app.querySelector('.game-shell');
+ drawerClickFocus=drawerFocusSnapshot(focusRoot,e.target.closest(drawerFocusable));
  const thread=e.target.closest('[data-grill-thread]');if(thread){if(threadGrillIngredient(game,thread.dataset.grillThread))note('穿上 '+ING[thread.dataset.grillThread].name+'，继续摆串。');return}
  const lane=e.target.closest('[data-grill-lane]');if(lane){if(placeGrillSkewer(game,lane.dataset.grillLane))note('烤串入炉！留意两面火候。');return}
  const drop=e.target.closest('[data-live-drop]');if(drop){if(dropLiveIngredient(game,drop.dataset.liveDrop))note('食材入锅！正在连续受热。');return}
@@ -960,4 +1010,4 @@ app.addEventListener('pointerup',e=>{
 },{passive:false});
 
 // Close a reference drawer without altering the underlying game phase.
-document.addEventListener('keydown',e=>{if(e.key==='Escape'&&overlay){e.preventDefault();overlay='';render();}});
+document.addEventListener('keydown',e=>{if(!overlay)return;if(e.key==='Escape'){e.preventDefault();overlay='';render();return;}drawerTab(e,app.querySelector('.z2c13-sheet'),document.activeElement);});
