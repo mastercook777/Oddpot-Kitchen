@@ -574,3 +574,11 @@
 .game-shell .z2c13-sheet .v063-book-entry{min-width:0}.game-shell .z2c13-sheet .v015-atlas-status{font-size:12px;line-height:1.4;color:#654c34;overflow-wrap:anywhere}.game-shell .z2c13-sheet .v015-atlas-status.ready{color:#34583c}
 .game-shell .z2c13-sheet .v063-variant-chip{min-height:36px;font-size:12px;line-height:1.4;white-space:normal;overflow-wrap:anywhere}.game-shell .z2c13-sheet .v063-variant-chip.active{background:#35543d;color:#fff0c7}
 @media(max-width:350px){.game-shell .z2c13-sheet .sheet-body{padding:9px 8px 16px}.game-shell .z2c13-sheet .z2c13-book-nav{padding:6px 8px}.game-shell .z2c13-sheet .sheet-header h2{font-size:16px}.game-shell .z2c13-sheet .v102-book-tabs button{font-size:11px}}
+
+/* Z2d.1: shared drawer focus and touch targets, without shrinking the scene. */
+.game-shell .z2c13-sheet :is(button,summary,a,select,input,textarea,[tabindex]):focus-visible{outline:2px solid #79521d;outline-offset:-3px;box-shadow:inset 0 0 0 5px #ffe9ae}
+.game-shell .z2c13-sheet .sheet-close:focus-visible,.game-shell .z2c13-sheet button.active:focus-visible{outline-color:#ffdda0;box-shadow:inset 0 0 0 5px #294738}
+.game-shell .z2c13-sheet .v102-book-tabs button,.game-shell .z2c13-sheet .v063-variant-chip{min-height:44px;min-width:0;white-space:normal;overflow-wrap:anywhere}
+.game-shell .z2c13-sheet .v015-cook-tabs button{min-height:49px}
+.game-shell .z2c13-sheet .sheet-body{min-width:0;overflow-x:hidden}
+@media(max-width:350px){.game-shell .z2c13-sheet .v015-region-tabs{grid-template-columns:repeat(2,minmax(0,1fr))}.game-shell .z2c13-sheet .v015-cook-tabs{grid-template-columns:repeat(2,minmax(0,1fr))}}
