@@ -1,4 +1,4 @@
-import {makeChefY2} from './three_y2b_chef.js?v=y3d';
+import {makeChefY2} from './three_y2b_chef.js?v=z2c12';
 import {previewCadence,previewAtlas,ecologyIdle} from './three_z2c5_preview_motion.js?v=z2c5';
 import {createWeaponRig} from './three_y3b_weapon_pose.js?v=z2c4';
 import {createFieldEnemyModel} from './three_y3_enemy_models.js?v=z2c4';
@@ -119,7 +119,7 @@ function makeDiorama(T){
   let landCalls=Number(mapCanvas.dataset.drawCalls)||0,benchCalls=Number(rackCanvas.dataset.drawCalls)||0;
   if(showLand){land.update(t);landCalls=paint(mapCanvas,land.scene,land.camera,atlas.land,5.55,3.7);mapCanvas.dataset.frames=String((Number(mapCanvas.dataset.frames)||0)+1);}
   if(showHero){bench.update(selected,level,t);benchCalls=paint(rackCanvas,bench.scene,bench.camera,atlas.hero,.82,.96);rackCanvas.dataset.frames=String((Number(rackCanvas.dataset.frames)||0)+1);}
-  frames++;mapCanvas.dataset.targetFps=String(target);mapCanvas.dataset.atlasResizes=String(atlasResizes);rackCanvas.dataset.portrait='z2c10';
+  frames++;mapCanvas.dataset.targetFps=String(target);mapCanvas.dataset.atlasResizes=String(atlasResizes);rackCanvas.dataset.portrait='z2c12';
   mapCanvas.dataset.region=region;mapCanvas.dataset.drawCalls=String(landCalls);mapCanvas.dataset.landscape='y5d';mapCanvas.dataset.enemies=land.ecology.enemies.join(',');rackCanvas.dataset.drawCalls=String(benchCalls);rackCanvas.dataset.selected=selected;rackCanvas.dataset.level=String(level);rackCanvas.dataset.upgradeParts=String(bench.rig.masteryParts());rackCanvas.dataset.models=String(buttons.length);
   a.dataset.z2c3Active='1';b.dataset.z2c3Active='1';
  },dispose(){disposed=true;clearHost(map,mapCanvas);clearHost(rack,rackCanvas);for(const v of lands.values())releaseScene(v);lands.clear();bench?.dispose();for(const g of geo)g.dispose();for(const mat of mats)mat.dispose();renderer.dispose();renderer.forceContextLoss();}};
