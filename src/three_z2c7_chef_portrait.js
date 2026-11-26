@@ -13,6 +13,13 @@ export function portraitIdle(t,changed=-100){
    headRoll:.056-.012*breath-.026*glance,
    yaw:-.16+.045*glance+.10*show};
 }
+// Short, non-looping appraisal of the selected tool; no arm/weapon transforms.
+export function loadoutAccent(t,changed,type){
+ const u=Math.max(0,Math.min(1,(t-changed)/.90)),q=Math.sin(Math.PI*u)**2;
+ const sign=type==='WOK'?-1:type==='POT'?1:type==='GRILL'?-0.6:0;
+ return {pitch:(type==='STEAM'?.095:type==='GRILL'?.035:.065)*q,
+   yaw:sign*.095*q,roll:sign*.030*q,turn:sign*.065*q,brow:.012*q};
+}
 export function makeChefZ2c7(T,rounded){
  const root=new T.Group(),body=new T.Group();root.add(body);
  const mat=(color,roughness=.78)=>new T.MeshStandardMaterial({color,roughness});
@@ -101,15 +108,16 @@ export function makeChefZ2c7(T,rounded){
  const badge=mesh(cap,new T.CylinderGeometry(.047,.047,.018,24),gold,.074,.043,.246);badge.rotation.x=Math.PI/2;
  box(cap,leather,.074,.043,.258,.035,.013,.008,.004);
  let last='',changed=-100;
- return {root,rig:{body,head,arms,elbows,grips},update(t,type){
-  if(type!==last){last=type;changed=t;}
-  const p=portraitIdle(t,changed);
-  root.rotation.y=p.yaw;
+ return {root,rig:{body,head,arms,elbows,grips},update(t,type,level){
+  const key=level===undefined?type:type+':'+level;
+  if(key!==last){last=key;changed=t;}
+  const p=portraitIdle(t,changed),a=level===undefined?{pitch:0,yaw:0,roll:0,turn:0,brow:0}:loadoutAccent(t,changed,type);
+  root.rotation.y=p.yaw+a.turn;
   body.position.y=.12+.003*p.breath;body.rotation.z=p.roll;
-  head.rotation.z=p.headRoll;head.rotation.x=.012*p.breath-.048*p.nod-.032*p.show;
-  head.rotation.y=.075*p.glance;
+  head.rotation.z=p.headRoll+a.roll;head.rotation.x=.012*p.breath-.048*p.nod-.032*p.show+a.pitch;
+  head.rotation.y=.075*p.glance+a.yaw;
   for(const {eyes,pupil,base} of eyesList){eyes.scale.y=p.blink;pupil.position.x=base+.010*p.glance;}
-  brows[1].position.y=.008*p.nod+.007*p.show;
+  brows[1].position.y=.008*p.nod+.007*p.show+a.brow;
   tail.rotation.z=.31+.035*p.breath-.085*p.show;
   // Leg and foot anchors are unchanged; all weapon poses remain owned by the rig.
   for(let i=0;i<2;i++)legs[i].rotation.z=0;

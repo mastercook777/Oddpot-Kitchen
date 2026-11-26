@@ -1,4 +1,4 @@
-import {makeChefZ2c6} from './three_z2c6_chef_portrait.js?v=z2c6';
+import {makeChefZ2c7} from './three_z2c7_chef_portrait.js?v=z2c8';
 import {previewCadence,previewAtlas,ecologyIdle} from './three_z2c5_preview_motion.js?v=z2c5';
 import {createWeaponRig} from './three_y3b_weapon_pose.js?v=z2c4';
 import {createFieldEnemyModel} from './three_y3_enemy_models.js?v=z2c4';
@@ -90,9 +90,9 @@ function makeDiorama(T){
  function buildBench(){
   const scene=new T.Scene();scene.background=new T.Color('#394d3d');lights(scene,{x:0,z:0},false);const root=group(scene);
   cyl(root,woodDark,0,-.13,0,.72,.78,.18,48);cyl(root,woodLight,0,-.033,0,.73,.75,.045,48);ring(root,brass,.70,.018,-.005);
-  const hero=makeChefZ2c6(T,rounded);root.add(hero.root);const rig=createWeaponRig(T,hero,rounded);
+  const hero=makeChefZ2c7(T,rounded);root.add(hero.root);const rig=createWeaponRig(T,hero,rounded);
   const camera=new T.OrthographicCamera(-1,1,1,-1,.1,40);camera.position.set(2.5,1.80,5.8);camera.lookAt(0,.83,0);
-  return {scene,camera,hero,rig,update(type,level,t){hero.update(t,type);rig.update({weapon:{type,level},moving:false,facing:{x:0,y:1}},t);},dispose(){const gs=new Set(),ms=new Set();hero.root.traverse(o=>{if(o.geometry)gs.add(o.geometry);if(o.material)for(const v of Array.isArray(o.material)?o.material:[o.material])ms.add(v);});for(const g of gs)if(!geo.has(g))g.dispose();for(const v of ms)if(!mats.has(v))v.dispose();}};
+  return {scene,camera,hero,rig,update(type,level,t){hero.update(t,type,level);rig.update({weapon:{type,level},moving:false,facing:{x:0,y:1}},t);},dispose(){const gs=new Set(),ms=new Set();hero.root.traverse(o=>{if(o.geometry)gs.add(o.geometry);if(o.material)for(const v of Array.isArray(o.material)?o.material:[o.material])ms.add(v);});for(const g of gs)if(!geo.has(g))g.dispose();for(const v of ms)if(!mats.has(v))v.dispose();}};
  }
 
  function clearHost(host,canvas){canvas?.remove();if(host)host.removeAttribute('data-z2c3-active');}
@@ -119,7 +119,7 @@ function makeDiorama(T){
   let landCalls=Number(mapCanvas.dataset.drawCalls)||0,benchCalls=Number(rackCanvas.dataset.drawCalls)||0;
   if(showLand){land.update(t);landCalls=paint(mapCanvas,land.scene,land.camera,atlas.land,5.55,3.7);mapCanvas.dataset.frames=String((Number(mapCanvas.dataset.frames)||0)+1);}
   if(showHero){bench.update(selected,level,t);benchCalls=paint(rackCanvas,bench.scene,bench.camera,atlas.hero,.82,.96);rackCanvas.dataset.frames=String((Number(rackCanvas.dataset.frames)||0)+1);}
-  frames++;mapCanvas.dataset.targetFps=String(target);mapCanvas.dataset.atlasResizes=String(atlasResizes);rackCanvas.dataset.portrait='z2c6';
+  frames++;mapCanvas.dataset.targetFps=String(target);mapCanvas.dataset.atlasResizes=String(atlasResizes);rackCanvas.dataset.portrait='z2c8';
   mapCanvas.dataset.region=region;mapCanvas.dataset.drawCalls=String(landCalls);mapCanvas.dataset.landscape='y5d';mapCanvas.dataset.enemies=land.ecology.enemies.join(',');rackCanvas.dataset.drawCalls=String(benchCalls);rackCanvas.dataset.selected=selected;rackCanvas.dataset.level=String(level);rackCanvas.dataset.upgradeParts=String(bench.rig.masteryParts());rackCanvas.dataset.models=String(buttons.length);
   a.dataset.z2c3Active='1';b.dataset.z2c3Active='1';
  },dispose(){disposed=true;clearHost(map,mapCanvas);clearHost(rack,rackCanvas);for(const v of lands.values())releaseScene(v);lands.clear();bench?.dispose();for(const g of geo)g.dispose();for(const mat of mats)mat.dispose();renderer.dispose();renderer.forceContextLoss();}};
