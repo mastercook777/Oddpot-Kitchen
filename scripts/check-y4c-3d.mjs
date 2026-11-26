@@ -1,11 +1,18 @@
 import {chromium} from 'playwright';import assert from 'node:assert/strict';import {spawn} from 'node:child_process';import {mkdir,readFile} from 'node:fs/promises';import {newGame,createService,setServicePaused,tick,beginLiveResearch,dropLiveIngredient,enterField,buildFieldMap} from '../src/engine.js';import {startActionField} from '../src/field_v04.js';
 // Actual Three.js transforms, all eight equipment/level pairs on the new hero.
 import * as T from 'three';
+import {y2Layout,y2CameraFrame,y2ApplyCamera} from '../src/three_y2_diner.js';
 import {makeChefZ2c9} from '../src/three_z2c9_kett.js';
 import {makeChefZ2c9b} from '../src/three_z2c9b_kett.js';
 import {makeChefY2} from '../src/three_y2b_chef.js';
 import {roundedFactory} from '../src/three_y1_models.js';
 import {createWeaponRig} from '../src/three_y3b_weapon_pose.js';
+// Use actual Three projection for the growth furniture envelope and caption clearance.
+for(const [w,h] of [[320,210],[375,245],[390,260],[475,315],[320,320],[320,110]])for(const count of [2,3,4]){
+ const layout=y2Layout({phase:'upgrade',dining:{tableCount:count},kitchen:{thirdUnlocked:count===4}}),f=y2CameraFrame('upgrade',w,h,layout),camera=new T.OrthographicCamera(-1,1,1,-1,.1,60);
+ y2ApplyCamera(camera,f);
+ for(const x of [-.25,10.25])for(const [y,z] of [[0,f.front],[3.16,1]]){const p=new T.Vector3(x,y,z).project(camera);assert.ok(Math.abs(p.x)<=1&&p.y>=-1+2*f.bottomPad-1e-6&&p.y<=1-2*f.topPad+1e-6,JSON.stringify({w,h,count,p}));}
+}
 const hero=makeChefZ2c9b(T,roundedFactory(T));let maxForkError=0,poseSamples=0;
 const featureNames=new Set();hero.root.traverse(o=>{if(o.name)featureNames.add(o.name)});for(const name of ['kett-hair-lock-0','kett-hair-lock-3','kett-cap-curl','kett-squared-face','kett-grin','kett-jacket','kett-scarf-tail','kett-apron-red-hem','kett-satchel','kett-eye-lid','kett-eye-white','kett-teeth-band'])assert.ok(featureNames.has(name),name);
 hero.root.updateMatrixWorld(true);const bounds=new T.Box3().setFromObject(hero.root);assert.ok(bounds.min.y>=-.08&&bounds.max.y<1.9,'hero vertical bounds '+bounds.min.y+' '+bounds.max.y);
@@ -73,18 +80,20 @@ for(const [width,height] of [[320,568],[375,667],[390,844]]){
  let page;const errors=[];
  async function load(s,gate=null){if(page)await page.close();page=await browser.newPage({viewport:{width,height},deviceScaleFactor:2,isMobile:true,hasTouch:true});page.on('pageerror',e=>errors.push(e.message));page.on('console',m=>{if(m.type()==='warning'||m.type()==='error')console.log('browser',m.text());if(/Shader Error|VALIDATE_STATUS|GL_INVALID_OPERATION.*program/i.test(m.text()))errors.push(m.text());});
  await page.route('https://cdn.jsdelivr.net/npm/three@0.170.0/build/**',async route=>{const name=new URL(route.request().url()).pathname.split('/').at(-1);if(!/^three[.a-z]+\.js$/.test(name))return route.abort();await route.fulfill({status:200,contentType:'text/javascript',headers:{'access-control-allow-origin':'*'},body:await readFile('node_modules/three/build/'+name,'utf8')});});
- if(gate)await page.route(/\/src\/three_y2_diner\.js\?v=z2c13(?:&.*)?$/,async route=>{await gate;await route.continue();});
+ if(gate)await page.route(/\/src\/three_y2_diner\.js\?v=z2c14(?:&.*)?$/,async route=>{await gate;await route.continue();});
  await page.addInitScript(s=>localStorage.setItem('oddpot-prototype-v04',JSON.stringify(s)),s);await page.goto(url+'?render=3d',{waitUntil:'domcontentloaded'});}
  // Growth preview must render actual geometry and update after a real purchase.
  const growth=newGame(15742);growth.onboarding.enabled=false;growth.phase='upgrade';growth.day=3;growth.reputation=2;growth.coins=500;
  await load(growth);const growth3d=page.locator('.z2c11-growth-scene canvas[data-phase="upgrade"]');
  await page.waitForFunction(()=>document.documentElement.dataset.oddpot3d==='active'&&document.querySelector('.z2c11-growth-scene canvas[data-phase="upgrade"]')?.dataset.tableCount==='2',null,{timeout:20000});
  assert.equal(await growth3d.count(),1);
+ assert.equal(await growth3d.getAttribute('data-view'),'growth-preview');assert.ok(Number(await growth3d.getAttribute('data-camera-half'))<8.35);
  const g=await growth3d.boundingBox(),work=await page.locator('.z2c11-growth-work').boundingBox();assert.ok(g.height>100&&g.y+g.height<=work.y+1);
  await page.locator('[data-act="expand-room"]').click();
  await page.waitForFunction(()=>document.querySelector('.z2c11-growth-scene canvas[data-phase="upgrade"]')?.dataset.tableCount==='3',null,{timeout:10000});
  assert.equal(await page.evaluate(()=>JSON.parse(localStorage.getItem('oddpot-prototype-v04')).dining.tableCount),3);
- await page.screenshot({path:out+'/z2c13-growth-3d-'+width+'.png'});
+ assert.equal(await growth3d.getAttribute('data-view'),'growth-preview');
+ await page.screenshot({path:out+'/z2c14-growth-3d-'+width+'.png'});
  const s=newGame(15742);s.onboarding.enabled=false;s.phase='service';s.crew.helper.hired=true;s.dining.tableCount=width===320?2:width===375?3:4;assert.ok(createService(s,{walkable:true}));setServicePaused(s,false);for(let i=0;i<9;i++)tick(s,1);
  // Controlled test-only queue: force future guests to arrive while real seats remain occupied.
  const free=s.service.orders.filter(o=>o.tableId==null&&o.status==='waiting');for(const o of free)o.arrival=s.service.time;tick(s,1);const expectedQueue=s.service.orders.filter(o=>o.status==='waiting'&&o.arrival<=s.service.time).length;const ready=s.service.orders.find(o=>o.tableId!=null&&['queued','cooking','entering','ordering'].includes(o.status));assert.ok(ready,'fixture has a real seated order');Object.assign(ready,{status:'pickup',recipeId:ready.recipeId||'mushroom_stir',pickupAt:s.service.time});await load(s);
