@@ -4,6 +4,7 @@ import * as T from 'three';
 import {makeChefZ2c9} from '../src/three_z2c9_kett.js';
 import {makeChefZ2c9b} from '../src/three_z2c9b_kett.js';
 import {makeChefZ2c9c} from '../src/three_z2c9c_kett.js';
+import {makeChefZ2c9d} from '../src/three_z2c9d_kett.js';
 import {roundedFactory} from '../src/three_y1_models.js';
 import {createWeaponRig} from '../src/three_y3b_weapon_pose.js';
 const hero=makeChefZ2c9c(T,roundedFactory(T));let maxForkError=0,poseSamples=0;
@@ -19,6 +20,15 @@ for(const type of ['WOK','POT','GRILL','STEAM'])for(const level of [1,2])for(let
  poseSamples++;
 }
 console.log('Z2c9c actual Three rig samples',poseSamples,'max fork grip error',maxForkError);
+// D changes limb lengths, so its bare model is checked separately from the C weapon rig.
+const longHero=makeChefZ2c9d(T,roundedFactory(T));longHero.root.updateMatrixWorld(true);
+const longBounds=new T.Box3().setFromObject(longHero.root);assert.ok(longBounds.min.y>=-.08&&longBounds.max.y<1.95,'long hero bounds');
+for(let i=0;i<2;i++){assert.equal(longHero.rig.elbows[i].position.y,-.21);assert.equal(longHero.rig.grips[i].position.y,-.185);}
+assert.ok(longHero.rig.head.scale.x<hero.rig.head.scale.x);assert.ok(longHero.rig.head.scale.y<hero.rig.head.scale.y);
+longHero.root.traverse(o=>{const p=o.geometry?.attributes?.position;if(p)assert.ok(p.array.every(Number.isFinite),'long hero finite geometry '+o.name);});
+for(let i=0;i<=180;i++){longHero.update(i/30,'WOK');longHero.root.updateMatrixWorld(true);longHero.root.traverse(o=>assert.ok(o.matrixWorld.elements.every(Number.isFinite),'long hero matrix'));}
+const longNames=new Set();longHero.root.traverse(o=>longNames.add(o.name));for(const name of ['kett-long-sleeve','kett-long-forearm','kett-clenched-fist','kett-grin'])assert.ok(longNames.has(name),name);
+console.log('Z2c9d bare model bounds',longBounds.min.y,longBounds.max.y,'arms',.21,.185);
 const url='http://127.0.0.1:5189/',out='docs/screenshots/y4c-3d';await mkdir(out,{recursive:true});
 const server=spawn(process.execPath,['node_modules/vite/bin/vite.js','--host','127.0.0.1','--port','5189','--strictPort'],{stdio:'ignore'});const wait=ms=>new Promise(r=>setTimeout(r,ms));let browser;
 try{for(let i=0;i<60;i++){try{if((await fetch(url)).ok)break;}catch{}await wait(250);}
@@ -30,11 +40,11 @@ const artStats=await atelier.locator('.sample').evaluateAll(cards=>cards.map(c=>
 assert.ok(artStats.every(a=>a.pixels>35&&a.colors>=3&&a.shapes>=2),JSON.stringify(artStats));assert.deepEqual(artErrors,[]);await atelier.screenshot({path:out+'/z2a3-icon-atelier.png',fullPage:true});await atelier.close();
 const heroPage=await browser.newPage({viewport:{width:390,height:844},deviceScaleFactor:2,isMobile:true,hasTouch:true});const heroErrors=[];heroPage.on('pageerror',e=>heroErrors.push(e.message));
 await heroPage.route('https://cdn.jsdelivr.net/npm/three@0.170.0/build/**',async route=>{const name=new URL(route.request().url()).pathname.split('/').at(-1);if(!/^three[.a-z]+\\.js$/.test(name))return route.abort();await route.fulfill({status:200,contentType:'text/javascript',headers:{'access-control-allow-origin':'*'},body:await readFile('node_modules/three/build/'+name,'utf8')});});
-await heroPage.goto(url+'hero-atelier.html');await heroPage.waitForFunction(()=>document.querySelector('#status')?.textContent.includes('Z2c9c · 静态'),null,{timeout:20000});
+await heroPage.goto(url+'hero-atelier.html');await heroPage.waitForFunction(()=>document.querySelector('#status')?.textContent.includes('Z2c9d · 静态'),null,{timeout:20000});
 assert.equal(await heroPage.locator('#stage canvas').count(),1);
-for(const [model,label] of [[0,'Z2c5'],[1,'Z2c6'],[2,'Z2c7'],[3,'Z2c9'],[4,'Z2c9b'],[5,'Z2c9c']]){await heroPage.locator('[data-model="'+model+'"]').click();await heroPage.waitForFunction(s=>document.querySelector('#status')?.textContent.startsWith(s+' ·'),label);await heroPage.screenshot({path:out+'/hero-atelier-'+label+'.png'});}
+for(const [model,label] of [[0,'Z2c5'],[1,'Z2c6'],[2,'Z2c7'],[3,'Z2c9'],[4,'Z2c9b'],[5,'Z2c9c'],[6,'Z2c9d']]){await heroPage.locator('[data-model="'+model+'"]').click();await heroPage.waitForFunction(s=>document.querySelector('#status')?.textContent.startsWith(s+' ·'),label);await heroPage.screenshot({path:out+'/hero-atelier-'+label+'.png'});}
 for(const angle of [0,90,180,45]){await heroPage.locator('[data-angle="'+angle+'"]').click();await heroPage.waitForFunction(a=>document.querySelector('#status')?.textContent.endsWith(a+'°'),angle);}
-await heroPage.locator('#close').click();assert.equal(await heroPage.locator('#close').getAttribute('aria-pressed'),'true');await heroPage.screenshot({path:out+'/hero-atelier-Z2c9c-close.png'});await heroPage.locator('#close').click();await heroPage.locator('#small').click();assert.equal(await heroPage.locator('#small').getAttribute('aria-pressed'),'true');await heroPage.screenshot({path:out+'/hero-atelier-Z2c9c-small.png'});await heroPage.locator('#small').click();
+await heroPage.locator('#close').click();assert.equal(await heroPage.locator('#close').getAttribute('aria-pressed'),'true');await heroPage.screenshot({path:out+'/hero-atelier-Z2c9d-close.png'});await heroPage.locator('#close').click();await heroPage.locator('#small').click();assert.equal(await heroPage.locator('#small').getAttribute('aria-pressed'),'true');await heroPage.screenshot({path:out+'/hero-atelier-Z2c9d-small.png'});await heroPage.locator('#small').click();
 await heroPage.locator('#idle').click();await heroPage.waitForFunction(()=>document.querySelector('#status')?.textContent.includes('Idle'));await heroPage.locator('#idle').click();
 assert.deepEqual(heroErrors,[]);await heroPage.close();
 async function checkSceneArea(page,selector){
