@@ -14,7 +14,7 @@ import {mealLife} from './three_y6_life.js?v=y6';
 import {makeGuestFactory} from './three_y6_guests.js?v=y6';
 import {makeDishFactory} from './three_y6_dishes.js?v=y6';
 
-export function y2Eligible(s){return s?.activeWorld!=='cloud'&&(['forecast','prep','report','upgrade'].includes(s?.phase)&&!s.service||s?.phase==='service'&&!!s.service?.walkable);}
+export function y2Eligible(s){return s?.activeWorld!=='cloud'&&(['forecast','prep','report','upgrade'].includes(s?.phase)&&(!s.service||['report','upgrade'].includes(s.phase))||s?.phase==='service'&&!!s.service?.walkable);}
 export function y2Layout(s){
  const g=dinerFloor(s),v=s.service,slots=v?.kitchenSnapshot||s.kitchen?.slots||[];
  const n=v?v.kitchenSnapshot?.length||2:s.kitchen?.thirdUnlocked?3:2;
@@ -53,6 +53,8 @@ function fail(error){recovery.fail();release();console.warn('Oddpot 3D fallback'
 export function enableY2(){
  state('idle');
  globalThis.__oddpotY2Renderer={leave,retry(){release();recovery.reset();sharedThree.reset();state('idle');},draw(canvas,s,t,w,h,actorsFn){
+  // Keep the preview independent of an ended service, even with a cached caller.
+  if(['report','upgrade'].includes(s?.phase)&&s.service)s={...s,service:null};
   if(!y2Eligible(s)){leave();return false;}entered=true;
   if(!visibleHost(canvas)||!recovery.canTry())return false;
   const lib=sharedThree.value;if(!lib){sharedThree.tryLoad();state(sharedThree.exhausted?'fallback':'loading');return false;}
