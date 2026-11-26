@@ -33,13 +33,14 @@ function reset(){
 }
 function stopInput(){axis=[0,0];keys.clear();pointer=null}
 function notify(msg){clearTimeout(toastTimer);$('toast').textContent=msg;$('toast').hidden=false;toastTimer=setTimeout(()=>$('toast').hidden=true,1800)}
+function safeLeave(key){try{globalThis[key]?.leave()}catch(e){console.warn('Workshop renderer cleanup',key,e)}}
 function switchScene(next,force=false){
  const old=world.dataset.scene,target=sceneOf(next);mode=next;lab.dataset.mode=next;lab.dataset.scene=target;stopInput();
  if(old!==target||force){
-  if(old==='room'&&target!=='room')globalThis.__oddpotY2Renderer?.leave();
-  if(old==='departure'&&target!=='departure')globalThis.__oddpotDepartureRenderer?.leave();
-  if(old==='field'&&target!=='field')globalThis.__oddpotY3Renderer?.leave();
-  if(old==='research'&&target!=='research')globalThis.__oddpotY4bRenderer?.leave();
+  if(old==='room'&&target!=='room')safeLeave('__oddpotY2Renderer');
+  if(old==='departure'&&target!=='departure')safeLeave('__oddpotDepartureRenderer');
+  if(old==='field'&&target!=='field')safeLeave('__oddpotY3Renderer');
+  if(old==='research'&&target!=='research')safeLeave('__oddpotY4bRenderer');
   for(const id of ['room','departure','field','research'])$(id+'-host').hidden=id!==target;
   world.dataset.scene=target;renderer='加载中';
   if(!reduced){$('curtain').classList.remove('cross');void $('curtain').offsetWidth;$('curtain').classList.add('cross')}
