@@ -19,7 +19,7 @@ export function makeChefY2(T,rounded,signature=true){
   const collar=lathe(body,red,[[0,0],[.145,0],[.188,.018],[.195,.047],[.168,.077],[.130,.085],[0,.085]],0,.711,.015);collar.scale.z=.91;collar.name='chef-scarf-collar';
   const cloth=new T.Shape();cloth.moveTo(-.16,.05);cloth.quadraticCurveTo(-.015,.012,.15,.058);cloth.quadraticCurveTo(.145,-.025,.035,-.122);cloth.quadraticCurveTo(-.03,-.090,-.16,.05);cloth.closePath();
   const bib=new T.ExtrudeGeometry(cloth,{depth:.020,bevelEnabled:true,bevelThickness:.008,bevelSize:.009,bevelSegments:2,curveSegments:16});
-  const v=bib.attributes.position;for(let i=0;i<v.count;i++)v.setZ(i,v.getZ(i)-.62*v.getX(i)**2);bib.computeVertexNormals();
+  const v=bib.attributes.position;for(let i=0;i<v.count;i++)v.setZ(i,v.getZ(i)-.62*v.getX(i)**2-.65*v.getY(i));bib.computeVertexNormals();
   const flap=mesh(body,bib,red,0,.734,.224);flap.name='chef-scarf-bib';
   ell(body,red,-.105,.738,.203,.057,.034,.034);
  }
@@ -62,7 +62,7 @@ export function makeChefY2(T,rounded,signature=true){
  const copper=mat('#b66b3c'),gold=mat('#e4b474'),leather=mat('#865236'),seam=mat('#c59260'),scarf=group(body,.10,.74,-.08);
  const tail2=box(scarf,red,.08,-.12,-.11,.12,.32,.045);tail2.rotation.z=.32;
  const tail3=box(scarf,red,.17,-.20,-.10,.09,.25,.04);tail3.rotation.z=-.22;
- if(!signature)scarf.visible=false;
+ if(!signature)scarf.visible=false;else ell(scarf,red,.035,0,-.075,.072,.052,.048);
  if(signature){
   // Rebuild the cap from a tilted, single broad soft crown, not the original tower of puffs.
   for(const o of [...head.children])if(o.material===hat||o.material===fold){if(o.position.y>.16)head.remove(o);}
