@@ -176,6 +176,24 @@ try{
    await page.close();
   }
  }
+ // Z2d3: real intermission at a viewport shorter than the smallest normal phone.
+ const eventState=newGame(15742);eventState.onboarding.enabled=false;eventState.coins=500;eventState.phase='service';
+ assert.ok(createService(eventState,{walkable:true}));setServicePaused(eventState,false);
+ for(let t=0;t<160&&!eventState.service.breakAt&&!eventState.service.done;t++)tick(eventState,1);
+ assert.ok(eventState.service.breakAt,'real intermission fixture');
+ const short=await browser.newPage({viewport:{width:320,height:420},deviceScaleFactor:2,isMobile:true,hasTouch:true,locale:'zh-CN'});
+ await short.addInitScript(([key,state])=>localStorage.setItem(key,JSON.stringify(state)),[storageKey,eventState]);
+ await short.goto(url+'index.html',{waitUntil:'domcontentloaded'});
+ const card=short.locator('.v075-event-card'),choices=card.locator('[data-choice]');await card.waitFor({state:'visible'});
+ assert.ok(await choices.count()>=2);
+ const geometry=await card.evaluate(el=>{const a=el.getBoundingClientRect(),p=el.parentElement.getBoundingClientRect(),s=getComputedStyle(el);return {bounded:a.top>=p.top-1&&a.bottom<=p.bottom+1,scroll:s.overflowY,ink:getComputedStyle(el.querySelector('p')).color,buttons:[...el.querySelectorAll('button')].map(b=>b.getBoundingClientRect().height)};});
+ assert.ok(geometry.bounded);assert.equal(geometry.scroll,'auto');assert.equal(geometry.ink,'rgb(99, 74, 49)');assert.ok(geometry.buttons.every(h=>h>=44));
+ const last=card.locator('[data-choice]:not(:disabled)').last();await last.scrollIntoViewIfNeeded();
+ assert.ok(await last.evaluate(el=>{const a=el.getBoundingClientRect(),p=el.closest('.v075-event-card').getBoundingClientRect();return a.top>=p.top-1&&a.bottom<=p.bottom+1;}));
+ assert.ok(await short.evaluate(()=>document.dispatchEvent(new KeyboardEvent('keydown',{key:'ArrowDown',cancelable:true,bubbles:true}))), 'event allows native arrow scrolling, not movement capture');
+ await short.screenshot({path:output+'/z2d3-event-short.png'});
+ await last.click();await card.waitFor({state:'detached'});assert.ok(await short.evaluate(k=>!JSON.parse(localStorage.getItem(k)).service.breakAt,storageKey));
+ await short.close();
  const offline=await browser.newPage({viewport:{width:390,height:844},isMobile:true,hasTouch:true,locale:'zh-CN'});
  await offline.addInitScript(([key,state])=>localStorage.setItem(key,JSON.stringify(state)),[storageKey,fixture('menu')]);
  await offline.goto(url+'standalone.html',{waitUntil:'networkidle'});
