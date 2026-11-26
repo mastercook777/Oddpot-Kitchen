@@ -55,17 +55,21 @@ try{
      assert.ok(await page.locator('.sheet').isVisible(),act+' uses the existing sheet');
      assert.equal(await page.locator('.z2c13-sheet .sheet-header h2').count(),1);
      assert.equal(await page.locator('.z2c13-sheet').getAttribute('data-sheet-kind'),act);
+     assert.ok(await page.evaluate(()=>document.activeElement.matches('.sheet-close')&&[...document.querySelector('.game-shell').children].filter(e=>!e.matches('.sheet,.sheet-backdrop')).every(e=>e.inert)), 'drawer focuses close and isolates background');
+     await page.keyboard.press('Shift+Tab');assert.ok(await page.evaluate(()=>document.activeElement.closest('.z2c13-sheet')&&!document.activeElement.matches('.sheet-close')));
+     await page.keyboard.press('Tab');assert.ok(await page.evaluate(()=>document.activeElement.matches('.sheet-close')));
      const head=await page.locator('.sheet-header').boundingBox(),body=await page.locator('.sheet-body').boundingBox();assert.ok(head.y+head.height<=body.y+1);
      if(act==='book'){
       assert.ok(await page.locator('.z2c13-atlas-count').isVisible());
-      await page.locator('[data-book-region="all"]').click();
+      await page.locator('[data-book-region="all"]').click();assert.ok(await page.evaluate(()=>document.activeElement.dataset.bookRegion==='all'));assert.ok((await page.locator('[data-book-region="all"]').boundingBox()).height>=44);
       for(const type of ['WOK','POT','STEAM','GRILL']){await page.locator('[data-recipe-type="'+type+'"]').click();assert.equal(await page.locator('[data-recipe-type="'+type+'"]').getAttribute('aria-selected'),'true');assert.ok(await page.locator('.z2c13-atlas-count').isVisible());assert.ok(await page.locator('.book-item[data-book],.z2c13-empty').count()>0);}
       await page.locator('[data-book-tab="guests"]').click();assert.ok(await page.locator('.v102-guest-card').count()>0);assert.match(await page.locator('.sheet-header h2').innerText(),/客人图鉴/);
       await page.screenshot({path:output+'/z2c13-guest-'+width+'.png'});
       await page.locator('[data-book-tab="recipes"]').click();await page.locator('[data-recipe-type="WOK"]').click();await page.screenshot({path:output+'/z2c13-atlas-'+width+'.png'});
       assert.equal(await page.evaluate(()=>document.documentElement.scrollWidth>innerWidth),false);
      }
-     await page.locator('[data-act="close-sheet"]').last().click();
+     if(act==='book')await page.keyboard.press('Escape');else await page.locator('[data-act="close-sheet"]').last().click();
+     assert.equal(await page.locator('.sheet').count(),0);assert.ok(await page.evaluate(a=>document.activeElement.dataset.act===a,act),'focus returns to original scene action');
     }
     const door=scene.locator('.z2c2-threshold');assert.ok(await door.isVisible());assert.equal(await scene.locator('.v076-home-primary').count(),0);assert.ok((await door.boundingBox()).height>=44);await page.screenshot({path:`${output}/z2c2-home-${width}.png`});
     await scene.locator('[data-act="to-field"]').click();assert.ok(await page.locator('.z2c-hud').isVisible());assert.equal(await page.locator('.z2c4-routes [data-route]').count(),2);assert.equal(await page.locator('.z2c2-map-art').count(),1);assert.equal(await page.locator('.region-tabs,.route-options').count(),0);const map=await page.locator('.z2c2-map').boundingBox();assert.ok(map.height>=layout.stageHeight*.35);await page.locator('[data-region="spring"]').click();assert.ok(await page.locator('[data-route="spring_safe"]').isVisible());await page.locator('[data-weapon="POT"]').click();assert.equal(await page.locator('[data-weapon="POT"]').getAttribute('aria-pressed'),'true');await page.screenshot({path:output+'/z2c2-expedition-'+width+'.png'});
