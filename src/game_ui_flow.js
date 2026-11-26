@@ -1,5 +1,5 @@
 import {labFixture,labOffers,labBuy,labNextHint,labProject} from './game_ui_lab_state.js?v=z2e1';
-import {nextPhase,enterField,settleField,fieldWeaponChoices,selectedFieldWeaponType,selectFieldWeapon,availableBento,prepareBento,fieldBagSlotsUsed,beginLiveResearch,dropLiveIngredient,performLiveAction,stepLiveResearch,finishLiveResearch,liveCookPreview,selectMenuRecipe,prepDish,createService,setServicePaused,tick,currentServiceEvent,chooseServiceEvent,resumeBreak,advanceWalkableInteraction,closeService,advanceDay} from './engine.js';
+import {nextPhase,enterField,settleField,fieldWeaponChoices,selectedFieldWeaponType,selectFieldWeapon,availableBento,prepareBento,fieldBagSlotsUsed,beginLiveResearch,dropLiveIngredient,performLiveAction,stepLiveResearch,finishLiveResearch,liveCookPreview,selectMenuRecipe,prepDish,createService,setServicePaused,tick,currentServiceEvent,chooseServiceEvent,resumeBreak,advanceWalkableInteraction,activateWalkableSpecial,closeService,advanceDay} from './engine.js';
 import {startActionField,stepActionField,useFieldSkill,resolveFieldEvent} from './field_v04.js?v=y5c';
 import {walkServiceHero} from './walkable_restaurant_v07.js';
 import {dinerFloor,dinerGuide} from './restaurant_scene_v075.js?v=y4d';
@@ -54,7 +54,7 @@ function hide(){
  if(dialog.open)dialog.close();view=back='';stopInput();
 }
 function dismiss(){
- if(['harvest','cook-result','result','star','service-event'].includes(view))return;
+ if(['harvest','cook-result','result','star','service-event','field-event'].includes(view))return;
  if(view==='research-select'&& !s.cook){hide();renderUI();return}
  if(back){const v=back;open(v);return}
  if(view==='menu'&&mode==='prep')s.phase='prep';
@@ -93,7 +93,7 @@ function renderSpots(){
  if(!['morning','prep','growth'].includes(mode)){$('hotspots').innerHTML='';return}
  const g=dinerFloor(s),w=world.clientWidth,h=world.clientHeight;let items=[];
  if(mode==='morning')items=[{id:'departure',icon:'route',title:'出发',at:g.entrance},{id:'forecast',icon:'target',title:'今日预报',at:g.passFurniture}];
- if(mode==='prep')items=g.tables.slice(0,0).concat(s.kitchen.slots.map((x,i)=>({id:'prep:'+i,icon:x.type.toLowerCase(),title:names[x.type]+' 备餐',at:[g.stoveLeft,g.stoveRight,g.reservedStove][i]})));
+ if(mode==='prep')items=s.kitchen.slots.map((x,i)=>({id:'prep:'+i,icon:x.type.toLowerCase(),title:names[x.type]+' 备餐',at:[g.stoveLeft,g.stoveRight,g.reservedStove][i]}));
  if(mode==='growth')items=labOffers(s).map(o=>({...o,id:'offer:'+o.id,title:o.title+' · '+o.cost+' 金币'}));
  const used=[];$('hotspots').innerHTML=items.map(o=>{
   let p=o.at?(renderer==='2D'?{x:o.at.x*w,y:o.at.y*h-20}:labProject(o.at,w,h)):{x:w-39,y:h-145};p.y=Math.max(90,Math.min(h-120,p.y));while(used.some(q=>Math.hypot(p.x-q.x,p.y-q.y)<49)&&p.y<h-175)p.y+=51;used.push(p);
@@ -184,7 +184,7 @@ function handle(a){
  if(a==='open-shop'&&mode==='prep'){nextPhase(s,'service');if(createService(s,{walkable:true})){starsBefore=s.chapterProgress.stars;setServicePaused(s,false);acc=0;fast=false;switchScene('service')}else{s.phase='prep';notify('请检查菜单与厨具')}return}
  if(a==='pause'&&mode==='service'){setServicePaused(s,!s.service.paused);stopInput();renderUI();return}
  if(a==='fast'&&mode==='service'){fast=!fast;setServicePaused(s,false);renderUI();return}
- if(a==='special'&&mode==='service'){notify('靠近工作区可自动操作');return}
+ if(a==='special'&&mode==='service'){if(activateWalkableSpecial(s))notify('主厨技能已使用');else notify('当前无可用技能');return}
  if(a.startsWith('service-choice:')){if(chooseServiceEvent(s,a.slice(15))){resumeBreak(s);hide();renderUI()}else notify('当前无法执行');return}
  if(a==='resume'){resumeBreak(s);hide();renderUI();return}
  if(a==='result-ledger'){open('ledger','result');return}
