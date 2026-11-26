@@ -131,6 +131,9 @@ try{
    }
    if(phase==='service')assert.ok(await page.locator('#diner-canvas').isVisible());
    if(phase==='report'){
+    const sceneBox=await page.locator('.z2d2-report-stage').boundingBox(),ledgerBox=await page.locator('.z2d2-report-layout .z2c10-ledger').boundingBox();
+    assert.ok(sceneBox.height>=100&&sceneBox.y+sceneBox.height<=ledgerBox.y+1&&ledgerBox.height>0);
+    assert.equal(await page.locator('.z2d2-report-stage #diner-canvas').count(),1);
     assert.ok(await page.locator('.z2c10-paper .report-stats').isVisible());
     const title=await page.locator('.z2c10-paper .report-header').evaluate(el=>({color:getComputedStyle(el).color,weight:Number(getComputedStyle(el).fontWeight),size:parseFloat(getComputedStyle(el).fontSize)}));assert.equal(title.color,'rgb(69, 51, 40)');assert.ok(title.weight>=700&&title.size>=17);
     assert.equal(await page.locator('.z2c10-hud').count(),1);assert.equal(await page.locator('.brand,.day-strip').count(),0);
