@@ -1,5 +1,5 @@
 import {labFixture,labOffers,labBuy,labNextHint,labProject} from './game_ui_lab_state.js?v=z2e1';
-import {nextPhase,enterField,settleField,fieldWeaponChoices,selectedFieldWeaponType,selectFieldWeapon,availableBento,prepareBento,fieldBagSlotsUsed,beginLiveResearch,dropLiveIngredient,performLiveAction,stepLiveResearch,finishLiveResearch,liveCookPreview,selectMenuRecipe,prepDish,createService,setServicePaused,tick,currentServiceEvent,chooseServiceEvent,resumeBreak,advanceWalkableInteraction,activateWalkableSpecial,closeService,advanceDay} from './engine.js';
+import {nextPhase,enterField,settleField,fieldWeaponChoices,selectedFieldWeaponType,selectFieldWeapon,availableBento,prepareBento,fieldBagSlotsUsed,beginLiveResearch,dropLiveIngredient,performLiveAction,stepLiveResearch,finishLiveResearch,liveCookPreview,selectMenuRecipe,recipeCookware,prepDish,createService,setServicePaused,tick,currentServiceEvent,chooseServiceEvent,resumeBreak,advanceWalkableInteraction,activateWalkableSpecial,closeService,advanceDay} from './engine.js';
 import {startActionField,stepActionField,useFieldSkill,resolveFieldEvent} from './field_v04.js?v=y5c';
 import {walkServiceHero} from './walkable_restaurant_v07.js';
 import {dinerFloor,dinerGuide} from './restaurant_scene_v075.js?v=y4d';
@@ -121,7 +121,7 @@ function renderWindow(){
   const recipes=Object.keys(s.recipes).filter(id=>RECIPES[id]);pages=Math.max(1,Math.ceil(recipes.length/8));page=Math.min(page,pages-1);
   body=title('今日菜单')+'<div class="menu-slots">'+s.menu.map((id,i)=>'<button class="slot" data-act="slot:'+i+'" aria-pressed="'+(menuSlot===i)+'" aria-label="菜单第'+(i+1)+'格">'+icon('plate')+'<small>'+esc(RECIPES[id]?.name||'空')+'</small></button>').join('')+'</div><div class="slot-detail">点选菜谱替换第 '+(menuSlot+1)+' 格</div><div class="grid-slots">'+recipes.slice(page*8,page*8+8).map(id=>'<button class="slot" data-act="recipe:'+id+'" aria-label="'+esc(RECIPES[id].name)+'" aria-pressed="'+(s.menu[menuSlot]===id)+'">'+ingredientIconHtml(RECIPES[id].ids[0],32)+'</button>').join('')+'</div>'+(pages>1?'<div class="pager">'+minor('prev-page','‹',page===0?'disabled':'')+'<span>'+(page+1)+'/'+pages+'</span>'+minor('next-page','›',page>=pages-1?'disabled':'')+'</div>':'')+gold('close','完成','next');
  }else if(view==='prep'){
-  const k=s.kitchen.slots[Number(selection)],dishes=[...new Set(s.menu)].filter(id=>RECIPES[id]);
+  const k=s.kitchen.slots[Number(selection)],dishes=[...new Set(s.menu)].filter(id=>recipeCookware(RECIPES[id])===k?.type);
   body=title(names[k?.type]+' · 备餐')+'<div class="compact-list">'+dishes.map(id=>minor('prep-dish:'+id,esc(RECIPES[id].name)+' · 已备 '+(s.prep[id]||0)+' 份')).join('')+'</div><p class="note">预制会实际消耗工坊食材。</p>'+gold('close','完成','next');
  }else if(view==='field-event'){
   const n=s.field.nodes.find(n=>n.key===s.field.activeEvent);body=title('野外奇遇',false)+'<div class="upgrade-hero">'+icon('warn')+'<h2>'+esc(n?.title||'偶遇旅人')+'</h2><p>本轮先验证事件窗口，完整奇遇选项保留在正式游戏。</p></div><div class="actions">'+minor('retreat','返回餐厅')+gold('event-leave','继续赶路','route')+'</div>';
