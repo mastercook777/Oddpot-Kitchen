@@ -527,3 +527,18 @@
 .z2c10-feedback>*+*{border-top:1px dashed #bda87e!important}.z2c10-feedback strong,.z2c10-feedback b,.z2c10-feedback span,.z2c10-feedback small,.z2c10-feedback p{color:#443829;line-height:1.45;text-shadow:none}.z2c10-feedback p{margin:4px 0 0}
 .z2c10-ledger .v014-report-more{background:#284437;border-color:#a99161;padding:0 10px 8px}.z2c10-ledger .v014-report-more summary{min-height:44px}.stage.report .z2c10-ledger .v014-report-more[open]{display:grid;gap:7px}
 @media(max-width:350px){.stage.report>.z2c10-ledger{padding:9px 8px 16px}.z2c10-paper{padding:11px 10px}.z2c10-paper .report-header{font-size:17px}.z2c10-paper .report-stats b{font-size:22px}}
+
+/* Z2c11: keep the actual restaurant visible above the growth workbench. */
+.stage.upgrade>.z2c11-growth-layout{display:flex;flex-direction:column;width:100%;height:100%;min-height:0;overflow:hidden;background:#283d30}
+.z2c11-growth-scene{position:relative;flex:0 0 43%;min-height:120px;overflow:hidden;border-bottom:3px solid #b28a57;background:#61472e}
+.z2c11-growth-scene .diner-world{width:100%;height:100%}
+.z2c11-scene-caption{position:absolute;bottom:6px;left:8px;right:8px;display:flex;align-items:center;gap:5px;color:#f8e3b5;background:#253b30e8;border:1px solid #a78b59;border-radius:5px;padding:5px 8px;font-size:12px;pointer-events:none;z-index:2}
+.z2c11-scene-caption span{display:flex;align-items:center;gap:4px;margin-left:auto}.z2c11-scene-caption .z2a3-art{width:18px;height:18px}
+.z2c11-growth-work{flex:1;min-height:0;overflow-y:auto;overflow-x:hidden;overscroll-behavior:contain;touch-action:pan-y;background:linear-gradient(#344737,#20382c);padding:8px 10px 14px}
+.stage.upgrade .z2c11-growth-work .kitchen-upgrade-card{position:static!important;inset:auto!important;transform:none!important;width:100%;max-width:none;max-height:none!important;min-height:0;margin:0;padding:0;overflow:visible;border:0;background:none;box-shadow:none}
+.z2c11-growth-work .kitchen-upgrade-card h2{display:flex;align-items:center;gap:6px;font-size:17px;margin:4px 0 8px}.z2c11-growth-work .kitchen-upgrade-card h2 .z2a3-art{width:23px;height:23px}
+.z2c11-growth-group{display:grid;gap:7px;margin:0 0 10px;padding:9px 10px;border:1px solid #ae9161;border-radius:7px;background:#e7d4a9;color:#493827;box-shadow:0 2px #172c22}
+.z2c11-growth-group h3{display:flex;align-items:center;gap:5px;margin:0;color:#503a27;font-size:13px;font-weight:850}.z2c11-growth-group h3 .z2a3-art{width:20px;height:20px}
+.z2c11-growth-group .v09-room-upgrade,.z2c11-growth-group .v13a-bundle-panel,.z2c11-growth-group .v014b-grill-unlock,.z2c11-growth-group .kitchen-upgrade-row,.z2c11-growth-group .upgrade-feature{margin:0;padding:8px 0;background:none;border:0;border-radius:0;box-shadow:none;color:#493827;border-bottom:1px dashed #bca47b}
+.z2c11-growth-group .v09-room-upgrade strong,.z2c11-growth-group .v13a-bundle-panel strong,.z2c11-growth-group .v014b-grill-unlock strong,.z2c11-growth-group .kitchen-upgrade-row strong{color:#493827}.z2c11-growth-group small,.z2c11-growth-group span{color:#634e36;line-height:1.45}.z2c11-growth-group .game-btn{min-height:44px}.z2c11-growth-group .game-btn:disabled{opacity:.65}.z2c11-growth-group .z2c11-history{font-size:11px}.z2c11-history .z2a3-art,.z2c11-growth-group .v09-room-upgrade .z2a3-art{width:18px;height:18px;vertical-align:middle}
+@media(max-height:620px){.z2c11-growth-scene{flex-basis:40%;min-height:110px}.z2c11-growth-work{padding:6px 8px 10px}}
