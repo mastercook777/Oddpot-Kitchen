@@ -33,22 +33,22 @@ test('growth uses current frontier geometry; Cloud Harbor remains its own 2D sce
  assert.match(read('src/scenes_v04.js'),/if\(s.phase==='upgrade'\)s=\{\.\.\.s,service:null\};/);
 });
 
-test('Z2c14 growth frames the real furniture, preserves caption clearance and enlarges the core room',()=>{
+test('Z2d2 management previews share prep scale, pitch and close-up target; table view pans without zoom',()=>{
  for(const [w,h] of [[320,210],[375,245],[390,260],[475,315],[320,320],[320,110]])for(const count of [2,3,4]){
   const state={phase:'upgrade',activeWorld:'hearth',dining:{tableCount:count},kitchen:{thirdUnlocked:count===4}},before=JSON.stringify(state);
-  const layout=y2Layout(state),frame=y2CameraFrame('upgrade',w,h,layout),old=y2CameraFrame('service',w,h,layout);
-  const pitch=Math.atan2(frame.position[1],frame.position[2]-frame.target[2]),si=Math.sin(pitch),co=Math.cos(pitch);
-  const project=(y,z)=>(co*y-si*(z-frame.target[2]))/frame.half;
-  assert.equal(frame.view,'growth-preview');assert.equal(JSON.stringify(state),before);
-  assert.ok(frame.front>=Math.max(...layout.tables.map(p=>dinerWorldZ(p.z)))+.65-1e-9);
-  assert.ok(5.25/(frame.half*frame.aspect)<=1);
-  assert.ok(project(0,frame.front)>=-1+2*frame.bottomPad-1e-9);
-  assert.ok(project(3.16,1)<=1-2*frame.topPad+1e-9);
-  if(w/h>=1.35&&h>=200){assert.ok(old.half/frame.half>=1.35);assert.ok(project(0,dinerWorldZ(.93))<-1+2*frame.bottomPad);}
-  assert.equal(layout.stoves.filter(p=>p.unlocked).length,count===4?3:2);
+  const layout=y2Layout(state),prep=y2CameraFrame('prep',w,h,layout),report=y2CameraFrame('report',w,h,layout),growth=y2CameraFrame('upgrade',w,h,layout),tables=y2CameraFrame('upgrade',w,h,layout,'tables');
+  assert.deepEqual(report,{...prep,view:'report-preview'});assert.deepEqual(growth,{...prep,view:'growth-preview'});
+  assert.equal(tables.view,'growth-tables');assert.equal(tables.half,prep.half);assert.equal(tables.aspect,prep.aspect);
+  assert.ok(Math.abs(tables.position[2]-tables.target[2]-11.8)<1e-9);
+  assert.equal(tables.position[1],15);assert.equal(tables.target[0],5);
+  const z=layout.tables.map(p=>dinerWorldZ(p.z));assert.equal(tables.target[2],(Math.min(...z)+Math.max(...z))/2);
+  const pitch=Math.atan2(15,11.8),si=Math.sin(pitch),co=Math.cos(pitch);
+  for(const p of layout.tables){assert.ok(Math.abs((p.x*10-5)/(tables.half*tables.aspect))<1);assert.ok(Math.abs((co*.8-si*(dinerWorldZ(p.z)-tables.target[2]))/tables.half)<1);}
+  assert.equal(JSON.stringify(state),before);assert.equal(y2Layout(state).stoves.filter(p=>p.unlocked).length,count===4?3:2);
  }
+ assert.equal(y2Eligible({phase:'report',activeWorld:'hearth'}),true);assert.equal(y2Eligible({phase:'report',activeWorld:'cloud'}),false);
 });
-test('Z2c14 keeps original non-growth camera presets',()=>{
+test('Z2d2 keeps original preparation and live camera presets',()=>{
  const layout=y2Layout({phase:'forecast'});
  for(const [w,h] of [[320,210],[390,260],[320,320],[200,700]]){
   const aspect=w/h;
