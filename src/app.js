@@ -585,12 +585,12 @@ function drawerFindFocus(root,snapshot){
 function drawerFocusAfterRender(previousKind,previousFocus,origin){
  const shell=app.querySelector('.game-shell'),sheet=app.querySelector('.z2c13-sheet');
  if(sheet){
-  if(!previousKind)drawerReturnFocus=origin;
+  if(!previousKind)drawerReturnFocus={phase:game.phase,snapshot:origin};
   for(const child of shell.children)if(child!==sheet&&!child.classList.contains('sheet-backdrop'))child.inert=true;
   const target=previousKind===sheet.dataset.sheetKind?drawerFindFocus(sheet,previousFocus):null;
   (target||sheet.querySelector('.sheet-close'))?.focus({preventScroll:true});
  }else if(previousKind){
-  drawerFindFocus(shell,drawerReturnFocus)?.focus({preventScroll:true});
+  if(drawerReturnFocus?.phase===game.phase)drawerFindFocus(shell,drawerReturnFocus.snapshot)?.focus({preventScroll:true});
   drawerReturnFocus=null;
  }
 }
@@ -600,7 +600,7 @@ function drawerTab(e,sheet,active){
  if(!controls.length){e.preventDefault();return true;}
  const first=controls[0],last=controls[controls.length-1];
  if(!controls.includes(active)||(e.shiftKey?active===first:active===last)){
-  e.preventDefault();(e.shiftKey?last:first).focus({preventScroll:true});return true;
+  e.preventDefault();(e.shiftKey?last:first).focus();return true;
  }
  return false;
 }
@@ -733,7 +733,9 @@ function action(act){
 }
 app.addEventListener('click',e=>{
  const focusRoot=app.querySelector('.z2c13-sheet')||app.querySelector('.game-shell');
- drawerClickFocus=drawerFocusSnapshot(focusRoot,e.target.closest(drawerFocusable));
+ const clickedFocus=drawerFocusSnapshot(focusRoot,e.target.closest(drawerFocusable));
+ drawerClickFocus=clickedFocus;
+ queueMicrotask(()=>{if(drawerClickFocus===clickedFocus)drawerClickFocus=null;});
  const thread=e.target.closest('[data-grill-thread]');if(thread){if(threadGrillIngredient(game,thread.dataset.grillThread))note('穿上 '+ING[thread.dataset.grillThread].name+'，继续摆串。');return}
  const lane=e.target.closest('[data-grill-lane]');if(lane){if(placeGrillSkewer(game,lane.dataset.grillLane))note('烤串入炉！留意两面火候。');return}
  const drop=e.target.closest('[data-live-drop]');if(drop){if(dropLiveIngredient(game,drop.dataset.liveDrop))note('食材入锅！正在连续受热。');return}
