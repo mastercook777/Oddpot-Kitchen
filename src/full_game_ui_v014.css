@@ -557,7 +557,7 @@
 .game-shell .z2c13-sheet .sheet-handle{position:absolute;top:5px;left:50%;transform:translateX(-50%);width:35px;height:3px;background:#b69b6a}
 .game-shell .z2c13-sheet .sheet-header h2{display:flex;align-items:center;gap:7px;margin:0;color:#ffedc3;font-size:17px;font-weight:750;line-height:1.35;text-shadow:none;letter-spacing:0;min-width:0}
 .game-shell .z2c13-sheet .sheet-header h2 .z2a3-art{width:23px;height:23px;flex:none}
-.game-shell .z2c13-sheet .sheet-close{top:9px;right:7px;min-width:42px;min-height:42px;padding:0 8px;background:#395747;color:#ffedc3;border:1px solid #b59a6a;box-shadow:none;border-radius:6px}
+.game-shell .z2c13-sheet .sheet-close{top:9px;right:7px;min-width:44px;min-height:44px;padding:0 8px;background:#395747;color:#ffedc3;border:1px solid #b59a6a;box-shadow:none;border-radius:6px}
 .game-shell .z2c13-sheet .sheet-body{flex:1 1 auto;min-height:0;padding:12px 12px 20px;overflow:auto;overscroll-behavior:contain;touch-action:pan-y;color:#483727;line-height:1.45}
 .game-shell .z2c13-sheet .sheet-lead{font-size:12px;color:#624b34;line-height:1.55;margin:0 0 10px}
 .game-shell .z2c13-sheet .sheet-body h3{font-size:14px;color:#4f3a27;line-height:1.4}
