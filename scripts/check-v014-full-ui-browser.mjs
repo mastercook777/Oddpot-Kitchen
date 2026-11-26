@@ -2,7 +2,7 @@ import {chromium} from 'playwright';
 import assert from 'node:assert/strict';
 import {spawn} from 'node:child_process';
 import {mkdir} from 'node:fs/promises';
-import {newGame,createService,setServicePaused,tick,resumeBreak,closeService} from '../src/engine.js';
+import {newGame,createService,setServicePaused,tick,resumeBreak,closeService,ROOM_EXPANSION_COST} from '../src/engine.js';
 
 const storageKey='oddpot-prototype-v04';
 const url='http://127.0.0.1:5173/';
@@ -12,6 +12,7 @@ const server=spawn(process.execPath,['node_modules/vite/bin/vite.js','--host','1
 const wait=ms=>new Promise(resolve=>setTimeout(resolve,ms));
 const fixture=phase=>{
  const s=newGame(15742);s.onboarding.enabled=false;s.phase=phase;
+ if(phase==='upgrade'){s.day=3;s.reputation=2;s.coins=500;}
  if(phase==='service'){assert.ok(createService(s,{walkable:true}));setServicePaused(s,false);}
  if(phase==='report'){
   s.phase='service';assert.ok(createService(s,{walkable:true}));setServicePaused(s,false);
@@ -131,7 +132,25 @@ try{
     await page.screenshot({path:output+'/z2c10-report-'+width+'.png'});
     await page.locator('[data-act="to-upgrade"]').click();assert.equal(await page.locator('.stage.upgrade').count(),1);
    }
-   if(phase==='upgrade')assert.ok(await page.locator('.kitchen-upgrade-card').isVisible());
+   if(phase==='upgrade'){
+    assert.equal(await page.locator('.z2c11-hud').count(),1);
+    const scene=page.locator('.z2c11-growth-scene'),work=page.locator('.z2c11-growth-work');
+    const a=await scene.boundingBox(),d=await work.boundingBox();assert.ok(a.height>=110&&a.y+a.height<=d.y+1&&a.height>=layout.stageHeight*.39);
+    assert.equal(await scene.locator('#diner-canvas').count(),1);
+    assert.equal(await page.locator('.z2c11-growth-group').count(),3);
+    const before=await page.evaluate(k=>JSON.parse(localStorage.getItem(k)),storageKey);
+    await page.locator('[data-act="expand-room"]').click();
+    const after=await page.evaluate(k=>JSON.parse(localStorage.getItem(k)),storageKey);
+    assert.equal(after.dining.tableCount,3);assert.equal(after.coins,before.coins-ROOM_EXPANSION_COST);
+    assert.match(await page.locator('.z2c11-scene-caption').innerText(),/3 桌 · 6 席/);
+    const a2=await scene.boundingBox();assert.ok(Math.abs(a2.y-a.y)<1&&Math.abs(a2.height-a.height)<1);
+    await page.locator('[data-act="upgrade-bag"]').click();
+    const bag=await page.evaluate(k=>JSON.parse(localStorage.getItem(k)),storageKey);
+    assert.equal(bag.bagSlots,(after.bagSlots||8)+2);
+    assert.equal(bag.coins,after.coins-60);
+    await page.screenshot({path:output+'/z2c11-growth-'+width+'.png'});
+    await page.locator('[data-act="next-day"]').click();assert.equal(await page.locator('.stage.forecast').count(),1);
+   }
    assert.deepEqual(errors,[],`${phase} runtime errors at ${width}`);
    if(width!==375)await page.screenshot({path:`${output}/${phase}${['prep','report'].includes(phase)?'-details':''}-${width}.png`});
    await page.close();
