@@ -596,3 +596,15 @@
 
 /* The camera switch has no meaning in the original 2D fallback. */
 html:not([data-oddpot3d="active"]) .z2d2-view-switch{display:none}
+
+/* Z2d3: decisions own their scroll surface, never the combat joystick. */
+.action-forest[data-z2d3-event-key]{touch-action:pan-y}
+.action-forest[data-z2d3-event-key] .field-event{max-height:calc(100% - 16px);min-width:0;overflow-y:auto;overflow-x:hidden;overscroll-behavior:contain;touch-action:pan-y;-webkit-overflow-scrolling:touch;scroll-padding:8px}
+.action-forest[data-z2d3-event-key] .field-event button{min-height:44px;white-space:normal;overflow-wrap:anywhere;touch-action:pan-y}
+.v075-event-shade{min-height:0;overflow:hidden;touch-action:pan-y;padding:8px 10px}
+.v075-event-shade .v075-event-card{max-height:100%;min-height:0;overflow-y:auto;overflow-x:hidden;overscroll-behavior:contain;touch-action:pan-y;-webkit-overflow-scrolling:touch;scroll-padding:8px;box-sizing:border-box;background:#f0dfb9;color:#3a3022}
+.v075-event-card .v075-event-kicker{color:#76502e}
+.v075-event-card p,.v075-event-card>small{color:#634a31;overflow-wrap:anywhere}
+.v075-event-card .v075-event-choice{min-height:44px;flex:none;touch-action:pan-y;overflow-wrap:anywhere}
+.v075-event-card .v075-event-choice:focus-visible,.action-forest[data-z2d3-event-key] .field-event button:focus-visible{outline:2px solid #be7b32;outline-offset:2px}
+@media(max-height:568px){.v075-event-shade{padding:5px 7px}.v075-event-shade .v075-event-card{padding:9px 10px}.v075-event-card p{margin:5px 0 8px}.v075-event-options{gap:5px}}
