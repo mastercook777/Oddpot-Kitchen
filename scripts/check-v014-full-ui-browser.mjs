@@ -114,9 +114,22 @@ try{
    }
    if(phase==='service')assert.ok(await page.locator('#diner-canvas').isVisible());
    if(phase==='report'){
-    assert.ok(await page.locator('.report-stats').isVisible());
+    assert.ok(await page.locator('.z2c10-paper .report-stats').isVisible());
+    assert.equal(await page.locator('.z2c10-hud').count(),1);assert.equal(await page.locator('.brand,.day-strip').count(),0);
+    assert.equal(await page.locator('.z2c10-paper .report-stats>div').count(),4);
+    const saved=await page.evaluate(k=>JSON.parse(localStorage.getItem(k)),storageKey);
+    assert.equal((await page.locator('.report-stats b').first().textContent()).trim(),String(saved.report.revenue));
+    assert.equal(await page.locator('.z2c10-feedback .daily-goal-result').count(),1);
+    assert.equal(await page.evaluate(()=>document.documentElement.scrollWidth>innerWidth),false);
+    assert.equal(await page.locator('.v014-report-more').getAttribute('open'),null);
     await page.locator('.v014-report-more summary').click();
     assert.ok(await page.locator('.v12c-finance').isVisible());
+    assert.equal(await page.locator('.report-scene > .v063-craft-report').count(),0);
+    await page.locator('[data-act="details"]').click();assert.ok(await page.locator('.sheet').isVisible());
+    await page.locator('[data-act="close-sheet"]').last().click();
+    assert.notEqual(await page.locator('.v014-report-more').getAttribute('open'),null);
+    await page.screenshot({path:output+'/z2c10-report-'+width+'.png'});
+    await page.locator('[data-act="to-upgrade"]').click();assert.equal(await page.locator('.stage.upgrade').count(),1);
    }
    if(phase==='upgrade')assert.ok(await page.locator('.kitchen-upgrade-card').isVisible());
    assert.deepEqual(errors,[],`${phase} runtime errors at ${width}`);
