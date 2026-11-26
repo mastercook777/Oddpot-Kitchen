@@ -20,6 +20,6 @@ test('departure restores original Y2 chef and keeps rig and version marker',()=>
  assert.match(src,/hero.update\(t,\{facing:'front',moving:false,working:false,carrying:false\}\);rig.update/);
  assert.match(src,/createWeaponRig\(T,hero,rounded\)/);
  assert.match(src,/dataset.portrait='z2c12'/);
- assert.match(index,/v0\.16-Z\.2d1/);
+ assert.match(index,/v0\.16-Z\.2d2/);
  assert.match(index,/three_z2c3_departure\.js\?v=z2c12/);
 });
