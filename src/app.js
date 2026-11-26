@@ -359,7 +359,7 @@ function field(){
  const readyToFinish=f.nodes?.some(n=>n.key==='target'&&n.claimed)&&!(f.segmentIndex===3&&f.enemies?.some(e=>e.isBoss&&e.hp>0));
  const bag=Object.entries(f.bag).map(([id,n])=>`${ING[id].name}${n}`).join(' · ')||'空';
  const event=f.activeEvent&&f.nodes.find(n=>n.key===f.activeEvent);
- return [`<div class="forest-scene action-forest"><canvas id="forest-canvas" class="forest-canvas"></canvas><div class="floating-joystick" id="field-stick" aria-hidden="true"><div class="floating-joystick-knob" id="field-stick-knob"></div></div><div class="field-action-notice" id="field-action-notice" hidden></div>${f.weapon?.type==='WOK'?`<div class="v082-shield-status" id="v082-shield-status" aria-label="锅盖被动防御状态">${z2a2Icon('shield')} <span id="z2a2-shield-value">${f.shieldCharge!==false?'就绪':'蓄能 '+Math.ceil(f.shieldCooldown||0)+'s'}</span></div>`:''}${f.bento?`<div class="v063-field-bento">${z2a2Icon('bento')} <span id="v063-bento-effect">${f.bento.used?"已触发":"待触发"}</span></div>`:""}<button data-act="skill" data-cookware="${f.weapon?.type||'WOK'}" class="field-skill" aria-label="${f.weapon?.type==='GRILL'?'扇形火焰':f.weapon?.type==='POT'?'沸汤爆裂':f.weapon?.type==='STEAM'?'凝雾结界':'旋风斩'}"><span class="skill-glyph" aria-hidden="true">${z2a2Icon(({GRILL:'grill',WOK:'wok',STEAM:'steam',POT:'pot'})[f.weapon?.type]||'wok')}</span><span class="skill-caption">${f.weapon?.type==='GRILL'?'喷焰':f.weapon?.type==='POT'?'爆裂':f.weapon?.type==='STEAM'?'凝雾':'旋风'}</span><span class="skill-cooldown" id="skill-cooldown" hidden></span></button>${event?(event.offer?specialEncounterHtml(game,event):`<div class="field-event"><strong>野外遭遇 · 流浪调味师</strong><p>你在野外遇见流浪调味师。本次机会只有一次，要交换还是继续赶路？</p><button data-event="trade">蘑菇 ×1 → 火椒 ×1（野外背包）</button><button data-event="forage">深入调查：损失生命，争取两份材料</button><button data-event="leave">绕开，保留现有收获</button></div>`):''}</div>`,
+ return [`<div class="forest-scene action-forest" ${event?`data-z2d3-event-key="field:${esc(event.key)}"`:''}><canvas id="forest-canvas" class="forest-canvas"></canvas><div class="floating-joystick" id="field-stick" aria-hidden="true"><div class="floating-joystick-knob" id="field-stick-knob"></div></div><div class="field-action-notice" id="field-action-notice" hidden></div>${f.weapon?.type==='WOK'?`<div class="v082-shield-status" id="v082-shield-status" aria-label="锅盖被动防御状态">${z2a2Icon('shield')} <span id="z2a2-shield-value">${f.shieldCharge!==false?'就绪':'蓄能 '+Math.ceil(f.shieldCooldown||0)+'s'}</span></div>`:''}${f.bento?`<div class="v063-field-bento">${z2a2Icon('bento')} <span id="v063-bento-effect">${f.bento.used?"已触发":"待触发"}</span></div>`:""}<button data-act="skill" data-cookware="${f.weapon?.type||'WOK'}" class="field-skill" aria-label="${f.weapon?.type==='GRILL'?'扇形火焰':f.weapon?.type==='POT'?'沸汤爆裂':f.weapon?.type==='STEAM'?'凝雾结界':'旋风斩'}"><span class="skill-glyph" aria-hidden="true">${z2a2Icon(({GRILL:'grill',WOK:'wok',STEAM:'steam',POT:'pot'})[f.weapon?.type]||'wok')}</span><span class="skill-caption">${f.weapon?.type==='GRILL'?'喷焰':f.weapon?.type==='POT'?'爆裂':f.weapon?.type==='STEAM'?'凝雾':'旋风'}</span><span class="skill-cooldown" id="skill-cooldown" hidden></span></button>${event?(event.offer?specialEncounterHtml(game,event):`<div class="field-event"><strong>野外遭遇 · 流浪调味师</strong><p>你在野外遇见流浪调味师。本次机会只有一次，要交换还是继续赶路？</p><button data-event="trade">蘑菇 ×1 → 火椒 ×1（野外背包）</button><button data-event="forage">深入调查：损失生命，争取两份材料</button><button data-event="leave">绕开，保留现有收获</button></div>`):''}</div>`,
  `<div class="action-field-dock field-compact-dock"><span class="field-touch-tip" aria-label="按住场景拖动移动">${z2a2Icon('move')} 移动</span>${readyToFinish?b('finish-segment',z2a2Icon('next')+' '+(f.segmentIndex===3?'结束探索':'下一站'),'primary'):''}${b('retreat',z2a2Icon('home')+' 回店','secondary')} </div>`]
 }
 
@@ -519,7 +519,7 @@ function service(){
   const cost=costs[ch.id]||0,disabled=game.coins<cost;
   return '<button class="v075-event-choice" data-choice="'+esc(ch.id)+'" '+(disabled?'disabled':'')+'><strong>'+esc(ch.label)+'</strong><small>'+esc(ch.detail)+(cost?' · 🪙'+cost:'')+'</small></button>'
  }).join(''):'';
- const modal=event?'<div class="v075-event-shade" role="dialog" aria-modal="true" aria-label="突发经营事件"><div class="v075-event-card"><div class="v075-event-kicker">⚡ 第 '+v.breakAt+' 波事件</div><h2>'+esc(event.title)+'</h2><p>'+esc(event.description)+'</p><div class="v075-event-options">'+choices+'</div><small>选择后将自动继续营业</small></div></div>':'';
+ const modal=event?'<div class="v075-event-shade" role="dialog" aria-modal="true" aria-label="突发经营事件"><div class="v075-event-card" data-z2d3-event-key="service:'+v.breakAt+'"><div class="v075-event-kicker">⚡ 第 '+v.breakAt+' 波事件</div><h2>'+esc(event.title)+'</h2><p>'+esc(event.description)+'</p><div class="v075-event-options">'+choices+'</div><small>选择后将自动继续营业</small></div></div>':'';
  const paused=v.paused&&!v.breakAt&&!v.done?'<div class="v075-pause-screen"><strong>⏸ 已暂停</strong><button data-act="toggle-service">▶ 继续营业</button></div>':'';
  const end=v.done?'<div class="v075-finish"><h2>🌙 今日打烊</h2><p>成功上菜 '+complete+' / '+total+' · 厨房已经收工</p><button data-act="close">📊 查看经营日报</button></div>':'';
  const warn=serviceSupplyStatus(game);
@@ -606,10 +606,26 @@ function drawerTab(e,sheet,active){
  return false;
 }
 
+// Z2d3: keep presentation input gated while a real decision blocks play.
+function keyboardMovementAllowed(s,open){
+ if(open)return false;
+ const f=s.field,v=s.service;
+ return (s.phase==='field'&&!!f&&!f.activeEvent&&!f.finished&&f.segmentStatus!=='choice')||
+  (s.phase==='service'&&!!v?.walkable&&!v.paused&&!v.breakAt&&!v.done&&!s.cook);
+}
+function eventScrollState(root){
+ const panel=root.querySelector('.action-forest[data-z2d3-event-key] .field-event,.v075-event-card[data-z2d3-event-key]');
+ return panel?{panel,key:panel.closest('[data-z2d3-event-key]').dataset.z2d3EventKey,top:panel.scrollTop}:null;
+}
+function restoreEventScroll(root,previous){
+ const next=eventScrollState(root);
+ if(previous&&next?.key===previous.key)next.panel.scrollTop=previous.top;
+}
 function render(){
  if(walking&&(!game.field||game.phase!=='field')){clearInterval(walking);walking=null;}
  // Restoring horizontal chip position prevents the target selector from snapping
  // back to the first ingredient on every tap; same for an open reference sheet.
+ const previousEvent=eventScrollState(app);
  const prevTargetScroll=app.querySelector('.target-scroller')?.scrollLeft||0;
  const prevPantryScroll=app.querySelector('.z2b-pantry')?.scrollTop||0;
  const previousSheet=app.querySelector('.z2c13-sheet');
@@ -619,7 +635,7 @@ function render(){
  drawerClickFocus=null;
  const prevSheetScroll=previousSheet?.dataset.sheetKind===(overlay.startsWith('menu:')?'menu':overlay)?app.querySelector('.sheet-body')?.scrollTop||0:0;
  if(overlay&&stick.pointer!==null)releaseStick();
- if(overlay)keys.clear();
+ if(!keyboardMovementAllowed(game,overlay))keys.clear();
  const prevMarketingOpen=app.querySelector('.v014-marketing')?.open||false;
  const prevReportOpen=app.querySelector('.v014-report-more')?.open||false;
  const prevLastCookOpen=app.querySelector('.z2b-last-cook')?.open||false;
@@ -651,6 +667,7 @@ function render(){
  const target=app.querySelector('.target-scroller');if(target)target.scrollLeft=prevTargetScroll;
  const sheet=app.querySelector('.sheet-body');if(sheet)sheet.scrollTop=prevSheetScroll;
  const scroller=app.querySelector(stageScrollSelector);if(scroller)scroller.scrollTop=prevStageScroll;
+ restoreEventScroll(app,previousEvent);
  drawerFocusAfterRender(previousKind,previousFocus,origin);
  // Preserve the on-screen floating stick when a second finger uses the skill.
  if(stick.pointer!==null&&(!playingGameGestures()||stick.phase!==game.phase))releaseStick();
@@ -787,7 +804,7 @@ app.addEventListener('pointerdown',e=>{const skill=e.target.closest('.field-skil
 },{passive:false});
 app.addEventListener('pointerdown',e=>{const a=e.target.closest('[data-tile]');if(a&&game.cook&&game.cook.tiles[+a.dataset.tile])drag={i:+a.dataset.tile,x:e.clientX,y:e.clientY};},{passive:true});
 app.addEventListener('pointerup',e=>{if(!drag)return;const from=drag;drag=null;if(Math.hypot(e.clientX-from.x,e.clientY-from.y)<25)return;const to=document.elementFromPoint(e.clientX,e.clientY)?.closest('[data-tile]');if(to){tileSelected=null;note(moveTile(game,from.i,+to.dataset.tile)?'拖动翻炒成功。':'本拍只能换位一次。')}},{passive:true});
-document.addEventListener('keydown',e=>{if(((game.phase==='field'&&game.field&&!game.field.activeEvent)||(game.phase==='service'&&game.service?.walkable))&&!overlay){const map={ArrowUp:[0,-1],ArrowDown:[0,1],ArrowLeft:[-1,0],ArrowRight:[1,0],w:[0,-1],s:[0,1],a:[-1,0],d:[1,0]};if(map[e.key]){e.preventDefault();keys.add(e.key)}}});
+document.addEventListener('keydown',e=>{if(keyboardMovementAllowed(game,overlay)){const map={ArrowUp:[0,-1],ArrowDown:[0,1],ArrowLeft:[-1,0],ArrowRight:[1,0],w:[0,-1],s:[0,1],a:[-1,0],d:[1,0]};if(map[e.key]){e.preventDefault();keys.add(e.key)}}});
 setInterval(()=>{if(document.hidden||overlay)return;if(game.phase==='service'&&game.service&&!game.service.walkable&&!game.service.paused&&!game.service.done&&!game.service.breakAt){tick(game,1);serviceTickAt=performance.now();if(game.service.done)message='今晚的顾客已经全部处理完毕，可以查看日报。';else if(game.service.breakAt){servicePanel='event';message='突发经营事件！请选择应对方案，或改菜单、备菜。';}render()}},750);
 document.addEventListener('keyup',e=>keys.delete(e.key));
 document.addEventListener('visibilitychange',()=>{if(document.hidden){releaseStick();livePanPointer=null;keys.clear();if(walking){clearInterval(walking);walking=null}if(game.phase==='service'&&game.service&&!game.service.paused){game.service.paused=true;game.service.clockAccumulator=0;releaseStick();message='已自动暂停营业，返回后继续。'}save(game)}else if(game.phase==='service'&&game.service?.walkable){render()}});
