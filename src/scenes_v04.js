@@ -1289,6 +1289,7 @@ function drawRestaurantV075(c,s,t,w,h){
 export function drawDiner(canvas,s,clock,simTime=s.service?.time??clock){
  // Growth is a read-only current restaurant, not yesterday's frozen service snapshot.
  if(s.phase==='upgrade')s={...s,service:null};
+ if(s.phase==='report')s={...s,service:null};
  const size=setCanvas(canvas);if(!size)return;
  const {c,w,h}=size,v=s.service,t=v?simTime:clock;
  if(v?.walkable||!v){
