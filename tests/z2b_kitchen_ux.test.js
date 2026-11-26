@@ -37,7 +37,7 @@ test('Z2b preserves action endpoints, actual 3D hosts, separate prep regions and
  assert.match(app,/z2b-prep-scene[^]*?restaurantView\(false\)[^]*?z2b-prep-work/);
  assert.match(app,/z2b-stock-shortcut/);assert.match(app,/prevPantryScroll/);assert.match(app,/prevStageScroll/);
  assert.match(app,/data-live-pan="true"/);assert.match(app,/class="v014c-hearth/);assert.match(app,/class="v063-receipt-head"/);
- assert.match(three,/\['forecast','prep'\].includes\(s\?\.phase\)/);assert.match(three,/kitchen-preview/);
+ assert.match(three,/\['forecast','prep','upgrade'\].includes\(s\?\.phase\)/);assert.match(three,/kitchen-preview/);
  assert.match(css,/\.z2b-prep-scene\{flex:0 0 43%;min-height:135px/);
  assert.match(css,/\.z2b-prep-work\{flex:1;min-height:0;overflow-y:auto/);
  assert.match(css,/\.z2b-prep-work \.kitchen-choice button\{flex:1;min-width:44px;min-height:44px/);

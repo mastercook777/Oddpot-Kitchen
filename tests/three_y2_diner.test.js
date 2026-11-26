@@ -24,3 +24,11 @@ test('3D is opt-in and offline has no CDN bootstrap',()=>{
  assert.doesNotMatch(read('standalone.html'),/cdn\.jsdelivr\.net\/npm\/three/);
  assert.match(read('src/scenes_v04.js'),/restaurantActorsV075\(s,t\)/);
 });
+
+test('growth uses current frontier geometry; Cloud Harbor remains its own 2D scene',()=>{
+ const s={phase:'upgrade',activeWorld:'hearth',dining:{tableCount:3},kitchen:{slots:[{type:'WOK'},{type:'POT'}]}};
+ assert.equal(y2Eligible(s),true);assert.equal(y2Layout(s).tables.length,3);
+ assert.equal(y2Eligible({...s,activeWorld:'cloud'}),false);
+ const read=p=>readFileSync(new URL('../'+p,import.meta.url),'utf8');
+ assert.match(read('src/scenes_v04.js'),/if\(s.phase==='upgrade'\)s=\{\.\.\.s,service:null\};/);
+});
