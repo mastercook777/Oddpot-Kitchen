@@ -14,21 +14,46 @@ export function makeChefY2(T,rounded,signature=true){
  mesh(body,new T.ExtrudeGeometry(s,{depth:.025,bevelEnabled:true,bevelThickness:.012,bevelSize:.012,bevelSegments:3,curveSegments:10}),apron,0,.51,.23);
  box(body,fold,.035,.44,.269,.16,.10,.024);box(body,apron,.035,.465,.285,.13,.06,.018);
  for(const k of [-1,1]){const strap=box(body,apron,k*.12,.70,.18,.045,.14,.035);strap.rotation.z=k*.13;}
- ell(body,red,0,.77,.15,.16,.065,.10);ell(body,red,0,.74,.25,.075,.065,.05);box(body,red,.055,.675,.255,.08,.14,.035).rotation.z=.28;
+ if(!signature){ell(body,red,0,.77,.15,.16,.065,.10);ell(body,red,0,.74,.25,.075,.065,.05);box(body,red,.055,.675,.255,.08,.14,.035).rotation.z=.28;}
+ else{
+  const collar=lathe(body,red,[[0,0],[.145,0],[.188,.018],[.195,.047],[.168,.077],[.130,.085],[0,.085]],0,.711,.015);collar.scale.z=.91;collar.name='chef-scarf-collar';
+  const cloth=new T.Shape();cloth.moveTo(-.16,.05);cloth.quadraticCurveTo(-.015,.012,.15,.058);cloth.quadraticCurveTo(.145,-.025,.035,-.122);cloth.quadraticCurveTo(-.03,-.090,-.16,.05);cloth.closePath();
+  const bib=new T.ExtrudeGeometry(cloth,{depth:.020,bevelEnabled:true,bevelThickness:.008,bevelSize:.009,bevelSegments:2,curveSegments:16});
+  const v=bib.attributes.position;for(let i=0;i<v.count;i++)v.setZ(i,v.getZ(i)-.62*v.getX(i)**2);bib.computeVertexNormals();
+  const flap=mesh(body,bib,red,0,.734,.224);flap.name='chef-scarf-bib';
+  ell(body,red,-.105,.738,.203,.057,.034,.034);
+ }
  const legs=[],arms=[],elbows=[],grips=[];
  for(const k of [-1,1]){
   const leg=group(root,k*.125,.36,0);legs.push(leg);ell(leg,navy,0,-.12,0,.11,.15,.11);ell(leg,shoe,0,-.265,.045,.125,.09,.17);
   const arm=group(body,k*.265,.685,0);arms.push(arm);arm.rotation.z=k*.19;ell(arm,blue,0,-.075,0,.105,.125,.10);const elbow=group(arm,0,-.15,0);elbows.push(elbow);ell(elbow,blue,0,-.035,0,.093,.085,.092);ell(elbow,navy,0,-.055,0,.096,.045,.09);const wrist=group(elbow,0,-.125,.015);ell(wrist,skin,0,0,0,.085,.095,.082);grips.push(wrist);
  }
  const head=group(body,0,.96,0);
- ell(head,hair,0,.04,-.025,.305,.285,.26);ell(head,skin,0,-.005,.065,.28,.245,.245);ell(head,skin,0,-.10,.135,.245,.16,.18);
+ ell(head,hair,0,.04,-.025,.305,.285,.26);
+ // Only the roaming chef is polished; staff retain their exact original face.
+ const faceZ=(x,y)=>{const n=(y+.005)/.245,z=Math.sqrt(Math.max(0,1-(x/.28)**2-n*n));return .065+.245*z+.038*Math.max(0,-n)*(1-Math.abs(x)/.28)*z;};
+ if(signature){const g=new T.SphereGeometry(1,48,32),p=g.attributes.position;
+  for(let i=0;i<p.count;i++){const x=p.getX(i),y=p.getY(i),z=p.getZ(i);p.setXYZ(i,x*.28,y*.245-.005,z*.245+.065+.038*Math.max(0,-y)*(1-Math.abs(x))*Math.max(0,z));}
+  g.computeVertexNormals();mesh(head,g,skin,0,0,0).name='chef-continuous-face';
+ }else{ell(head,skin,0,-.005,.065,.28,.245,.245);ell(head,skin,0,-.10,.135,.245,.16,.18);}
  for(const k of [-1,1]){
   ell(head,skin,k*.281,-.028,0,.066,.09,.066);ell(head,hair,k*.225,.115,.085,.09,.13,.115);
-  ell(head,ink,k*.103,.015,.286,.030,.044,.014);ell(head,hat,k*.103-.009,.031,.297,.009,.010,.006);ell(head,cheek,k*.165,-.072,.266,.050,.019,.009);
-  ell(head,hair,k*.103,.083,.274,.046,.013,.015).rotation.z=-k*.11;
+  if(signature){
+   const x=k*.101,y=.015,eye=ell(head,ink,x,y,faceZ(x,y)+.003,.024,.036,.013);eye.rotation.y=k*.22;eye.name='chef-eye';
+   const glint=ell(head,hat,x-.007,y+.012,faceZ(x,y)+.015,.006,.008,.004);glint.name='chef-eye-glint';
+   const blush=ell(head,cheek,k*.153,-.061,faceZ(k*.153,-.061)+.001,.034,.012,.008);blush.rotation.y=k*.40;
+   const brow=ell(head,hair,x,.073,faceZ(x,.073)+.003,.038,.010,.010);brow.rotation.z=-k*.08;
+  }else{ell(head,ink,k*.103,.015,.286,.030,.044,.014);ell(head,hat,k*.103-.009,.031,.297,.009,.010,.006);ell(head,cheek,k*.165,-.072,.266,.050,.019,.009);
+   ell(head,hair,k*.103,.083,.274,.046,.013,.015).rotation.z=-k*.11;}
+
  }
- ell(head,skin,0,-.047,.30,.043,.045,.038);
- const smile=new T.CatmullRomCurve3([new T.Vector3(-.043,-.112,.282),new T.Vector3(0,-.124,.290),new T.Vector3(.043,-.112,.282)]);mesh(head,new T.TubeGeometry(smile,12,.009,6,false),hair,0,0,0);
+ if(signature){
+  ell(head,skin,0,-.042,faceZ(0,-.042)+.005,.036,.034,.031).name='chef-nose';
+  const pts=[[-.047,-.108],[-.023,-.119],[.008,-.123],[.034,-.114],[.047,-.103]].map(([x,y])=>new T.Vector3(x,y,faceZ(x,y)+.005));
+  mesh(head,new T.TubeGeometry(new T.CatmullRomCurve3(pts),24,.006,8,false),ink,0,0,0).name='chef-smile';
+ }else{ell(head,skin,0,-.047,.30,.043,.045,.038);
+  const smile=new T.CatmullRomCurve3([new T.Vector3(-.043,-.112,.282),new T.Vector3(0,-.124,.290),new T.Vector3(.043,-.112,.282)]);mesh(head,new T.TubeGeometry(smile,12,.009,6,false),hair,0,0,0);}
+
  lathe(head,fold,[[0,0],[.27,0],[.30,.035],[.29,.105],[.265,.13],[0,.13]],0,.18,0);
  lathe(head,hat,[[0,0],[.255,0],[.31,.07],[.32,.16],[.27,.25],[.15,.29],[0,.3]],0,.26,0);
  for(let i=0;i<5;i++){const a=i*Math.PI*2/5;ell(head,hat,Math.cos(a)*.15,.46,Math.sin(a)*.14,.18,.16,.17);}ell(head,hat,0,.52,0,.18,.15,.18);
@@ -51,7 +76,13 @@ export function makeChefY2(T,rounded,signature=true){
   // Thick swept fringe, leather sash and apron buttons readable at game scale.
   for(let i=0;i<3;i++){const lock=ell(head,hair,-.13+i*.105,.165-i*.019,.235,.105,.095,.08);lock.rotation.z=-.45;}
   ell(head,mat('#a6754e'),-.17,.181,.278,.060,.04,.022);
-  const sash=box(body,leather,0,.43,.295,.055,.56,.04);sash.rotation.z=.62;
+  // Follow the actual torso over the left shoulder and into the right hip bag.
+  const path=[ [.252,.46,.086],[.202,.49,.216],[.101,.56,.282],[-.006,.636,.293],[-.104,.708,.231],[-.165,.766,.139],[-.173,.785,.015],[-.166,.752,-.142],[-.090,.659,-.247],[.021,.574,-.285],[.146,.497,-.229],[.246,.449,-.117] ];
+  const curve=new T.CatmullRomCurve3(path.map(p=>new T.Vector3(...p))),verts=[],indices=[],n=48;
+  for(let i=0;i<=n;i++){const u=i/n,p=curve.getPoint(u),t=curve.getTangent(u),normal=new T.Vector3(p.x*.70,Math.max(0,p.y-.60)*1.3,p.z).normalize();const w=t.clone().cross(normal).normalize().multiplyScalar(.023);if(w.lengthSq()<1e-8)w.set(.023,0,0);
+   for(const sign of [-1,1]){const v=p.clone().addScaledVector(w,sign);verts.push(v.x,v.y,v.z);}}
+  for(let i=0;i<n;i++){const j=i*2;indices.push(j,j+1,j+2,j+1,j+3,j+2);}
+  const geo=new T.BufferGeometry();geo.setAttribute('position',new T.Float32BufferAttribute(verts,3));geo.setIndex(indices);geo.computeVertexNormals();const sashMat=leather.clone();sashMat.side=T.DoubleSide;mesh(body,geo,sashMat,0,0,0).name='chef-curved-satchel-strap';
   box(body,leather,0,.36,.22,.49,.09,.08);box(body,gold,.02,.36,.28,.105,.075,.025);box(body,leather,.02,.36,.30,.060,.040,.014);
   for(const y of [.63,.54])ell(body,gold,-.12,y,.263,.025,.025,.014);
   const satchel=group(body,.27,.40,-.035);satchel.rotation.z=-.15;
