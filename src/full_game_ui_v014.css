@@ -582,3 +582,14 @@
 .game-shell .z2c13-sheet .v015-cook-tabs button{min-height:49px}
 .game-shell .z2c13-sheet .sheet-body{min-width:0;overflow-x:hidden}
 @media(max-width:350px){.game-shell .z2c13-sheet .v015-region-tabs{grid-template-columns:repeat(2,minmax(0,1fr))}.game-shell .z2c13-sheet .v015-cook-tabs{grid-template-columns:repeat(2,minmax(0,1fr))}}
+
+/* Z2d2: same management stage geometry as the accepted prep close-up. */
+.stage.report>.z2d2-report-layout{width:100%;height:100%;min-height:0;display:flex;flex-direction:column;overflow:hidden}
+.z2d2-report-stage,.stage.upgrade .z2c11-growth-scene{position:relative;flex:0 0 43%;min-height:135px;overflow:hidden;border-bottom:3px solid #b28a57;background:#61472e}
+.z2d2-report-stage .diner-world,.z2d2-report-stage .v075-world{position:absolute;inset:0;width:100%;height:100%;min-height:0;max-height:none}
+.stage.report .z2d2-report-layout>.z2c10-ledger{flex:1 1 0;min-height:0;width:100%;display:flex;flex-direction:column;justify-content:flex-start;align-items:stretch;overflow-y:auto;overflow-x:hidden;overscroll-behavior:contain;touch-action:pan-y;gap:10px;padding:12px 12px 20px;background:radial-gradient(ellipse at 50% 10%,#52664b,#253b30 68%,#172e26)}
+.z2d2-view-switch{position:absolute;top:7px;left:7px;display:flex;gap:3px;z-index:3;padding:3px;background:#253b30e8;border:1px solid #a78b59;border-radius:6px}
+.z2d2-view-switch button{min-width:52px;min-height:44px;padding:4px 8px;font-size:12px;font-weight:750;color:#ffe8b8;background:#344d3c;border:1px solid #a78b59;border-radius:4px}
+.z2d2-view-switch button[aria-pressed="true"]{background:#b58c55;color:#392b1e;border-color:#f2d7a1}
+.z2d2-view-switch button:focus-visible{outline:2px solid #ffe8b8;outline-offset:-3px}
+@media(max-width:350px){.stage.report .z2d2-report-layout>.z2c10-ledger{padding:9px 8px 16px}}
