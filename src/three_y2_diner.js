@@ -14,7 +14,7 @@ import {mealLife} from './three_y6_life.js?v=y6';
 import {makeGuestFactory} from './three_y6_guests.js?v=y6';
 import {makeDishFactory} from './three_y6_dishes.js?v=y6';
 
-export function y2Eligible(s){return s?.activeWorld!=='cloud'&&(['forecast','prep','upgrade'].includes(s?.phase)&&!s.service||s?.phase==='service'&&!!s.service?.walkable);}
+export function y2Eligible(s){return s?.activeWorld!=='cloud'&&(['forecast','prep','report','upgrade'].includes(s?.phase)&&!s.service||s?.phase==='service'&&!!s.service?.walkable);}
 export function y2Layout(s){
  const g=dinerFloor(s),v=s.service,slots=v?.kitchenSnapshot||s.kitchen?.slots||[];
  const n=v?v.kitchenSnapshot?.length||2:s.kitchen?.thirdUnlocked?3:2;
@@ -23,20 +23,15 @@ export function y2Layout(s){
 export const dinerWorldX=x=>x*10;
 export const dinerWorldZ=z=>z<=.428?z*12:.428*12+(z-.428)*16;
 const wx=dinerWorldX,wz=dinerWorldZ;
- // The growth view frames actual furniture, not the porch/whole restaurant.
- // Project the bounds along the orthographic camera's vertical basis.
- export function y2CameraFrame(phase,w,h,layout){
+ // Shared management close-up: identical orthographic scale and pitch.
+ export function y2CameraFrame(phase,w,h,layout,growthView='kitchen'){
   const aspect=Math.max(.1,w/Math.max(1,h));
-  if(phase==='prep')return {view:'kitchen-preview',half:Math.max(5.6/aspect,3.65),aspect,position:[5,15,16],target:[5,0,4.2]};
-  if(phase!=='upgrade')return {view:'restaurant',half:Math.max(5.65/aspect,8.35),aspect,position:[5,23,25],target:[5,0,8.7]};
-  const pitch=42*Math.PI/180,si=Math.sin(pitch),co=Math.cos(pitch);
-  // Rear wall/hoods at z=1.0..3.0, height <=3.16; table ends extend .65 beyond centers.
-  const front=Math.max(...layout.tables.map(p=>wz(p.z)))+.65;
-  const bottom=-si*front,top=co*3.16-si*1.0;
-  const bottomPad=Math.min(.33,Math.max(.10,36/Math.max(1,h))),topPad=.035;
-  const half=Math.max(5.45/aspect,(top-bottom)/(2*(1-bottomPad-topPad)));
-  const center=(top+bottom)/2-half*(bottomPad-topPad),z=-center/si;
-  return {view:'growth-preview',half,aspect,position:[5,18,z+18/Math.tan(pitch)],target:[5,0,z],front,bottomPad,topPad};
+  if(['prep','report','upgrade'].includes(phase)){
+   const tableView=phase==='upgrade'&&growthView==='tables';
+   const z=tableView?(Math.min(...layout.tables.map(p=>wz(p.z)))+Math.max(...layout.tables.map(p=>wz(p.z))))/2:4.2;
+   return {view:tableView?'growth-tables':phase==='upgrade'?'growth-preview':phase==='report'?'report-preview':'kitchen-preview',half:Math.max(5.6/aspect,3.65),aspect,position:[5,15,tableView?z+11.8:16],target:[5,0,z]};
+  }
+  return {view:'restaurant',half:Math.max(5.65/aspect,8.35),aspect,position:[5,23,25],target:[5,0,8.7]};
  }
  export function y2ApplyCamera(camera,frame){
   camera.position.set(...frame.position);camera.lookAt(...frame.target);
@@ -146,13 +141,13 @@ function createDiner(T){
  return {element,draw(canvas,s,t,w,h,actors){
   const parent=canvas.parentElement;if(!parent)return;if(element.parentElement!==parent)parent.insertBefore(element,canvas);
   const dpr=Math.min(devicePixelRatio||1,1.5),rw=Math.round(w*dpr),rh=Math.round(h*dpr);
-  const layout=y2Layout(s),frame=y2CameraFrame(s.phase,w,h,layout),viewKey=frame.view+':'+(s.phase==='upgrade'?layout.tables.length:0);
+  const layout=y2Layout(s),frame=y2CameraFrame(s.phase,w,h,layout,s.growthCameraZ2d2),viewKey=frame.view+':'+(s.phase==='upgrade'?layout.tables.length:0);
   if(rw!==lastW||rh!==lastH||viewKey!==lastView){renderer.setSize(rw,rh,false);y2ApplyCamera(camera,frame);lastW=rw;lastH=rh;lastView=viewKey;}
   element.dataset.view=frame.view;element.dataset.cameraHalf=String(frame.half);
   const v=s.service,guide=dinerGuide(s);pass.position.set(wx(layout.floor.passFurniture.x),0,wz(layout.floor.passFurniture.y));guideMark.visible=!!guide?.target;if(guide?.target){guideMark.position.set(wx(guide.target.x),0,wz(guide.target.y));arrow.position.y=.55+Math.sin(t*4)*.085;arrow.rotation.y=t*.9;markerMat.color.set(guide.mode==='serve'?'#b8f1ac':'#ffdf8b');}alcoves.forEach((a,i)=>a.visible=layout.tables.length>=i+3);
   let mealCount=0,foodPieces=0;const mealKinds=new Set();
   for(let i=0;i<tables.length;i++){const item=tables[i],p=layout.tables[i];item.p.visible=!!p;if(p){item.p.position.set(wx(p.x),0,wz(p.z));for(let j=0;j<2;j++){const order=v?.orders?.find(o=>o.tableId===i&&(o.seatId??0)===j&&['eating','review'].includes(o.status));item.meals[j].visible=!!order;if(order){const stats=item.meals[j].userData.setDish(order.recipeId,mealLife(order,t,DINER_TIMING.eat).portion);mealCount++;foodPieces+=stats.count;mealKinds.add(stats.kind);}}}}
-  for(let i=0;i<3;i++){const item=stoves[i],p=layout.stoves[i],busy=v?.stations?.[p.id];item.p.position.set(wx(p.x),0,wz(p.z));const type=p.unlocked?(item.vessels[p.type]?p.type:'WOK'):'LOCKED';for(const [k,g] of Object.entries(item.vessels))g.visible=k===type;item.flames.forEach((f,j)=>{f.visible=p.unlocked&&(!v||!!busy);f.scale.y=.17+.085*Math.sin(t*8+j*1.7);f.rotation.z=.14*Math.sin(t*6+j);});item.wisps.forEach((o,j)=>{const q=(t*.55+j*.25)%1;o.visible=p.unlocked&&!!busy;o.position.set(Math.sin(q*5+j)*.14,1.18+q*.75,Math.cos(q*4+j)*.09);o.quaternion.copy(camera.quaternion);o.scale.set(.23+q*.43,.35+q*.50,1);o.material.uniforms.time.value=t;o.material.uniforms.opacity.value=Math.sin(Math.PI*q)*.48;});}
+  for(let i=0;i<3;i++){const item=stoves[i],p=layout.stoves[i],busy=v?.stations?.[p.id];item.p.position.set(wx(p.x),0,wz(p.z));const type=p.unlocked?(item.vessels[p.type]?p.type:'WOK'):'LOCKED';for(const [k,g] of Object.entries(item.vessels))g.visible=k===type;item.flames.forEach((f,j)=>{f.visible=p.unlocked&&(s.phase!=='report')&&(!v||!!busy);f.scale.y=.17+.085*Math.sin(t*8+j*1.7);f.rotation.z=.14*Math.sin(t*6+j);});item.wisps.forEach((o,j)=>{const q=(t*.55+j*.25)%1;o.visible=p.unlocked&&!!busy;o.position.set(Math.sin(q*5+j)*.14,1.18+q*.75,Math.cos(q*4+j)*.09);o.quaternion.copy(camera.quaternion);o.scale.set(.23+q*.43,.35+q*.50,1);o.material.uniforms.time.value=t;o.material.uniforms.opacity.value=Math.sin(Math.PI*q)*.48;});}
   const ready=v?.orders?.filter(o=>o.status==='pickup')||[];passPlates.forEach((p,i)=>{p.visible=!!ready[i];if(ready[i])p.userData.setDish(ready[i].recipeId);});
   const ids=new Set(actors.map(a=>a.id));for(const [id,a] of byId)if(!ids.has(id)){a.root.visible=false;byId.delete(id);}
   for(const list of pool.values())for(const a of list)a.used=false;
