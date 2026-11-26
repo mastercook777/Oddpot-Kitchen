@@ -53,6 +53,18 @@ try{
     for(const act of ['stock','book','bento','crew']){
      await scene.locator('[data-act="'+act+'"]').click();
      assert.ok(await page.locator('.sheet').isVisible(),act+' uses the existing sheet');
+     assert.equal(await page.locator('.z2c13-sheet .sheet-header h2').count(),1);
+     assert.equal(await page.locator('.z2c13-sheet').getAttribute('data-sheet-kind'),act);
+     const head=await page.locator('.sheet-header').boundingBox(),body=await page.locator('.sheet-body').boundingBox();assert.ok(head.y+head.height<=body.y+1);
+     if(act==='book'){
+      assert.ok(await page.locator('.z2c13-atlas-count').isVisible());
+      await page.locator('[data-book-region="all"]').click();
+      for(const type of ['WOK','POT','STEAM','GRILL']){await page.locator('[data-recipe-type="'+type+'"]').click();assert.equal(await page.locator('[data-recipe-type="'+type+'"]').getAttribute('aria-selected'),'true');assert.ok(await page.locator('.z2c13-atlas-count').isVisible());assert.ok(await page.locator('.book-item[data-book],.z2c13-empty').count()>0);}
+      await page.locator('[data-book-tab="guests"]').click();assert.ok(await page.locator('.v102-guest-card').count()>0);assert.match(await page.locator('.sheet-header h2').innerText(),/客人图鉴/);
+      await page.screenshot({path:output+'/z2c13-guest-'+width+'.png'});
+      await page.locator('[data-book-tab="recipes"]').click();await page.locator('[data-recipe-type="WOK"]').click();await page.screenshot({path:output+'/z2c13-atlas-'+width+'.png'});
+      assert.equal(await page.evaluate(()=>document.documentElement.scrollWidth>innerWidth),false);
+     }
      await page.locator('[data-act="close-sheet"]').last().click();
     }
     const door=scene.locator('.z2c2-threshold');assert.ok(await door.isVisible());assert.equal(await scene.locator('.v076-home-primary').count(),0);assert.ok((await door.boundingBox()).height>=44);await page.screenshot({path:`${output}/z2c2-home-${width}.png`});
@@ -116,6 +128,7 @@ try{
    if(phase==='service')assert.ok(await page.locator('#diner-canvas').isVisible());
    if(phase==='report'){
     assert.ok(await page.locator('.z2c10-paper .report-stats').isVisible());
+    const title=await page.locator('.z2c10-paper .report-header').evaluate(el=>({color:getComputedStyle(el).color,weight:Number(getComputedStyle(el).fontWeight),size:parseFloat(getComputedStyle(el).fontSize)}));assert.equal(title.color,'rgb(69, 51, 40)');assert.ok(title.weight>=700&&title.size>=17);
     assert.equal(await page.locator('.z2c10-hud').count(),1);assert.equal(await page.locator('.brand,.day-strip').count(),0);
     assert.equal(await page.locator('.z2c10-paper .report-stats>div').count(),4);
     const saved=await page.evaluate(k=>JSON.parse(localStorage.getItem(k)),storageKey);
