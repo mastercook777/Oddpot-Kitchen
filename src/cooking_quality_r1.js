@@ -91,10 +91,13 @@ function grillEvidence(r){
  let tech=clamp(.14+.77*balance+.09*brushGrade);
  if(r.baseOnly){
   const grades=r.actions.filter(a=>['brush','smoke'].includes(a.type)).map(a=>{
-   const readings=r.ids.map(id=>{const h=grillHeat(id,a.t,[],r.facts.rate,true),{low}=grillHeatBounds(id);return (h.front+h.back)/(2*low)});
-   const window=a.type==='brush'?[1.08,.48]:[.66,.48];
+   const longest=Math.max(...r.ids.map(id=>grillHeatBounds(id).low));
+   const readings=r.ids.map(id=>{const h=grillHeat(id,a.t,[],r.facts.rate,true),{low}=grillHeatBounds(id);return {q:(h.front+h.back)/(2*low),fast:low<longest*.69}});
+   const window=a.type==='brush'?[1.05,.32]:[.66,.32];
    const contact=smooth(a.t,.7,2.25),remaining=smooth(r.duration-a.t,.15,a.type==='brush'?1.15:1.65);
-   return contact*remaining*(.8*mean(readings.map(q=>peak(q,...window)))+.2*Math.min(...readings.map(q=>peak(q,...window))));
+   const weights=readings.map(x=>x.fast?.35:1);
+   const effective=readings.map(x=>x.fast?peak(x.q,1.65,.95):peak(x.q,...window));
+   return contact*remaining*effective.reduce((n,q,i)=>n+q*weights[i],0)/weights.reduce((a,b)=>a+b,0);
   });
   tech=grades.length?.12+.88*(.7*Math.max(...grades)+.3*mean(grades)):.12;
  }
