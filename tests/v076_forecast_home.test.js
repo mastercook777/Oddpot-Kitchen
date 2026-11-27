@@ -10,7 +10,7 @@ const index=source('../index.html'),pkg=JSON.parse(source('../package.json'));
 
 test('the internal, browser, offline and package versions all target v0.15.0-alpha.11',()=>{
  assert.equal(pkg.version,'0.15.0-alpha.11');
- assert.match(index,/<title>怪味食堂 · Oddpot Kitchen v0\.16-[YZ]\.\d+(?:[a-z]\d*)*<\/title>/);
+ assert.match(index,/<title>怪味食堂 · Oddpot Kitchen v0\.16-[YZ]\.\d+(?:[a-z]\d*)*(?:-D\d+)?<\/title>/);
  assert.match(index,/coreVersion:\s*['"]0\.15\.0-alpha\.11['"]/);
  assert.match(index,/id="oddpot-build-label"/);
  assert.match(index,/src\/app\.js\?v=0\.15\.0-alpha\.11/);
