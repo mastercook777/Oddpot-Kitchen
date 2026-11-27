@@ -1,0 +1,96 @@
+import {ING,RECIPES,CUSTOMERS} from './data.js';
+import {beginLiveResearch,dropLiveIngredient,threadGrillIngredient,placeGrillSkewer,performLiveAction,finishLiveResearch,stepLiveResearch,liveCookPreview,grillCookPreview,recipeCookware,prepDish,createService,setServicePaused,tick,currentServiceEvent,chooseServiceEvent,resumeBreak,advanceWalkableInteraction,activateWalkableSpecial,closeService,canUse} from './engine.js';
+import {LIVE_ACTIONS} from './cooking_v063.js?v=0.15.0-alpha.11';
+import {drawDiner} from './scenes_v04.js?v=z2e2';
+import {enableY2} from './three_y2_diner.js?v=z2e2';
+import {enableY4b} from './three_y4b_research.js?v=z2e2';
+import {walkServiceHero} from './walkable_restaurant_v07.js';
+import {dinerGuide} from './restaurant_scene_v075.js';
+import {ingredientIconHtml} from './ingredient_icons_v011g.js';
+import {fixture,identify,collect,budget,applyDeck,summary,DEFAULT_CONFIG,AFFIX,TIERS,COLORS,LEVELS} from './cooking_build_v2.js?v=cb01';
+const $=id=>document.getElementById(id),lab=$('lab'),panel=$('panel'),dialog=$('window'),content=$('window-content');
+const esc=x=>String(x??'').replaceAll('&','&amp;').replaceAll('<','&lt;').replaceAll('>','&gt;').replaceAll('"','&quot;');
+const names={WOK:'炒锅',POT:'炖锅',GRILL:'烤架',STEAM:'蒸笼'};
+const modes={config:'实验设置',research:'料理研发',cook:'料理工作台',result:'出锅鉴定',deck:'今日菜单',prep:'开业准备',service:'营业中',report:'经营日报'};
+let s=fixture(),cfg={...DEFAULT_CONFIG},mode='config',vessel='WOK',ids=[],deck=[],before=null,results=[],found=null,txn='',speed=1,acc=0,axis=[0,0],pointer=null,keys=new Set(),filter='all',detail=null,message='',last=0;
+const button=(act,label,cls='minor',disabled=false)=>'<button type="button" class="'+cls+'" data-act="'+esc(act)+'" '+(disabled?'disabled':'')+'>'+esc(label)+'</button>';
+const row=(label,value)=>'<div class="cb-row"><b>'+esc(label)+'</b><span>'+esc(value)+'</span></div>';
+const paper=(title,body)=>'<section class="cb-paper"><h2>'+esc(title)+'</h2>'+body+'</section>';
+const nav=(...buttons)=>'<div class="cb-nav">'+buttons.join('')+'</div>';
+const tier=v=>TIERS[v?.rarity]||'失败';
+const card=(v,act,disabled=false)=>'<button class="cb-card" style="--rarity:'+COLORS[v.rarity]+'" data-act="'+esc(act)+'" '+(disabled?'disabled':'')+'><span class="cost">'+v.rarity+'</span><span class="food">'+RECIPES[v.recipeId].emoji+'</span><strong>'+esc(RECIPES[v.recipeId].name)+'</strong><small>'+tier(v)+' · '+(v.affixes.map(a=>AFFIX[a.id].name).join(' / ')||'无词缀')+'</small></button>';
+const describe=v=>'<div class="cb-result" style="--rarity:'+COLORS[v.rarity]+'"><span class="food">'+RECIPES[v.recipeId].emoji+'</span><h2>'+esc(RECIPES[v.recipeId].name)+'</h2><div>'+tier(v)+' · '+v.rarity+' Cost · '+names[v.vessel]+'</div><small>'+esc(v.styleLabel)+' · '+(v.source==='sample'?'预置样本':'实际研发')+'</small>'+v.affixes.map(a=>'<div class="cb-affix"><b style="color:'+COLORS[AFFIX[a.id].tier===3?5:AFFIX[a.id].tier===2?4:3]+'">'+AFFIX[a.id].name+'</b>'+esc(AFFIX[a.id].desc(a.value))+'</div>').join('')+(v.affixes.length?'':'<small>基础工艺，无随机词缀</small>')+'</div>';
+function stop(){axis=[0,0];pointer=null;keys.clear();$('stick').querySelector('i').style.transform=''}
+function leave(key){try{globalThis[key]?.leave()}catch(e){console.warn('CB renderer cleanup',e)}}
+function switchMode(next){if(mode==='cook'&&next!=='cook')leave('__oddpotY4bRenderer');if(['prep','service','report'].includes(mode)&&!['prep','service','report'].includes(next))leave('__oddpotY2Renderer');mode=next;lab.dataset.mode=next;$('room-host').hidden=!['prep','service','report'].includes(next);$('cook-host').hidden=next!=='cook';$('play-controls').hidden=next!=='service';panel.hidden=next==='service';stop();message='';render()}
+function notify(msg){message=msg;render()}
+function select(name,choices){return '<select data-config="'+name+'" aria-label="'+name+'">'+choices.map(([value,label])=>'<option value="'+value+'" '+(String(cfg[name])===String(value)?'selected':'')+'>'+label+'</option>').join('')+'</select>'}
+function configUI(){return paper('实验起点','<p>仅工坊内存 · 不影响正式游戏。先选条件，再研发或使用预置工艺。</p><label class="cb-label">章节</label>'+select('world',[['hearth','边境食堂'],['cloud','云港食堂（蒸笼）']])+'<label class="cb-label">厨房等级</label>'+select('level',[[1,'初级 · 7 Cost / 3槽'],[2,'熟练 · 9 Cost / 3槽'],[3,'高级 · 11 Cost / 3槽'],[4,'大师 · 13 Cost / 4槽']])+'<div class="cb-grid"><div><label class="cb-label">餐桌</label>'+select('tables',[[2,'2桌'],[3,'3桌'],[4,'4桌']])+'</div><div><label class="cb-label">实体厨位</label>'+select('stations',[[2,'2厨位'],[3,'3厨位']])+'</div></div><label class="cb-label">中央厨具（第三厨位）</label>'+select('third',[['WOK','炒锅'],['POT','炖锅'],['GRILL','烤架'],['STEAM','蒸笼']])+'<div class="cb-row"><label><input type="checkbox" data-config="helper" '+(cfg.helper?'checked':'')+'> 帮厨</label><label><input type="checkbox" data-config="waiter" '+(cfg.waiter?'checked':'')+'> 侍者</label></div><label class="cb-label">客群</label>'+select('guest',[['normal','均衡'],['adventure','冒险者偏多'],['family','家庭与街坊'],['premium','高预算食客']])+'<div class="cb-grid"><div><label class="cb-label">客流</label>'+select('pressure',[['low','清闲 · 7人'],['normal','正常 · 10人'],['high','繁忙 · 14人']])+'</div><div><label class="cb-label">库存</label>'+select('stock',[['full','充足'],['limited','有限'],['scarce','紧缺']])+'</div></div><label class="cb-label">随机种子</label><div class="cb-row"><input type="number" min="0" max="4294967295" data-config="seed" value="'+esc(cfg.seed)+'">'+button('random','随机')+'</div>')}
+function researchUI(){const inv=Object.keys(ING).filter(id=>s.inventory[id]>0);return paper('选择厨具','<div class="cb-row">'+['WOK','POT','GRILL','STEAM'].map(v=>button('vessel:'+v,names[v],vessel===v?'gold':'minor',v==='STEAM'&&!s.kitchen.steamerOwned||v==='GRILL'&&!s.kitchen.grillOwned)).join('')+'</div><p>选择2–3种不同食材。实际熟度与技法决定基础品质；优秀才进入词缀鉴定。</p>')+paper('备料托盘 · '+ids.length+'/3','<div class="cb-cards">'+inv.map(id=>'<button class="minor cb-ingredient" data-act="ing:'+id+'" aria-pressed="'+ids.includes(id)+'">'+ingredientIconHtml(id,32)+esc(ING[id].name)+' ×'+s.inventory[id]+'</button>').join('')+'</div>')}
+function cookUI(){const c=s.cook;if(!c)return '';const grill=c.mode==='v014c-grill',dropped=grill?c.skewer:c.dropped.map(x=>x.id);return '<div class="cb-cook-controls"><div class="cb-heat" id="cook-clock">烹饪 0.0s</div><div class="cb-row">'+c.ids.map(id=>'<button class="cb-card" style="--rarity:#c5a46f" data-act="drop:'+id+'" '+(dropped.includes(id)?'disabled':'')+'>'+ingredientIconHtml(id,30)+'<small>'+esc(ING[id].name)+'</small><span data-heat="'+id+'">'+(dropped.includes(id)?'已投放':'待投放')+'</span></button>').join('')+'</div>'+(grill&&!c.lane?'<div class="cb-row">'+['edge','middle','flame'].map((lane,i)=>button('lane:'+lane,['边火','均火','猛火'][i],'minor',c.skewer.length!==c.ids.length)).join('')+'</div>':'<div class="cb-row">'+LIVE_ACTIONS[c.vessel].map(a=>button('action:'+a.id,a.name,'minor',c.actions.some(x=>x.type===a.id)||!c.dropped.length)).join('')+'</div>')+'</div>'}
+function deckUI(){const b=budget(s,deck),all=s.cbExperiment.collection.filter(v=>filter==='all'||String(v.rarity)===filter);return paper('今日菜单','<div class="cb-budget"><span>'+deck.length+' / '+b.slots+' Slot</span><span id="budget">'+b.used+' / '+b.limit+' Cost</span></div><div class="cb-meter"><i style="width:'+Math.min(100,b.used/b.limit*100)+'%;background:'+(b.used>b.limit?'#a9483a':'#54794b')+'"></i></div><div class="cb-cards">'+Array.from({length:b.slots},(_,i)=>b.variants[i]?card(b.variants[i],'remove:'+i):'<div class="cb-empty">空槽</div>').join('')+'</div><p class="cb-notice">'+esc(b.reasons.join(' · ')||'菜单合法；可进入备餐。')+'</p>')+paper('工艺收藏 · '+s.cbExperiment.collection.length,'<div class="cb-filter"><select id="filter" aria-label="品质筛选"><option value="all">全部品质</option>'+TIERS.slice(1).map((t,i)=>'<option value="'+(i+1)+'" '+(filter===String(i+1)?'selected':'')+'>'+t+'</option>').join('')+'</select></div><p>点击工艺查看详情并上架；相同菜品只可选一种工艺。</p><div class="cb-cards">'+all.map(v=>card(v,'detail:'+v.variantId)).join('')+'</div>')}
+function prepUI(){return paper('菜单已锁定 · 真实备餐','<p>每次预制扣真实食材；同条件重试回到备餐前。点击备餐可多做一份。</p>'+s.menu.map(id=>{const c=s.cbExperiment.crafts[id];return '<div class="cb-affix"><b style="color:#65452d">'+esc(RECIPES[id].name)+' · '+TIERS[c.rarity]+'</b><small>售价 '+c.price+'G / 基础制作 '+Math.round((c.baseTime+c.timeDelta)*10)/10+'s · 已备 '+(s.prep[id]||0)+' 份</small><div class="cb-row">'+button('prep:'+id,'预制一份','minor',!canUse(s,c.ingredientIds))+'<small>'+c.ingredientIds.map(i=>esc(ING[i].name)+' '+(s.inventory[i]||0)).join(' · ')+'</small></div></div>'}).join(''))}
+function reportUI(){const r=results.at(-1);if(!r)return '';let stats=[['营业收入',r.revenue+'G'],['净利润',r.profit+'G'],['材料成本',r.cost+'G'],['工资',r.wage+'G'],['成功服务',r.served+'/'+r.guests],['离场',r.left],['拒单',r.rejected],['满意度',r.sat],['平均等待',r.wait+'s'],['生产耗时',r.production+'s']];return paper('真实经营结果','<div class="cb-stats">'+stats.map(([k,v])=>'<div><b>'+v+'</b>'+k+'</div>').join('')+'</div><p>'+esc(r.suggested)+'</p>')+paper('实际词缀触发',r.rows.map(x=>{const c=s.cbExperiment.crafts[x.id],ev=x.events;return '<div class="cb-report-row"><strong>'+esc(RECIPES[x.id].name)+' · '+TIERS[c.rarity]+'</strong>点单 '+x.ordered+' / 上菜 '+x.served+' / 收入 '+x.income+'G'+c.affixes.map(a=>{const hits=ev.filter(e=>e.affix===a.id);return '<div>'+AFFIX[a.id].name+'：'+hits.length+' 次'+(hits.length?' · '+(a.id==='aroma'?'候选权重已作用':a.id==='frugal'?'返料 '+hits.reduce((n,e)=>n+e.value,0)+' 份':a.id==='fine'||a.id==='stars'?'额外收入 '+hits.reduce((n,e)=>n+e.value,0)+'G':Math.round(hits.reduce((n,e)=>n+e.value,0)*10)/10+(a.id==='aftertaste'?' 满意度':' 秒')):'（未触发）')+'</div>'}).join('')+'</div>'}).join(''))+(results.length>1?paper('最近两晚实测对照','<p>手动走位、事件选择可能不同；非单一词缀因果实验。</p><table class="cb-table"><tr><th>指标</th><th>上局</th><th>本局</th></tr>'+[['营收','revenue'],['净利','profit'],['上菜','served'],['等待','wait'],['满意','sat']].map(([n,k])=>'<tr><th>'+n+'</th><td>'+results.at(-2)[k]+'</td><td>'+r[k]+'</td></tr>').join('')+'</table>'):'')}
+function render(){lab.dataset.mode=mode;$('hud').innerHTML='<div class="hud-stack"><div class="hud-chip">料理构筑 · '+modes[mode]+'</div><div class="lab-label">CB0+CB1 实验工坊 · 不写正式档</div></div><div class="hud-stack"><div class="hud-chip" id="coin">'+s.coins+' G</div>'+(mode==='service'?'<div class="hud-chip" id="service-status">0s</div>':'')+'</div>';let body='',dock='';if(mode==='config'){body=configUI();dock=nav(button('start','进入实验','gold'))}
+ else if(mode==='research'){body=researchUI();dock=nav(button('config','设置'),button('deck','菜单'),button('begin','开始烹饪','gold',ids.length<2))}
+ else if(mode==='cook'){body=cookUI();dock=nav(button('finish','出锅鉴定','gold',!s.cook?.live||s.cook.elapsed<1.2))}
+ else if(mode==='result'){body=found?paper('本锅研发结果',describe(found)) :paper('研发失败','<p>'+esc(s.lastCook?.reason||'未识别料理')+'</p>');dock=nav(button('discard','继续研发'),button('save','收入收藏','gold',!found))}
+ else if(mode==='deck'){body=deckUI();dock=nav(button('research','研发'),button('clear','清空'),button('prepare','备餐','gold',!budget(s,deck).valid))}
+ else if(mode==='prep'){body=prepUI();dock=nav(button('back-deck','调整菜单'),button('open','开门营业','gold'))}
+ else if(mode==='service'){dock=nav(button('pause',s.service?.paused?'继续':'暂停'),button('speed',speed+'×'),button('skill','主厨技能'))}
+ else if(mode==='report'){body=reportUI();dock=nav(button('config','新实验'),button('retry','同条件重试','gold'))}
+ if(message)body='<div class="cb-caption">'+esc(message)+'</div>'+body;panel.innerHTML=body;$('dock').innerHTML=dock;$('hint').textContent=mode==='service'?'摇杆移动 · 靠近厨位与出餐台':mode==='cook'?'观察熟度 · 适时起锅':'';
+}
+function show(title,body){stop();content.innerHTML='<header class="ribbon" id="window-title">'+esc(title)+'</header>'+body;if(!dialog.open)dialog.showModal()}
+function hide(){if(dialog.open)dialog.close();stop()}
+function finish(result){if(!result)return;found=identify(result,cfg.seed,txn);switchMode('result')}
+function eventWindow(){const e=currentServiceEvent(s);show(e?.title||'营业间歇','<p>'+esc(e?.description||'')+'</p>'+(e?.choices||[]).map(x=>'<div class="cb-affix">'+button('event:'+x.id,x.label,'gold')+'<small>'+esc(x.detail)+'</small></div>').join('')+button('resume','不追加操作，继续营业'))}
+function startExperiment(){s=fixture(cfg);cfg={...s.cbExperiment.config};deck=[...s.cbExperiment.deck];before=null;results=[];vessel='WOK';ids=[];filter='all';switchMode('research')}
+function action(a){
+ if(a==='random'){cfg.seed=Math.floor(Math.random()*4294967296);render();return}
+ if(a==='start'){startExperiment();return}
+ if(a==='config'){switchMode('config');return}
+ if(a==='research'){s.phase='research';switchMode('research');return}
+ if(a==='deck'){switchMode('deck');return}
+ if(a.startsWith('vessel:')){vessel=a.slice(7);ids=[];render();return}
+ if(a.startsWith('ing:')){const id=a.slice(4);if(ids.includes(id))ids=ids.filter(x=>x!==id);else if(ids.length<3)ids.push(id);render();return}
+ if(a==='begin'){if(!beginLiveResearch(s,ids,vessel)){notify('食材不足或当前章节不支持');return}txn=s.cook.txn;$('pan').className=vessel==='GRILL'?'v014c-hearth':'v063-live-pan';switchMode('cook');return}
+ if(a.startsWith('drop:')){if(s.cook?.mode==='v014c-grill')threadGrillIngredient(s,a.slice(5));else dropLiveIngredient(s,a.slice(5));render();return}
+ if(a.startsWith('lane:')){placeGrillSkewer(s,a.slice(5));render();return}
+ if(a.startsWith('action:')){performLiveAction(s,a.slice(7));render();return}
+ if(a==='finish'){finish(finishLiveResearch(s));return}
+ if(a==='discard'){ids=[];found=null;switchMode('research');return}
+ if(a==='save'){if(!collect(s,found)){notify('该料理工艺已达12份上限，本轮仍消耗材料');return}ids=[];found=null;switchMode('deck');return}
+ if(a==='clear'){deck=[];render();return}
+ if(a.startsWith('remove:')){deck.splice(Number(a.slice(7)),1);render();return}
+ if(a.startsWith('detail:')){detail=s.cbExperiment.collection.find(v=>v.variantId===a.slice(7));if(!detail)return;const old=deck.findIndex(id=>s.cbExperiment.collection.find(v=>v.variantId===id)?.recipeId===detail.recipeId),next=[...deck];if(old>=0)next[old]=detail.variantId;else next.push(detail.variantId);const b=budget(s,next),allowed=!b.reasons.some(r=>!r.startsWith('需配置'))&&next.length<=b.slots;show('料理工艺',describe(detail)+button('equip',old>=0?'替换同菜工艺':'加入菜单','gold',!allowed)+button('close','返回')+(allowed?'':'<p>'+esc(b.reasons.join(' · '))+'</p>'));return}
+ if(a==='equip'){const old=deck.findIndex(id=>s.cbExperiment.collection.find(v=>v.variantId===id)?.recipeId===detail.recipeId);if(old>=0)deck[old]=detail.variantId;else deck.push(detail.variantId);hide();render();return}
+ if(a==='close'){hide();return}
+ if(a==='prepare'){if(!applyDeck(s,deck)){notify('菜单不合法');return}before=structuredClone(s);s.phase='prep';switchMode('prep');return}
+ if(a==='back-deck'){s=structuredClone(before);switchMode('deck');return}
+ if(a.startsWith('prep:')){if(!prepDish(s,a.slice(5)))notify('材料不足');else render();return}
+ if(a==='open'){s.phase='service';if(!createService(s,{walkable:true})){s.phase='prep';notify('无法开门：检查菜单、厨具和库存');return}setServicePaused(s,false);speed=1;acc=0;switchMode('service');return}
+ if(a==='pause'){setServicePaused(s,!s.service.paused);stop();render();return}
+ if(a==='speed'){speed=speed===1?2:speed===2?4:1;render();return}
+ if(a==='skill'){activateWalkableSpecial(s);return}
+ if(a.startsWith('event:')){if(chooseServiceEvent(s,a.slice(6))){resumeBreak(s);hide();render()}return}
+ if(a==='resume'){resumeBreak(s);hide();render();return}
+ if(a==='retry'){if(!before)return;s=structuredClone(before);deck=[...s.cbExperiment.deck];switchMode('deck');return}
+}
+document.addEventListener('click',e=>{const el=e.target.closest('[data-act]');if(el&&!el.disabled)action(el.dataset.act)});
+document.addEventListener('change',e=>{const k=e.target.dataset.config;if(k){cfg[k]=e.target.type==='checkbox'?e.target.checked:e.target.type==='number'||['level','tables','stations'].includes(k)?Number(e.target.value):e.target.value}if(e.target.id==='filter'){filter=e.target.value;render()}});
+dialog.addEventListener('cancel',e=>{e.preventDefault();if(mode!=='service')hide()});
+const d={ArrowLeft:[-1,0],ArrowRight:[1,0],ArrowUp:[0,-1],ArrowDown:[0,1],a:[-1,0],d:[1,0],w:[0,-1],s:[0,1]};
+document.addEventListener('keydown',e=>{if(mode==='service'&&!dialog.open&&d[e.key]){keys.add(e.key);e.preventDefault()}});document.addEventListener('keyup',e=>keys.delete(e.key));
+function moveStick(e){const b=$('stick').getBoundingClientRect(),x=e.clientX-b.left-b.width/2,y=e.clientY-b.top-b.height/2,l=Math.hypot(x,y),r=40;axis=l<5?[0,0]:[x/Math.max(r,l),y/Math.max(r,l)];$('stick').querySelector('i').style.transform='translate('+axis[0]*r+'px,'+axis[1]*r+'px)'}
+$('stick').addEventListener('pointerdown',e=>{if(dialog.open)return;e.preventDefault();pointer=e.pointerId;$('stick').setPointerCapture(pointer);moveStick(e)});$('stick').addEventListener('pointermove',e=>{if(e.pointerId===pointer)moveStick(e)});for(const event of ['pointerup','pointercancel','lostpointercapture'])$('stick').addEventListener(event,e=>{if(e.pointerId===pointer)stop()});window.addEventListener('blur',stop);document.addEventListener('visibilitychange',stop);
+function input(){let [x,y]=axis;for(const k of keys){x+=d[k][0];y+=d[k][1]}const l=Math.max(1,Math.hypot(x,y));return [x/l,y/l]}
+function updateCook(){const c=s.cook;if(!c)return;const p=c.mode==='v014c-grill'?grillCookPreview(s):liveCookPreview(s),items=p?.indicators||p?.items||[];$('cook-clock').textContent='烹饪 '+c.elapsed.toFixed(1)+' / 19s';for(const i of items){const el=panel.querySelector('[data-heat="'+i.id+'"]');if(el){el.textContent=i.state||'受热中';el.style.color=i.tone==='bad'?'#f38f7b':i.tone==='good'?'#b1db87':'#e8c888'}}const b=$('dock').querySelector('[data-act=finish]');if(b)b.disabled=!c.live||c.elapsed<1.2}
+function frame(now){requestAnimationFrame(frame);const dt=Math.min(.06,Math.max(0,(now-last)/1000));last=now;if(document.hidden)return;try{
+ if(mode==='cook'&&s.cook){if(!dialog.open){const result=stepLiveResearch(s,dt);if(result){finish(result);return}}updateCook();globalThis.__oddpotY4bRenderer?.draw(lab,s,s.cook.mode==='v014c-grill'?grillCookPreview(s):liveCookPreview(s),now)}
+ if(['prep','service','report'].includes(mode))drawDiner($('room'),mode==='service'?s:{...s,phase:'forecast',service:null},now/1000,s.service?.time??now/1000);
+ if(mode==='service'&&!dialog.open&&!s.service.paused&&!s.service.done){const [x,y]=input();for(let i=0;i<speed;i++){walkServiceHero(s.service.hero,x,y,dt,s);advanceWalkableInteraction(s,dt);acc+=dt;if(acc>=1){acc-=1;tick(s,1)}if(s.service.breakAt||s.service.done)break}
+ if(s.service.breakAt){acc=0;eventWindow();return}if(s.service.done){closeService(s);results.push(summary(s));switchMode('report');return}}
+ if(mode==='service'){const v=s.service;$('coin').textContent=s.coins+' G';$('service-status').textContent=v.time+'s · '+v.orders.filter(o=>o.status==='served').length+'/'+v.orders.length;const guide=dinerGuide(s);$('hint').textContent=guide?.mode==='serve'?'前往 '+(guide.table+1)+' 号桌上菜':guide?.mode==='pickup'?'靠近出餐台取餐':'靠近厨位，协助制作'}
+ }catch(e){console.error('CB frame',e);if(mode==='service')setServicePaused(s,true)}}
+enableY2();enableY4b();render();requestAnimationFrame(frame);
