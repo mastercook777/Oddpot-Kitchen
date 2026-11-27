@@ -1,5 +1,5 @@
 import {ING,RECIPES,CUSTOMERS} from './data.js';
-import {beginLiveResearch,dropLiveIngredient,threadGrillIngredient,placeGrillSkewer,performLiveAction,finishLiveResearch,stepLiveResearch,liveCookPreview,grillCookPreview,recipeCookware,prepDish,createService,setServicePaused,tick,currentServiceEvent,chooseServiceEvent,resumeBreak,advanceWalkableInteraction,activateWalkableSpecial,closeService,canUse} from './engine.js';
+import {beginLiveResearch,dropLiveIngredient,threadGrillIngredient,placeGrillSkewer,performLiveAction,finishLiveResearch,stepLiveResearch,liveCookPreview,grillCookPreview,recipeCookware,prepDish,createService,setServicePaused,tick,currentServiceEvent,chooseServiceEvent,resumeBreak,advanceWalkableInteraction,activateWalkableSpecial,closeService,canUse} from './engine.js?v=cb2r1';
 import {LIVE_ACTIONS} from './cooking_v063.js?v=0.15.0-alpha.11';
 import {drawDiner} from './scenes_v04.js?v=z2e2';
 import {enableY2} from './three_y2_diner.js?v=z2e2';
