@@ -674,7 +674,7 @@ function render(){
  const scroller=app.querySelector(stageScrollSelector);if(scroller)scroller.scrollTop=prevStageScroll;
  restoreEventScroll(app,previousEvent);
  drawerFocusAfterRender(previousKind,previousFocus,origin);
- if(game.phase==='report'&&!overlay){const result=app.querySelector('.z2ed1-result');if(result&&!previousDinerPhase?.contains('report'))result.querySelector('[data-act="to-upgrade"]')?.focus({preventScroll:true});}
+ if(game.phase==='report'&&!overlay){const result=app.querySelector('.z2ed1-result');const shell=app.querySelector('.game-shell');for(const child of shell.children)if(!child.classList.contains('stage'))child.inert=true;if(result&&(!previousDinerPhase?.contains('report')||!result.contains(document.activeElement)))result.querySelector('[data-act="to-upgrade"]')?.focus({preventScroll:true});}
  // Preserve the on-screen floating stick when a second finger uses the skill.
  if(stick.pointer!==null&&(!playingGameGestures()||stick.phase!==game.phase))releaseStick();
  paintStick();
