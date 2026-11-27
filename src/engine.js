@@ -477,6 +477,7 @@ export function buyKitchenUpgrade(s,index){
 // v0.6.3-B: recipe identity + selected *actual* craft determines its own
 // benefits. Never attach economic effects to style labels globally.
 export function recipeCraftSnapshot(s,recipeId,variant=null){
+ if(s.cbExperiment?.crafts?.[recipeId])return clone(s.cbExperiment.crafts[recipeId]);
  const r=RECIPES[recipeId];if(!r)return null;
  const v=variant||activeRecipeVariant(s,recipeId);
  const pair=v&&!v.legacy?resolveTechnique(recipeId,v.style):null;
@@ -870,7 +871,7 @@ const effects=[...new Set([...c.effects,...(c.adj.spice>=2&&good.every(Boolean)?
 let synergy=effects.length>=2?25:effects.length?18:10;let technique=id?15:0;let quality=clamp(Math.round(heatScore+synergy+technique),0,100);const sellable=Boolean(id)&&!undersafe&&quality>=40;return {recipeId:id,quality,heatScore:Math.round(heatScore),effects,ids,tiles:clone(c.tiles),sellable,reason:!id?'未匹配已开放的料理配方':undersafe?'肉类未达到安全熟度':quality<40?'火候偏差过大':'成功',heat:tiles.map(t=>({id:t.id,heat:t.heat,ideal:`${ING[t.id].lo}–${ING[t.id].hi}`}))};}
 export function finishCook(s){const c=s.cook;if(!c||c.beats!==3)return false;const r=cookOutcome(c,s.tech);const fee=c.context==='research',premium=!!(!fee&&s.service?.orders?.find(o=>o.id===c.orderId)?.premium);const ok=consume(s,r.ids,c.txn,premium);if(!ok)return false;if(premium)s.service.premiumConsumed=(s.service.premiumConsumed||0)+1;s.lastCook=r;s.cook=null;if(fee&&r.sellable){s.recipes[r.recipeId]=Math.max(s.recipes[r.recipeId]||0,Math.min(r.quality,90));s.learned[r.recipeId]=true;}if(!fee&&s.service){s.manualCost+=materialCost(r.ids);const order=s.service.orders.find(o=>o.id===c.orderId);if(order&&order.status==='queued'){order.manual={quality:r.quality,sellable:r.sellable,recipeId:r.recipeId};order.manualMaterialsConsumed=true;order.manualTimePaid=false;}}return r;}
 export function synergyFor(menu){const rs=[...new Set(menu)].map(id=>RECIPES[id]).filter(Boolean);if(rs.some(r=>r.tags.includes('辣')&&r.tags.includes('肉'))&&rs.some(r=>r.station==='POT'))return '辛香暖胃';if(rs.filter(r=>r.tags.includes('菌香')).length>=2)return '菌香组合';return null}
-export function canMenu(s){return s.menu.length===3&&s.menu.every(id=>s.recipes[id]&&chapterRecipeAvailable(s,id)&&cookwareOwned(s,RECIPES[id]))&&new Set(s.menu.map(id=>recipeCookware(RECIPES[id]))).size<=ensureKitchen(s).slots.length;}
+export function canMenu(s){if(s.cbExperiment){const e=s.cbExperiment,cap=[7,9,11,13][e.config.level-1];return s.menu.length>=3&&s.menu.length<=(e.config.level===4?4:3)&&new Set(s.menu).size===s.menu.length&&s.menu.every(id=>e.crafts[id]&&s.recipes[id]&&chapterRecipeAvailable(s,id)&&cookwareOwned(s,RECIPES[id]))&&s.menu.reduce((n,id)=>n+e.crafts[id].rarity,0)<=cap;}return s.menu.length===3&&s.menu.every(id=>s.recipes[id]&&chapterRecipeAvailable(s,id)&&cookwareOwned(s,RECIPES[id]))&&new Set(s.menu.map(id=>recipeCookware(RECIPES[id]))).size<=ensureKitchen(s).slots.length;}
 export function selectMenuRecipe(s,slot,id){
  if(s.phase!=='menu'||!Number.isInteger(slot)||slot<0||slot>2||!s.recipes?.[id]||!chapterRecipeAvailable(s,id)||!cookwareOwned(s,RECIPES[id]))return false;
  const next=[...s.menu];next[slot]=id;
@@ -925,7 +926,8 @@ export function selectArrivalDish(s,o){
  // intermission affects future orders, never rewrites an already seated order.
  const syn=synergyFor(s.menu),options=[...new Set(s.menu)].filter(id=>s.recipes[id]&&chapterRecipeAvailable(s,id)&&RECIPES[id]).map(id=>{const craft=recipeCraftSnapshot(s,id);return {id,craft,score:customerFit(RECIPES[id],o.segment,syn,craft),price:craft.price}}).sort((a,b)=>b.score-a.score||a.price-b.price||a.id.localeCompare(b.id));
  const themed=firstChallenge(s)&&o.id===(s.service?.judgeOrderId||s.service?.orders?.[6]?.id)?options.filter(x=>RECIPES[x.id].tags.some(t=>['辣','爆香'].includes(t))):[];
- const eligible=themed.length?themed:options,best=eligible[0];
+ const stocked=s.cbExperiment?options.filter(x=>canUse(s,x.craft.ingredientIds)||(s.prepVariants?.[x.id]||[]).some(p=>p.variantId===x.craft.variantId)):options;
+ const eligible=themed.length?themed:stocked.length?stocked:options,best=eligible[0];
  // Genuine favorite dishes still dominate. Similar-fit alternatives may be
  // chosen; menu duplicates must not multiply demand. No rerolls on UI refresh.
  // Star appraisals and the chef duel must retain their authored scoring
@@ -937,7 +939,8 @@ export function selectArrivalDish(s,o){
  const key=String(o.id||'')+'|'+String(o.segment||'');
  const hash=[...key].reduce((h,c)=>rand((h^c.charCodeAt(0))>>>0),s.service?.scenarioSeed??s.seed??0);
  const roll=rand(hash)/4294967296;
- const weights=choices.map(x=>Math.exp((x.score-(best?.score||0))*.055)/(1+(counts[x.id]||0)*.38));
+ const weights=choices.map(x=>Math.exp((x.score-(best?.score||0))*.055)/(1+(counts[x.id]||0)*.38)*(1+(s.cbExperiment?(x.craft.cb?.aroma||0):0)/100));
+ if(s.cbExperiment)for(const x of choices)if(x.craft.cb?.aroma)record(s,{type:'cb_affix',affix:'aroma',order:o.id,recipeId:x.id,value:x.craft.cb.aroma});
  const total=weights.reduce((n,w)=>n+w,0);
  let cursor=roll*total,chosen=best;
  for(let i=0;i<choices.length;i++){cursor-=weights[i];if(cursor<0||i===choices.length-1){chosen=choices[i];break;}}
@@ -1072,8 +1075,8 @@ export function serviceGoalResult(v){
   served.filter(o=>RECIPES[o.recipeId]?.tags?.includes('辣')).length;
  return {kind:goal.kind,label:goal.label,value,target:goal.target,success:value>=goal.target};
 }
-export function createService(s,options={}){if(s.phase!=='service'||s.service||!kitchenHasMenuCoverage(s))return false;
- const plan=serviceDayPlan(s),size=plan.count;
+export function createService(s,options={}){if(s.phase!=='service'||s.service||!kitchenHasMenuCoverage(s)||(s.cbExperiment&&!canMenu(s)))return false;
+ const plan=s.cbExperiment?.plan||serviceDayPlan(s),size=plan.count;
  if(s.coins<plan.marketingCost)return false;
  if(plan.marketingCost&&!transact(s,`marketing-${kitchenDayKey(s)}`,'marketing',{},-plan.marketingCost))return false;
  const namedToday=new Set();
@@ -1193,6 +1196,7 @@ export function chooseServiceEvent(s,choice){
  record(s,{type:'management_choice',wave,choice,cost});return true;
 }
 export function swapBreakMenu(s,slot,id){
+ if(s.cbExperiment)return false;
  const v=s.service;
  if(s.phase!=='service'||!v?.breakAt||v.breakUsed||!Number.isInteger(slot)||slot<0||slot>2||!s.recipes[id]||!chapterRecipeAvailable(s,id)||!v.kitchenSnapshot.some(k=>k.type===recipeCookware(RECIPES[id])))return false;
  const before=s.menu[slot];if(before===id)return false;s.menu[slot]=id;v.breakUsed=true;v.decisionFlash=`下一波新上架：${RECIPES[id].name}`;v.decisionAt=v.time;
@@ -1224,6 +1228,7 @@ function finishOrder(s,o,quality){
  const v=s.service;
  if(o.status==='left'||o.status==='rejected')return;
  o.quality=quality;
+ if(s.cbExperiment&&o.started!=null&&o.craft?.cb?.refund){const key=[...o.id].reduce((h,c)=>rand((h^c.charCodeAt(0))>>>0),v.scenarioSeed^0x2a7a);const ids=o.craft.ingredientIds.filter(id=>['beef','chicken','chili','garlic','mushroom','cabbage','onion','potato','cloud_rice','sky_moss','storm_egg','sour_bell'].includes(id));if(ids.length&&rand(key)/4294967296<o.craft.cb.refund/100){const id=ids[key%ids.length];if(transact(s,'cb-refund-'+o.id,'cb_refund',{[id]:1})){v.cost-=ING[id].cost;record(s,{type:'cb_affix',affix:'frugal',order:o.id,recipeId:o.recipeId,value:1,ingredient:id});}}}
  if(v.walkable){
   o.status='pickup';o.pickupAt=v.time;
   record(s,{type:'plate_ready',order:o.id,recipeId:o.recipeId});
@@ -1371,13 +1376,14 @@ function advanceGuestMeals(s){
   if(o.status==='flying'&&v.time-o.flightAt>=DINER_TIMING.flight){
    o.status='eating';o.landedAt=v.time;o.served=v.time;
    const price=o.craft?.price??RECIPES[o.recipeId]?.price??0;
-   if(transact(s,`sale-${o.id}`,'sale',{},price))v.income+=price;
+   if(transact(s,`sale-${o.id}`,'sale',{},price)){v.income+=price;if(s.cbExperiment&&o.craft?.cb?.gain)record(s,{type:'cb_affix',affix:o.craft.affixes.some(a=>a.id==='stars')?'stars':'fine',order:o.id,recipeId:o.recipeId,value:price-o.craft.basePrice});}
    record(s,{type:'landed',order:o.id,recipeId:o.recipeId});
   }
   if(o.status==='eating'&&v.time-o.landedAt>=DINER_TIMING.eat){
    const wait=clamp(o.landedAt-o.arrival,0,o.patience);
    const serviceScore=clamp(Math.round(100*(1-wait/o.patience)),0,100);
    o.sat=clamp(Math.round(.5*o.fit+.3*o.quality+.2*serviceScore+(v.guestMood||0)*(o.wave===v.eventMoodWave?1:0)),0,100);
+   if(s.cbExperiment&&o.craft?.cb?.sat){const old=o.sat;o.sat=clamp(o.sat+o.craft.cb.sat,0,100);record(s,{type:'cb_affix',affix:'aftertaste',order:o.id,recipeId:o.recipeId,value:o.sat-old});}
    const review=guestReview(o);o.reviewText=review.text;o.reviewType=review.type;
    o.status='review';o.reviewAt=v.time;
    s.reputation+=o.sat>=70?1:o.sat<50?-1:0;
@@ -1408,7 +1414,8 @@ function advanceGuestOrders(s){
    o.basePatience=o.patience;const bonus=Math.min(12,(v.crew?.waiter?.patience||0)+(v.crew?.waiter2?.patience||0));
    // Outdoor waiting uses up real customer patience; reset at ordering must not be a free time bank.
    const queuePenalty=Math.min(24,Math.round((o.queueSeconds||0)*1.15));
-   o.patience=Math.max(8,o.patience+bonus-queuePenalty);v.staffStats.waiterBonus+=bonus;if(bonus)v.staffStats.waiterOrders++;
+   const cbWait=s.cbExperiment?Math.round(o.patience*(o.craft?.cb?.wait||0)/100):0;if(cbWait)record(s,{type:'cb_affix',affix:'wait',order:o.id,recipeId:o.recipeId,value:cbWait});
+   o.patience=Math.max(8,o.patience+bonus-queuePenalty+cbWait);v.staffStats.waiterBonus+=bonus;if(bonus)v.staffStats.waiterOrders++;
    o.status='queued';o.arrival=v.time; o.orderedAt=v.time;
    v.queued.push(o.id);record(s,{type:'ordered',order:o.id,recipeId:o.recipeId,table:o.tableId,seat:o.seatId});
   }
@@ -1504,6 +1511,7 @@ if(!canUse(s,materialIds,!!o.premium)){o.status='rejected';o.rejectReason='食�
 if(!consume(s,materialIds,`service-cook-${id}`,!!o.premium)){o.status='rejected';o.rejectReason='食材不足';record(s,{type:'rejected',order:id,reason:'食材不足'});continue;}
 if(o.premium)v.premiumConsumed=(v.premiumConsumed||0)+1;
 v.cost+=materialCost(materialIds);o.status='cooking';o.started=v.time;v.stations[st]={orderId:id,left:stationDuration(s,st,r,v,o),quality:o.craft?.quality||s.recipes[o.recipeId]||72};v.stationStats[st].count++;v.stationStats[st].secondsSaved+=Math.max(0,r.time-v.stations[st].left);
+ if(s.cbExperiment&&o.craft?.cb?.discount){const base=stationDuration(s,st,r,v,{...o,craft:{...o.craft,timeDelta:0}});const saved=Math.max(0,base-v.stations[st].left);record(s,{type:'cb_affix',affix:o.craft.affixes.some(a=>a.id==='solo')?'solo':'quick',order:o.id,recipeId:o.recipeId,value:saved});}
  const role=shiftHelperAt(v.crew,ix);
  if(role){const withoutHelper=Math.max(1,r.time+(o.craft?.timeDelta||0)-(slot.level-1)*2-(v.eventEffects?.[r.station]||0));const prefix=role==='helper2'?'helper2':'helper';v.staffStats[prefix+'Seconds']+=Math.max(0,withoutHelper-v.stations[st].left);v.staffStats[prefix+'Orders']++;}
  record(s,{type:'started',order:id,station:st,cookType:r.station,level:slot.level});}
@@ -1651,6 +1659,7 @@ export function activeRecipeVariant(s,id){
    (s.recipeVariants[id]||[])[0]||null;
 }
 export function chooseRecipeVariant(s,id,variantId){
+ if(s.cbExperiment)return false;
  if(!s.recipes?.[id]||!Array.isArray(s.recipeVariants?.[id])||
     !s.recipeVariants[id].some(v=>v.valid&&v.variantId===variantId))return false;
  s.activeVariantIds[id]=variantId;return true;
