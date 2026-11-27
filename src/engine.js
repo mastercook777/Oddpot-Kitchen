@@ -1,4 +1,4 @@
-import {judgeCooking} from './cooking_quality_r1.js?v=cb2r1c';
+import {judgeCooking} from './cooking_quality_r1.js?v=cb2r1d';
 import {fieldHarvestTargetSuffix} from './field_target_v012f.js?v=0.13.0-alpha.9';
 import {craftedPrice} from './recipe_value_v013j.js';
 import {makeSpecialEncounterPlan,previewSpecialEncounter,SPECIAL_ENCOUNTER_KINDS} from './field_encounters_v011c.js';
