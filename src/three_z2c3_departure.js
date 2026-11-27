@@ -89,9 +89,35 @@ function makeDiorama(T){
  }
  function buildBench(){
   const scene=new T.Scene();scene.background=new T.Color('#394d3d');lights(scene,{x:0,z:0},false);const root=group(scene);
-  cyl(root,woodDark,0,-.13,0,.72,.78,.18,48);cyl(root,woodLight,0,-.033,0,.73,.75,.045,48);ring(root,brass,.70,.018,-.005);
+  // A small cutaway travelling-chef equipment nook, not a character pedestal.
+  const room=group(root),wall=mat('#b59b6e'),linen=mat('#b99a65'),leather=mat('#79513a'),stoneFloor=mat('#807764');
+  box(room,woodDark,0,-.12,0,3.4,.22,2.65);
+  for(let i=0;i<13;i++)box(room,i%3?wood:woodLight,0,-.006,-1.22+i*.197,3.28,.055,.19);
+  box(room,wall,0,1.05,-1.23,3.35,2.20,.16);
+  box(room,woodDark,0,.12,-1.11,3.4,.22,.16);
+  box(room,woodDark,0,2.04,-1.11,3.4,.18,.18);
+  for(const x of [-1.56,-.56,.68,1.56])box(room,woodDark,x,1.05,-1.10,.12,2.0,.17);
+  // Right-hand doorway with a visible threshold and warm outside light.
+  box(room,woodDark,1.12,.85,-1.075,.77,1.62,.13);
+  box(room,teal,1.12,.84,-.99,.55,1.42,.06);
+  box(room,woodLight,1.12,.035,-.89,.79,.10,.36);
+  for(const x of [.78,1.46])box(room,brass,x,.87,-.91,.035,1.48,.035);
+  box(room,light,1.12,1.82,-.94,.24,.17,.12);
+  // Low chest on the left, hanging pegs and folded travelling supplies.
+  box(room,woodDark,-1.04,.23,-.76,.77,.45,.53);
+  box(room,woodLight,-1.04,.48,-.76,.82,.09,.57);
+  for(const x of [-1.27,-.82])box(room,brass,x,.29,-.48,.06,.31,.035);
+  box(room,linen,-1.09,.59,-.79,.43,.13,.36);
+  box(room,woodLight,-1.04,1.36,-1.04,.86,.09,.24);
+  for(const x of [-1.34,-1.04,-.74])cyl(room,brass,x,1.25,-.86,.025,.025,.15,10).rotation.x=Math.PI/2;
+  const bag=group(room,1.12,.20,-.42);
+  box(bag,leather,0,.18,0,.48,.62,.31);box(bag,linen,0,.42,.06,.48,.16,.35);
+  for(const x of [-.14,.14])box(bag,woodDark,x,.19,.18,.07,.48,.035);
+  box(bag,brass,0,.25,.205,.12,.085,.025);
+  box(room,stoneFloor,0,.03,.74,1.65,.045,.38);
+  scene.background=new T.Color('#67543e');
   const hero=makeChefY2(T,rounded,true);root.add(hero.root);const rig=createWeaponRig(T,hero,rounded);
-  const camera=new T.OrthographicCamera(-1,1,1,-1,.1,40);camera.position.set(0,2.25,5.8);camera.lookAt(0,.70,0);
+  const camera=new T.OrthographicCamera(-1,1,1,-1,.1,40);camera.position.set(.12,2.48,6.25);camera.lookAt(0,.88,0);
   return {scene,camera,hero,rig,update(type,level,t){hero.update(t,{facing:'front',moving:false,working:false,carrying:false});rig.update({weapon:{type,level},moving:false,facing:{x:0,y:1}},t);hero.root.rotation.y=Math.sin(t*.85)*.035;},dispose(){const gs=new Set(),ms=new Set();hero.root.traverse(o=>{if(o.geometry)gs.add(o.geometry);if(o.material)for(const v of Array.isArray(o.material)?o.material:[o.material])ms.add(v);});for(const g of gs)if(!geo.has(g))g.dispose();for(const v of ms)if(!mats.has(v))v.dispose();}};
  }
 
@@ -118,8 +144,8 @@ function makeDiorama(T){
   const showLand=onscreen(a)||!mapCanvas.dataset.drawCalls||mapCanvas.dataset.region!==region||resized,showHero=onscreen(b)||!rackCanvas.dataset.drawCalls||rackCanvas.dataset.selected!==selected||rackCanvas.dataset.level!==String(level)||resized;
   let landCalls=Number(mapCanvas.dataset.drawCalls)||0,benchCalls=Number(rackCanvas.dataset.drawCalls)||0;
   if(showLand){land.update(t);landCalls=paint(mapCanvas,land.scene,land.camera,atlas.land,5.55,3.7);mapCanvas.dataset.frames=String((Number(mapCanvas.dataset.frames)||0)+1);}
-  if(showHero){bench.update(selected,level,t);benchCalls=paint(rackCanvas,bench.scene,bench.camera,atlas.hero,.82,.96);rackCanvas.dataset.frames=String((Number(rackCanvas.dataset.frames)||0)+1);}
-  frames++;mapCanvas.dataset.targetFps=String(target);mapCanvas.dataset.atlasResizes=String(atlasResizes);rackCanvas.dataset.portrait='z2c12';
+  if(showHero){bench.update(selected,level,t);benchCalls=paint(rackCanvas,bench.scene,bench.camera,atlas.hero,1.55,1.13);rackCanvas.dataset.frames=String((Number(rackCanvas.dataset.frames)||0)+1);}
+  frames++;mapCanvas.dataset.targetFps=String(target);mapCanvas.dataset.atlasResizes=String(atlasResizes);rackCanvas.dataset.portrait='z2c12';rackCanvas.dataset.room='z2ed3a';
   mapCanvas.dataset.region=region;mapCanvas.dataset.drawCalls=String(landCalls);mapCanvas.dataset.landscape='y5d';mapCanvas.dataset.enemies=land.ecology.enemies.join(',');rackCanvas.dataset.drawCalls=String(benchCalls);rackCanvas.dataset.selected=selected;rackCanvas.dataset.level=String(level);rackCanvas.dataset.upgradeParts=String(bench.rig.masteryParts());rackCanvas.dataset.models=String(buttons.length);
   a.dataset.z2c3Active='1';b.dataset.z2c3Active='1';
  },dispose(){disposed=true;clearHost(map,mapCanvas);clearHost(rack,rackCanvas);for(const v of lands.values())releaseScene(v);lands.clear();bench?.dispose();for(const g of geo)g.dispose();for(const mat of mats)mat.dispose();renderer.dispose();renderer.forceContextLoss();}};
