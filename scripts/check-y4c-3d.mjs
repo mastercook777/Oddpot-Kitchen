@@ -128,9 +128,9 @@ for(const [width,height] of [[320,568],[375,667],[390,844]]){
  await load(closing);
  await page.waitForFunction(()=>document.querySelector('canvas[data-phase="service"]')&&document.documentElement.dataset.oddpot3d==='active',null,{timeout:20000});
  await page.locator('.v075-finish [data-act="close"]').click();
- await page.waitForFunction(()=>document.querySelector('.z2d2-report-stage canvas[data-view="report-preview"]')?.dataset.phase==='report',null,{timeout:20000});
- const reportCanvas=page.locator('.z2d2-report-stage canvas[data-view="report-preview"]'),reportBox=await reportCanvas.boundingBox(),ledgerBox=await page.locator('.z2d2-report-layout .z2c10-ledger').boundingBox();
- assert.ok(reportBox.height>=100&&reportBox.y+reportBox.height<=ledgerBox.y+1);assert.equal(await reportCanvas.getAttribute('data-order-count'),'0');assert.equal(await reportCanvas.getAttribute('data-guest-count'),'0');
+ await page.waitForFunction(()=>document.querySelector('.z2d2-report-stage canvas[data-view="restaurant"]')?.dataset.phase==='report',null,{timeout:20000});
+ const reportCanvas=page.locator('.z2d2-report-stage canvas[data-view="restaurant"]'),reportBox=await reportCanvas.boundingBox(),ledgerBox=await page.locator('.z2d2-report-layout .z2c10-ledger').boundingBox();
+ assert.ok(reportBox.height>=100&&ledgerBox.y>=reportBox.y&&ledgerBox.y+ledgerBox.height<=reportBox.y+reportBox.height+1);assert.equal(await reportCanvas.getAttribute('data-order-count'),'0');assert.equal(await reportCanvas.getAttribute('data-guest-count'),'0');
  await page.screenshot({path:out+'/z2d2-report-'+width+'.png'});
  const c=newGame(15742);c.onboarding.enabled=false;c.phase='research';assert.ok(beginLiveResearch(c,['mushroom','garlic'],'WOK'));assert.ok(dropLiveIngredient(c,'mushroom'));await load(c);await page.waitForFunction(()=>document.documentElement.dataset.oddpotResearch3d==='active',null,{timeout:20000});assert.ok(await page.locator('canvas[data-oddpot-research="3d"]').count());assert.ok(await page.locator('[data-live-drop="garlic"]').isEnabled());await page.locator('[data-live-drop="garlic"]').click();await page.waitForFunction(()=>document.querySelector('[data-live-drop="garlic"]')?.disabled);await page.screenshot({path:out+'/research-'+width+'.png'});
 
