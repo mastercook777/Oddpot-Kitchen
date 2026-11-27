@@ -28,7 +28,7 @@ try{
   await page.addInitScript(([k,s])=>localStorage.setItem(k,JSON.stringify(s)),[storageKey,fixture()]);
   await page.goto('http://127.0.0.1:5173/index.html',{waitUntil:'networkidle'});
   const read=()=>page.evaluate(k=>JSON.parse(localStorage.getItem(k)),storageKey);
-  await page.locator('.v014-marketing summary').click();
+  await page.locator('.ui2-room-dock [data-act="ui2-prep"]').click();await page.locator('.v014-marketing summary').click();
   await page.locator('[data-act="promo:flyer"]').click();
   assert.equal((await read()).management.campaignId,'flyer');
   assert.equal(await page.locator('[data-act="promo:flyer"]').getAttribute('aria-pressed'),'true');
@@ -41,7 +41,7 @@ try{
   const mid=await read();assert.equal(mid.crew.helper.level,2);assert.equal(mid.coins,472);
   await page.screenshot({path:`${out}/staff-${width}.png`});
   await page.locator('[data-act="close-sheet"]').last().click();
-  await page.screenshot({path:`${out}/preopen-${width}.png`});
+  await page.screenshot({path:`${out}/preopen-${width}.png`});await page.keyboard.press('Escape');
   await page.locator('[data-act="open"]').click();
   const after=await read();assert.equal(after.phase,'service');
   assert.equal(after.management.campaignId,'flyer');
@@ -76,7 +76,7 @@ try{
  offline.on('pageerror',e=>errors.push(e.message));
  await offline.addInitScript(([k,s])=>localStorage.setItem(k,JSON.stringify(s)),[storageKey,fixture()]);
  await offline.goto('http://127.0.0.1:5173/standalone.html',{waitUntil:'networkidle'});
- await offline.locator('.v014-marketing summary').click();
+ await offline.locator('.ui2-room-dock [data-act="ui2-prep"]').click();await offline.locator('.v014-marketing summary').click();
  await offline.locator('[data-act="promo:flyer"]').click();
  assert.equal(await offline.evaluate(k=>JSON.parse(localStorage.getItem(k)).management.campaignId,storageKey),'flyer');
  await offline.screenshot({path:`${out}/offline-390.png`});
