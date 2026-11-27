@@ -130,3 +130,6 @@
 .ui2-shell[data-ui2-mode=upgrade] .z2ed1-growth-tools{bottom:calc(66px + env(safe-area-inset-bottom))!important}
 .ui2-shell:has(>.sheet-backdrop)>.z2a-hud,.ui2-shell:has(>.sheet-backdrop)>.dock,.ui2-shell:has(>.sheet-backdrop)>.v013j-guide,.ui2-shell:has(>.sheet-backdrop)>.game-toast{visibility:hidden!important;pointer-events:none!important}
 @media(max-width:350px){.ui2-shell .ui2-tool{flex-basis:44px;width:44px}.ui2-shell .ui2-tool.ui2-gold{font-size:12px;max-width:100px}}
+
+/* Recovered real resources in a dedicated chip; no second overlay. */
+.ui2-shell .ui2-hud-meta{font-size:11px;min-height:23px}.ui2-shell .ui2-hud-meta .z2a3-art{width:17px;height:17px}.ui2-shell .ui2-hud-side>.ui2-mode-label{display:block;font-size:10px;padding:3px 6px}.ui2-shell[data-ui2-mode=upgrade] .z2c11-scene-caption{top:calc(var(--ui2-hud-top) + 90px)!important}.ui2-shell:not([data-ui2-mode=research])>.v013j-guide{top:calc(var(--ui2-hud-top) + 90px)!important}

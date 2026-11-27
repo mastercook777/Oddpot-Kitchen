@@ -21,46 +21,24 @@ test('the internal, browser, offline and package versions all target v0.15.0-alp
  assert.match(script,/forecast_home_v076\.css/);
  assert.match(script,/v0\.15\.0-alpha\.11 离线版/);
 });
-test('home is its own phase UI, without historical large message bar or old bottom dock',()=>{
- const s=app.slice(app.indexOf('function shell('),app.indexOf('\nfunction overlayMarkup(',app.indexOf('function shell(')));
- assert.match(s,/home=game\.phase==='forecast'/);
- assert.match(s,/playablePhase\(\)\|\|home\?'':toast\(\)/);
- assert.match(s,/walk\|\|home\?'':/);
- const forecast=app.slice(app.indexOf('function forecast(){'),app.indexOf('\nfunction field(){'));
- assert.match(forecast,/v076-mission/);
- assert.match(forecast,/v076-preview/);
- assert.match(forecast,/v076-home-controls/);
- assert.doesNotMatch(forecast,/scene-float/);
- assert.doesNotMatch(forecast,/sceneTag/);
- assert.doesNotMatch(forecast,/forecast-advice/);
- assert.doesNotMatch(forecast,/dock-head/);
- assert.doesNotMatch(forecast,/game-toast/);
+test('home is a mode in the shared real room and floating dock, not a separate page',()=>{
+ const shell=app.slice(app.indexOf('function shell('),app.indexOf('\nfunction overlayMarkup(',app.indexOf('function shell(')));
+ const screen=app.slice(app.indexOf('function forecast(){'),app.indexOf('\nfunction bossHint('));
+ assert.match(shell,/home=game\.phase==='forecast'/);
+ assert.match(shell,/playablePhase\(\)\|\|home\|\|game.phase==='menu'\|\|game.phase==='prep'/);
+ assert.match(screen,/ui2Room\('morning'/);
+ assert.match(app,/function ui2Room[^\n]*restaurantView\(false\)/);
+ assert.doesNotMatch(screen,/v076-preview|forecast-advice|dock-head|game-toast/);
 });
-test('each world home has one door action and one of each existing shortcut',()=>{
- const screen=app.slice(app.indexOf('function forecast(){'),app.indexOf('\nfunction field(){'));
- const marker='return [`\n <div class="v076-home v016-home z2c2-cloud-home">';
- const cloudStart=screen.indexOf(marker);
- assert.ok(cloudStart>0,'legacy cloud home remains distinct');
- const border=screen.slice(0,cloudStart),cloud=screen.slice(cloudStart);
- for(const world of [border,cloud]){
-  for(const action of ['to-field','stock','bento','book']){
-   assert.equal(action==='to-field'?(world.match(/z2c2Door\(\)/g)||[]).length:(world.match(new RegExp('data-act="'+action+'"','g'))||[]).length,1);
-  }
- }
- assert.match(border,/v016-world-actions/);
- assert.match(border,/data-act="crew"/);
- assert.match(border,/z2c2Door\(\)/);
- assert.match(cloud,/z2c2Door\(\)/);assert.match(app,/class="v016-door z2c2-threshold" data-act="to-field"/);
- assert.match(app,/if\(act==='to-field'\)\{nextPhase\(game,'field'\)/);
+test('home retains real door and each shortcut in both worlds with shared room',()=>{
+ const screen=app.slice(app.indexOf('function forecast(){'),app.indexOf('\nfunction bossHint('));
+ for(const action of ['stock','bento','book','crew'])assert.equal(screen.split("ui2Tool('"+action+"'").length-1,1);
+ assert.match(screen,/ui2Spot\('to-field','route','整装出发',g.entrance\)/);
+ assert.match(screen,/ui2Tool\('ui2-depart'/);
+ assert.match(app,/if\(act==='to-field'\|\|act==='ui2-depart'\)\{[^}]*nextPhase\(game,'field'\)/);
  assert.match(app,/if\(act==='book'\)\{bookTab='recipes';overlay='book';render\(\);return\}/);
  assert.match(app,/if\(act==='stock'\|\|act==='premium'\|\|act==='settings'/);
- const s=newGame();
- assert.equal(s.phase,'forecast');
- assert.ok(serviceDayPlan(s).goal.label.length>0);
- assert.equal(ensureKitchen(s).slots.length,2);
- assert.ok(Array.isArray(availableBento(s)));
- nextPhase(s,'field');
- assert.equal(s.phase,'field');
+ const s=newGame();assert.equal(s.phase,'forecast');assert.ok(serviceDayPlan(s).goal.label.length>0);assert.equal(ensureKitchen(s).slots.length,2);assert.ok(Array.isArray(availableBento(s)));nextPhase(s,'field');assert.equal(s.phase,'field');
 });
 test('the compact game HUD shows the current phase and a journey, with version in settings',()=>{
  const hud=app.slice(app.indexOf('function hud(){'),app.indexOf('\nfunction toast(){'));
@@ -81,7 +59,7 @@ test('small-phone responsive CSS protects the preview, touch targets and bottom 
 });
 test('the same existing Canvas restaurant is displayed without inventing a second environment',()=>{
  const forecast=app.slice(app.indexOf('function forecast(){'),app.indexOf('\nfunction field(){'));
- assert.match(forecast,/restaurantView\(false\)/);
+ assert.match(forecast,/ui2Room\('morning'/);assert.match(app,/function ui2Room[^\n]*restaurantView\(false\)/);
  assert.match(app,/if\(v\?\.walkable\|\|!v\)return/);
  const sc=source('../src/scenes_v04.js');
  assert.match(sc,/if\(v\?\.walkable\|\|!v\)\{\s*const y2=globalThis\.__oddpotY2Renderer;\s*if\(y2&&y2\.draw\(canvas,s,t,w,h,restaurantActorsV075\)\)return;\s*drawRestaurantV075\(c,s,t,w,h\);return;\s*\}/);

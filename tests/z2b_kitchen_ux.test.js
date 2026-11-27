@@ -34,12 +34,12 @@ test('Z2b preserves action endpoints, actual 3D hosts, separate prep regions and
  assert.match(app,/selectedIngredients=selectedIngredients.filter\(i=>i!==id\)/);
  assert.match(app,/beginLiveResearch\(game,selectedIngredients/);assert.match(app,/performLiveAction\(game,act.slice\(12\)\)/);
  assert.match(app,/selectMenuRecipe\(game,Number\(slot\),id\)/);assert.match(app,/configureKitchenSlot\(game,Number\(i\),type\)/);assert.match(app,/prepDish\(game,act.slice\(5\)\)/);
- assert.match(app,/z2b-prep-scene[^]*?restaurantView\(false\)[^]*?z2b-prep-work/);
- assert.match(app,/z2b-stock-shortcut/);assert.match(app,/prevPantryScroll/);assert.match(app,/prevStageScroll/);
+ assert.match(app,/function prep\(\)[^\n]*ui2Room\('prep'/);assert.match(app,/function ui2Room[^\n]*restaurantView\(false\)/);assert.match(app,/function ui2PrepPanel\(\)/);
+ assert.match(app,/ui2Tool\('stock','bag'/);assert.match(app,/prevPantryScroll/);assert.match(app,/prevStageScroll/);
  assert.match(app,/data-live-pan="true"/);assert.match(app,/class="v014c-hearth/);assert.match(app,/class="v063-receipt-head"/);
- assert.match(three,/\['forecast','prep','report','upgrade'\].includes\(s\?\.phase\)/);assert.match(three,/kitchen-preview/);
- assert.match(css,/\.z2b-prep-scene\{flex:0 0 43%;min-height:135px/);
- assert.match(css,/\.z2b-prep-work\{flex:1;min-height:0;overflow-y:auto/);
- assert.match(css,/\.z2b-prep-work \.kitchen-choice button\{flex:1;min-width:44px;min-height:44px/);
+ assert.match(three,/\['forecast','menu','prep','report','upgrade'\].includes\(s\?\.phase\)/);assert.match(three,/kitchen-preview/);
+ const ui2=read('src/formal_ui_v2.css');assert.match(ui2,/\.ui2-room-host\{position:absolute!important;inset:0!important/);
+ assert.match(ui2,/\.sheet-body\{overflow:auto!important/);
+ assert.match(ui2,/\.kitchen-choice button\{min-height:52px/);
  assert.match(css,/\.z2b-shell \.z2b-pantry\{[^}]*overflow-y:auto/);
 });

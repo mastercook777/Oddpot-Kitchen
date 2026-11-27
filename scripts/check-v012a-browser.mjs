@@ -63,7 +63,7 @@ try{
  const report=closeService(rated);assert.ok(report.rating?.passed);
  await open('index.html',rated);
  assert.equal(await page.locator('.v12-rating-result').count(),1);
- assert.match(await page.locator('.v12-rating-result').innerText(),/第一枚万味星章/);
+ await page.locator('.v014-report-more summary').click();assert.match(await page.locator('.v12-rating-result').innerText(),/第一枚万味星章/);
  await page.screenshot({path:`${out}/report-390.png`,fullPage:true});
 
  const room=base();room.phase='upgrade';room.chapterProgress.stars=1;

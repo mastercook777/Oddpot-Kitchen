@@ -23,8 +23,8 @@ test('pale marketplace sheet uses dark legible price and stock copy',()=>{
 test('the top-level inventory shortcut is labelled 采购 and still opens existing stock',()=>{
  const app=src('../src/app.js');
  const forecast=app.slice(app.indexOf('function forecast(){'),app.indexOf('\nfunction field(){'));
- assert.match(forecast,/data-act="stock"[^\n]*采购/);
- assert.doesNotMatch(forecast,/data-act="stock"[^\n]*仓库/);
+ assert.match(forecast,/ui2Tool\('stock','bag','采购'\)/);
+ assert.doesNotMatch(forecast,/ui2Tool\('stock','bag','仓库'\)/);
  assert.match(app,/overlay==='stock'/);
 });
 
