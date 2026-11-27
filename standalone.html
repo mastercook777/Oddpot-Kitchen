@@ -3283,11 +3283,12 @@ for(const recipe of Object.values(RECIPES)){
 
 const MIN_FACE={beef:3.2,chicken:3.0,garlic:1.5,chili:1.5,mushroom:2.0,cabbage:1.8,onion:1.9,potato:3.1};
 const MAX_FACE={beef:8.4,chicken:8.2,garlic:8.0,chili:8.0,mushroom:8.2,cabbage:8.0,onion:8.1,potato:8.5};
+function grillHeatBounds(id){return {low:MIN_FACE[id]??2.2,high:MAX_FACE[id]??8};}
 function grillHeat(id,elapsed,actions=[],rate=1.05){
  const turn=actions.find(x=>x.type==='turn');
  const faceA=Math.max(0,Math.min(elapsed,turn?.t??elapsed))*rate;
  const faceB=turn?Math.max(0,elapsed-turn.t)*rate:0;
- const low=MIN_FACE[id]??2.2,high=MAX_FACE[id]??8;
+ const {low,high}=grillHeatBounds(id);
  const state=faceA>high||faceB>high?'焦糊':faceA<low||faceB<low?'偏生':'熟透';
  return {front:faceA,back:faceB,frontProgress:Math.min(100,Math.round(faceA/low*100)),backProgress:Math.min(100,Math.round(faceB/low*100)),state,tone:state==='焦糊'?'bad':state==='熟透'?'good':'warming'};
 }
@@ -3376,14 +3377,21 @@ function liveCookAmount(drop,t,actions,vessel){
  }
  return count;
 }
+// Shared read-only heat evidence. Does not change existing maturity rules.
+function liveHeatEvidence(drop,t,actions,vessel){
+ const divisor=REQUIRE[drop.id]*(vessel==='POT'?1.18:vessel==='STEAM'?1.05:1);
+ const ratio=liveCookAmount(drop,t,actions,vessel)/divisor;
+ const age=Math.max(0,t-drop.t),dense=['beef','chicken','potato'].includes(drop.id);
+ const ageLimit=drop.id==='ember_pepper'&&vessel==='POT'?19:
+  ['garlic','chili','onion','ember_pepper'].includes(drop.id)?14:16;
+ return {ratio,age,ageLimit,dense};
+}
 function liveIngredientState(drop,t,actions,vessel){
  if(!drop)return '待下锅';
- const ratio=liveCookAmount(drop,t,actions,vessel)/(REQUIRE[drop.id]*(vessel==='POT'?1.18:vessel==='STEAM'?1.05:1));
- const age=Math.max(0,t-drop.t);
+ const {ratio,age,ageLimit,dense}=liveHeatEvidence(drop,t,actions,vessel);
  if(ratio<.65)return '偏生';
  if(ratio<1)return '受热中';
- if((ratio>3.4&&['beef','chicken','potato'].includes(drop.id))||
-    age>(drop.id==='ember_pepper'&&vessel==='POT'?19:['garlic','chili','onion','ember_pepper'].includes(drop.id)?14:16))return '焦糊';
+ if((ratio>3.4&&dense)||age>ageLimit)return '焦糊';
  return '熟透';
 }
 // Presentation ONLY. Uses the exact maturity/burning rules above; its percent
@@ -3394,12 +3402,8 @@ function liveIngredientHeatFeedback(drop,t,actions,vessel){
   const h=grillHeat(drop.id,t-drop.t,(actions||[]).map(a=>({...a,t:a.t-drop.t})));
   return {state:h.state,baseState:h.state,progress:Math.min(h.frontProgress,h.backProgress),frontProgress:h.frontProgress,backProgress:h.backProgress,tone:h.tone,nearBurn:false};
  }
- const divisor=REQUIRE[drop.id]*(vessel==='POT'?1.18:vessel==='STEAM'?1.05:1);
- const ratio=liveCookAmount(drop,t,actions,vessel)/divisor,age=Math.max(0,t-drop.t);
+ const {ratio,age,ageLimit,dense}=liveHeatEvidence(drop,t,actions,vessel);
  const baseState=liveIngredientState(drop,t,actions,vessel);
- const ageLimit=drop.id==='ember_pepper'&&vessel==='POT'?19:
-  ['garlic','chili','onion','ember_pepper'].includes(drop.id)?14:16;
- const dense=['beef','chicken','potato'].includes(drop.id);
  const nearBurn=baseState==='熟透'&&(age>=ageLimit-2||(dense&&ratio>=2.9));
  const state=nearBurn?'将焦':baseState;
  const tone=baseState==='焦糊'?'bad':nearBurn?'warning':baseState==='熟透'?'good':'warming';
@@ -6257,11 +6261,14 @@ function finishLiveResearch(s){
  const c=s.cook;
  if(!['v063-live','v014c-grill'].includes(c?.mode)||!c.live||c.elapsed<1.2)return false;
  const result=c.mode==='v014c-grill'?evaluatePlacedGrill(c):evaluateLiveCook(c.ids,c.vessel,c.dropped,c.actions,c.elapsed);
+ if(s.cbExperiment){result.cbVerdict=judgeCooking(result,s.cbExperiment.config.seed,c.txn);result.sellable=result.cbVerdict.baseTier>0;result.status=result.cbVerdict.status;result.reason=result.cbVerdict.tip||result.culinaryReason;result.cbTxn=c.txn;}
  // Every attempted cook uses real resources, including failed recipes.
  if(!consume(s,c.ids,c.txn))return false;
  s.cook=null;s.lastCook=result;s.researchReceipt=true;
  result.firstDiscovery=!s.recipes[result.recipeId];
  result.ingredientCost=c.ids.reduce((sum,id)=>sum+ING[id].cost,0);
+ // Workshop has independent immutable variants; only collection confirmation registers them.
+ if(s.cbExperiment)return result;
  if(result.sellable){
   const id=result.recipeId;
   // The recipe did not exist before this cook: avoid inventing a fake
