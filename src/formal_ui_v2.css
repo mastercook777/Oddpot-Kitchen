@@ -1,0 +1,82 @@
+/* Formal Game UI 2.0. The palette, shapes and hierarchy are derived from
+ game_ui_lab.css / game_ui_flow.css, not the cooking experiment. Research
+ retains its existing stage and cooking-specific layout. */
+.ui2-shell{--ui2-ink:#473321;--ui2-gold:#d6ac70;--ui2-rim:#9a6b3e;--ui2-paper:#efdbb0;--ui2-dark:#20382c;position:relative!important;isolation:isolate;overflow:hidden!important;height:100dvh;max-height:100dvh;min-height:0}
+#app .ui2-shell [hidden]{display:none!important}
+#app .ui2-shell:not([data-ui2-mode=research]){display:block!important;padding:0!important;background:#20382c}
+#app .ui2-shell:not([data-ui2-mode=research])>.stage{position:absolute!important;inset:0!important;width:100%!important;height:100%!important;min-height:0!important;max-height:none!important;padding:0!important;margin:0!important;border:0!important;border-radius:0!important;overflow:hidden!important;background:#35493b}
+#app .ui2-shell>.stage>.ui2-room-host{position:absolute!important;inset:0!important;width:100%!important;height:100%!important;min-height:0!important;max-height:none!important;z-index:0;overflow:hidden;background:#35493b}
+.ui2-room-host>.diner-canvas,.ui2-room-host>canvas{position:absolute;inset:0;width:100%;height:100%;border:0}
+.ui2-room-host .diner-float-stick,.ui2-room-host .diner-special{z-index:5}
+.ui2-room-mode,.ui2-hotspots{position:absolute;inset:0;pointer-events:none;z-index:2}
+.ui2-spot,.ui2-shell .z2ed1-growth-hotspot{position:absolute;pointer-events:auto;display:grid;place-items:center;gap:0;width:52px;min-height:52px;padding:3px;border:2px solid #ffe7a9;border-radius:10px;background:linear-gradient(#e5c180,#b88943);box-shadow:0 3px #654425,0 0 14px #efce7166;color:#4b3825;transform:translate(-50%,-50%);font-weight:850;touch-action:manipulation;line-height:1.05}
+.ui2-spot .z2a3-art,.ui2-shell .z2ed1-growth-hotspot .z2a3-art{width:26px;height:26px}.ui2-spot small,.ui2-shell .z2ed1-growth-hotspot span{font-size:10px;font-weight:850;white-space:nowrap}
+.ui2-spot:active{transform:translate(-50%,-46%);box-shadow:none}
+#app .ui2-shell:not([data-ui2-mode=research])>.z2a-hud{position:absolute!important;inset:calc(8px + env(safe-area-inset-top)) 10px auto!important;z-index:8;display:flex;justify-content:space-between;align-items:flex-start;gap:5px;pointer-events:none;width:auto!important;height:auto!important;min-height:0!important;background:none!important;padding:0!important;border:0!important;box-shadow:none!important}
+.ui2-shell .z2a-hud button{pointer-events:auto}
+.ui2-shell:not([data-ui2-mode=research]) .z2b-phase-title,.ui2-shell:not([data-ui2-mode=research]) .z2c-resource,.ui2-shell:not([data-ui2-mode=research]) .z2b-coins{display:flex;align-items:center;gap:4px;min-height:34px;background:#20382ce8;color:#ffebc3;border:1px solid #ba9562;border-radius:8px;padding:4px 7px;box-shadow:0 2px #19251e;white-space:nowrap;font-size:13px;font-weight:750}
+.ui2-shell:not([data-ui2-mode=research]) .z2b-phase-title span{display:grid}.ui2-shell:not([data-ui2-mode=research]) .z2b-phase-title small{font-size:10px;color:#e9d3a5}
+.ui2-shell:not([data-ui2-mode=research]) .z2a-hud .hud-gear{width:44px;min-width:44px;min-height:44px;display:grid;place-items:center;background:linear-gradient(#536b4c,#2f4a36);border:2px solid #d6b27b;border-radius:10px;color:#fff0cf;box-shadow:0 3px #283523}
+.ui2-shell:not([data-ui2-mode=research]) .z2a-hud .z2a3-art{width:22px;height:22px;flex:none}
+#app .ui2-shell:not([data-ui2-mode=research])>.dock{position:absolute!important;z-index:8;left:8px!important;right:8px!important;bottom:calc(9px + env(safe-area-inset-bottom))!important;top:auto!important;width:auto!important;height:auto!important;min-height:0!important;padding:0!important;border:0!important;box-shadow:none!important;background:none!important;overflow:visible!important;pointer-events:none}
+.ui2-shell>.dock button{pointer-events:auto}.ui2-room-dock{display:flex;align-items:end;justify-content:center;gap:5px;width:100%}
+.ui2-tool{display:grid;justify-items:center;align-content:center;gap:2px;min-width:44px;max-width:65px;flex:1;min-height:56px;padding:4px 2px;border:2px solid #d6b27b;border-radius:10px;background:linear-gradient(#536b4c,#2f4a36);box-shadow:0 3px #283523,inset 0 1px #e9d5a655;color:#fff0cf;font-size:11px;font-weight:800;line-height:1.2;touch-action:manipulation}
+.ui2-tool .z2a3-art{width:27px;height:27px}.ui2-gold{background:linear-gradient(#ffe2a3,#d9a45c);color:#473321;border-color:#ffe7b3;box-shadow:0 4px #805a32;font-size:13px;min-width:57px;max-width:none}
+.ui2-tool:active,.ui2-shell .game-btn:active{transform:translateY(2px);box-shadow:none}
+.ui2-hint{position:absolute;bottom:calc(100% + 9px);left:5px;right:5px;background:#20382cdb;color:#f9e6ba;border-radius:7px;text-align:center;font-size:12px;padding:6px 8px;pointer-events:none}
+.ui2-shell:not([data-ui2-mode=research])>.v013j-guide{position:absolute;z-index:9;top:calc(64px + env(safe-area-inset-top));left:12px;right:12px;max-width:none;background:#20382ce8;color:#ffecc1;border:1px solid #c7a46c;border-radius:8px;box-shadow:0 3px #213023}
+.ui2-shell:not([data-ui2-mode=research]) .game-toast{position:absolute;z-index:7;bottom:calc(91px + env(safe-area-inset-bottom));left:12px;right:12px;max-width:none;background:#20382ce8;border:1px solid #d6ac70;border-radius:8px;color:#fff0cf;padding:5px;text-align:center;pointer-events:none}
+.ui2-shell[data-ui2-scene=room] .stage>.z2d2-report-layout,.ui2-shell[data-ui2-scene=room] .stage>.z2ed1-growth,.ui2-shell[data-ui2-scene=room] .stage>.v075-service{position:absolute!important;inset:0!important;background:transparent!important;width:100%;height:100%;border:0;pointer-events:none}
+.ui2-shell[data-ui2-scene=room] .z2d2-report-stage,.ui2-shell[data-ui2-scene=room] .z2c11-growth-scene{background:transparent!important}
+.ui2-shell .z2ed1-result,.ui2-shell .z2ed1-growth-tools,.ui2-shell .v075-event-shade,.ui2-shell .v075-pause-screen,.ui2-shell .v075-finish{pointer-events:auto}
+.ui2-shell .z2c11-growth-scene .z2c11-scene-caption,.ui2-shell .z2d2-report-stage .z2b-prep-caption{top:calc(62px + env(safe-area-inset-top));left:12px;right:auto}
+.ui2-shell .z2ed1-growth-tools{bottom:calc(68px + env(safe-area-inset-bottom))}
+.ui2-shell .z2ed1-growth-hotspot{width:auto;min-width:48px}
+.ui2-shell .z2ed3-departure{padding-top:calc(62px + env(safe-area-inset-top))!important;padding-bottom:calc(62px + env(safe-area-inset-bottom))!important}
+.ui2-shell .z2ed3-departure .z2c4-loadout{background:#594531;border:2px solid #b18b57;border-radius:9px}
+.ui2-shell .z2ed3-departure .z2c2-tool{background:#d9bd85;border:2px solid #af8a53;border-radius:7px;color:#473321}
+.ui2-shell .z2ed3-departure .z2c2-tool.chosen{background:#4b7049;color:#fff1c9;border-color:#e4c584}
+.ui2-shell .action-forest,.ui2-shell .z2ed3-branch-scene{position:absolute;inset:0;width:100%;height:100%;min-height:0;overflow:hidden}
+.ui2-shell .field-action-notice{top:calc(70px + env(safe-area-inset-top))}
+.ui2-shell .field-compact-dock{background:#20382ce8;border:1px solid #b99b65;border-radius:9px;min-height:48px;padding:4px;pointer-events:auto}
+.ui2-shell .v075-event-card,.ui2-shell .v075-finish,.ui2-shell .v075-pause-screen{background:var(--ui2-paper);color:var(--ui2-ink);border:3px solid #b2844e;border-radius:13px;box-shadow:0 0 0 2px #503722,0 7px #684727,0 14px 38px #0008}
+.ui2-shell .v4d-service-guide{top:calc(76px + env(safe-area-inset-top))}
+.ui2-shell .v075-goal{top:calc(58px + env(safe-area-inset-top))}
+.ui2-shell .v075-notification{top:calc(58px + env(safe-area-inset-top))}
+.ui2-shell .sheet-backdrop{position:absolute!important;inset:0!important;z-index:30!important;background:#12271d91!important;backdrop-filter:none!important}
+#app .ui2-shell .z2c13-sheet{position:absolute!important;z-index:31!important;left:50%!important;right:auto!important;top:50%!important;bottom:auto!important;transform:translate(-50%,-50%)!important;width:min(calc(100% - 28px),408px)!important;height:auto!important;min-height:0!important;max-height:calc(100dvh - 54px - env(safe-area-inset-top) - env(safe-area-inset-bottom))!important;display:flex!important;flex-direction:column;overflow:hidden!important;border:3px solid #b2844e!important;border-radius:13px!important;background:#efdbb0!important;color:#473321!important;box-shadow:0 0 0 2px #503722,0 7px #684727,0 14px 38px #0008!important;padding:0!important;animation:none!important}
+#app .ui2-shell .z2c13-sheet .sheet-header{position:relative;display:flex;align-items:center;justify-content:center;flex:none;min-height:52px;background:linear-gradient(#8a6239,#674429);border-bottom:2px solid #e3bc78;box-shadow:0 3px #513923;color:#fff1d1;padding:8px 44px}
+#app .ui2-shell .z2c13-sheet .sheet-header h2{color:#fff1d1;font-size:17px;font-weight:900;margin:0;text-align:center}
+.ui2-shell .sheet-header .sheet-handle{display:none!important}
+#app .ui2-shell .z2c13-sheet .sheet-close{position:absolute;right:4px;top:4px;display:grid;place-items:center;width:44px;height:44px;min-height:44px;padding:0;background:#a25d46;border:2px solid #ebbe88;border-radius:9px;box-shadow:0 2px #70422d;color:#fff3dc;font-size:18px}
+#app .ui2-shell .z2c13-sheet .sheet-body{overflow:auto!important;overflow-x:hidden!important;min-height:0;flex:1 1 auto;max-height:none!important;padding:12px!important;overscroll-behavior:contain;touch-action:pan-y;color:#473321}
+.ui2-shell .z2c13-sheet .sheet-body h3{font-size:14px;color:#63452a;margin:10px 0 7px}.ui2-shell .z2c13-sheet .sheet-lead{font-size:12px;color:#75573a;line-height:1.45}
+.ui2-shell .z2c13-sheet .game-btn,.ui2-shell .z2c13-sheet button:not(.ui2-slot):not(.sheet-close){min-height:44px;font-size:13px;white-space:normal}
+.ui2-shell .z2c13-sheet .primary,.ui2-shell .z2ed1-result .primary,.ui2-shell .dock .primary{background:linear-gradient(#ffe2a3,#d9a45c);color:#473321;border:2px solid #ffe7b3;border-radius:9px;box-shadow:0 3px #805a32;font-weight:900}
+.ui2-shell .z2c13-sheet .secondary{background:#e2c998;color:#503821;border:1px solid #aa8759;border-radius:7px}
+.ui2-slots{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:6px;max-height:35dvh;overflow:auto;overscroll-behavior:contain;padding:2px 2px 8px;margin:0 0 8px;border-bottom:1px solid #c5a56c}
+.ui2-slot{position:relative;min-width:0;min-height:66px;padding:3px;display:grid;align-content:center;justify-items:center;gap:1px;border:2px solid #af8a53;border-radius:7px;background:#d9bd85;box-shadow:inset 0 2px 3px #76532d38;color:#473321;touch-action:manipulation}
+.ui2-slot[aria-pressed=true]{border-color:#4b7647;background:#f6e4ae;box-shadow:0 0 0 1px #4b7647}
+.ui2-slot>small{font-size:10px;line-height:1.12;text-align:center;max-width:100%;overflow:hidden;white-space:nowrap;text-overflow:ellipsis}
+.ui2-slot>b{position:absolute;right:2px;top:2px;background:#efdbb0;border-radius:3px;font-size:10px;padding:1px 2px}
+.ui2-slot .z2b-dish-art,.ui2-slot .book-icon{width:35px!important;height:35px!important;min-width:0!important}
+.ui2-slot .z2b-dish-vessel .z2a3-art{width:30px!important;height:30px!important}.ui2-slot .z2b-dish-food{display:none}
+.ui2-slot>span svg,.ui2-slot>span img,.ui2-slot>.z2a3-art{max-width:32px;max-height:32px}
+.ui2-crew-slots{grid-template-columns:repeat(4,minmax(0,1fr))}.ui2-crew-slots .ui2-slot{min-height:83px}.ui2-slot canvas{width:44px!important;height:54px!important;image-rendering:pixelated;object-fit:contain}
+.ui2-detail-list{display:block!important;width:100%;min-width:0}.ui2-selected-detail{margin:0!important;width:100%!important;max-width:none!important;min-width:0!important;background:#f6e8c7!important;border:1px solid #c6a776!important;border-radius:8px!important;padding:9px!important}
+.ui2-menu-slots{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:6px;margin:8px 0}
+.ui2-menu-slots .menu-line{display:grid!important;grid-template-columns:1fr!important;justify-items:center;align-content:center;text-align:center;gap:3px;min-height:115px;min-width:0;padding:6px 3px!important;background:#d9bd85!important;color:#473321!important;border:2px solid #af8a53!important;border-radius:8px!important;box-shadow:inset 0 2px 3px #76532d38}
+.ui2-menu-slots .menu-line strong{font-size:12px;color:#473321;overflow-wrap:anywhere}.ui2-menu-slots .menu-num{display:none}.ui2-menu-slots .menu-switch{display:none}.ui2-menu-slots .v014-menu-value{display:grid;justify-items:center;font-size:11px;gap:2px}.ui2-menu-slots .v014-menu-value i{font-size:10px}.ui2-menu-slots .menu-line small{font-size:10px;color:#63452a}
+.ui2-summary{text-align:center;display:grid;justify-items:center;gap:3px;padding:10px 0}.ui2-summary>.z2a3-art{width:52px;height:52px}.ui2-summary h3,.ui2-summary p{margin:0!important}
+.ui2-shell .z2c13-sheet .kitchen-prep-card,.ui2-shell .z2c13-sheet .ui2-menu-board{position:static!important;inset:auto!important;max-height:none!important;height:auto!important;overflow:visible!important;background:none!important;color:#473321;border:0;box-shadow:none;width:100%;padding:0}
+.ui2-shell .z2c13-sheet .kitchen-choice{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:4px}
+.ui2-shell .z2c13-sheet .kitchen-choice button{min-height:52px;background:#d9bd85;color:#473321;border:2px solid #af8a53;border-radius:7px;display:grid;justify-items:center;padding:3px}
+.ui2-shell .z2c13-sheet .kitchen-choice button.active{background:#4b7049;color:#fff0c7;border-color:#e3bc78}
+.ui2-shell .z2c13-sheet .kitchen-config-slot{padding:8px 0;border-bottom:1px solid #c5a56c}
+.ui2-shell .z2c13-sheet .prep-items{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:6px}
+.ui2-shell .z2c13-sheet .prep-item{min-width:0;display:grid;justify-items:center;text-align:center;padding:4px;background:#d9bd85;border:2px solid #af8a53;border-radius:7px;color:#473321}
+.ui2-shell .z2c13-sheet .prep-item .z2b-dish-art{width:33px;height:33px}
+.ui2-shell .z2c13-sheet .v102-book-tabs button{min-height:44px;color:#473321;background:#d9bd85;border-color:#af8a53}
+.ui2-shell .z2c13-sheet .v102-book-tabs button.active{color:#fff0c7;background:#4b7049;border-color:#d6ac70}
+@media(max-height:620px){.ui2-tool{min-height:50px}.ui2-tool .z2a3-art{width:23px;height:23px}.ui2-slot{min-height:57px}.ui2-menu-slots .menu-line{min-height:95px}.ui2-shell .z2c13-sheet .sheet-body{padding:8px!important}}
+@media(prefers-reduced-motion:reduce){.ui2-shell *{animation:none!important;transition:none!important}}
