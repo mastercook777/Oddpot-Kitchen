@@ -47,7 +47,7 @@ export function advanceWorkbenchPresentation(previous,frame,now){
   const age=clamp((clock-(was?.born??clock))/.52);
   tracks[v.id].born=was?.born??clock;
   const a=i*2.39996,r=.44+i*.16,action=frame.action;
-  const stirring=['flip','gentle'].includes(action)?frame.p*(action==='flip'?4.8:3.8):0;
+  const stirring=['flip','gentle'].includes(action)?Math.sin(frame.p*Math.PI)*(action==='flip'?2.8:1.8):0;
   const toss=action==='toss'?Math.sin(frame.p*Math.PI)*.95:0;
   return {...v,x:Math.cos(a+stirring)*r+(1-age)*-.85,z:Math.sin(a+stirring)*r*.82+(1-age)*.65,y:(1-age)**2*1.25+toss,rot:action==='toss'?frame.p*Math.PI*2:0};
  });
@@ -72,7 +72,7 @@ export function enableY4b(){
   const lib=sharedThree.value;if(!lib){sharedThree.tryLoad();state(sharedThree.exhausted?'fallback':'loading');return;}
   const identity=cook||result,changed=lastCook!==identity||lastHost!==host;const enhanced=!!(s.cbExperiment&&cook?.cbTiming&&app.id==='lab');if(!changed&&now-lastAt<(enhanced?16:33))return;if(changed)workbenchMotion=null;lastAt=now;lastCook=identity;lastHost=host;
   const frame=live?researchFrame(cook,preview):null,receipt=result?receiptFrame(result):null;if(!frame&&!receipt)return;
-  if(enhanced&&frame){workbenchMotion=advanceWorkbenchPresentation(workbenchMotion,frame,now);frame.items=workbenchMotion.items;frame.workbench={z:workbenchMotion.z,lift:workbenchMotion.lift,clock:workbenchMotion.clock};}
+  if(enhanced&&frame){workbenchMotion=advanceWorkbenchPresentation(workbenchMotion,frame,now);frame.items=workbenchMotion.items.map(v=>{const h=preview?.items?.find(i=>i.id===v.id);return {...v,frontProgress:h?.frontProgress,backProgress:h?.backProgress};});frame.workbench={z:workbenchMotion.z,lift:workbenchMotion.lift,clock:workbenchMotion.clock,firstAge:workbenchMotion.clock-Math.min(workbenchMotion.clock,...Object.values(workbenchMotion.tracks).map(v=>v.born??workbenchMotion.clock))};}
   try{if(!instance)instance=makeWorkbench(lib);instance.draw(host,frame,receipt,s.lastCook,now);recovery.success();state('active');}catch(e){fail(e);}
  }};
 }
@@ -126,7 +126,7 @@ function makeWorkbench(T){
   else if(id==='garlic'){for(let i=0;i<3;i++)ball(root,base,(i-1)*.10,.10,0,.08,.11,.08);}
   else if(id==='cloud_rice'){for(let i=0;i<7;i++)ball(root,base,Math.cos(i*2.4)*.11,.08+(i%2)*.035,Math.sin(i*2.4)*.12,.045,.035,.085);}
   else{ball(root,base,0,.115,0,.17,.13,.15);if(id==='onion')ball(root,base,0,.24,0,.055,.075,.055);}
-  const v={root,base,raw};foodPool.set(id,v);return v;}
+  const faceMats=[mat('#9b6238'),mat('#9b6238')],faces=faceMats.map((m,i)=>ball(root,m,0,(id==='beef'?.09:id==='chicken'?.12:.105)+(i===0?1:-1)*(id==='beef'?.092:.128),0,.13,.012,.085));for(const o of faces)o.visible=false;const v={root,base,raw,faceMats,faces};foodPool.set(id,v);return v;}
  const warm=new T.Color('#a76b35'),burn=new T.Color('#3d2d26');let host=null,hostStyle=null,hint=null,lastW=0,lastH=0,lastAt=-Infinity,lastReceipt=null,revealAt=0;
  function detach(){if(host){host.style.position=hostStyle.position;host.style.minHeight=hostStyle.minHeight;host.style.color=hostStyle.color;host.removeAttribute('data-y4b-active');for(const child of host.children)if(child.dataset.y4bHidden==='1'){child.style.visibility=child.dataset.y4bOldVisibility||'';delete child.dataset.y4bHidden;delete child.dataset.y4bOldVisibility;}}hint?.remove();hint=null;canvas.remove();host=null;}
  function attach(next,receipt){if(host===next)return;detach();host=next;hostStyle={position:host.style.position,minHeight:host.style.minHeight,color:host.style.color};host.style.position='relative';if(receipt){host.style.minHeight='92px';}host.append(canvas);if(!receipt){hint=document.createElement('span');hint.setAttribute('aria-hidden','true');Object.assign(hint.style,{position:'absolute',bottom:'8px',left:'0',right:'0',textAlign:'center',font:'600 12px system-ui',color:'#fff0cf',textShadow:'0 1px 3px #000',zIndex:'10',pointerEvents:'none'});host.append(hint);}}
@@ -139,19 +139,21 @@ function makeWorkbench(T){
    stick.position.set(0,(f.lane?.58:.60)+(enhancedGrill?f.workbench.lift:0),enhancedGrill?f.workbench.z:(f.lane?({edge:.62,middle:0,flame:-.62}[f.lane]||0):.94));stick.rotation.x=f.turn;soup.position.y=.36+.17*f.reduction;
    if(f.workbench&&f.type==='POT'){soup.position.y+=f.action==='gentle'?Math.sin(f.p*Math.PI)*.018:0;if(f.action==='reduce')soup.position.y+=.17*.34*(1-f.p);soup.scale.set(1,1,1);}
    lid.visible=f.sealed||f.action==='seal'||f.action==='vent';lid.position.set(0,.64+(f.baseOnly?(f.action==='vent'?.28*f.beat:0):f.action==='seal'?(1-f.p)*.75:f.action==='vent'?f.p*.75:0),0);lid.rotation.z=f.action==='vent'?(f.baseOnly?f.beat:f.p)*.34:0;
+   if(f.workbench&&f.type==='STEAM'){const closing=smooth(f.workbench.firstAge/.65);lid.visible=true;const opening=f.action==='vent'?f.beat:f.action==='seal'?.20*f.beat:0;lid.position.set(0,.64+(1-closing)*.45+opening*.48,-(1-closing)*.75-opening*.44);lid.rotation.z=(1-closing)*.12+opening*.25;}
    tool.visible=['flip','gentle','brush','reduce'].includes(f.action);toolHead.visible=f.action==='flip';ladle.visible=['gentle','reduce'].includes(f.action);brush.visible=f.action==='brush';tool.position.set(Math.sin(f.p*Math.PI*2)*.62,.72+f.beat*.12,.30);tool.rotation.set(-.72,0,Math.sin(f.p*6.28)*.4);
    if(f.workbench&&f.type==='GRILL'&&f.action==='brush'){tool.position.set(-.85+1.7*f.p,.74+f.workbench.lift,f.workbench.z);tool.rotation.set(-.5,0,-.3);}
    if(f.workbench&&f.type==='POT'&&f.action==='gentle'){tool.position.set(Math.cos(f.p*6.28)*.46,.62,Math.sin(f.p*6.28)*.46);tool.rotation.set(-.5,0,Math.sin(f.p*6.28)*.22);}
    for(const [i,o] of bubbles.entries()){const q=(f.t*1.4+i/10)%1,a=i*2.4,r=.25+(i%4)*.15;o.visible=!!f.workbench&&f.lit&&f.type==='POT';o.position.set(Math.cos(a)*r,soup.position.y+.035+Math.sin(q*Math.PI)*.065,Math.sin(a)*r);o.scale.setScalar(.025+Math.sin(q*Math.PI)*.055);}
    for(const [i,o] of glaze.entries()){const q=(f.t*1.8+i/8)%1,a=i*2.4;o.visible=!!f.workbench&&f.lit&&(f.type==='WOK'||f.type==='GRILL'&&f.action==='brush');o.position.set(f.type==='GRILL'?-.9+1.8*q:Math.cos(a)*(.30+q*.43),f.type==='GRILL'?.66+f.workbench.lift:.19+Math.sin(q*Math.PI)*.10,f.type==='GRILL'?f.workbench.z:Math.sin(a)*(.30+q*.43));o.scale.setScalar(.025+Math.sin(q*Math.PI)*.036);}
-   for(const [i,o] of vapor.entries()){const q=(f.t*.66+i/12)%1,a=i*2.4;o.visible=f.lit&&(f.type!=='STEAM'||!f.sealed||f.vent>0||i<3);o.position.set(Math.cos(a)*(.15+q*.40),.65+q*(.8+f.vent*.6+(f.smoke||0)*.8),Math.sin(a)*(.12+q*.29)+(f.type==='GRILL'&&f.workbench?f.workbench.z:0));o.scale.set(.09+q*.12+(f.smoke||0)*.12,.13+q*.15+(f.smoke||0)*.15,.09+q*.12+(f.smoke||0)*.12);}
+   for(const [i,o] of vapor.entries()){const q=(f.t*.66+i/12)%1,a=i*2.4;o.visible=f.lit&&(f.type!=='STEAM'||!f.sealed||f.vent>0||i<3);o.position.set(Math.cos(a)*(.15+q*.40),.65+q*(.8+f.vent*.6+(f.smoke||0)*.8),Math.sin(a)*(.12+q*.29)+(f.type==='GRILL'&&f.workbench?f.workbench.z:0));o.scale.set(.09+q*.12+(f.smoke||0)*.12,.13+q*.15+(f.smoke||0)*.15,.09+q*.12+(f.smoke||0)*.12);if(f.workbench&&f.type==='GRILL'&&f.smoke>0)o.position.x=-.9+1.8*(i/11);}
    for(const [i,o] of sparks.entries()){o.visible=f.lit&&(['toss','flip','brush'].includes(f.action));const q=(f.p+i*.11)%1;o.position.set(Math.cos(i*2.4)*(.35+q*.72),.50+Math.sin(q*Math.PI)*.85,Math.sin(i*2.4)*(.35+q*.55));}
   }
   if(r){for(const o of [...bubbles,...glaze])o.visible=false;if(lastReceipt!==receiptKey){lastReceipt=receiptKey;revealAt=now;}const q=clamp((now-revealAt)/850);plateRoot.scale.setScalar(.88+.12*Math.sin(q*Math.PI/2));plateRoot.rotation.y=(1-q)*-.35;reveal.visible=r.discovery&&q<1;reveal.rotation.y=q*1.6;resultSoup.visible=r.type==='POT';resultStick.visible=r.type==='GRILL';}
   for(const [i,v] of (f?.items||r?.items||[]).entries()){const o=food(v.id);o.root.visible=true;const parent=r?plateRoot:f.type==='GRILL'?stick:foodRoot;if(o.root.parent!==parent)parent.add(o.root);
    const height=r?.24:f.type==='POT'?.36+.17*f.reduction:f.type==='STEAM'?.56:f.type==='GRILL'?.06:.14;
    o.root.position.set(f?.type==='GRILL'?v.x:r?.type==='GRILL'?(i-((r.items.length-1)/2))*.62:v.x,(f?.type==='GRILL'&&f.workbench?-(v.id==='beef'?.09:v.id==='chicken'?.12:v.id.includes('mushroom')?.16:v.id==='onion'?.13:.105)+v.y:height+v.y),f?.type==='GRILL'||r?.type==='GRILL'?0:v.z);
-   o.root.rotation.set(v.rot||0,0,0);o.base.color.copy(o.raw).lerp(v.tone==='bad'?burn:warm,v.tone==='bad'?.86:v.tone==='good'?.26:v.tone==='warning'?.53:f?.workbench?clamp((v.progress||0)/100)*.24:0);o.base.roughness=f?.workbench&&f.type==='WOK'?.48:.83;}
+   o.root.rotation.set(v.rot||0,0,0);o.base.color.copy(o.raw).lerp(v.tone==='bad'?burn:warm,v.tone==='bad'?.86:v.tone==='good'?.26:v.tone==='warning'?.53:f?.workbench?clamp((v.progress||0)/100)*.24:0);o.base.roughness=f?.workbench&&f.type==='WOK'?.48:.83;
+   for(let face=0;face<2;face++){const show=!!(f?.workbench&&f.type==='GRILL'&&['beef','chicken'].includes(v.id));o.faces[face].visible=show;if(show){const heat=clamp((face===0?v.frontProgress||0:v.backProgress||0)/100);o.faceMats[face].color.copy(o.raw).lerp(v.tone==='bad'?burn:warm,v.tone==='bad'?.85:heat*.7);}}}
   renderer.render(scene,camera);if(r)host.style.color='transparent';else for(const child of host.children)if(child!==canvas&&child!==hint&&child.dataset.y4bHidden!=='1'){child.dataset.y4bOldVisibility=child.style.visibility;child.dataset.y4bHidden='1';child.style.visibility='hidden';}host.dataset.y4bActive='1';
  },dispose(){disposed=true;detach();for(const g of geos)g.dispose();for(const m of mats)m.dispose();renderer.dispose();renderer.forceContextLoss();}};
 }
