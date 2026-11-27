@@ -495,7 +495,7 @@ export function recipeCraftSnapshot(s,recipeId,variant=null){
 }
 export function stationDuration(s,position,recipe,v,order=null){
  const i=stationIdx(position),slot=v?.kitchenSnapshot?.[i]||ensureKitchen(s).slots[i];
- const base=order?.craft?.baseTime??recipe.time;
+ const base=order?.craft?.formulaId?order.craft.baseTime:recipe.time;
  if(!slot)return base;
  const role=shiftHelperAt(v?.crew,i),staff=role?v.crew[role]:null;
  const bonus=(slot.level-1)*2,delta=order?.craft?.timeDelta||0;
@@ -1513,7 +1513,7 @@ const materialIds=o.craft?.ingredientIds||r.ids;
 if(!canUse(s,materialIds,!!o.premium)){o.status='rejected';o.rejectReason='食材不足';o.leftAt=v.time;const shortage=materialIds.filter(x=>(s.inventory[x]||0)<materialIds.filter(y=>y===x).length);o.missingIngredients=[...new Set(shortage)];record(s,{type:'rejected',order:id,reason:'食材不足',recipeId:o.recipeId,missing:o.missingIngredients});continue;}
 if(!consume(s,materialIds,`service-cook-${id}`,!!o.premium)){o.status='rejected';o.rejectReason='食材不足';record(s,{type:'rejected',order:id,reason:'食材不足'});continue;}
 if(o.premium)v.premiumConsumed=(v.premiumConsumed||0)+1;
-v.cost+=materialCost(materialIds);o.status='cooking';o.started=v.time;v.stations[st]={orderId:id,left:stationDuration(s,st,r,v,o),quality:o.craft?.quality||s.recipes[o.recipeId]||72};v.stationStats[st].count++;v.stationStats[st].secondsSaved+=Math.max(0,(o.craft?.baseTime??r.time)-v.stations[st].left);
+v.cost+=materialCost(materialIds);o.status='cooking';o.started=v.time;v.stations[st]={orderId:id,left:stationDuration(s,st,r,v,o),quality:o.craft?.quality||s.recipes[o.recipeId]||72};v.stationStats[st].count++;v.stationStats[st].secondsSaved+=Math.max(0,(o.craft?.formulaId?o.craft.baseTime:r.time)-v.stations[st].left);
  if(s.cbExperiment&&o.craft?.cb?.discount){const base=stationDuration(s,st,r,v,{...o,craft:{...o.craft,timeDelta:0}});const saved=Math.max(0,base-v.stations[st].left);record(s,{type:'cb_affix',affix:o.craft.affixes.some(a=>a.id==='solo')?'solo':'quick',order:o.id,recipeId:o.recipeId,value:saved});}
  const role=shiftHelperAt(v.crew,ix);
  if(role){const withoutHelper=Math.max(1,(o.craft?.baseTime??r.time)+(o.craft?.timeDelta||0)-(slot.level-1)*2-(v.eventEffects?.[r.station]||0));const prefix=role==='helper2'?'helper2':'helper';v.staffStats[prefix+'Seconds']+=Math.max(0,withoutHelper-v.stations[st].left);v.staffStats[prefix+'Orders']++;}
