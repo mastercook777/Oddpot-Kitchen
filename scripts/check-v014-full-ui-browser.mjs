@@ -114,7 +114,7 @@ try{
     const choices=await page.locator('[data-menu-pick]:enabled').evaluateAll(es=>es.map(e=>e.dataset.menuPick));
     const picked=choices.find(x=>x.split(':')[1]!==before)||choices[0];assert.ok(picked);
     const allPicks=await page.locator('[data-menu-pick]').evaluateAll(es=>es.map(e=>e.dataset.menuPick));await page.locator('.ui2-slots .ui2-slot').nth(allPicks.indexOf(picked)).click();await page.locator('[data-menu-pick="'+picked+'"]').click();assert.equal(await page.locator('.sheet').getAttribute('data-sheet-kind'),'ui2-menu');
-    assert.equal(await page.evaluate(k=>JSON.parse(localStorage.getItem(k)).menu[0],storageKey),picked.split(':')[1]);await page.keyboard.press('Escape');assert.ok(await page.evaluate(()=>globalThis.__menuRoom===document.querySelector('#diner-canvas')));
+    assert.equal(await page.evaluate(k=>JSON.parse(localStorage.getItem(k)).menu[0],storageKey),picked.split(':')[1]);await page.keyboard.press('Escape');assert.ok(await page.evaluate(()=>globalThis.__menuRoom===document.querySelector('#diner-canvas')));await page.locator('[data-act="to-prep"]').click();assert.equal(await page.locator('.stage.prep').count(),1);assert.ok(await page.evaluate(()=>globalThis.__menuRoom===document.querySelector('#diner-canvas')),'same canvas from menu into preparation');
    }
    if(phase==='prep'){
     assert.ok(await page.locator('[data-act="open"]').isVisible());
@@ -159,7 +159,8 @@ try{
     assert.equal(await page.locator('.z2c11-hud').count(),1);
     const scene=page.locator('.z2c11-growth-scene'),work=page.locator('.z2ed1-growth-tools');
     const a=await scene.boundingBox(),d=await work.boundingBox();assert.ok(a.height>=layout.stageHeight*.90&&d.y>=a.y&&d.y+d.height<=a.y+a.height+1);
-    assert.equal(await scene.locator('#diner-canvas').count(),1);
+    assert.equal(await page.locator('.ui2-room-host #diner-canvas').count(),1);
+    await page.evaluate(()=>globalThis.__growthRoom=document.querySelector('#diner-canvas'));
     assert.equal(await page.locator('.z2c11-growth-group').count(),0);await page.locator('[data-act="growth-overview"]').click();assert.equal(await page.locator('.z2c11-growth-group').count(),3);await page.keyboard.press('Escape');
     const before=await page.evaluate(k=>JSON.parse(localStorage.getItem(k)),storageKey);
     await page.locator('[data-act="growth-offer:table"]').click();assert.equal(await page.evaluate(k=>JSON.parse(localStorage.getItem(k)).coins,storageKey),before.coins);await page.locator('[data-act="growth-buy:expand-room"]').click();
@@ -172,7 +173,7 @@ try{
     assert.equal(bag.bagSlots,(after.bagSlots||8)+2);
     assert.equal(bag.coins,after.coins-60);
     await page.screenshot({path:output+'/z2c11-growth-'+width+'.png'});
-    await page.locator('[data-act="next-day"]').click();assert.equal(await page.locator('.stage.forecast').count(),1);
+    await page.locator('[data-act="next-day"]').click();assert.equal(await page.locator('.stage.forecast').count(),1);assert.ok(await page.evaluate(()=>globalThis.__growthRoom===document.querySelector('#diner-canvas')),'same room across new business day');
    }
    assert.deepEqual(errors,[],`${phase} runtime errors at ${width}`);
    if(width!==375)await page.screenshot({path:`${output}/${phase}${['prep','report'].includes(phase)?'-details':''}-${width}.png`});
