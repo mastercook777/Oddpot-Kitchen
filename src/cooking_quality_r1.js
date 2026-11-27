@@ -1,7 +1,7 @@
 // CB2-R1: workshop-only adjudication based on actual recorded ingredient/action heat.
 import {ING} from './data.js';
-import {liveHeatEvidence,liveIngredientState} from './cooking_v063.js?v=0.15.0-alpha.11';
-import {grillHeatBounds} from './grill_cooking_v014b.js?v=0.15.0-alpha.3';
+import {liveHeatEvidence,liveIngredientState} from './cooking_v063.js?v=cb2r1';
+import {grillHeatBounds} from './grill_cooking_v014b.js?v=cb2r1';
 const clamp=(v,a=0,b=1)=>Math.max(a,Math.min(b,v));
 const mean=xs=>xs.length?xs.reduce((a,b)=>a+b,0)/xs.length:0;
 const spread=xs=>Math.max(...xs)-Math.min(...xs);
