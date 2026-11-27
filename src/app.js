@@ -5,6 +5,7 @@ import {z2aOrderStatus} from './scene_hud_z2a.js?v=z2a3';
 import {selectDiningSpeech,selectStaffSpeech} from './diner_ambience_v077.js?v=0.15.0-alpha.3';
 import {specialEncounterHtml} from './field_encounter_ui_v011c.js';
 import {ingredientIconHtml} from './ingredient_icons_v011g.js';
+import {readStickMode,writeStickMode,fixedStickAnchor,stickOrigin} from './ui_foundation_z2ed0.js?v=z2ed0';
 import {joystickVector} from './controls_v041.js?v=0.5.5';
 import {ING,RECIPES,FORECAST,ROUTES,CUSTOMERS} from './data.js?v=0.15.0-alpha.11';
 import {LIVE_ACTIONS,LIVE_STYLES,LIVE_AFFINITY,liveRecipeId,reviewLiveCook,liveHeatSummary} from './cooking_v063.js?v=0.15.0-alpha.11';
@@ -26,7 +27,8 @@ let message='今天会有怎样的客人上门呢？';
 let overlay='',bookTab='recipes',recipeType='WOK',bookRegion='current',tileSelected=null,selectedOrderId=null;let servicePanel='';
 let selectedIngredients=activeWorld(game)==='cloud'?['cloud_rice','chicken']:['chicken','chili'],selectedMethod='stir';
 let walking=null,drag=null,selectedRegion=activeWorld(game)==='cloud'?'cloud':'forest';let livePanPointer=null;
-const stick={x:0,y:0,pointer:null,originX:0,originY:0,phase:null};const gestureTouches=new Set();const keys=new Set();let lastFrame=0,lastSave=0;let gameClock=0;let serviceTickAt=0;const touched=new Map();
+const deviceStorage=()=>{try{return globalThis.localStorage}catch{return null}};let stickMode=readStickMode(deviceStorage());
+const stick={x:0,y:0,knobX:0,knobY:0,pointer:null,originX:0,originY:0,phase:null};const gestureTouches=new Set();const keys=new Set();let lastFrame=0,lastSave=0;let gameClock=0;let serviceTickAt=0;const touched=new Map();
 const app=document.getElementById('app');
 const esc=s=>String(s??'').replaceAll('&','&amp;').replaceAll('<','&lt;').replaceAll('>','&gt;').replaceAll('"','&quot;');
 const b=(act,text,klass='',disabled=false)=>`<button class="game-btn ${klass}" data-act="${act}" ${disabled?'disabled':''}>${text}</button>`;
@@ -170,7 +172,7 @@ function overlayMarkup(){if(!overlay)return '';
    };
    body='<h2>👩‍🍳 食堂伙伴</h2><p class="sheet-lead">'+(activeWorld(game)==='cloud'?'云港可在首枚星章后再聘一名跑堂，双跑堂各自认领一盘并行送餐、各计工资与经验；':'')+'每位帮厨按本人实际完成的订单获得经验；增加厨位必须配备人手才能真正出餐。开门前直接选择左、中、右优先站位；已选位置不可重复安排。营业时，空闲帮厨仍会自动走到缺人的炉台支援。</p><div class="staff-roster">'+row('helper')+row('waiter')+(crew.helper2.hired?row('helper2'):'')+(activeWorld(game)==='cloud'?row('waiter2'):'')+'</div>';
  }else if(overlay==='settings'){
-  body=`<h2>⚙ 游戏设置</h2><p class="sheet-lead">ODDPOT · v0.15.0-alpha.11 · 单机本地存档</p>${b('guide-replay','重看第一轮引导','secondary')}${b('reset','重置存档，从第 1 天重新开始','danger')}<p class="sheet-lead">切到后台时营业会自动暂停。更换设备不会同步存档。</p>`;
+  body=`<h2>⚙ 游戏设置</h2><p class="sheet-lead">ODDPOT · v0.15.0-alpha.11 · 单机本地存档</p><section class="z2ed0-controls"><h3>移动摇杆</h3><div class="z2ed0-stick-options" role="group" aria-label="移动摇杆模式">${['floating','fixed'].map(m=>`<button type="button" class="game-btn secondary" data-act="stick-mode:${m}" aria-pressed="${stickMode===m}">${m==='floating'?'浮动摇杆':'固定摇杆'}</button>`).join('')}</div><p class="sheet-lead">${stickMode==='floating'?'在场景内按下即可移动。':'左下常驻摇杆，按住拖动。'} 野外与营业共用，自动保存。</p></section>${b('guide-replay','重看第一轮引导','secondary')}${b('reset','重置存档，从第 1 天重新开始','danger')}<p class="sheet-lead">切到后台时营业会自动暂停。更换设备不会同步存档。</p>`;
  }else if(overlay==='details'){
   const r=game.report;body=r?`<h2>营业账本详情</h2><p class="sheet-lead">本日订单由真实食材库存、工位工作秒数和顾客等待事件计算。</p><div class="book-list">${Object.entries(r.byDish).map(([id,d])=>`<div class="detail-row">${RECIPES[id].emoji} ${RECIPES[id].name}：售出 ${d.count} 份 · 满意 ${Math.round(d.totalSat/d.count)}</div>`).join('')}<div class="detail-row">左厨位占用 ${r.congestion.WOK||0} 秒 / 右厨位 ${r.congestion.POT||0} 秒${r.congestion.CENTER!==undefined?' / 中厨位 '+r.congestion.CENTER+' 秒':''}</div><div class="detail-row">食材耗用估值 ${r.cost} · 宣传 ${r.finance?.marketingCost||0} · 工资 ${r.finance?.wage||0} · 招待支出 ${r.hospitalityCost||0} · 收入 ${r.revenue} · 经营利润 ${r.profit} · 现金净变动 ${r.finance?.cashChange??'旧版无记录'}</div></div>`:'';
  }
@@ -634,7 +636,7 @@ function render(){
  const origin=previousSheet?null:(drawerClickFocus||drawerFocusSnapshot(app.querySelector('.game-shell'),document.activeElement));
  drawerClickFocus=null;
  const prevSheetScroll=previousSheet?.dataset.sheetKind===(overlay.startsWith('menu:')?'menu':overlay)?app.querySelector('.sheet-body')?.scrollTop||0:0;
- if(overlay&&stick.pointer!==null)releaseStick();
+ if(overlay){if(stick.pointer!==null)releaseStick();livePanPointer=null;drag=null;gestureTouches.clear();}
  if(!keyboardMovementAllowed(game,overlay))keys.clear();
  const prevMarketingOpen=app.querySelector('.v014-marketing')?.open||false;
  const prevReportOpen=app.querySelector('.v014-report-more')?.open||false;
@@ -671,7 +673,7 @@ function render(){
  drawerFocusAfterRender(previousKind,previousFocus,origin);
  // Preserve the on-screen floating stick when a second finger uses the skill.
  if(stick.pointer!==null&&(!playingGameGestures()||stick.phase!==game.phase))releaseStick();
- if(stick.pointer!==null){const pad=app.querySelector('#field-stick, #diner-stick'),knob=app.querySelector('#field-stick-knob, #diner-stick-knob');if(pad){pad.classList.add('active');pad.style.left=stick.originX+'px';pad.style.top=stick.originY+'px';}if(knob)knob.style.transform=`translate(${stick.x*54}px,${stick.y*54}px)`;}
+ paintStick();
  save(game);
 }
 function note(txt){message=txt;flashUntil=performance.now()+1900;render()}
@@ -679,6 +681,7 @@ function stepMove(dx,dy){const result=moveExplorer(game,dx,dy);if(result.ok)mess
 function findPath(x,y){const f=game.field;if(!f)return [];const start=[f.x,f.y];const seen=new Set([start.join(',')]);let paths=[[...start,[]]];while(paths.length){const [cx,cy,path]=paths.shift();if(cx===x&&cy===y)return path;for(const [dx,dy] of [[0,-1],[1,0],[0,1],[-1,0]]){const nx=cx+dx,ny=cy+dy,key=`${nx},${ny}`;if(nx<0||ny<0||nx>=f.worldW||ny>=f.worldH||seen.has(key)||f.obstacles.some(o=>o.x===nx&&o.y===ny))continue;seen.add(key);paths.push([nx,ny,[...path,[dx,dy]]]);}}return []}
 function walkTo(x,y){if(walking)clearInterval(walking);const path=findPath(x,y);if(!path.length){note('点击可到达的地图格，或用方向键行走。');return}walking=setInterval(()=>{const step=path.shift();if(!step||game.phase!=='field'||!game.field||game.field.settled){clearInterval(walking);walking=null;return}const old=game.field.nodes.filter(n=>n.claimed).length;stepMove(...step);if(game.phase!=='field'||game.field.nodes.filter(n=>n.claimed).length>old||!path.length){clearInterval(walking);walking=null;}},130)}
 function action(act){
+ if(act==='stick-mode:fixed'||act==='stick-mode:floating'){releaseStick();keys.clear();stickMode=writeStickMode(deviceStorage(),act.split(':')[1]);render();return}
  if(game.phase==='upgrade'&&['growth-view:kitchen','growth-view:tables'].includes(act)){growthCameraZ2d2=act.split(':')[1];render();return}
  if(act==='guide-ack'){game.onboarding.seen??=[];if(!game.onboarding.seen.includes(game.phase))game.onboarding.seen.push(game.phase);render();return}
  if(act==='guide-skip'){game.onboarding.enabled=false;render();return}
@@ -961,7 +964,7 @@ function clearThumbSelection(){
 // A second finger on a skill, dialog, input or scroll list stays native.
 app.addEventListener('touchstart',e=>{
  for(const touch of e.changedTouches||[]){const target=touch.target||e.target;
-  if((playingFieldGestures()&&fieldGestureSurface(target))||(playingDinerGestures()&&dinerGestureSurface(target))||panGestureSurface(target))gestureTouches.add(touch.identifier);
+  if(((playingFieldGestures()&&fieldGestureSurface(target))||(playingDinerGestures()&&dinerGestureSurface(target)))&&stickOrigin(stickMode,stickSurfaceRect(),touch.clientX,touch.clientY)||panGestureSurface(target))gestureTouches.add(touch.identifier);
  }
  if(!Array.from(e.changedTouches||[]).some(t=>gestureTouches.has(t.identifier)))return;
  if(e.cancelable)e.preventDefault();clearThumbSelection();
@@ -979,15 +982,23 @@ app.addEventListener('dragstart',suppressGameSelection,true);
 document.addEventListener('selectionchange',()=>{if(stick.pointer!==null||livePanPointer||gestureTouches.size)clearThumbSelection();});
 // Floating analog: anchored at finger-down anywhere on the forest canvas.
 // Pointer capture stays on #app, which does not get replaced during scene updates.
+function stickSurfaceRect(){return app.querySelector(game.phase==='service'?'.diner-world':'.action-forest')?.getBoundingClientRect();}
+function paintStick(){
+ const pad=app.querySelector('#field-stick, #diner-stick'),knob=app.querySelector('#field-stick-knob, #diner-stick-knob');if(!pad)return;
+ const rect=stickSurfaceRect(),fixed=stickMode==='fixed'&&playingGameGestures()&&!!rect;
+ const a=stick.pointer!==null?{x:stick.originX,y:stick.originY}:fixed?fixedStickAnchor(rect):null;
+ pad.classList.toggle('active',!!a);pad.classList.toggle('z2ed0-fixed',fixed);
+ pad.style.left=(a?.x??-100)+'px';pad.style.top=(a?.y??-100)+'px';
+ if(knob)knob.style.transform=`translate(${stick.knobX}px,${stick.knobY}px)`;
+}
 function releaseStick(){
- const pointer=stick.pointer;stick.pointer=null;stick.phase=null;stick.x=stick.y=0;gestureTouches.clear();
+ const pointer=stick.pointer;stick.pointer=null;stick.phase=null;stick.x=stick.y=stick.knobX=stick.knobY=0;gestureTouches.clear();
  if(pointer!==null){try{if(app.hasPointerCapture(pointer))app.releasePointerCapture(pointer);}catch{}clearThumbSelection();}
- const el=app.querySelector('#field-stick, #diner-stick');if(el){el.classList.remove('active');el.style.left='-100px';el.style.top='-100px';}
- const knob=app.querySelector('#field-stick-knob, #diner-stick-knob');if(knob)knob.style.transform='translate(0px,0px)';
+ paintStick();
 }
 function updateStick(e){
  const v=joystickVector(stick.originX,stick.originY,e.clientX,e.clientY,54,9);
- stick.x=v.x;stick.y=v.y;
+ stick.x=v.x;stick.y=v.y;stick.knobX=v.knobX;stick.knobY=v.knobY;
  const knob=app.querySelector('#field-stick-knob, #diner-stick-knob');
  if(knob)knob.style.transform=`translate(${v.knobX}px,${v.knobY}px)`;
 }
@@ -996,8 +1007,8 @@ app.addEventListener('pointerdown',e=>{
  if(!(serviceReady||fieldReady)||overlay||stick.pointer!==null)return;
  // The scene is the input surface. Do not steal events from active buttons or dialogs.
  if(!(serviceReady?dinerGestureSurface(e.target):fieldGestureSurface(e.target))||e.button!==0)return;
- if(e.cancelable)e.preventDefault();clearThumbSelection();stick.pointer=e.pointerId;stick.phase=game.phase;stick.originX=e.clientX;stick.originY=e.clientY;
- const pad=app.querySelector('#field-stick, #diner-stick');if(pad){pad.classList.add('active');pad.style.left=e.clientX+'px';pad.style.top=e.clientY+'px';}
+ const origin=stickOrigin(stickMode,stickSurfaceRect(),e.clientX,e.clientY);if(!origin)return;
+ if(e.cancelable)e.preventDefault();clearThumbSelection();stick.pointer=e.pointerId;stick.phase=game.phase;stick.originX=origin.x;stick.originY=origin.y;paintStick();
  try{app.setPointerCapture(e.pointerId)}catch{}
  updateStick(e);
 },{passive:false});
@@ -1005,7 +1016,8 @@ app.addEventListener('pointermove',e=>{
  if(stick.pointer!==e.pointerId)return;if(!playingGameGestures()||stick.phase!==game.phase){releaseStick();return;}if(e.cancelable)e.preventDefault();updateStick(e);
 },{passive:false});
 for(const name of ['pointerup','pointercancel','lostpointercapture'])app.addEventListener(name,e=>{if(stick.pointer===e.pointerId)releaseStick();});
-window.addEventListener('blur',()=>{releaseStick();livePanPointer=null;keys.clear();});
+window.addEventListener('blur',()=>{releaseStick();livePanPointer=null;drag=null;keys.clear();});
+window.addEventListener('resize',()=>{if(stick.pointer!==null)releaseStick();else paintStick();});
 window.addEventListener('pointerup',e=>{if(stick.pointer===e.pointerId)releaseStick();});
 window.addEventListener('pointercancel',e=>{if(stick.pointer===e.pointerId)releaseStick();if(livePanPointer?.id===e.pointerId)livePanPointer=null;});
 
