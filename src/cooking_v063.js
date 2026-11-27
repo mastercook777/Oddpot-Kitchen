@@ -112,9 +112,9 @@ export function resolveTechnique(recipeId,style){
    curated:!!profile
  };
 }
-export function evaluateLiveCook(ids,vessel,drops,actions,elapsed,baseOnly=false){
+export function evaluateLiveCook(ids,vessel,drops,actions,elapsed,baseOnly=false,recipeOverride=undefined){
  if(vessel==='GRILL')return evaluateGrillCook(ids,drops,actions,elapsed);
- const id=liveRecipeId(ids,vessel);
+ const id=recipeOverride===undefined?liveRecipeId(ids,vessel):recipeOverride;
  const recipe=id&&RECIPES[id];
  const sorted=[...drops].sort((a,b)=>a.t-b.t||a.index-b.index);
  const facts=readCookFacts(ids,vessel,sorted,actions,elapsed);
