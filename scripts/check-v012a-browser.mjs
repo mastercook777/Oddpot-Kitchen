@@ -34,8 +34,8 @@ try{
  for(const [w,h] of [[320,568],[375,667],[390,844]]){
   width=w;height=h;
   await open('index.html',base());
-  await visible('[data-act="first-star-request"]',width,height);
-  await visible('[data-act="to-field"]',width,height);
+  await visible('.ui2-spot[data-act="to-field"]',width,height);
+  await page.locator('[data-act="ui2-forecast"]').click();await visible('[data-act="first-star-request"]',width,height);
   assert.equal(await page.locator('.v12-star-invite').count(),1);
   await page.screenshot({path:`${out}/forecast-${width}.png`});
   await page.locator('[data-act="first-star-request"]').click();
@@ -46,7 +46,7 @@ try{
  }
  const prep=base();prep.phase='prep';
  await open('index.html',prep);
- assert.equal(await page.locator('.stage.prep [data-act="first-star-request"]').count(),1);
+ await page.locator('.ui2-room-dock [data-act="ui2-prep"]').click();assert.equal(await page.locator('.sheet [data-act="first-star-request"]').count(),1);
  await page.locator('[data-act="first-star-request"]').click();
  assert.equal((await read(page)).chapterProgress.requestDay,'2-1');
  await page.screenshot({path:`${out}/prep-390.png`});
@@ -85,7 +85,7 @@ try{
  await page.screenshot({path:`${out}/service-four-tables-390.png`});
 
  await open('standalone.html',base());
- await page.locator('[data-act="first-star-request"]').click();
+ await page.locator('[data-act="ui2-forecast"]').click();await page.locator('[data-act="first-star-request"]').click();
  assert.equal((await read(page)).chapterProgress.requestDay,'2-1');
  await page.screenshot({path:`${out}/offline-forecast-390.png`});
  assert.deepEqual(errors,[]);
