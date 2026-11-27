@@ -8,6 +8,9 @@ const smooth=(v,lo,hi)=>{const n=clamp((v-lo)/(hi-lo));return n*n*(3-2*n)};
 const band=(x,lo,hi,fadeLo,fadeHi)=>smooth(x,lo-fadeLo,lo)*(1-smooth(x,hi,hi+fadeHi));
 export function hash(str,seed=2166136261){let h=seed>>>0;for(const c of String(str)){h=Math.imul(h^c.charCodeAt(0),16777619)>>>0}return h}
 export function seeded(seed,txn,domain){let h=hash(domain,hash(txn,seed));return ()=>{h=(h+0x6D2B79F5)>>>0;let t=h;t=Math.imul(t^t>>>15,t|1);t^=t+Math.imul(t^t>>>7,t|61);return ((t^t>>>14)>>>0)/4294967296}}
+// Continuous quality peaks, not plateau rewards or fixed timing answers.
+const peak=(x,center,width)=>Math.exp(-.5*((x-center)/width)**2);
+export const CB_QUALITY_BLUE=85;
 function failure(result){
  const states=result.doneness||[],ids=result.ids||[];
  const missing=ids.find(id=>!states.some(d=>d.id===id)||states.some(d=>d.id===id&&['未下锅','未穿串','待下锅'].includes(d.label)));
@@ -28,12 +31,12 @@ function liveEvidence(r){
  const texture=hs.map((h,i)=>{
   const p=clamp(Math.max((h.age-h.age/Math.max(1,h.ratio))/Math.max(.1,h.ageLimit-h.age/Math.max(1,h.ratio)),h.dense?(h.ratio-1)/2.4:0));
   // Aromatics can release flavor early; long stew exposure is not a texture defect by itself.
-  return {p,grade:.25+.75*(aromatic(drops[i])?band(p,.04,v==='POT'?.68:.63,.18,.37):band(p,.08,v==='POT'?.32:.26,.16,.43))};
+  return {p,grade:.25+.75*(aromatic(drops[i])?peak(p,v==='POT'?.40:.36,.35):peak(p,v==='POT'?.20:.17,.15))};
  });
  const progress=texture.map(x=>x.p),heat=mean(texture.map(x=>x.grade));
  // Shared time to integrate flavor, not synchronized readiness. Order has no independent bonus.
  const together=Math.max(0,t-Math.max(...drops.map(d=>d.t)));
- const coordination=.35+.65*smooth(together,.2,v==='WOK'?1.9:v==='POT'?2.8:2.1);
+ const coordination=.35+.65*(1-Math.exp(-together/(v==='POT'?1.25:.85)));
  const grades=actions.map(a=>{
   const involved=drops.filter(d=>a.with?.includes(d.id)&&d.t<=a.t),prior=actions.filter(x=>x.t<a.t);
   const ratios=involved.map(d=>liveHeatEvidence(d,a.t,prior,v,!!r.baseOnly).ratio);
@@ -43,37 +46,43 @@ function liveEvidence(r){
   // A short-lived aromatic must not make a barely heated main ingredient look ready.
   if(v==='WOK'||v==='POT'){
    const natural=involved.map(d=>liveHeatEvidence(d,a.t,[],v,!!r.baseOnly).ratio);
-   const window=a.type==='flip'?[.43,1.12,.40,.85]:a.type==='toss'?[.60,1.30,.48,.90]:a.type==='gentle'?[.38,1.05,.35,.85]:[.85,1.42,.60,.85];
+   const window=a.type==='flip'?[.65,.20]:a.type==='toss'?[1.12,.26]:a.type==='gentle'?[.63,.20]:[1.12,.20];
    // Each ingredient contributes by its culinary role. Aromatics are not judged as protein.
    const structural=involved.filter(d=>!aromatic(d));
    const focus=structural.length?structural:involved;
-   const weights=involved.map(d=>aromatic(d)&&structural.length?.32:1);
+   // Identify fast-cooking accompaniments relative to the slowest structural ingredient.
+   // Their useful technique stage is broader; do not reintroduce synchronized maturity.
+   const slowRate=Math.min(...focus.map(d=>liveHeatEvidence(d,d.t+1,[],v,!!r.baseOnly).ratio));
+   const secondary=d=>!aromatic(d)&&liveHeatEvidence(d,d.t+1,[],v,!!r.baseOnly).ratio>slowRate*1.45;
+   const weights=involved.map(d=>aromatic(d)&&structural.length?.32:secondary(d)?.55:1);
    const grades=involved.map((d,i)=>{
     const q=natural[i],age=Math.max(0,a.t-d.t);
     const contact=smooth(age,v==='WOK'?.45:.55,v==='WOK'?1.55:1.85);
-    const effective=aromatic(d)&&structural.length?band(q,.25,8,.25,5):band(q,...window);
+    const effective=aromatic(d)&&structural.length?(.75+.25*peak(q,2.8,2.9))*smooth(q,0,.3):secondary(d)?peak(q,1.3,.72):peak(q,...window);
     return contact*effective;
    });
-   const core=focus.map(d=>liveHeatEvidence(d,a.t,[],v,!!r.baseOnly).ratio);
+   const core=focus.filter(d=>!secondary(d)).map(d=>liveHeatEvidence(d,a.t,[],v,!!r.baseOnly).ratio);
    const readiness=smooth(mean(core),.12,a.type==='reduce'?.65:.40);
    timing=readiness*grades.reduce((sum,q,i)=>sum+q*weights[i],0)/Math.max(.01,weights.reduce((a,b)=>a+b,0));
 
   }
-  else if(r.baseOnly&&v==='STEAM'){const recent=involved.length?Math.min(...involved.map(d=>a.t-d.t)):0;const window=a.type==='seal'?[.28,1.25,.28,1.5]:[.65,1.9,.6,1.5];timing=smooth(recent,.55,1.65)*smooth(Math.min(...ratios),.10,.38)*mean(ratios.map(q=>band(q,...window)));}
+  else if(r.baseOnly&&v==='STEAM'){const recent=involved.length?Math.min(...involved.map(d=>a.t-d.t)):0;const window=a.type==='seal'?[.62,.38]:[1.12,.40];timing=smooth(recent,.55,1.65)*smooth(Math.min(...ratios),.10,.38)*mean(ratios.map(q=>peak(q,...window)));}
   else if(a.type==='seal')timing=1-smooth(mean(ratios),.60,1.6);
   else if(a.type==='vent'){const seal=actions.find(x=>x.type==='seal');timing=seal?band(a.t-seal.t,2,8,2,5)*band(mean(ratios),.65,2.25,.65,1.4):0}
-  return {type:a.type,grade:clamp(timing*(.60+.40*coverage)*smooth(t-a.t,.12,v==='POT'?1.25:.85)),early:involved.some(d=>a.t-d.t<1.25)||mean(ratios)<.35};
+  return {type:a.type,grade:clamp(timing*(.60+.40*coverage)*smooth(t-a.t,.12,v==='POT'?1.25:.85)),early:involved.some(d=>a.t-d.t<1.25)||mean(ratios)<.35,late:t-a.t<(v==='POT'?1.25:.85)};
  });
  // A good technique is enough; optional extra technique is not a checklist.
  let tech=.12;
  if(grades.length){const best=Math.max(...grades.map(x=>x.grade)),avg=mean(grades.map(x=>x.grade));tech=.12+.88*(.7*best+.3*avg)}
  const weak=grades.slice().sort((a,b)=>a.grade-b.grade)[0];
- const tips={coord:'食材一起烹制的时间偏短，风味还没有充分融合。',tech:!grades.length?'试着在烹饪过程中运用一种合适的技法。':weak?.early?'食材还没充分受热，技法或许可以稍晚一些。':'技法的时机还有改善空间，留意锅中食材的状态。',heat:mean(progress)>.35?'料理已经熟了，再早一些起锅或许会更鲜嫩。':'食材刚刚熟透，再稍微融合一下或许会更好。'};
+ const over=texture.filter((x,i)=>x.p>(aromatic(drops[i])?(v==='POT'?.40:.36):(v==='POT'?.20:.17))).reduce((n,x)=>n+1-x.grade,0);
+ const under=texture.reduce((n,x)=>n+1-x.grade,0)-over;
+ const tips={coord:'食材一起烹制的时间偏短，风味还没有充分融合。',tech:!grades.length?'试着在烹饪过程中运用一种合适的技法。':weak?.early?'食材还没充分受热，技法或许可以稍晚一些。':weak?.late?'技法施展后还需要一点时间，让风味融入料理。':'技法的时机还有改善空间，留意锅中食材的状态。',heat:over>=under?'料理已经熟了，再早一些起锅或许会更鲜嫩。':'食材刚刚熟透，再稍微融合一下或许会更好。'};
  return {coordination,tech,heat,tips};
 }
 function grillEvidence(r){
  const faces=r.facts.frontBack||[],heatSamples=faces.flatMap(f=>{const {low,high}=grillHeatBounds(f.id);return [f.front,f.back].map(x=>clamp((x-low)/(high-low)))});
- const heat=mean(heatSamples.map(x=>.25+.75*band(x,.12,.43,.15,.5)));
+ const heat=mean(heatSamples.map(x=>.25+.75*peak(x,.24,.19)));
  const balance=mean(faces.map(f=>1-smooth(Math.abs(f.front-f.back),.55,4.6)));
  // Each skewer has two faces; judge balance within each ingredient, never between different ingredients.
  const coordination=.45+.55*balance;
@@ -82,10 +91,13 @@ function grillEvidence(r){
  let tech=clamp(.14+.77*balance+.09*brushGrade);
  if(r.baseOnly){
   const grades=r.actions.filter(a=>['brush','smoke'].includes(a.type)).map(a=>{
-   const readings=r.ids.map(id=>{const h=grillHeat(id,a.t,[],r.facts.rate,true),{low}=grillHeatBounds(id);return (h.front+h.back)/(2*low)});
-   const window=a.type==='brush'?[.55,1.4,.45,1.5]:[.35,1.05,.35,1.65];
+   const longest=Math.max(...r.ids.map(id=>grillHeatBounds(id).low));
+   const readings=r.ids.map(id=>{const h=grillHeat(id,a.t,[],r.facts.rate,true),{low}=grillHeatBounds(id);return {q:(h.front+h.back)/(2*low),fast:low<longest*.69}});
+   const window=a.type==='brush'?[1.05,.32]:[.66,.32];
    const contact=smooth(a.t,.7,2.25),remaining=smooth(r.duration-a.t,.15,a.type==='brush'?1.15:1.65);
-   return contact*remaining*(.8*mean(readings.map(q=>band(q,...window)))+.2*Math.min(...readings.map(q=>band(q,...window))));
+   const weights=readings.map(x=>x.fast?.35:1);
+   const effective=readings.map(x=>x.fast?peak(x.q,1.65,.95):peak(x.q,...window));
+   return contact*remaining*effective.reduce((n,q,i)=>n+q*weights[i],0)/weights.reduce((a,b)=>a+b,0);
   });
   tech=grades.length?.12+.88*(.7*Math.max(...grades)+.3*mean(grades)):.12;
  }
@@ -99,7 +111,7 @@ export function judgeCooking(result,seed,txn){
  const random=seeded(seed,txn,'cb2r1-quality')();
  // Only within three points of thresholds can RNG affect adjacent bands.
  const score=raw+(random*6-3);
- const baseTier=score>=75&&excellent?3:score>=55?2:1;
+ const baseTier=score>=CB_QUALITY_BLUE&&excellent?3:score>=55?2:1;
  const losses=scores.map((x,i)=>(1-x)*[.20,.45,.35][i]);
  const key=['coord','tech','heat'][losses.indexOf(Math.max(...losses))];
  return {baseTier,status:'成功',tip:baseTier<3?e.tips[key]:null,internal:{coordination:e.coordination,tech:e.tech,heat:e.heat,raw,score,excellent}};

@@ -3,9 +3,9 @@ import assert from 'node:assert/strict';
 import {fixture,identify,collect,budget,applyDeck,summary,AFFIX,rarityOf,baseTier,sample} from '../src/cooking_build_v2.js';
 import {beginLiveResearch,dropLiveIngredient,performLiveAction,stepLiveResearch,finishLiveResearch,createService,tick,resumeBreak,closeService,setServicePaused,prepDish,recipeCraftSnapshot,canMenu,selectArrivalDish,stationDuration,threadGrillIngredient,placeGrillSkewer,grillCookPreview,liveCookPreview} from '../src/engine.js';
 import {ING,RECIPES} from '../src/data.js';
-import {evaluateLiveCook} from '../src/cooking_v063.js';
+import {evaluateLiveCook,liveHeatEvidence} from '../src/cooking_v063.js';
 import {evaluatePlacedGrill} from '../src/grill_cooking_v014c.js';
-import {judgeCooking} from '../src/cooking_quality_r1.js';
+import {judgeCooking,CB_QUALITY_BLUE} from '../src/cooking_quality_r1.js';
 const advance=(s,target)=>{while(s.cook&&s.cook.elapsed<target-1e-6){const dt=Math.min(.1,target-s.cook.elapsed);stepLiveResearch(s,dt)}};
 const testRecipes={WOK:['mushroom_stir','garlic_beef'],POT:['chicken_stew','onion_chicken'],STEAM:['steam_cloud_rice','steam_moss_egg'],GRILL:['grill_beef','grill_chicken']};
 function candidates(id,v){
@@ -15,8 +15,8 @@ function candidates(id,v){
   const actions=[];let r;
   if(v==='GRILL'){if(kind!=='none')actions.push({type:kind,t:at,with:ids});r=evaluatePlacedGrill({ids,skewer:order,lane:'middle',actions,elapsed:end,cbTiming:true})}
   else{if(kind!=='none')actions.push({type:kind,t:at,with:ids});r=evaluateLiveCook(ids,v,order.map((id,index)=>({id,index,t:index*delay})),actions,end,true)}
-  const j=judgeCooking(r,15742,'trajectory');if(!j.baseTier)continue;
-  const target=[0,44,64,88][j.baseTier],distance=Math.abs(j.internal.raw-target),p={order:[...order],delay,kind,actions,end,distance,r,j};
+  const j=judgeCooking(r,15742,'trajectory');if(!j.baseTier||j.baseTier===3&&j.internal.raw<CB_QUALITY_BLUE+3)continue;
+  const target=[0,44,64,92][j.baseTier],distance=Math.abs(j.internal.raw-target),p={order:[...order],delay,kind,actions,end,distance,r,j};
   if(!found[j.baseTier]||distance<found[j.baseTier].distance)found[j.baseTier]=p;
   if(j.baseTier===3){const k=order[0]+':'+kind;if(!blue.has(k)||distance<blue.get(k).distance)blue.set(k,p)}
  }
@@ -31,7 +31,7 @@ function replay(id,v,p){
  advance(s,p.end);const r=finishLiveResearch(s);assert.ok(r&&r.sellable,id+' '+JSON.stringify(p));assert.ok(r.doneness.every(d=>d.label==='熟透'));assert.deepEqual(s.recipeVariants,before);for(const id of p.order)assert.equal(s.inventory[id],old[id]-1);assert.equal(finishLiveResearch(s),false);assert.equal(r.cbVerdict.baseTier,p.j.baseTier,id+' '+JSON.stringify(p));return {s,r,txn};
 }
 test('R1 eight real recipes, four cookware, reachable fully cooked white green blue and multiple excellent trajectories',()=>{
- for(const [v,ids] of Object.entries(testRecipes))for(const id of ids){const {found,blue}=candidates(id,v);assert.ok(found[1]&&found[2]&&found[3],id+' all tiers');assert.ok(blue.length>=2,id+' multiple routes');
+ for(const [v,ids] of Object.entries(testRecipes))for(const id of ids){const {found,blue}=candidates(id,v);assert.ok(found[1]&&found[2]&&found[3],id+' all tiers');assert.ok(blue.length>=2,id+' multiple routes');assert.equal(new Set(blue.map(p=>p.kind)).size,2,id+' independent techniques');
  for(const tier of [1,2,3]){const {s,r,txn}=replay(id,v,found[tier]);const item=identify(r,s.seed,txn);assert.equal(item.baseTier,tier);if(tier<3){assert.ok(r.cbVerdict.tip);assert.equal(item.affixes.length,0)}else assert.ok(item.affixes.length);const n=s.cbExperiment.collection.length;assert.ok(collect(s,item));assert.ok(collect(s,item));assert.equal(s.cbExperiment.collection.length,n+1)}
  for(const p of blue.slice(0,2))assert.equal(replay(id,v,p).r.cbVerdict.baseTier,3);console.log('R1 actual trajectories',v,id,[1,2,3].map(k=>({kind:found[k].kind,order:found[k].order,delay:found[k].delay,end:found[k].end,raw:Math.round(found[k].j.internal.raw)})),blue.length);
  }
@@ -98,9 +98,9 @@ test('R1d real aromatic-first, main-first and simultaneous routes have comparabl
    let best=null,stable=0;
    for(const type of types)for(let at=delay+.5;at<=13;at+=.25)for(let end=at+.25;end<=17;end+=.25){
     const actions=[{type,t:at,with:order}],r=evaluateLiveCook(ids,v,order.map((id,index)=>({id,t:index*delay,index})),actions,end,true),j=judgeCooking(r,15742,'audit');
-    if(j.baseTier===3&&j.internal.raw>=78){stable++;if(!best||j.internal.raw>best.j.internal.raw)best={order,delay,kind:type,actions,end,r,j}}
+    if(j.baseTier===3&&j.internal.raw>=CB_QUALITY_BLUE+3){stable++;if(!best||j.internal.raw>best.j.internal.raw)best={order,delay,kind:type,actions,end,r,j}}
    }
-   assert.ok(best&&stable>=20,v+' '+order.join(',')+' '+delay);
+   assert.ok(best&&stable>=(delay===4.5?10:20),v+' '+order.join(',')+' '+delay);
    for(let seed=0;seed<32;seed++)assert.equal(judgeCooking(best.r,seed,'route').baseTier,3);
    const actual=replay(id,v,best).r;assert.equal(actual.cbVerdict.baseTier,3);ceilings.push(best.j.internal.raw);
    console.log('R1d route',v,order,delay,best.j.internal.raw,stable);
@@ -119,5 +119,30 @@ test('R1d three-ingredient recipes retain multiple genuinely distinct good route
    }
    assert.ok(best,id+' '+order);assert.equal(replay(id,'WOK',best).r.cbVerdict.baseTier,3);
   }
+ }
+});
+
+test('R1e ordinary plausible cooks stay mostly green; deliberate technique timing rewards skill',()=>{
+ for(const [v,ids,types] of [['WOK',['beef','garlic'],['flip','toss']],['POT',['chicken','onion'],['gentle','reduce']]]){
+  const ordinary=[0,0,0,0],dual=[0,0,0,0],skilled=[0,0,0,0];
+  const add=(counts,drops,actions,end,txn)=>{const r=evaluateLiveCook(ids,v,drops,actions,end,true);counts[judgeCooking(r,15742,txn).baseTier]++};
+  for(const order of [ids,[...ids].reverse()])for(const delay of [.5,1.5,3]){
+   const drops=order.map((id,index)=>({id,t:index*delay,index}));let ready=delay;
+   while(ready<18&&!evaluateLiveCook(ids,v,drops,[],ready,true).doneness.every(d=>d.label==='熟透'))ready+=.05;
+   for(const type of types)for(let at=delay+.5;at<=ready;at+=.25)for(const rest of [.25,.75,1.5,2.5]){
+    const end=ready+rest;add(ordinary,drops,[{type,t:at,with:ids}],end,'r1d-user-audit');
+    if(at+.8<end)add(dual,drops,[{type,t:at,with:ids},{type:types.find(t=>t!==type),t:at+.8,with:ids}],end,'r1d-user-audit');
+   }
+   // Predetermined natural-maturity phase, not best-of-search: jitter technique and finish.
+   const main=drops.find(d=>d.id===ids[0]),unit=1/liveHeatEvidence(main,main.t+1,[],v,true).ratio;
+   for(const type of types)for(const offset of [-.45,0,.45])for(const rest of [.6,1,1.4]){
+    const phase=type==='flip'?.65:type==='gentle'?.63:1.12,at=Math.max(delay+.8,main.t+unit*phase+offset);
+    const end=Math.max(ready+rest,at+(v==='POT'?1.25:.85));add(skilled,drops,[{type,t:at,with:ids}],end,'skilled');
+   }
+  }
+  const rate=counts=>counts[3]/(counts[1]+counts[2]+counts[3]);
+  assert.equal(ordinary[0],0);assert.ok(ordinary[2]>ordinary[1]&&ordinary[2]>ordinary[3]);assert.ok(rate(ordinary)>=.15&&rate(ordinary)<=.35,v+' ordinary '+ordinary);
+  assert.ok(rate(dual)<=.55,v+' two-button '+dual);assert.ok(rate(skilled)>=.65&&rate(skilled)>rate(ordinary)+.30,v+' skilled '+skilled);
+  console.log('R1e ordinary / dual / skilled',v,ordinary,dual,skilled);
  }
 });
