@@ -40,7 +40,9 @@ try{
 
   assert.equal(await page.locator('[data-target]').count(),0,'no selectable material target is allowed');
   assert.equal(await page.locator('.target-scroller').count(),0,'obsolete target strip must not render');
-  assert.match(await page.locator('.v013h-supply-hint').innerText(),/库存偏低/);
+  await page.locator('[data-act="departure-notebook"]').click();
+  assert.match(await page.locator('.sheet .v013h-supply-hint').innerText(),/库存偏低/);
+  await page.keyboard.press('Escape');
   assert.equal(await page.locator('[data-route]').count(),2);
   assert.match(await page.locator('[data-route="safe"]').innerText(),/采集路线/);
   assert.match(await page.locator('[data-route="risk"]').innerText(),/狩猎路线/);
