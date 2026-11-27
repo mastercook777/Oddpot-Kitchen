@@ -15,8 +15,8 @@ export function drawCrewPortrait(canvas,role,level=1){
 export function drawCrewPortraits(root){
  if(!root||typeof root.querySelectorAll!=='function')return 0;
  let count=0;
- for(const canvas of root.querySelectorAll('canvas[data-crew-portrait]')){
-  const look=crewAppearance(canvas.dataset.crewPortrait,Number(canvas.dataset.level));
+ for(const canvas of root.querySelectorAll('canvas[data-crew-portrait],canvas[data-ui2-crew-portrait]')){
+  const look=crewAppearance((canvas.dataset.crewPortrait||canvas.dataset.ui2CrewPortrait),Number(canvas.dataset.level));
   if(look&&drawCrewPortrait(canvas,look.role,look.level))count++;
  }
  return count;
