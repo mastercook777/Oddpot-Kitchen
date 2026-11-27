@@ -58,3 +58,30 @@ const choose=(s,id,rarity=1)=>s.cbExperiment.collection.find(v=>v.recipeId===id&
 function run(s,deck){assert.ok(applyDeck(s,deck));assert.ok(canMenu(s));s.phase='prep';assert.ok(prepDish(s,s.menu[0]));s.phase='service';assert.ok(createService(s,{walkable:false}));setServicePaused(s,false);for(let i=0;i<110&&!s.service.done;i++){if(s.service.breakAt)resumeBreak(s);tick(s,1)}assert.ok(s.service.done);assert.ok(closeService(s));assert.equal(closeService(s),false);assert.ok(s.service.orders.every(o=>['served','left','rejected'].includes(o.status)));assert.equal(s.service.income,s.ledger.filter(e=>e.type==='sale').reduce((n,e)=>n+e.amount,0));assert.ok(Object.values(s.inventory).every(n=>n>=0));assert.equal(new Set(s.ledger.map(e=>e.id)).size,s.ledger.length);return summary(s)}
 test('real one-night A/B, immutable snapshot, budget and deterministic replay',()=>{const base=fixture({level:1,guest:'adventure',pressure:'high'});const a=[choose(base,'garlic_beef',5),choose(base,'chicken_stew'),choose(base,'veg_stir')],b=[choose(base,'mushroom_stir',3),choose(base,'chicken_stew',3),choose(base,'veg_stir')];assert.equal(budget(base,a).used,7);assert.equal(budget(base,b).used,7);assert.equal(budget(base,[...a,choose(base,'mushroom_stir')]).valid,false);const x=structuredClone(base),y=structuredClone(base);const ra=run(x,a),rb=run(y,b);assert.deepEqual(ra,run(structuredClone(base),a));assert.ok(ra.guests===14&&rb.guests===14);assert.ok(ra.rows.some(row=>row.events.some(e=>e.affix==='stars'||e.affix==='aroma')));assert.ok(rb.rows.some(row=>row.events.some(e=>e.affix==='quick'||e.affix==='aftertaste')));console.log('CB real A/B',JSON.stringify({a:ra,b:rb}))});
 test('master four slots, actual craft snapshots and cloud eligibility',()=>{const s=fixture({level:4,stations:3,third:'GRILL'});const deck=[choose(s,'garlic_beef',5),choose(s,'chicken_stew',3),choose(s,'mushroom_stir',3),choose(s,'grill_beef')];assert.equal(budget(s,deck).used,12);assert.ok(budget(s,deck).valid);assert.ok(applyDeck(s,deck));assert.equal(recipeCraftSnapshot(s,'garlic_beef').price,Math.round(RECIPES.garlic_beef.price*1.08));assert.ok(run(s,deck).guests>0);const cloud=fixture({world:'cloud',level:4,stations:3,third:'STEAM'});assert.ok(cloud.kitchen.slots.some(x=>x.type==='STEAM'));const cd=[choose(cloud,'cloud_rice_chicken'),choose(cloud,'sour_rice'),choose(cloud,'steam_cloud_rice',4),choose(cloud,'cloud_potato_rice')];assert.ok(budget(cloud,cd).valid);assert.ok(run(cloud,cd).guests>0)});
+
+test('R1b rapid four-button sequences cannot obtain excellent even with ideal finish timing',()=>{
+ for(const v of ['WOK','POT']){
+  const dishes=Object.entries(RECIPES).filter(([id,x])=>!x.generated&&!x.rare&&x.station===v&&x.method!=='steam'&&x.ids.length===2&&x.ids.every(i=>!['cloud_rice','sky_moss','storm_egg','sour_bell','gale_core'].includes(i)));
+  const counts=[0,0,0,0];
+  for(const [id,x] of dishes)for(const order of [x.ids,[...x.ids].reverse()])for(const gap of [.1,.25,.4])for(const kinds of v==='WOK'?[['flip','toss'],['toss','flip']]:[['gentle','reduce'],['reduce','gentle']])for(let end=2;end<=18;end+=.25){
+   const drops=order.map((id,i)=>({id,index:i,t:i*gap})),actions=kinds.map((type,i)=>({type,t:(i+2)*gap,with:order}));
+   const rr=evaluateLiveCook(order,v,drops,actions,end);
+   for(const seed of [1,15742,99])counts[judgeCooking(rr,seed,'rapid').baseTier]++;
+  }
+  assert.equal(counts[3],0);assert.ok(counts[1]>0&&counts[2]>0);
+  console.log('R1b rapid trace distribution',v,dishes.length,counts);
+ }
+ // Execute the same pattern through the actual workshop engine, not a synthetic verdict.
+ for(const [v,ids,actions] of [['WOK',['beef','garlic'],['flip','toss']],['POT',['chicken','mushroom'],['gentle','reduce']]]){
+  const s=fixture();assert.ok(beginLiveResearch(s,ids,v));dropLiveIngredient(s,ids[0]);advance(s,.25);dropLiveIngredient(s,ids[1]);advance(s,.5);performLiveAction(s,actions[0]);advance(s,.75);performLiveAction(s,actions[1]);advance(s,9);const rr=finishLiveResearch(s);assert.ok(rr.sellable);assert.ok(rr.cbVerdict.baseTier<3);assert.equal(identify(rr,s.seed,rr.cbTxn).affixes.length,0);
+ }
+});
+test('R1b early grill turn is recoverable; actual face heat conserved and legacy stays single-turn',()=>{
+ function start(legacy=false){const s=fixture();if(legacy)delete s.cbExperiment;assert.ok(beginLiveResearch(s,['beef','garlic'],'GRILL'));for(const id of ['beef','garlic'])assert.ok(threadGrillIngredient(s,id));assert.ok(placeGrillSkewer(s,'middle'));advance(s,.5);assert.ok(performLiveAction(s,'turn'));return s}
+ const failed=start();advance(failed,7.5);assert.equal(finishLiveResearch(failed).sellable,false);
+ const s=start();advance(s,.7);assert.equal(performLiveAction(s,'turn'),false);advance(s,4);assert.ok(performLiveAction(s,'turn'));advance(s,7.5);
+ const preview=grillCookPreview(s);for(const item of preview.items){assert.equal(item.state,'熟透');assert.ok(Math.abs(item.front+item.back-7.5*1.05)<.002)}
+ const r=finishLiveResearch(s);assert.ok(r.sellable);assert.equal(r.actions.filter(a=>a.type==='turn').length,2);assert.ok(r.facts.frontBack.every(x=>x.state==='熟透'));assert.equal(r.facts.frontBack[0].front,preview.items[0].front);
+ const legacy=start(true);advance(legacy,4);assert.equal(performLiveAction(legacy,'turn'),false);
+ const burnt=start();advance(burnt,10);assert.ok(performLiveAction(burnt,'turn'));advance(burnt,14);assert.equal(finishLiveResearch(burnt).sellable,false);
+});
