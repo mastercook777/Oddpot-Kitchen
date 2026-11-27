@@ -112,8 +112,8 @@ test('R1d three-ingredient recipes retain multiple genuinely distinct good route
  for(const id of ['flame_beef','harvest_stir']){
   const ids=RECIPES[id].ids;
   for(const order of [ids,[...ids].reverse()]){
-   let best=null;const delay=1.5;
-   for(const type of ['flip','toss'])for(let at=3.5;at<=11;at+=.5)for(let end=at+.5;end<=16;end+=.5){
+   let best=null;
+   for(const delay of [.5,1,1.5])for(const type of ['flip','toss'])for(let at=2*delay+.5;at<=11;at+=.5)for(let end=at+.5;end<=16;end+=.5){
     const actions=[{type,t:at,with:order}],r=evaluateLiveCook(ids,'WOK',order.map((id,index)=>({id,t:index*delay,index})),actions,end,true),j=judgeCooking(r,15742,'route');
     if(j.baseTier===3&&j.internal.raw>=78&&(!best||j.internal.raw>best.j.internal.raw))best={order,delay,kind:type,actions,end,r,j};
    }
