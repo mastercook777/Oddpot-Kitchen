@@ -50,3 +50,13 @@ export function ui2SlotGrid(sheet,selection){
  list.classList.add('ui2-detail-list');for(const head of list.querySelectorAll('.z2b-menu-group'))head.hidden=true;
  list.before(grid);
 }
+
+// The cloned slot canvas has no pixel buffer. Copy the real drawn portrait
+// after the existing art renderer has painted its original canvas.
+export function ui2SyncPortraits(root){
+ for(const copy of root.querySelectorAll('canvas[data-ui2-crew-portrait],canvas[data-ui2-guest-portrait]')){
+  const role=copy.dataset.ui2CrewPortrait,guest=copy.dataset.ui2GuestPortrait;
+  const source=Array.from(root.querySelectorAll(role?'canvas[data-crew-portrait]':'canvas[data-guest-portrait]')).find(c=>role?c.dataset.crewPortrait===role:c.dataset.guestPortrait===guest);
+  if(source){copy.width=source.width;copy.height=source.height;copy.getContext('2d')?.drawImage(source,0,0)}
+ }
+}
