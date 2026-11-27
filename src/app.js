@@ -63,6 +63,11 @@ function hud(){
   </div>
 </header>`;}
  if(game.phase==='field'&&game.field?.action&&game.field.segmentStatus!=='choice'){const f=game.field;return `<header class="z2a-hud z2a-field-hud"><div class="action-hud" aria-label="探索状态"><span class="field-hp" data-hp="${f.hp}" aria-label="生命 ${f.hp}/3">${z2a2Health(f.hp)}</span><button data-act="field-bag" class="field-bag-chip" aria-label="查看野外背包">${z2a2Icon('bag')} <b id="field-bag-count">${fieldBagSlotsUsed(f)}/${f.capacity||8}</b></button><span class="field-clock" id="field-clock">${z2a2Icon('route')} <b id="z2a2-clock-value">${f.segmentIndex||1}/3 · ${Math.floor(f.elapsed)}s</b></span></div><button type="button" class="z2a-settings hud-gear" data-act="settings" aria-label="设置">${z2a2Icon('gear')}</button></header>`;}
+ if(game.phase!=='research'&&['forecast','menu','prep','report','upgrade','field'].includes(game.phase)){
+ const stars=activeWorld(game)==='cloud'?game.cloudProgress?.stars||0:game.chapterProgress?.stars||0;
+ const klass=['menu','prep'].includes(game.phase)?'z2b-hud':game.phase==='report'?'z2c-hud z2c10-hud':game.phase==='upgrade'?'z2c-hud z2c11-hud':'z2c-hud';
+ return `<header class="z2a-hud ${klass} ui2-hud"><div class="ui2-hud-stack"><span class="ui2-hud-chip" aria-label="当前金币 ${game.coins}">${z2a2Icon('coin')} <b>${game.coins}</b></span><span class="ui2-hud-chip">${z2a2Icon('star')} ${stars} · 第 ${totalBusinessDay(game)} 天</span></div><div class="ui2-hud-side"><small>${esc(phaseLabels[game.phase])}</small><button type="button" class="hud-gear" data-act="settings" aria-label="设置">${z2a2Icon('gear')}</button></div></header>`;
+ }
  if(['report','upgrade'].includes(game.phase))return `<header class="z2a-hud z2c-hud ${game.phase==='report'?'z2c10-hud':'z2c11-hud'}"><div class="z2b-phase-title">${z2a2Icon(game.phase==='report'?'ledger':'home')}<span><b>${game.phase==='report'?'收工 · 食堂账册':'食堂扩建'}</b><small>第 ${totalBusinessDay(game)} 天</small></span></div><span class="z2c-resource" aria-label="当前金币 ${game.coins}">${z2a2Icon('coin')} <b>${game.coins}</b></span><span class="z2c-resource" aria-label="声望 ${game.reputation}">${z2a2Icon('rep')} <b>${game.reputation}</b></span><button class="hud-gear" data-act="settings" aria-label="设置">${z2a2Icon('gear')}</button></header>`;
  if(z2bPhase())return `<header class="z2a-hud z2b-hud"><div class="z2b-phase-title">${z2a2Icon(game.phase==='research'?'cook':game.phase==='menu'?'menu':'home')}<span><b>${phaseLabels[game.phase]}</b><small>第 ${totalBusinessDay(game)} 天</small></span></div><span class="z2b-coins">${z2a2Icon('coin')} <b>${game.coins}</b></span><button class="hud-gear" data-act="settings" aria-label="设置">${z2a2Icon('gear')}</button></header>`;
  const home=game.phase==='forecast';
@@ -176,6 +181,9 @@ function overlayMarkup(){if(!overlay)return '';
    body='<h2>👩‍🍳 食堂伙伴</h2><p class="sheet-lead">'+(activeWorld(game)==='cloud'?'云港可在首枚星章后再聘一名跑堂，双跑堂各自认领一盘并行送餐、各计工资与经验；':'')+'每位帮厨按本人实际完成的订单获得经验；增加厨位必须配备人手才能真正出餐。开门前直接选择左、中、右优先站位；已选位置不可重复安排。营业时，空闲帮厨仍会自动走到缺人的炉台支援。</p><div class="staff-roster">'+row('helper')+row('waiter')+(crew.helper2.hired?row('helper2'):'')+(activeWorld(game)==='cloud'?row('waiter2'):'')+'</div>';
  }else if(overlay==='settings'){
   body=`<h2>⚙ 游戏设置</h2><p class="sheet-lead">ODDPOT · v0.15.0-alpha.11 · 单机本地存档</p><section class="z2ed0-controls"><h3>移动摇杆</h3><div class="z2ed0-stick-options" role="group" aria-label="移动摇杆模式">${['floating','fixed'].map(m=>`<button type="button" class="game-btn secondary" data-act="stick-mode:${m}" aria-pressed="${stickMode===m}">${m==='floating'?'浮动摇杆':'固定摇杆'}</button>`).join('')}</div><p class="sheet-lead">${stickMode==='floating'?'在场景内按下即可移动。':'左下常驻摇杆，按住拖动。'} 野外与营业共用，自动保存。</p></section>${b('guide-replay','重看第一轮引导','secondary')}${b('reset','重置存档，从第 1 天重新开始','danger')}<p class="sheet-lead">切到后台时营业会自动暂停。更换设备不会同步存档。</p>`;
+ }else if(overlay==='ui2-star'){
+  const r=game.report,stars=r?.thirdRating?.passed?3:r?.secondRating?.passed&&r.secondRating.stage===2?2:r?.rating?.passed?1:0;
+  body='<section class="ui2-star-hero">'+z2a2Icon('star')+'<h3>第 '+stars+' 枚万味星章</h3><strong>食堂荣誉提升</strong><p>星章已正式获得，无需重复领取。</p>'+b('ui2-star-confirm','继续 · 食堂成长','primary wide')+'</section>';
  }else if(overlay==='ui2-forecast'){
   body=forecastPanel();
  }else if(overlay==='ui2-menu'){
@@ -196,11 +204,12 @@ function overlayMarkup(){if(!overlay)return '';
   const r=game.report;body=r?`<h2>营业账本详情</h2><p class="sheet-lead">本日订单由真实食材库存、工位工作秒数和顾客等待事件计算。</p><div class="book-list">${Object.entries(r.byDish).map(([id,d])=>`<div class="detail-row">${RECIPES[id].emoji} ${RECIPES[id].name}：售出 ${d.count} 份 · 满意 ${Math.round(d.totalSat/d.count)}</div>`).join('')}<div class="detail-row">左厨位占用 ${r.congestion.WOK||0} 秒 / 右厨位 ${r.congestion.POT||0} 秒${r.congestion.CENTER!==undefined?' / 中厨位 '+r.congestion.CENTER+' 秒':''}</div><div class="detail-row">食材耗用估值 ${r.cost} · 宣传 ${r.finance?.marketingCost||0} · 工资 ${r.finance?.wage||0} · 招待支出 ${r.hospitalityCost||0} · 收入 ${r.revenue} · 经营利润 ${r.profit} · 现金净变动 ${r.finance?.cashChange??'旧版无记录'}</div></div>`:'';
  }
  const kind=overlay.startsWith('menu:')?'menu':overlay.startsWith('growth-offer:')?'growth-offer':overlay;
- const titles={book:bookTab==='guests'?'客人图鉴':'料理工艺图鉴','service-ledger':'营业账册','field-bag':kind==='field-bag'&&game.field?'野外背包 · '+fieldBagSlotsUsed(game.field)+'/'+(game.field.capacity||8)+' 格':'野外背包',stock:'食材采购',premium:'隐藏菜单',menu:'更换第 '+(Number(overlay.split(':')[1])+1)+' 道上架菜',bento:'今日探索便当',crew:'食堂伙伴',settings:'游戏设置',details:'营业账本详情','growth-overview':'食堂成长总览','growth-offer':'扩建与强化','growth-portal':'传送门','departure-notebook':'旅厨笔记','harvest-result':'探索收获','ui2-forecast':'今日预报','ui2-menu':'今晚菜单','ui2-prep':'厨位与备餐'};
- const icons={book:bookTab==='guests'?'queue':'ledger','service-ledger':'ledger','field-bag':'bag',stock:'bag',premium:'star',menu:'menu',bento:'bento',crew:'queue',settings:'gear',details:'ledger','growth-overview':'ledger','growth-offer':'home','growth-portal':'route','departure-notebook':'ledger','harvest-result':'bag','ui2-forecast':'target','ui2-menu':'menu','ui2-prep':'cook'};
+ const titles={book:bookTab==='guests'?'客人图鉴':'料理工艺图鉴','service-ledger':'营业账册','field-bag':kind==='field-bag'&&game.field?'野外背包 · '+fieldBagSlotsUsed(game.field)+'/'+(game.field.capacity||8)+' 格':'野外背包',stock:'食材采购',premium:'隐藏菜单',menu:'更换第 '+(Number(overlay.split(':')[1])+1)+' 道上架菜',bento:'今日探索便当',crew:'食堂伙伴',settings:'游戏设置',details:'营业账本详情','growth-overview':'食堂成长总览','growth-offer':'扩建与强化','growth-portal':'传送门','departure-notebook':'旅厨笔记','harvest-result':'探索收获','ui2-forecast':'今日预报','ui2-menu':'今晚菜单','ui2-prep':'厨位与备餐','ui2-star':'万味星章'};
+ const icons={book:bookTab==='guests'?'queue':'ledger','service-ledger':'ledger','field-bag':'bag',stock:'bag',premium:'star',menu:'menu',bento:'bento',crew:'queue',settings:'gear',details:'ledger','growth-overview':'ledger','growth-offer':'home','growth-portal':'route','departure-notebook':'ledger','harvest-result':'bag','ui2-forecast':'target','ui2-menu':'menu','ui2-prep':'cook','ui2-star':'star'};
  const title=titles[kind]||'游戏面板';body=body.replace(/<h2>[\s\S]*?<\/h2>/,'');
  let nav='';if(kind==='book'){const m=body.match(/^<div class="v102-book-tabs z2c13-book-nav"[\s\S]*?<\/div>/);if(m){nav=m[0];body=body.slice(nav.length);}}
- return `<div class="sheet-backdrop" data-act="close-sheet"></div><section class="sheet z2c13-sheet ${kind==='book'?'v104-book-sheet':''}" data-sheet-kind="${kind}" data-ui2-context="${esc(kind==='book'?bookTab+'-'+bookRegion+'-'+recipeType:overlay)}" role="dialog" aria-modal="true" aria-labelledby="z2c13-sheet-title"><div class="sheet-header"><span class="sheet-handle" aria-hidden="true"></span><h2 id="z2c13-sheet-title">${z2a2Icon(icons[kind]||'ledger')} ${esc(title)}</h2><button type="button" class="game-btn sheet-close" data-act="close-sheet" aria-label="关闭面板">✕</button></div>${nav}<div class="sheet-body" tabindex="0">${body}</div></section>`;
+ const mandatory=['harvest-result','ui2-star'].includes(overlay);
+ return `<div class="sheet-backdrop" ${mandatory?'':'data-act="close-sheet"'}></div><section class="sheet z2c13-sheet ${kind==='book'?'v104-book-sheet':''}" data-sheet-kind="${kind}" data-ui2-context="${esc(kind==='book'?bookTab+'-'+bookRegion+'-'+recipeType:overlay)}" role="dialog" aria-modal="true" aria-labelledby="z2c13-sheet-title"><div class="sheet-header"><span class="sheet-handle" aria-hidden="true"></span><h2 id="z2c13-sheet-title">${z2a2Icon(icons[kind]||'ledger')} ${esc(title)}</h2>${mandatory?'':'<button type="button" class="game-btn sheet-close" data-act="close-sheet" aria-label="关闭面板">✕</button>'}</div>${nav}<div class="sheet-body" tabindex="0">${body}</div></section>`;
 }
 
 let growthCameraZ2d2='kitchen';
@@ -602,7 +611,7 @@ function drawerFocusAfterRender(previousKind,previousFocus,origin){
   if(!previousKind)drawerReturnFocus={phase:game.phase,snapshot:origin};
   for(const child of shell.children)if(child!==sheet&&!child.classList.contains('sheet-backdrop'))child.inert=true;
   const target=previousKind===sheet.dataset.sheetKind?drawerFindFocus(sheet,previousFocus):null;
-  (target||sheet.querySelector('.sheet-close'))?.focus({preventScroll:true});
+  (target||sheet.querySelector('.sheet-close')||drawerControls(sheet)[0])?.focus({preventScroll:true});
  }else if(previousKind){
   if(drawerReturnFocus?.phase===game.phase)drawerFindFocus(shell,drawerReturnFocus.snapshot)?.focus({preventScroll:true});
   drawerReturnFocus=null;
@@ -721,8 +730,9 @@ function action(act){
  if(act.startsWith('ui2-slot:')){const parts=act.slice(9).split(':');const index=Number(parts.pop());ui2Selection[parts.join(':')]=index;render();return}
  if(act.startsWith('ui2-warehouse:')){ui2Warehouse=act.slice(14);render();return}
  if(act==='ui2-forecast'||act==='ui2-menu'||act==='ui2-prep'||act.startsWith('ui2-prep:')){ui2Back='';ui2PrepSlot=act.startsWith('ui2-prep:')?Number(act.split(':')[1]):-1;overlay=act.startsWith('ui2-prep:')?'ui2-prep':act;render();return}
+ if(act==='ui2-star-confirm'&&overlay==='ui2-star'){overlay='';render();return}
  if(act==='harvest-confirm'&&overlay==='harvest-result'){overlay='';render();return}
- if(act==='close-sheet'){overlay=ui2Back;ui2Back='';render();return}
+ if(act==='close-sheet'){if(['harvest-result','ui2-star'].includes(overlay))return;overlay=ui2Back;ui2Back='';render();return}
  if(act==='service-ledger'&&game.phase==='service'&&game.service?.walkable){releaseStick();overlay='service-ledger';render();return}
  if(act==='crew'){overlay='crew';render();return}
  if(act.startsWith('promo:')){note(chooseCampaign(game,act.slice(6))?'揽客方案已选好，将于开门时生效。':'该活动尚未解锁或不能更改。');return}
@@ -770,7 +780,7 @@ function action(act){
  if(act.startsWith('soothe:')){note(sootheGuest(game,act.slice(7))?'💛 花费 5 金币招待客人，延长其耐心 9 秒。':'今晚的招待机会已用或该客人已经离开。');return}
  if(act==='clear-table'){selectedOrderId=null;note('点餐桌查看客人的实时订单，再决定是否优先出餐。');return}
  if(act==='close'){const r=closeService(game);note(r?'日报已经生成。今天的客人会告诉你该研发什么新菜。':'请先完成本晚营业。');return}
- if(act==='to-upgrade'){growthCameraZ2d2='kitchen';nextPhase(game,'upgrade');note('所有食材与新菜都会保留到下一天。');return}
+ if(act==='to-upgrade'){growthCameraZ2d2='kitchen';const r=game.report;overlay=r?.thirdRating?.passed||r?.secondRating?.passed&&r.secondRating.stage===2||r?.rating?.passed?'ui2-star':'';nextPhase(game,'upgrade');note('所有食材与新菜都会保留到下一天。');return}
  if(act.startsWith('upgrade-kitchen:')){const i=Number(act.split(':')[1]);const ok=buyCookwareUpgrade(game,act.split(':')[1]);if(ok)growthCameraZ2d2='kitchen';note(ok?'该类厨具全店永久升到 Lv.2！所有同类厨位和探索装备都共享。':'金币不足或此类厨具已升级。');return}
  if(act==='upgrade'){note(buyUpgrade(game)?'厨位升级成功。':'已经升级或金币不足。');return}
  if(act==='upgrade-bag'){note(buyBagUpgrade(game)?`背包扩容完成！下次探索可带 ${game.bagSlots} 格。`:'金币不足或已经升满背包。');return}
@@ -1070,4 +1080,4 @@ app.addEventListener('pointerup',e=>{
 },{passive:false});
 
 // Close a reference drawer without altering the underlying game phase.
-document.addEventListener('keydown',e=>{if(!overlay){if(game.phase==='report')drawerTab(e,app.querySelector('.z2ed1-result'),document.activeElement);else if(game.phase==='field'&&(game.field?.segmentStatus==='choice'||game.field?.activeEvent))drawerTab(e,app.querySelector('.z2ed3-field-dialog,.field-event'),document.activeElement);return}if(e.key==='Escape'){e.preventDefault();if(overlay==='harvest-result')return;overlay=ui2Back;ui2Back='';render();return;}drawerTab(e,app.querySelector('.z2c13-sheet'),document.activeElement);});
+document.addEventListener('keydown',e=>{if(!overlay){if(game.phase==='report')drawerTab(e,app.querySelector('.z2ed1-result'),document.activeElement);else if(game.phase==='field'&&(game.field?.segmentStatus==='choice'||game.field?.activeEvent))drawerTab(e,app.querySelector('.z2ed3-field-dialog,.field-event'),document.activeElement);return}if(e.key==='Escape'){e.preventDefault();if(['harvest-result','ui2-star'].includes(overlay))return;overlay=ui2Back;ui2Back='';render();return;}drawerTab(e,app.querySelector('.z2c13-sheet'),document.activeElement);});
