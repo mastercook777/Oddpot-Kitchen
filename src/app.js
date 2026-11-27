@@ -75,7 +75,7 @@ function hud(){
  const step=journey.indexOf(game.phase);
  return `<div class="hud ${home?'v076-home-hud':''}"><div class="brand"><span class="logo" aria-hidden="true">🍳</span><div><strong>怪味食堂</strong><small>第 ${totalBusinessDay(game)} 天 · ${tableCapacity(game)} 座</small></div></div><div class="hud-meta"><span aria-label="金币">🪙 ${game.coins}</span><span aria-label="声望">⭐ ${game.reputation}</span></div><button class="hud-gear" data-act="settings" aria-label="设置">⚙</button></div><div class="day-strip ${home?'v076-home-day':''}" aria-label="当前阶段：${phaseLabels[game.phase]}"><b>${phaseLabels[game.phase]}</b><div class="v014-journey" aria-hidden="true">${journey.slice(0,7).map((phase,i)=>`<i class="${i===step?'current':i<step?'passed':''}"></i>`).join('')}</div><span class="day-phase">${step<5?'☀ 白天':'☾ 夜晚'}</span></div>`;
 }
-function toast(){return `<div class="game-toast" role="status"><span>${esc(message)}</span></div>`}
+function toast(){return `<div class="game-toast" role="status" ${performance.now()>flashUntil?'hidden':''}><span>${esc(message)}</span></div>`}
 function playablePhase(){return game.phase==='service'||(game.phase==='field'&&!!game.field?.action)}
 function sceneNotice(){return `<div class="ingame-notice" role="status" id="ingame-notice" ${performance.now()>flashUntil?'hidden':''}>${esc(message.slice(0,28))}</div>`}
 function guideMarkup(){
@@ -85,7 +85,7 @@ function guideMarkup(){
 }
 function shell(stage,dock){
  const walk=game.phase==='service'&&game.service?.walkable,home=game.phase==='forecast',fieldLive=game.phase==='field'&&game.field?.action&&game.field.segmentStatus!=='choice';
- return `<div class="game-shell ${activeWorld(game)==='cloud'?'world-cloud':''} ${walk?'v075-game-shell is-diner-playing z2a-live z2a-diner':''} ${fieldLive?'z2a-live z2a-field':game.phase==='field'?'z2c-route':''} ${home?'v076-home-shell z2c-home':''} ${z2bPhase()?'z2b-shell z2b-'+game.phase:''} ${game.phase==='field'&&game.field?.action?'is-field-playing':''}">${hud()}${guideMarkup()}<main class="stage ${game.phase}${game.cook?' wok-active':''}">${stage}${playablePhase()?sceneNotice():''}</main>${playablePhase()||home?'':toast()}${walk?'':`<nav class="dock">${dock}</nav>`}${overlayMarkup()}</div>`;
+ return `<div class="game-shell ${activeWorld(game)==='cloud'?'world-cloud':''} ${walk?'v075-game-shell is-diner-playing z2a-live z2a-diner':''} ${fieldLive?'z2a-live z2a-field':game.phase==='field'?'z2c-route':''} ${home?'v076-home-shell z2c-home':''} ${z2bPhase()?'z2b-shell z2b-'+game.phase:''} ${game.phase==='field'&&game.field?.action?'is-field-playing':''}">${hud()}${guideMarkup()}<main class="stage ${game.phase}${game.cook?' wok-active':''}">${stage}${playablePhase()?sceneNotice():''}</main>${playablePhase()||home||game.phase==='menu'||game.phase==='prep'?'':toast()}${walk?'':`<nav class="dock">${dock}</nav>`}${overlayMarkup()}</div>`;
 }
 function earnedPromotions(){
  return Object.keys(CREW_ROLES).map(role=>({role,name:crewRoleName(game,role),promotion:crewPromotion(game,role)}))
@@ -322,8 +322,8 @@ function z2c2Departure(routes,lowStock){
 }
 
 function ui2Tool(act,glyph,label,primary=false,disabled=false){return '<button type="button" class="ui2-tool '+(primary?'ui2-gold':'')+'" data-act="'+act+'" '+(disabled?'disabled':'')+' aria-label="'+esc(label)+'">'+z2a2Icon(glyph)+'<span>'+esc(label)+'</span></button>'}
-function ui2Spot(act,glyph,label,at){return '<button type="button" class="ui2-spot" data-act="'+act+'" data-ui2-anchor="'+at.x+','+at.y+'" style="left:'+at.x*100+'%;top:'+at.y*100+'%" aria-label="'+esc(label)+'">'+z2a2Icon(glyph)+'<small>'+esc(label)+'</small></button>'}
-function ui2Room(mode,spots,tools,primary='',hint=''){return ['<div class="ui2-room-mode" data-room-mode="'+mode+'">'+restaurantView(false)+'<div class="ui2-hotspots">'+spots+'</div></div>','<div class="ui2-room-dock">'+tools+primary+'</div>'+ (hint?'<div class="ui2-hint">'+esc(hint)+'</div>':'')]}
+function ui2Spot(act,glyph,label,at){return '<button type="button" class="ui2-spot" data-act="'+act+'" data-ui2-anchor="'+at.x+','+at.y+'" style="left:'+at.x*100+'%;top:'+at.y*100+'%" aria-label="'+esc(label)+'">' +z2a2Icon(glyph)+'</button>'}
+function ui2Room(mode,spots,tools,primary='',hint=''){return ['<div class="ui2-room-mode" data-room-mode="'+mode+'">'+restaurantView(false)+'<div class="ui2-hotspots">'+spots+'</div></div>','<div class="ui2-room-dock">'+tools+primary+'</div>'+ (hint?'<div class="ui2-hint" role="status">'+esc(performance.now()<flashUntil?message:hint)+'</div>':'')]}
 function forecastPanel(){
  const plan=serviceDayPlan(game),stock=Object.values(game.inventory).reduce((sum,n)=>sum+n,0);
  return '<div class="ui2-summary">'+z2a2Icon('target')+'<h3>'+esc(firstChallenge(game)?'爆炎厨王踢馆':plan.pressure)+'</h3><p>'+esc(plan.goal.label)+' · 预计 '+plan.count+' 位客人</p><p>仓库 '+stock+' 份食材</p></div>'+starInvite()+portalPanel();
@@ -527,7 +527,7 @@ function service(){
  }).join(''):'';
  const modal=event?'<div class="v075-event-shade" role="dialog" aria-modal="true" aria-label="突发经营事件"><div class="v075-event-card" data-z2d3-event-key="service:'+v.breakAt+'"><div class="v075-event-kicker">⚡ 第 '+v.breakAt+' 波事件</div><h2>'+esc(event.title)+'</h2><p>'+esc(event.description)+'</p><div class="v075-event-options">'+choices+'</div><small>选择后将自动继续营业</small></div></div>':'';
  const paused=v.paused&&!v.breakAt&&!v.done?'<div class="v075-pause-screen"><strong>⏸ 已暂停</strong><button data-act="toggle-service">▶ 继续营业</button></div>':'';
- const end=v.done?'<div class="v075-finish"><h2>🌙 今日打烊</h2><p>成功上菜 '+complete+' / '+total+' · 厨房已经收工</p><button data-act="close">📊 查看经营日报</button></div>':'';
+ const end=v.done?'<div class="v075-finish" role="dialog" aria-modal="true" aria-label="今日打烊"><h2>'+z2a2Icon('moon')+' 今日打烊</h2><p>成功上菜 <strong>'+complete+' / '+total+'</strong></p><button data-act="close">'+z2a2Icon('ledger')+' 查看经营日报</button></div>':'';
  const warn=serviceSupplyStatus(game);
  return [`<div class="scene-bg diner-bg service-scene v075-service">${restaurantView(true)}
   <div id="v075-notification" class="v075-notification" ${warn.shortages.length?'':'hidden'}>${z2a2Icon('warn')} 缺料 · 查账册</div>
@@ -688,7 +688,7 @@ function render(){
   const feedback=document.createElement('section');feedback.className='z2c10-feedback';feedback.setAttribute('aria-label','今晚成果与明日线索');
   for(const name of ['daily-goal-result','guest-verdict','recipe-lead']){const block=scene.querySelector('.'+name);if(block)feedback.append(block);}
   const receipts=[...scene.children].filter(x=>x.classList.contains('v12-rating-result')||x.classList.contains('v12e-promotion-alert')||x.classList.contains('v015-ferry')||x.classList.contains('boss-mini'));
-  (receipts.at(-1)||scene.querySelector('.z2c10-paper')).insertAdjacentElement('afterend',feedback);
+  const paper=scene.querySelector('.z2c10-paper');for(const receipt of receipts)more.append(receipt);more.append(feedback);const brief=document.createElement('p');brief.className='ui2-report-brief';brief.textContent=game.report.sat>=80?'客人评价良好 · 查看完整经营记录':'查看完整经营记录与客人反馈';paper.append(brief);
  }
  if(overlay==='book'&&bookTab==='guests')drawGuestPortraits(app);
  if(overlay==='crew')drawCrewPortraits(app);
@@ -969,7 +969,7 @@ function advanceFrame(now){const delta=Math.min(.045,(now-(lastFrame||now))/1000
    }
   }
  }
- const notice=app.querySelector('#ingame-notice');if(notice&&now>flashUntil)notice.hidden=true;
+ const notice=app.querySelector('#ingame-notice');if(notice&&now>flashUntil)notice.hidden=true;const transient=app.querySelector('.game-toast');if(transient&&now>flashUntil)transient.hidden=true;
  const forest=app.querySelector('#forest-canvas'),diner=app.querySelector('#diner-canvas'),research3d=globalThis.__oddpotY4bRenderer,departure3d=globalThis.__oddpotDepartureRenderer;
  // Release inactive contexts before the next scene allocates its context.
  if(!forest)globalThis.__oddpotY3Renderer?.leave();if(!diner)globalThis.__oddpotY2Renderer?.leave();if(game.phase!=='research')research3d?.leave();

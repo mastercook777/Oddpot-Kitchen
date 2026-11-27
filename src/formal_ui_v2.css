@@ -87,3 +87,46 @@
 
 /* Keep actual playable surface usable below the transparent phase overlay. */
 .ui2-shell[data-ui2-scene=room] .stage.service>.ui2-room-host{pointer-events:auto;touch-action:none}.ui2-shell[data-ui2-scene=room] .stage.service>.v075-service{z-index:2}.ui2-shell[data-ui2-scene=room] .stage.service .v075-event-shade,.ui2-shell[data-ui2-scene=room] .stage.service .v075-pause-screen,.ui2-shell[data-ui2-scene=room] .stage.service .v075-finish{z-index:12}.ui2-shell .ui2-hud-stack{pointer-events:none}.ui2-shell .ui2-hud-side .hud-gear{pointer-events:auto}.ui2-shell .ui2-hotspots{inset:0}.ui2-shell .stage.forecast .ui2-spot[data-act=to-field]{top:clamp(100px,79%,calc(100% - 116px))}.ui2-shell .sheet .ui2-selected-detail[hidden]{display:none!important}.ui2-shell .ui2-summary>.v011g-ingredient-icon{width:48px;height:48px}.ui2-shell .z2ed1-growth .z2ed1-hotspots{z-index:3}.ui2-shell .stage.service .v075-service>.v075-goal{pointer-events:none}.ui2-shell .z2ed3-departure .z2c4-routes{align-self:stretch}
+
+/* Rejected preview: bounded layer geometry. Not yet visual acceptance. */
+.ui2-shell:not([data-ui2-mode=research]){--ui2-hud-top:calc(24px + env(safe-area-inset-top))}
+#app .ui2-shell:not([data-ui2-mode=research])>.z2a-hud{top:var(--ui2-hud-top)!important}
+.ui2-shell .ui2-hud-side>small{display:none}
+.ui2-shell .ui2-spot,.ui2-shell .z2ed1-growth-hotspot{width:48px;min-width:48px;min-height:48px;height:48px;border-radius:12px;padding:5px}.ui2-shell .z2ed1-growth-hotspot>span{display:none}
+.ui2-shell .ui2-room-dock{justify-content:space-between}.ui2-shell .ui2-tool{flex:0 0 48px;width:48px;min-width:44px;max-width:54px;min-height:54px}.ui2-shell .ui2-tool.ui2-gold{flex:1 1 auto;min-width:58px;max-width:115px;grid-auto-flow:column;gap:4px;padding:6px}
+.ui2-shell:has(>.v013j-guide) .ui2-hint{display:none!important}
+#app .ui2-shell:not([data-ui2-mode=research])>.v013j-guide{top:calc(var(--ui2-hud-top) + 72px);bottom:auto;max-height:82px;overflow:auto}
+#app .ui2-shell:not([data-ui2-mode=research])>.game-toast{top:auto!important;bottom:calc(145px + env(safe-area-inset-bottom))!important;max-height:42px;overflow:hidden;font-size:12px}
+#app .ui2-shell[data-ui2-scene=field] .stage>.action-forest{inset:0 0 calc(70px + env(safe-area-inset-bottom))!important;height:auto!important;max-height:none!important}
+.ui2-shell[data-ui2-scene=field] .action-forest>.v082-shield-status{top:calc(var(--ui2-hud-top) + 51px)!important;bottom:auto!important;left:10px!important}
+.ui2-shell[data-ui2-scene=field] .action-forest>.v063-field-bento{top:calc(var(--ui2-hud-top) + 51px)!important;bottom:auto!important;right:10px!important}
+.ui2-shell[data-ui2-scene=field] .field-action-notice{top:calc(var(--ui2-hud-top) + 85px)!important;bottom:auto!important}
+.ui2-shell[data-ui2-scene=field] .field-compact-dock{height:50px;min-height:50px;gap:5px;justify-content:flex-end;background:none;border:0}
+.ui2-shell[data-ui2-scene=field] .field-compact-dock .field-touch-tip{display:none}
+.ui2-shell[data-ui2-scene=field] .field-compact-dock .game-btn{min-width:88px;min-height:44px}
+.ui2-shell[data-ui2-scene=field] .action-forest>.field-skill{bottom:16px!important;top:auto!important}
+#app .ui2-shell[data-ui2-mode=service] .v4d-service-guide{position:absolute!important;top:auto!important;bottom:calc(136px + env(safe-area-inset-bottom))!important;left:50%!important;right:auto!important;transform:translateX(-50%)!important;height:auto!important;max-height:60px!important;min-height:0!important;width:max-content!important;max-width:calc(100% - 44px)!important;display:grid;grid-template-columns:24px minmax(0,1fr);grid-template-rows:auto auto auto;align-content:center;overflow:hidden;padding:5px 8px}
+.ui2-shell[data-ui2-mode=service] .v075-goal{top:calc(var(--ui2-hud-top) + 49px)!important;bottom:auto!important}
+.ui2-shell[data-ui2-mode=service] .v075-notification{top:calc(var(--ui2-hud-top) + 49px)!important;bottom:auto!important;left:auto;right:10px}
+.ui2-shell:has(.v075-finish)>.z2a-hud,.ui2-shell:has(.v075-finish)>.v013j-guide,.ui2-shell:has(.v075-finish) .v4d-service-guide,.ui2-shell:has(.v075-finish) .v075-goal,.ui2-shell:has(.v075-finish) .v075-notification,.ui2-shell:has(.v075-finish) #diner-stick,.ui2-shell:has(.v075-finish) #diner-special{visibility:hidden!important;pointer-events:none!important}
+.ui2-shell[data-ui2-mode=service]:has(.v075-finish) .v075-service:before{content:'';position:absolute;inset:0;background:#12271d80;pointer-events:none}
+#app .ui2-shell .v075-finish{position:absolute!important;inset:auto!important;left:50%!important;top:50%!important;transform:translate(-50%,-50%)!important;width:min(calc(100% - 44px),330px)!important;height:auto!important;max-height:60%!important;min-height:0!important;gap:12px;padding:20px 15px!important;color:#473321!important;background:#efdbb0!important}
+.ui2-shell .v075-finish h2{display:flex;align-items:center;gap:6px;font-size:20px}.ui2-shell .v075-finish h2 .z2a3-art{width:30px;height:30px}.ui2-shell .v075-finish p{margin:0}.ui2-shell .v075-finish button{min-height:44px;display:flex;align-items:center;gap:7px}.ui2-shell .v075-finish button .z2a3-art{width:22px;height:22px}
+.ui2-shell[data-ui2-mode=report]>.z2a-hud,.ui2-shell[data-ui2-mode=report]>.v013j-guide,.ui2-shell[data-ui2-mode=report] .z2b-prep-caption{visibility:hidden!important;pointer-events:none!important}
+#app .ui2-shell .z2ed1-result{width:min(calc(100% - 36px),390px)!important;max-height:min(65%,480px)!important;z-index:12!important;background:#efdbb0!important}
+.ui2-shell .z2ed1-result-heading{background:linear-gradient(#8a6239,#674429);border-color:#e3bc78;color:#fff1d1;justify-content:center}.ui2-shell .z2ed1-result-heading small{margin-left:0}
+#app .ui2-shell .z2ed1-result .z2c10-ledger{background:#efdbb0;gap:6px}
+#app .ui2-shell .z2ed1-result .z2c10-paper{padding:8px;border:0;box-shadow:none;background:none}
+.ui2-shell .z2ed1-result .z2c10-eyebrow,.ui2-shell .z2ed1-result .report-header{text-align:center}
+#app .ui2-shell .z2ed1-result .report-stats{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:5px}
+#app .ui2-shell .z2ed1-result .report-stats>div{min-height:0;display:grid;justify-items:center;text-align:center;padding:4px;border:0}
+#app .ui2-shell .z2ed1-result .report-stats>div:first-child{grid-column:1/-1;border-bottom:1px solid #bda271;padding:4px 0 8px}
+#app .ui2-shell .z2ed1-result .report-stats>div:first-child b{font-size:39px;line-height:1.12;color:#426842}
+#app .ui2-shell .z2ed1-result .report-stats>div:not(:first-child) b{font-size:20px}
+.ui2-shell .ui2-report-brief{margin:6px 0;font-size:12px;text-align:center;color:#63452a}
+.ui2-shell .z2ed1-result .z2c10-outcome{font-size:11px;justify-content:center;text-align:center}
+.ui2-shell .z2ed1-result .v014-report-more summary{min-height:44px;display:grid;align-items:center;text-align:center}
+.ui2-shell[data-ui2-mode=upgrade] .z2c11-scene-caption{top:calc(var(--ui2-hud-top) + 66px)!important;left:10px!important;right:auto!important;bottom:auto!important;width:max-content;max-width:calc(100% - 20px)}
+.ui2-shell[data-ui2-mode=upgrade] .z2ed1-growth-tools{bottom:calc(66px + env(safe-area-inset-bottom))!important}
+.ui2-shell:has(>.sheet-backdrop)>.z2a-hud,.ui2-shell:has(>.sheet-backdrop)>.dock,.ui2-shell:has(>.sheet-backdrop)>.v013j-guide,.ui2-shell:has(>.sheet-backdrop)>.game-toast{visibility:hidden!important;pointer-events:none!important}
+@media(max-width:350px){.ui2-shell .ui2-tool{flex-basis:44px;width:44px}.ui2-shell .ui2-tool.ui2-gold{font-size:12px;max-width:100px}}
