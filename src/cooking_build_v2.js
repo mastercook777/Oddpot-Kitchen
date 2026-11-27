@@ -1,6 +1,6 @@
 import {judgeCooking,seeded} from './cooking_quality_r1.js?v=cb2r1';
 import {ING,RECIPES} from './data.js';
-import {newGame,ensureKitchen,ensureCrew,chapterRecipeAvailable,recipeCookware,serviceDayPlan,recipeCraftSnapshot,canUse,createService,closeService} from './engine.js';
+import {newGame,ensureKitchen,ensureCrew,chapterRecipeAvailable,recipeCookware,serviceDayPlan,recipeCraftSnapshot,canUse,createService,closeService} from './engine.js?v=cb2r1';
 export const TIERS=['','普通','良好','优秀','史诗','传说'];
 export const COLORS=['','#a6a6a6','#67a967','#559add','#ac83db','#e1a44a'];
 export const LEVELS=[7,9,11,13];
