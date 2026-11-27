@@ -4,7 +4,7 @@ import {beginLiveResearch,dropLiveIngredient,threadGrillIngredient,placeGrillSke
 import {WORKSHOP_ACTIONS} from './cooking_v063.js?v=cb2r1c';
 import {drawDiner} from './scenes_v04.js?v=z2e2';
 import {enableY2} from './three_y2_diner.js?v=z2e2';
-import {enableY4b} from './three_y4b_research.js?v=cb2r2a';
+import {enableY4b} from './three_y4b_research.js?v=cb2r2b';
 import {walkServiceHero} from './walkable_restaurant_v07.js';
 import {dinerGuide} from './restaurant_scene_v075.js';
 import {ingredientIconHtml} from './ingredient_icons_v011g.js';
