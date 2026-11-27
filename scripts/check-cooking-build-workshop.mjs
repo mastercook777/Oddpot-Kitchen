@@ -25,7 +25,16 @@ for(const [v,ingredients,world] of [['WOK',['garlic','mushroom'],'hearth'],['POT
  await p.waitForFunction(v=>{const h=document.getElementById('pan'),f=h.querySelector('.cb-fallback-vessel');return h.dataset.vessel===v&&h.clientHeight>=100&&f.clientWidth>=70&&f.clientHeight>=60&&getComputedStyle(f).visibility==='visible'&&getComputedStyle(f).display!=='none'},v);
  await p.screenshot({path:out+'/fallback-empty-'+v+'.png'});
  await act('drop:'+ingredients[0]).click();await p.waitForFunction(()=>document.querySelectorAll('#fallback-food>span').length===1&&getComputedStyle(document.getElementById('fallback-food')).visibility==='visible');
- await p.screenshot({path:out+'/fallback-food-'+v+'.png'});await p.close();
+ await p.screenshot({path:out+'/fallback-food-'+v+'.png'});
+ if(v==='GRILL'){
+  await act('drop:'+ingredients[1]).click();await act('lane:middle').click();
+  await act('action:turn').click();assert.ok(await act('action:turn').isDisabled());
+  await p.waitForFunction(()=>parseFloat(document.getElementById('cook-clock').textContent.replace('烹饪 ',''))>=4);
+  assert.ok(await act('action:turn').isEnabled());await act('action:turn').click();
+  await p.waitForFunction(()=>[...document.querySelectorAll('[data-heat]')].every(e=>e.textContent==='熟透'),null,{timeout:20000});
+  await p.screenshot({path:out+'/grill-recovered.png'});await act('finish').click();await act('save').waitFor({state:'visible'});assert.ok(await act('save').isEnabled());
+ }
+ await p.close();
 }
 console.log('CB01a empty and filled cookware 3D host dimensions, four offline fallbacks verified');
 console.log('CB01 real three-viewport research, identification, deck, prep, service, events, report, retry and save isolation');
