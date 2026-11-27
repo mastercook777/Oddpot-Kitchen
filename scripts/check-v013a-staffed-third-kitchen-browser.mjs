@@ -38,9 +38,9 @@ try{
   // Load the exact purchased state into pre-opening, with complete inventory.
   await page.addInitScript(([k,v])=>localStorage.setItem(k,JSON.stringify(v)),[key,prep]);
   await page.reload({waitUntil:'networkidle'});
-  assert.equal(await page.locator('.kitchen-config-slot').count(),3);
+  await page.locator('.ui2-room-dock [data-act="ui2-prep"]').click();assert.equal(await page.locator('.kitchen-config-slot').count(),3);
   assert.match(await page.locator('.kitchen-config-slot').last().innerText(),/中厨位/);
-  await page.locator('[data-act="crew"]').first().click();
+  await page.keyboard.press('Escape');await page.locator('.ui2-room-dock [data-act="crew"]').click();
   assert.equal(await page.locator('canvas[data-crew-portrait="helper2"]').count(),1,'different third employee portrait');
   assert.match(await page.locator('.staff-roster').innerText(),/小炭/);
   assert.equal(await page.locator('[data-assign="helper2:2"]').count(),1);
