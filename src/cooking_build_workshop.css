@@ -21,3 +21,22 @@
 .cb-chef-tip{margin-top:8px;padding:10px;border-left:3px solid #9c7548;background:#d6bd8d;border-radius:6px;color:#493521;font-size:13px}.cb-chef-tip b{font-size:12px;color:#745032}.cb-roll-range{display:block;color:#c0bda4;font-size:11px;margin-top:3px}
 
 .cb-formula-detail{display:grid;gap:3px;text-align:left;border-top:1px solid #a48a5c55;border-bottom:1px solid #a48a5c55;padding:8px 0;margin:7px 0}.cb-formula-detail small{display:block;line-height:1.35;overflow-wrap:anywhere}.cb-formula-mini{display:block;font-size:11px;line-height:1.2;white-space:normal}.cb-report-row>small{display:block;line-height:1.3}
+
+/* R2: scene is primary; control deck is a short tactile tray rather than cards. */
+#lab[data-mode=cook] #cook-stage{inset:calc(48px + env(safe-area-inset-top)) 0 calc(184px + env(safe-area-inset-bottom));min-height:110px}
+#lab[data-mode=cook] #panel{inset:auto 9px calc(65px + env(safe-area-inset-bottom));overflow:visible}
+#lab[data-mode=cook] #hud .lab-label{display:none}
+#lab[data-mode=cook] .cb-cook-controls{position:relative;bottom:auto;background:linear-gradient(#65452e,#39291e);border:1px solid #b68e58;box-shadow:0 -3px 16px #161b164d;padding:6px 8px;gap:3px;border-radius:13px}
+.cb-tray-label,.cb-action-label{font-size:10px;letter-spacing:.04em;color:#e2c79a;text-align:left}
+.cb-tray{background:#302b22;border:1px solid #a77a49;border-radius:9px;padding:4px;gap:5px}
+.cb-cook-controls .cb-tray .cb-card{min-height:58px;display:grid;grid-template-columns:32px minmax(0,1fr);grid-template-rows:auto auto;align-items:center;text-align:left;padding:4px;background:linear-gradient(#d9b27b,#a67a45);color:#312318;border:1px solid #f0cf91;border-radius:7px;box-shadow:0 2px #261c15}
+.cb-tray .cb-card img,.cb-tray .cb-card svg{grid-row:1/3;width:30px;height:30px}
+.cb-tray .cb-card small{font-size:11px;font-weight:800;line-height:1.1}
+.cb-tray .cb-card [data-heat]{font-size:10px;line-height:1.15;background:#302d24;color:#ffe2a1;border-radius:3px;padding:2px;overflow-wrap:anywhere}
+.cb-tray .cb-card:disabled{opacity:1;background:#4e5140;border-color:#7c8b65;color:#e8e0bd;box-shadow:none}
+.cb-techniques button{background:linear-gradient(#55714e,#344c36);border:1px solid #9faf75;color:#fff1cb;box-shadow:0 2px #223222;min-height:44px;border-radius:8px}
+.cb-techniques button:disabled{opacity:.5}
+#lab[data-mode=cook] #dock .gold{min-height:46px}
+#pan[data-vessel=GRILL] .cb-fallback-vessel:before{content:"";position:absolute;left:4%;right:4%;top:48%;height:5px;background:linear-gradient(90deg,#d4bb87 0 85%,#67472f 85%);border-radius:5px}
+@media(max-width:350px){.cb-cook-controls .cb-tray .cb-card{grid-template-columns:25px minmax(0,1fr);padding:3px}.cb-tray .cb-card img,.cb-tray .cb-card svg{width:24px;height:24px}}
+@media(max-height:600px){#lab[data-mode=cook] #cook-stage{inset:calc(43px + env(safe-area-inset-top)) 0 calc(191px + env(safe-area-inset-bottom))}.cb-cook-controls .cb-tray .cb-card{min-height:53px}}
