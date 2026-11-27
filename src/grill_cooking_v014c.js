@@ -21,10 +21,10 @@ export function evaluatePlacedGrill(c){
  const sellable=!!recipe&&!!c.lane&&!missing.length&&!bad;
  const status=!recipe?'未知组合':missing.length?'漏穿串':bad?.label==='焦糊'?'焦糊失败':bad?'夹生失败':'成功';
  const quality=Math.max(35,Math.min(90,76+(turn?4:0)+(ordered?3:0)+(glazed?5:0)+(c.lane==='flame'?2:0)));
- return {baseOnly:!!c.cbTiming,recipeId,recipeName:recipe?.name||'未识别料理',ids:[...ids],vessel:'GRILL',quality,sellable,status,style,
+ return {...(c.cbTiming?{baseOnly:true}:{}),recipeId,recipeName:recipe?.name||'未识别料理',ids:[...ids],vessel:'GRILL',quality,sellable,status,style,
   styleLabel:style==='glazed_smoke'?'酱香烟熏':style==='smoked'?'炭火熏香':glazed?'双面刷香':'双面原味',secondaryTrait:smoke?'炭火烟香':glazed?'香料焦边':'双面火候',affinity:tech?.affinity||'ordinary',
-  affinityLabel:tech?.affinityLabel||'普通',culinaryReason:tech?.reason||'食材组合不能上架',
+  affinityLabel:tech?.affinityLabel||'普通',culinaryReason:c.cbTiming?(recipe?'双面自动烤制，酱香与烟香取决于技法时机。':'食材组合不能上架'):tech?.reason||'食材组合不能上架',
   events:c.skewer.map((id,index)=>({id,t:0,index})),actions:c.actions.map(a=>({...a,with:[...a.with]})),
-  duration:+c.elapsed.toFixed(2),doneness:[...states,...missing.map(id=>({id,label:'未穿串'}))],reason:sellable?tech.reason:status,
-  facts:{lane:c.lane,rate,automatic:!!c.cbTiming,skewer:[...c.skewer],ordered,frontBack:c.skewer.map(id=>({id,...grillHeat(id,c.elapsed,c.actions,rate,!!c.cbTiming)})),turnedAt:turn?.t??null,brushedAt:brush?.t??null}};
+  duration:+c.elapsed.toFixed(2),doneness:[...states,...missing.map(id=>({id,label:'未穿串'}))],reason:sellable?(c.cbTiming?'双面熟透':tech.reason):status,
+  facts:{lane:c.lane,...(c.cbTiming?{rate,automatic:true}:{}),skewer:[...c.skewer],ordered,frontBack:c.skewer.map(id=>({id,...grillHeat(id,c.elapsed,c.actions,rate,!!c.cbTiming)})),turnedAt:turn?.t??null,brushedAt:brush?.t??null}};
 }
