@@ -90,3 +90,34 @@ test('R1c automatic grill and all optional techniques leave actual maturity inva
  }
  const legacy=fixture();delete legacy.cbExperiment;assert.ok(beginLiveResearch(legacy,['beef','garlic'],'GRILL'));threadGrillIngredient(legacy,'beef');threadGrillIngredient(legacy,'garlic');placeGrillSkewer(legacy,'middle');advance(legacy,3);assert.equal(performLiveAction(legacy,'brush'),false);assert.ok(performLiveAction(legacy,'turn'));assert.equal(performLiveAction(legacy,'turn'),false);assert.equal(performLiveAction(legacy,'smoke'),false);
 });
+
+test('R1d real aromatic-first, main-first and simultaneous routes have comparable stable excellent ceilings',()=>{
+ for(const [v,ids] of [['WOK',['beef','garlic']],['POT',['chicken','onion']]]){
+  const id=v==='WOK'?'garlic_beef':'onion_chicken',types=v==='WOK'?['flip','toss']:['gentle','reduce'],ceilings=[];
+  for(const order of [ids,[...ids].reverse()])for(const delay of [0,1.5,3,4.5]){
+   let best=null,stable=0;
+   for(const type of types)for(let at=delay+.5;at<=13;at+=.25)for(let end=at+.25;end<=17;end+=.25){
+    const actions=[{type,t:at,with:order}],r=evaluateLiveCook(ids,v,order.map((id,index)=>({id,t:index*delay,index})),actions,end,true),j=judgeCooking(r,15742,'audit');
+    if(j.baseTier===3&&j.internal.raw>=78){stable++;if(!best||j.internal.raw>best.j.internal.raw)best={order,delay,kind:type,actions,end,r,j}}
+   }
+   assert.ok(best&&stable>=20,v+' '+order.join(',')+' '+delay);
+   for(let seed=0;seed<32;seed++)assert.equal(judgeCooking(best.r,seed,'route').baseTier,3);
+   const actual=replay(id,v,best).r;assert.equal(actual.cbVerdict.baseTier,3);ceilings.push(best.j.internal.raw);
+   console.log('R1d route',v,order,delay,best.j.internal.raw,stable);
+  }
+  assert.ok(Math.max(...ceilings)-Math.min(...ceilings)<=10);
+ }
+});
+test('R1d three-ingredient recipes retain multiple genuinely distinct good routes',()=>{
+ for(const id of ['flame_beef','harvest_stir']){
+  const ids=RECIPES[id].ids;
+  for(const order of [ids,[...ids].reverse()]){
+   let best=null;const delay=1.5;
+   for(const type of ['flip','toss'])for(let at=3.5;at<=11;at+=.5)for(let end=at+.5;end<=16;end+=.5){
+    const actions=[{type,t:at,with:order}],r=evaluateLiveCook(ids,'WOK',order.map((id,index)=>({id,t:index*delay,index})),actions,end,true),j=judgeCooking(r,15742,'route');
+    if(j.baseTier===3&&j.internal.raw>=78&&(!best||j.internal.raw>best.j.internal.raw))best={order,delay,kind:type,actions,end,r,j};
+   }
+   assert.ok(best,id+' '+order);assert.equal(replay(id,'WOK',best).r.cbVerdict.baseTier,3);
+  }
+ }
+});
