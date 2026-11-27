@@ -43,7 +43,7 @@ export function ui2SlotGrid(sheet,selection){
  items.forEach((item,i)=>{
   const btn=document.createElement('button');btn.type='button';btn.className='ui2-slot';btn.dataset.act='ui2-slot:'+key+':'+i;btn.setAttribute('aria-pressed',String(i===selected));
   const label=(def.label(item)||'未发现').trim();btn.setAttribute('aria-label',label);const art=item.querySelector(def.art);
-  if(art){const copy=art.cloneNode(true);copy.removeAttribute('id');if(kind==='stock'){for(const n of Array.from(copy.childNodes))if(n.nodeType===3)n.remove()}btn.append(copy)}
+  if(art){const copy=art.cloneNode(true);copy.removeAttribute('id');for(const canvas of [copy,...copy.querySelectorAll('canvas')]){if(canvas.dataset?.crewPortrait){canvas.dataset.ui2CrewPortrait=canvas.dataset.crewPortrait;delete canvas.dataset.crewPortrait}if(canvas.dataset?.guestPortrait){canvas.dataset.ui2GuestPortrait=canvas.dataset.guestPortrait;delete canvas.dataset.guestPortrait}}if(kind==='stock'){for(const n of Array.from(copy.childNodes))if(n.nodeType===3)n.remove()}btn.append(copy)}
   const title=document.createElement('small');title.textContent=label;btn.append(title);if(def.quantity){const qty=document.createElement('b');qty.textContent=def.quantity(item)||'';btn.append(qty)}
   grid.append(btn);item.hidden=i!==selected;item.classList.add('ui2-selected-detail');
  });
