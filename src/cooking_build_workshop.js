@@ -1,5 +1,5 @@
 import {ING,RECIPES,CUSTOMERS} from './data.js';
-import {beginLiveResearch,dropLiveIngredient,threadGrillIngredient,placeGrillSkewer,performLiveAction,finishLiveResearch,stepLiveResearch,liveCookPreview,grillCookPreview,recipeCookware,prepDish,createService,setServicePaused,tick,currentServiceEvent,chooseServiceEvent,resumeBreak,advanceWalkableInteraction,activateWalkableSpecial,closeService,canUse} from './engine.js?v=cb2r1c';
+import {beginLiveResearch,dropLiveIngredient,threadGrillIngredient,placeGrillSkewer,performLiveAction,finishLiveResearch,stepLiveResearch,liveCookPreview,grillCookPreview,recipeCookware,prepDish,createService,setServicePaused,tick,currentServiceEvent,chooseServiceEvent,resumeBreak,advanceWalkableInteraction,activateWalkableSpecial,closeService,canUse} from './engine.js?v=cb2r1d';
 import {WORKSHOP_ACTIONS} from './cooking_v063.js?v=cb2r1c';
 import {drawDiner} from './scenes_v04.js?v=z2e2';
 import {enableY2} from './three_y2_diner.js?v=z2e2';
@@ -7,7 +7,7 @@ import {enableY4b} from './three_y4b_research.js?v=cb2r1c';
 import {walkServiceHero} from './walkable_restaurant_v07.js';
 import {dinerGuide} from './restaurant_scene_v075.js';
 import {ingredientIconHtml} from './ingredient_icons_v011g.js';
-import {fixture,identify,collect,budget,applyDeck,summary,DEFAULT_CONFIG,AFFIX,TIERS,COLORS,LEVELS} from './cooking_build_v2.js?v=cb2r1c';
+import {fixture,identify,collect,budget,applyDeck,summary,DEFAULT_CONFIG,AFFIX,TIERS,COLORS,LEVELS} from './cooking_build_v2.js?v=cb2r1d';
 const $=id=>document.getElementById(id),lab=$('lab'),panel=$('panel'),dialog=$('window'),content=$('window-content');
 const esc=x=>String(x??'').replaceAll('&','&amp;').replaceAll('<','&lt;').replaceAll('>','&gt;').replaceAll('"','&quot;');
 const names={WOK:'炒锅',POT:'炖锅',GRILL:'烤架',STEAM:'蒸笼'};
