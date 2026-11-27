@@ -69,7 +69,8 @@ test('Pages entry and offline bundle both contain the corrected steam recap',()=
  const engine=readFileSync(new URL('../src/engine.js',import.meta.url),'utf8');
  assert.match(index,/src\/app\.js\?v=0\.15\.0-alpha\.11/);
  assert.match(app,/cooking_v063\.js\?v=0\.15\.0-alpha\.11/);
- assert.match(engine,/cooking_v063\.js\?v=0\.15\.0-alpha\.11/);
+ // Workshop and formal engine share the same thermal module; its cache key was refreshed for R1c.
+ assert.match(engine,/cooking_v063\.js\?v=cb2r1c/);
  assert.match(html,/v0\.15\.0-alpha\.11 离线版/);
  assert.match(html,/封笼形成保温云汽/);
  assert.match(html,/云汽匀蒸 · 品质 \+8/);
