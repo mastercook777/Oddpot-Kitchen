@@ -59,18 +59,18 @@ for(const [v,ingredients,world] of [['WOK',['garlic','mushroom'],'hearth'],['POT
 
  await p.close();
 }
-// P1 actual new and invalid formulas: no clues before cooking, discovery distinct from main identity.
+// P1 actual new and invalid formulas: guided recipe discovery before cooking, discovery distinct from main identity.
 {
  const p=await browser.newPage({viewport:{width:390,height:844},isMobile:true,hasTouch:true});await p.route('**/three@0.170.0/**',route=>route.abort());await p.goto(url);
  const act=id=>p.locator('[data-act="'+id+'"]').first();
  await act('start').click();
  const cook=async ids=>{for(const id of ids)await act('ing:'+id).click();await act('begin').click();for(const id of ids)await act('drop:'+id).click();await p.waitForFunction(()=>[...document.querySelectorAll('[data-heat]')].length>0&&[...document.querySelectorAll('[data-heat]')].every(x=>x.textContent==='熟透'),null,{timeout:20000});await act('finish').click();await act('discard').waitFor({state:'visible'});};
- await cook(['beef','garlic']);assert.ok((await p.locator('#panel').textContent()).includes('发现新菜谱'));await act('save').click();await act('research').click();
+ await act('ing:beef').click();await act('ing:garlic').click();assert.equal(await p.locator('[data-discovery]').getAttribute('data-discovery'),'new-recipe');await act('ing:beef').click();await act('ing:garlic').click();await cook(['beef','garlic']);assert.ok((await p.locator('#panel').textContent()).includes('发现新菜谱'));await act('save').click();await act('research').click();
  // Previously selected ingredients persist after successful research; add third.
- await act('ing:mushroom').click();await act('begin').click();for(const id of ['beef','garlic','mushroom'])await act('drop:'+id).click();await p.waitForFunction(()=>[...document.querySelectorAll('[data-heat]')].every(x=>x.textContent==='熟透'),null,{timeout:20000});await act('finish').click();
+ await act('ing:mushroom').click();assert.equal(await p.locator('[data-discovery]').getAttribute('data-discovery'),'new-formula');await act('begin').click();for(const id of ['beef','garlic','mushroom'])await act('drop:'+id).click();await p.waitForFunction(()=>[...document.querySelectorAll('[data-heat]')].every(x=>x.textContent==='熟透'),null,{timeout:20000});await act('finish').click();
  assert.ok((await p.locator('#panel').textContent()).includes('发现新配方'));assert.ok((await p.locator('.cb-formula-detail').textContent()).includes('幽光蘑菇'));await p.screenshot({path:out+'/p1-new-formula.png'});await act('save').click();
  assert.ok((await p.locator('#panel').textContent()).includes('实际研发发现 1 道主菜 / 2 种配方'));
- await act('research').click();await act('vessel:WOK').click();await cook(['beef','chicken']);assert.ok(await act('save').isDisabled());assert.ok((await p.locator('.cb-chef-tip').textContent()).includes('食材'));await p.close();
+ await act('atlas').click();assert.ok((await p.locator('#panel').textContent()).includes('未知料理'));await act('formula:WOK:beef,garlic').click();assert.equal(await p.locator('[data-discovery]').getAttribute('data-discovery'),'known');assert.ok(await act('begin').isEnabled());await act('vessel:WOK').click();const before=await act('ing:beef').textContent();await act('ing:beef').click();assert.equal(await p.locator('[data-discovery]').getAttribute('data-discovery'),'partial');await act('ing:chicken').click();assert.equal(await p.locator('[data-discovery]').getAttribute('data-discovery'),'invalid');assert.ok(await act('begin').isDisabled());await act('ing:chicken').click();await act('ing:beef').click();assert.equal(await act('ing:beef').textContent(),before);await p.screenshot({path:out+'/r3-invalid.png'});await p.close();
 }
 console.log('CB01a empty and filled cookware 3D host dimensions, four offline fallbacks verified');
 console.log('CB01 real three-viewport research, identification, deck, prep, service, events, report, retry and save isolation');
