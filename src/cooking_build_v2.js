@@ -39,19 +39,19 @@ export function applyDeck(s,deck){
  }
  s.cbExperiment.crafts=crafts;s.cbExperiment.deck=[...deck];return true;
 }
-export const DEFAULT_CONFIG={level:2,tables:3,stations:2,third:'GRILL',helper:true,waiter:true,guest:'normal',pressure:'normal',stock:'full',seed:15742};
+export const DEFAULT_CONFIG={world:'hearth',level:2,tables:3,stations:2,third:'GRILL',helper:true,waiter:true,guest:'normal',pressure:'normal',stock:'full',seed:15742};
 export function fixture(config={}){
  const cfg={...DEFAULT_CONFIG,...config};cfg.level=Math.min(4,Math.max(1,Number(cfg.level)||1));cfg.seed=Number(cfg.seed)>>>0;
- const s=newGame(cfg.seed);s.phase='research';s.onboarding.enabled=false;s.coins=620;s.management.openingCoins=s.coins;s.cycle=2;s.day=1;s.dining.tableCount=Number(cfg.tables);s.chapterProgress.stars=2;s.reputation=12;
- s.kitchen.thirdUnlocked=Number(cfg.stations)===3;s.kitchen.grillOwned=true;if(s.kitchen.thirdUnlocked)s.kitchen.slots.push({type:['WOK','POT','GRILL'].includes(cfg.third)?cfg.third:'GRILL',level:1});
+ const s=newGame(cfg.seed);s.phase='research';s.onboarding.enabled=false;s.coins=620;s.management.openingCoins=s.coins;s.cycle=2;s.day=1;s.dining.tableCount=Number(cfg.tables);s.chapterProgress.stars=2;s.reputation=12;if(cfg.world==='cloud'){s.activeWorld='cloud';s.cloudProgress={explored:true,servedLocal:0,stars:0};s.kitchen.steamerOwned=true;}
+ s.kitchen.thirdUnlocked=Number(cfg.stations)===3;s.kitchen.grillOwned=cfg.world!=='cloud';if(s.kitchen.thirdUnlocked)s.kitchen.slots.push({type:(cfg.world==='cloud'?['WOK','POT','STEAM']:['WOK','POT','GRILL']).includes(cfg.third)?cfg.third:cfg.world==='cloud'?'STEAM':'GRILL',level:1});
  ensureKitchen(s);ensureCrew(s);s.crew.helper.hired=s.crew.helper.onDuty=!!cfg.helper;s.crew.helper.station=0;s.crew.waiter.hired=s.crew.waiter.onDuty=!!cfg.waiter;
- for(const id of Object.keys(ING))s.inventory[id]=id.startsWith('cloud_')?0:cfg.stock==='scarce'?3:cfg.stock==='limited'?7:24;
+ for(const id of Object.keys(ING))s.inventory[id]=(cfg.world!=='cloud'&&['cloud_rice','sky_moss','storm_egg','sour_bell','gale_core'].includes(id))?0:cfg.stock==='scarce'?3:cfg.stock==='limited'?7:24;
  s.cbExperiment={config:cfg,collection:[],crafts:{},deck:[],plan:null};
- const recipes=['chicken_stew','mushroom_stir','veg_stir','garlic_beef','onion_chicken','spicy_mushroom','grill_beef','grill_chicken'];
+ const recipes=cfg.world==='cloud'?['cloud_rice_chicken','sour_rice','cloud_potato_rice','cloud_chili_rice','steam_cloud_rice','steam_moss_egg','cloud_garlic_egg']:['chicken_stew','mushroom_stir','veg_stir','garlic_beef','onion_chicken','spicy_mushroom','grill_beef','grill_chicken'];
  for(const id of recipes){collect(s,sample(id));s.recipes[id]=76}
- for(const [id,as] of [['mushroom_stir',[{id:'quick',value:18}]],['chicken_stew',[{id:'aftertaste',value:8}]],['veg_stir',[{id:'aroma',value:25}]],['garlic_beef',[{id:'aroma',value:25},{id:'stars',value:8}]],['onion_chicken',[{id:'solo',value:15},{id:'wait',value:15}]],['spicy_mushroom',[{id:'frugal',value:15}]],['grill_beef',[{id:'fine',value:18}]]])collect(s,sample(id,as));
+ for(const [id,as] of (cfg.world==='cloud'?[['cloud_rice_chicken',[{id:'quick',value:18}]],['sour_rice',[{id:'aroma',value:25}]],['cloud_potato_rice',[{id:'aftertaste',value:8}]],['cloud_chili_rice',[{id:'aroma',value:25},{id:'stars',value:8}]],['steam_cloud_rice',[{id:'solo',value:15},{id:'wait',value:15}]]]:[['mushroom_stir',[{id:'quick',value:18}]],['chicken_stew',[{id:'aftertaste',value:8}]],['veg_stir',[{id:'aroma',value:25}]],['garlic_beef',[{id:'aroma',value:25},{id:'stars',value:8}]],['onion_chicken',[{id:'solo',value:15},{id:'wait',value:15}]],['spicy_mushroom',[{id:'frugal',value:15}]],['grill_beef',[{id:'fine',value:18}]]]))collect(s,sample(id,as));
  const plan=serviceDayPlan(s),n=cfg.pressure==='low'?7:cfg.pressure==='high'?14:10;
- const pool=cfg.guest==='adventure'?['adventurer','adventurer','adventurer','regular','family']:cfg.guest==='family'?['family','family','regular','family','gardener']:cfg.guest==='premium'?['critic','stargazer','critic','adventurer','regular']:null;
+ const pool=cfg.world==='cloud'?(cfg.guest==='premium'?['stargazer','cloud_weaver','cloud_docker']:cfg.guest==='adventure'?['cloud_docker','cloud_docker','cloud_weaver']:cfg.guest==='family'?['cloud_weaver','cloud_weaver','cloud_docker']:null):cfg.guest==='adventure'?['adventurer','adventurer','adventurer','regular','family']:cfg.guest==='family'?['family','family','regular','family','gardener']:cfg.guest==='premium'?['critic','stargazer','critic','adventurer','regular']:null;
  const random=rng(hash('guests',cfg.seed));const guests=Array.from({length:n},(_,i)=>pool?pool[Math.floor(random()*pool.length)]:plan.guests[i%plan.guests.length]);
  s.cbExperiment.plan={...plan,count:n,baseCount:n,guests,arrivalSpacing:cfg.pressure==='high'?1:cfg.pressure==='low'?4:2,marketingCost:0,marketingGuests:0,campaignId:'none',feastSeats:[],pressure:'工坊 · '+cfg.pressure,goal:{kind:'served',target:Math.ceil(n*.75),label:'完成 '+Math.ceil(n*.75)+' 份上菜'}};
  s.cbExperiment.deck=recipes.slice(0,3).map(id=>s.cbExperiment.collection.find(v=>v.recipeId===id).variantId);
