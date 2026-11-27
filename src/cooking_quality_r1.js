@@ -36,16 +36,25 @@ function liveEvidence(r){
   const ratios=involved.map(d=>liveHeatEvidence(d,a.t,prior,v).ratio);
   const coverage=involved.length/drops.length;
   let timing=0;
-  if(a.type==='flip'||a.type==='toss')timing=band(mean(ratios),.30,1.45,.30,1.10);
-  else if(a.type==='gentle')timing=band(mean(ratios),.25,1.35,.25,1.15);
-  else if(a.type==='reduce')timing=band(mean(ratios),.65,1.95,.55,1.25);
+  // Timing is judged on physical contact before any button heat bonus.
+  // A short-lived aromatic must not make a barely heated main ingredient look ready.
+  if(v==='WOK'||v==='POT'){
+   const natural=involved.map(d=>liveHeatEvidence(d,a.t,[],v).ratio);
+   const recent=involved.length?Math.min(...involved.map(d=>a.t-d.t)):0;
+   const contact=smooth(recent,v==='WOK'?.45:.55,v==='WOK'?1.55:1.85);
+   const window=a.type==='flip'?[.30,1.65,.30,1.65]:a.type==='toss'?[.50,1.8,.50,1.65]:a.type==='gentle'?[.27,1.45,.27,1.6]:[.78,1.95,.68,1.7];
+   const individual=natural.map(q=>band(q,...window));
+   const slow=natural.length?Math.min(...natural):0;
+   const readiness=smooth(slow,.12,a.type==='reduce'?.65:.40);
+   timing=contact*readiness*(.70*mean(individual)+.30*(individual.length?Math.min(...individual):0));
+  }
   else if(a.type==='seal')timing=1-smooth(mean(ratios),.60,1.6);
   else if(a.type==='vent'){const seal=actions.find(x=>x.type==='seal');timing=seal?band(a.t-seal.t,2,8,2,5)*band(mean(ratios),.65,2.25,.65,1.4):0}
-  return {type:a.type,grade:clamp(timing*(.35+.65*coverage)),early:mean(ratios)<.35};
+  return {type:a.type,grade:clamp(timing*(.35+.65*coverage)),early:involved.some(d=>a.t-d.t<1.25)||mean(ratios)<.35};
  });
  // A good technique is enough; optional extra technique is not a checklist.
  let tech=.12;
- if(grades.length){const best=Math.max(...grades.map(x=>x.grade)),avg=mean(grades.map(x=>x.grade));tech=.12+.88*(.8*best+.2*avg)}
+ if(grades.length){const best=Math.max(...grades.map(x=>x.grade)),avg=mean(grades.map(x=>x.grade));tech=.12+.88*(.7*best+.3*avg)}
  const weak=grades.slice().sort((a,b)=>a.grade-b.grade)[0];
  const tips={coord:'不同食材的熟化速度不太一致，试试调整投料间隔。',tech:!grades.length?'试着在烹饪过程中运用一种合适的技法。':weak?.early?'食材还没充分受热，技法或许可以稍晚一些。':'技法的时机还有改善空间，留意锅中食材的状态。',heat:mean(progress)>.35?'料理已经熟了，再早一些起锅或许会更鲜嫩。':'食材刚刚熟透，再稍微融合一下或许会更好。'};
  return {coordination,tech,heat,tips};
@@ -65,7 +74,7 @@ export function judgeCooking(result,seed,txn){
  const f=failure(result);if(f)return {baseTier:0,...f};
  const e=result.vessel==='GRILL'?grillEvidence(result):liveEvidence(result);
  const scores=[e.coordination,e.tech,e.heat],raw=100*(.30*scores[0]+.35*scores[1]+.35*scores[2]);
- const excellent=scores.filter(x=>x>=.68).length>=2&&scores.every(x=>x>=.40);
+ const excellent=scores.filter(x=>x>=.68).length>=2&&scores.every(x=>x>=.40)&&(!['WOK','POT'].includes(result.vessel)||e.tech>=.65);
  const random=seeded(seed,txn,'cb2r1-quality')();
  // Only within three points of thresholds can RNG affect adjacent bands.
  const score=raw+(random*6-3);
