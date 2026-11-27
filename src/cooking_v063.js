@@ -30,6 +30,15 @@ export function liveCookAmount(drop,t,actions,vessel){
  }
  return count;
 }
+// Shared read-only heat evidence. Does not change existing maturity rules.
+export function liveHeatEvidence(drop,t,actions,vessel){
+ const divisor=REQUIRE[drop.id]*(vessel==='POT'?1.18:vessel==='STEAM'?1.05:1);
+ const ratio=liveCookAmount(drop,t,actions,vessel)/divisor;
+ const age=Math.max(0,t-drop.t),dense=['beef','chicken','potato'].includes(drop.id);
+ const ageLimit=drop.id==='ember_pepper'&&vessel==='POT'?19:
+  ['garlic','chili','onion','ember_pepper'].includes(drop.id)?14:16;
+ return {ratio,age,ageLimit,dense};
+}
 export function liveIngredientState(drop,t,actions,vessel){
  if(!drop)return '待下锅';
  const ratio=liveCookAmount(drop,t,actions,vessel)/(REQUIRE[drop.id]*(vessel==='POT'?1.18:vessel==='STEAM'?1.05:1));
