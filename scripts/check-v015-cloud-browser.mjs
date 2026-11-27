@@ -24,7 +24,7 @@ try{
  const staticErrors=[];staticPage.on('pageerror',e=>staticErrors.push(e.message));
  await staticPage.addInitScript(([k,v])=>localStorage.setItem(k,JSON.stringify(v)),[key,hearth(914)]);
  await staticPage.goto(staticUrl+'index.html',{waitUntil:'networkidle'});
- assert.ok(await staticPage.locator('[data-act="portal-travel"]').isVisible(),'Pages-style static index renders the portal');
+ await staticPage.locator('[data-act="ui2-forecast"]').click();assert.ok(await staticPage.locator('[data-act="portal-travel"]').isVisible(),'Pages-style static index renders the portal');
  assert.deepEqual(staticErrors,[],'Pages-style static index has no startup errors');
  await staticPage.screenshot({path:`${out}/static-390.png`});await staticPage.close();
  for(const [width,height] of [[320,568],[375,667],[390,844]]){
@@ -36,9 +36,9 @@ try{
    await page.goto(url+path,{waitUntil:'networkidle'});
   };
   const two=hearth(width);two.chapterProgress.stars=2;
-  await open(two);await page.locator('[data-act="third-star-request"]').click();
+  await open(two);await page.locator('[data-act="ui2-forecast"]').click();await page.locator('[data-act="third-star-request"]').click();
   assert.equal((await page.evaluate(k=>JSON.parse(localStorage.getItem(k)),key)).chapterProgress.thirdAppraisal.requestDay,'1-1');
-  await open(hearth(width));assert.ok(await page.locator('[data-act="portal-travel"]').isVisible());
+  await open(hearth(width));await page.locator('[data-act="ui2-forecast"]').click();assert.ok(await page.locator('[data-act="portal-travel"]').isVisible());
   await page.locator('[data-act="portal-travel"]').click();
   const entered=await page.evaluate(k=>JSON.parse(localStorage.getItem(k)),key);
   assert.equal(entered.activeWorld,'cloud');assert.equal(entered.coins,120);
@@ -46,7 +46,7 @@ try{
   assert.deepEqual(entered.menu,['','','']);
   assert.ok((await page.locator('.v12-star-invite').first().innerText()).includes('云港'));
   await page.screenshot({path:`${out}/portal-${width}.png`});
-  await page.locator('[data-act="to-field"]').click();
+  await page.locator('.ui2-spot[data-act="to-field"]').click();
   assert.ok(await page.locator('[data-route="cloud_safe"]').isVisible());
   await page.screenshot({path:`${out}/routes-${width}.png`});
   await page.locator('[data-route="cloud_safe"]').click();
@@ -57,7 +57,7 @@ try{
   await page.screenshot({path:`${out}/island-${width}.png`});
   const choices=cloud(width);choices.phase='menu';choices.recipes.cloud_rice_chicken=80;choices.recipes.sour_rice=80;choices.recipes.steam_cloud_rice=80;
   choices.kitchen.steamerOwned=true;choices.menu=['sour_rice','cloud_rice_chicken','sour_rice'];
-  await open(choices);await page.locator('[data-edit-slot="2"]').click();
+  await open(choices);await page.locator('.ui2-room-dock [data-act="ui2-menu"]').click();await page.locator('[data-edit-slot="2"]').click();
   assert.equal(await page.locator('[data-menu-pick="2:steam_cloud_rice"]').isDisabled(),true,'third cookware is blocked at selection');
   await page.screenshot({path:`${out}/menu-limit-${width}.png`});
   const setup=cloud(width);await open(setup);
@@ -86,7 +86,7 @@ try{
  const offline=await browser.newPage({viewport:{width:390,height:844},isMobile:true,hasTouch:true,locale:'zh-CN'});
  await offline.addInitScript(([k,v])=>localStorage.setItem(k,JSON.stringify(v)),[key,hearth(915)]);
  await offline.goto(url+'standalone.html',{waitUntil:'networkidle'});
- assert.ok(await offline.locator('[data-act="portal-travel"]').isVisible());
+ await offline.locator('[data-act="ui2-forecast"]').click();assert.ok(await offline.locator('[data-act="portal-travel"]').isVisible());
  await offline.locator('[data-act="portal-travel"]').click();
  assert.ok((await offline.locator('.v12-star-invite').first().innerText()).includes('云港'));
  await offline.screenshot({path:`${out}/offline-390.png`});await offline.close();
