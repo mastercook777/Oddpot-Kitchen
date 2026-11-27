@@ -10,11 +10,11 @@ const advance=(s,target)=>{while(s.cook&&s.cook.elapsed<target-1e-6){const dt=Ma
 const testRecipes={WOK:['mushroom_stir','garlic_beef'],POT:['chicken_stew','onion_chicken'],STEAM:['steam_cloud_rice','steam_moss_egg'],GRILL:['grill_beef','grill_chicken']};
 function candidates(id,v){
  const ids=RECIPES[id].ids,found={},blue=new Map();
- for(const order of [ids,[...ids].reverse()])for(const delay of v==='GRILL'?[0]:[0,.5,1.5,2.5,4])for(const kind of v==='GRILL'?['turn','brush']:v==='STEAM'?['none','seal','vent']:v==='WOK'?['none','flip','toss']:['none','gentle','reduce'])for(const at of kind==='none'?[0]:[.5,1.5,2.5,4,5.5,7,8.5])for(let end=2;end<=18;end+=.5){
+ for(const order of [ids,[...ids].reverse()])for(const delay of v==='GRILL'?[0]:[0,.5,1.5,2.5,4])for(const kind of v==='GRILL'?['none','brush','smoke']:v==='STEAM'?['none','seal','vent']:v==='WOK'?['none','flip','toss']:['none','gentle','reduce'])for(const at of kind==='none'?[0]:[.5,1.5,2.5,4,5.5,7,8.5])for(let end=2;end<=18;end+=.5){
   if(delay>=end||kind!=='none'&&(at<delay||at>=end))continue;
   const actions=[];let r;
-  if(v==='GRILL'){actions.push({type:'turn',t:at,with:ids});if(kind==='brush'){if(at+1>=end)continue;actions.push({type:'brush',t:at+1,with:ids})}r=evaluatePlacedGrill({ids,skewer:order,lane:'middle',actions,elapsed:end})}
-  else{if(kind!=='none')actions.push({type:kind==='vent'?'seal':kind,t:at,with:ids});if(kind==='vent'){if(at+3>=end)continue;actions.push({type:'vent',t:at+3,with:ids})}r=evaluateLiveCook(ids,v,order.map((id,index)=>({id,index,t:index*delay})),actions,end)}
+  if(v==='GRILL'){if(kind!=='none')actions.push({type:kind,t:at,with:ids});r=evaluatePlacedGrill({ids,skewer:order,lane:'middle',actions,elapsed:end,cbTiming:true})}
+  else{if(kind!=='none')actions.push({type:kind,t:at,with:ids});r=evaluateLiveCook(ids,v,order.map((id,index)=>({id,index,t:index*delay})),actions,end,true)}
   const j=judgeCooking(r,15742,'trajectory');if(!j.baseTier)continue;
   const target=[0,44,64,88][j.baseTier],distance=Math.abs(j.internal.raw-target),p={order:[...order],delay,kind,actions,end,distance,r,j};
   if(!found[j.baseTier]||distance<found[j.baseTier].distance)found[j.baseTier]=p;
@@ -39,7 +39,7 @@ test('R1 eight real recipes, four cookware, reachable fully cooked white green b
 test('R1 strict failure before discovery, actual once-only ingredients and old game unaffected',()=>{
  const s=fixture();assert.ok(beginLiveResearch(s,['chicken','chili'],'WOK'));const old=s.inventory.chicken,recipes=structuredClone(s.recipes),variants=structuredClone(s.recipeVariants),learned=structuredClone(s.learned);
  assert.ok(dropLiveIngredient(s,'chicken'));assert.ok(dropLiveIngredient(s,'chili'));advance(s,4);const r=finishLiveResearch(s);assert.ok(r.doneness.some(x=>x.label==='受热中'));assert.equal(r.sellable,false);assert.equal(r.cbVerdict.baseTier,0);assert.equal(identify(r,s.seed,r.cbTxn),null);assert.ok(r.cbVerdict.tip.includes('熟透'));assert.deepEqual(s.recipes,recipes);assert.deepEqual(s.recipeVariants,variants);assert.deepEqual(s.learned,learned);assert.equal(s.inventory.chicken,old-1);assert.equal(finishLiveResearch(s),false);
- for(const [ids,v,actions,end] of [[['garlic','mushroom'],'WOK',[],15],[['beef','garlic'],'GRILL',[],6]]){const q=fixture();assert.ok(beginLiveResearch(q,ids,v));if(v==='GRILL'){for(const id of ids)assert.ok(threadGrillIngredient(q,id));assert.ok(placeGrillSkewer(q,'middle'))}else for(const id of ids)assert.ok(dropLiveIngredient(q,id));advance(q,end);const rr=finishLiveResearch(q);assert.equal(rr.sellable,false);assert.equal(rr.cbVerdict.baseTier,0)}
+ for(const [ids,v,actions,end] of [[['garlic','mushroom'],'WOK',[],15],[['beef','garlic'],'GRILL',[],2]]){const q=fixture();assert.ok(beginLiveResearch(q,ids,v));if(v==='GRILL'){for(const id of ids)assert.ok(threadGrillIngredient(q,id));assert.ok(placeGrillSkewer(q,'middle'))}else for(const id of ids)assert.ok(dropLiveIngredient(q,id));advance(q,end);const rr=finishLiveResearch(q);assert.equal(rr.sellable,false);assert.equal(rr.cbVerdict.baseTier,0)}
  const q=fixture();assert.ok(beginLiveResearch(q,['garlic','mushroom'],'WOK'));assert.ok(dropLiveIngredient(q,'garlic'));advance(q,3);assert.equal(finishLiveResearch(q).cbVerdict.baseTier,0);
  const legacy=fixture();delete legacy.cbExperiment;assert.ok(beginLiveResearch(legacy,['chicken','chili'],'WOK'));dropLiveIngredient(legacy,'chicken');dropLiveIngredient(legacy,'chili');advance(legacy,4);assert.equal(finishLiveResearch(legacy).sellable,true);
 });
@@ -65,7 +65,7 @@ test('R1b rapid four-button sequences cannot obtain excellent even with ideal fi
   const counts=[0,0,0,0];
   for(const [id,x] of dishes)for(const order of [x.ids,[...x.ids].reverse()])for(const gap of [.1,.25,.4])for(const kinds of v==='WOK'?[['flip','toss'],['toss','flip']]:[['gentle','reduce'],['reduce','gentle']])for(let end=2;end<=18;end+=.25){
    const drops=order.map((id,i)=>({id,index:i,t:i*gap})),actions=kinds.map((type,i)=>({type,t:(i+2)*gap,with:order}));
-   const rr=evaluateLiveCook(order,v,drops,actions,end);
+   const rr=evaluateLiveCook(order,v,drops,actions,end,true);
    for(const seed of [1,15742,99])counts[judgeCooking(rr,seed,'rapid').baseTier]++;
   }
   assert.equal(counts[3],0);assert.ok(counts[1]>0&&counts[2]>0);
@@ -76,12 +76,17 @@ test('R1b rapid four-button sequences cannot obtain excellent even with ideal fi
   const s=fixture();assert.ok(beginLiveResearch(s,ids,v));dropLiveIngredient(s,ids[0]);advance(s,.25);dropLiveIngredient(s,ids[1]);advance(s,.5);performLiveAction(s,actions[0]);advance(s,.75);performLiveAction(s,actions[1]);advance(s,9);const rr=finishLiveResearch(s);assert.ok(rr.sellable);assert.ok(rr.cbVerdict.baseTier<3);assert.equal(identify(rr,s.seed,rr.cbTxn).affixes.length,0);
  }
 });
-test('R1b early grill turn is recoverable; actual face heat conserved and legacy stays single-turn',()=>{
- function start(legacy=false){const s=fixture();if(legacy)delete s.cbExperiment;assert.ok(beginLiveResearch(s,['beef','garlic'],'GRILL'));for(const id of ['beef','garlic'])assert.ok(threadGrillIngredient(s,id));assert.ok(placeGrillSkewer(s,'middle'));advance(s,.5);assert.ok(performLiveAction(s,'turn'));return s}
- const failed=start();advance(failed,7.5);assert.equal(finishLiveResearch(failed).sellable,false);
- const s=start();advance(s,.7);assert.equal(performLiveAction(s,'turn'),false);advance(s,4);assert.ok(performLiveAction(s,'turn'));advance(s,7.5);
- const preview=grillCookPreview(s);for(const item of preview.items){assert.equal(item.state,'熟透');assert.ok(Math.abs(item.front+item.back-7.5*1.05)<.002)}
- const r=finishLiveResearch(s);assert.ok(r.sellable);assert.equal(r.actions.filter(a=>a.type==='turn').length,2);assert.ok(r.facts.frontBack.every(x=>x.state==='熟透'));assert.equal(r.facts.frontBack[0].front,preview.items[0].front);
- const legacy=start(true);advance(legacy,4);assert.equal(performLiveAction(legacy,'turn'),false);
- const burnt=start();advance(burnt,10);assert.ok(performLiveAction(burnt,'turn'));advance(burnt,14);assert.equal(finishLiveResearch(burnt).sellable,false);
+
+test('R1c automatic grill and all optional techniques leave actual maturity invariant',()=>{
+ for(const [v,ids,techs] of [['WOK',['beef','garlic'],['flip','toss']],['POT',['chicken','mushroom'],['gentle','reduce']],['STEAM',['cloud_rice','chicken'],['seal','vent']],['GRILL',['beef','garlic'],['brush','smoke']]]){
+  for(const end of [2,9,18.5]){
+   const run=(actions)=>{const s=fixture({world:v==='STEAM'?'cloud':'hearth',stations:3,third:v==='STEAM'?'STEAM':'GRILL'});assert.ok(beginLiveResearch(s,ids,v));if(v==='GRILL'){for(const id of ids)assert.ok(threadGrillIngredient(s,id));assert.ok(placeGrillSkewer(s,'middle'));assert.equal(performLiveAction(s,'turn'),false)}else for(const id of ids)assert.ok(dropLiveIngredient(s,id));
+    for(const [i,a] of actions.entries()){advance(s,.6+i*.5);assert.ok(performLiveAction(s,a));assert.equal(performLiveAction(s,a),false)}
+    advance(s,end);const preview=v==='GRILL'?grillCookPreview(s).items:liveCookPreview(s).indicators;if(v==='GRILL')for(const h of preview)assert.ok(Math.abs(h.front+h.back-end*1.05)<.002);
+    const r=finishLiveResearch(s);assert.deepEqual(r.doneness.map(h=>h.label),preview.map(h=>h.baseState||h.state));return r};
+   const plain=run([]);for(const actions of [[techs[0]],[techs[1]],techs,[...techs].reverse()]){const result=run(actions);assert.deepEqual(result.doneness,plain.doneness);assert.equal(result.sellable,plain.sellable);if(v==='GRILL')assert.deepEqual(result.facts.frontBack,plain.facts.frontBack)}
+   assert.equal(plain.sellable,end===9,v+' '+end);if(end===9)assert.ok(plain.cbVerdict.baseTier<3);
+  }
+ }
+ const legacy=fixture();delete legacy.cbExperiment;assert.ok(beginLiveResearch(legacy,['beef','garlic'],'GRILL'));threadGrillIngredient(legacy,'beef');threadGrillIngredient(legacy,'garlic');placeGrillSkewer(legacy,'middle');advance(legacy,3);assert.equal(performLiveAction(legacy,'brush'),false);assert.ok(performLiveAction(legacy,'turn'));assert.equal(performLiveAction(legacy,'turn'),false);assert.equal(performLiveAction(legacy,'smoke'),false);
 });
