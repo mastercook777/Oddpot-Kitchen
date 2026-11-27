@@ -74,7 +74,7 @@ try{
  assert.equal(expanded.dining.tableCount,4);
  assert.equal(expanded.coins,280);
  assert.equal(expanded.ledger.filter(x=>x.id==='expand-fourth-table').length,1);
- assert.match(await page.locator('.v09-room-upgrade').innerText(),/8 席/);
+ assert.match(await page.locator('.z2c11-scene-caption').innerText(),/8 席/);assert.equal(await page.locator('[data-act="growth-offer:table"]').count(),0,'all four tables built');await page.locator('[data-act="growth-overview"]').click();assert.match(await page.locator('.v09-room-upgrade').innerText(),/8 席/);await page.keyboard.press('Escape');
  await page.screenshot({path:`${out}/upgrade-four-tables-390.png`});
 
  const service=base();service.phase='service';service.chapterProgress.stars=1;
