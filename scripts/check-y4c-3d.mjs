@@ -86,14 +86,14 @@ for(const [width,height] of [[320,568],[375,667],[390,844]]){
  await page.addInitScript(s=>localStorage.setItem('oddpot-prototype-v04',JSON.stringify(s)),s);await page.goto(url+'?render=3d',{waitUntil:'domcontentloaded'});}
  // Growth preview must render actual geometry and update after a real purchase.
  const growth=newGame(15742);growth.onboarding.enabled=false;growth.phase='upgrade';growth.day=3;growth.reputation=2;growth.coins=500;
- await load(growth);const growth3d=page.locator('.z2c11-growth-scene canvas[data-phase="upgrade"]');
- await page.waitForFunction(()=>document.documentElement.dataset.oddpot3d==='active'&&document.querySelector('.z2c11-growth-scene canvas[data-phase="upgrade"]')?.dataset.tableCount==='2',null,{timeout:20000});
+ await load(growth);const growth3d=page.locator('.ui2-room-host canvas[data-phase="upgrade"]');
+ await page.waitForFunction(()=>document.documentElement.dataset.oddpot3d==='active'&&document.querySelector('.ui2-room-host canvas[data-phase="upgrade"]')?.dataset.tableCount==='2',null,{timeout:20000});
  assert.equal(await growth3d.count(),1);
  assert.equal(await growth3d.getAttribute('data-view'),'restaurant');assert.ok(Number(await growth3d.getAttribute('data-camera-half'))>=8.35);
  const g=await growth3d.boundingBox(),work=await page.locator('.z2ed1-growth-tools').boundingBox();assert.ok(g.height>100&&work.y>=g.y&&work.y+work.height<=g.y+g.height+1);
  await page.locator('[data-act="growth-offer:table"]').click();assert.equal(await page.evaluate(()=>JSON.parse(localStorage.getItem('oddpot-prototype-v04')).coins),500);
  await page.locator('[data-act="growth-buy:expand-room"]').click();
- await page.waitForFunction(()=>document.querySelector('.z2c11-growth-scene canvas[data-phase="upgrade"]')?.dataset.tableCount==='3',null,{timeout:10000});
+ await page.waitForFunction(()=>document.querySelector('.ui2-room-host canvas[data-phase="upgrade"]')?.dataset.tableCount==='3',null,{timeout:10000});
  assert.equal(await page.evaluate(()=>JSON.parse(localStorage.getItem('oddpot-prototype-v04')).dining.tableCount),3);
  assert.equal(await growth3d.getAttribute('data-view'),'restaurant');
  await page.screenshot({path:out+'/z2ed1-growth-'+width+'.png'});
@@ -120,14 +120,14 @@ for(const [width,height] of [[320,568],[375,667],[390,844]]){
   for(const o of v.orders){o.status='review';o.reviewAt=v.time-.25;}
   await load(feast);await page.waitForFunction(()=>{const c=document.querySelector('canvas[data-phase="service"]');return c?.dataset.lifeVersion==='y6'&&Number(c.dataset.reviewCount)===6&&Number(c.dataset.mealCount)===6;},null,{timeout:20000});assert.equal(Number(await page.locator('canvas[data-phase="service"]').getAttribute('data-food-pieces')),0);await page.screenshot({path:out+'/y6-empty-plates.png'});
  }
- const prep=newGame(15742);prep.onboarding.enabled=false;prep.phase='prep';await load(prep);await page.waitForFunction(()=>document.querySelector('canvas[data-view="kitchen-preview"]')?.dataset.phase==='prep',null,{timeout:20000});const prepLayout=await page.locator('.z2b-prep-layout').evaluate(el=>{const a=el.querySelector('.z2b-prep-scene').getBoundingClientRect(),b=el.querySelector('.z2b-prep-work').getBoundingClientRect();return {height:a.height,ratio:a.height/el.getBoundingClientRect().height,disjoint:a.bottom<=b.top+1};});assert.ok(prepLayout.height>=135&&prepLayout.ratio>=.40&&prepLayout.disjoint,JSON.stringify(prepLayout));await page.screenshot({path:out+'/z2b-prep-'+width+'.png'});
+ const prep=newGame(15742);prep.onboarding.enabled=false;prep.phase='prep';await load(prep);await page.waitForFunction(()=>document.querySelector('.ui2-room-host canvas[data-view="restaurant"]')?.dataset.phase==='prep',null,{timeout:20000});const prepLayout=await page.locator('.ui2-room-host').boundingBox();assert.ok(prepLayout.height>=height*.95);await page.locator('.ui2-room-dock [data-act="ui2-prep"]').click();assert.ok(await page.locator('.sheet .kitchen-config-slot').count()>0);await page.screenshot({path:out+'/ui2-prep-'+width+'.png'});
  const closing=newGame(15742);closing.onboarding.enabled=false;closing.phase='service';assert.ok(createService(closing,{walkable:true}));setServicePaused(closing,false);
  for(let t=0;t<160&&!closing.service.done;t++){if(closing.service.breakAt)resumeBreak(closing);tick(closing,1);}assert.ok(closing.service.done);
  await load(closing);
  await page.waitForFunction(()=>document.querySelector('canvas[data-phase="service"]')&&document.documentElement.dataset.oddpot3d==='active',null,{timeout:20000});
  await page.locator('.v075-finish [data-act="close"]').click();
- await page.waitForFunction(()=>document.querySelector('.z2d2-report-stage canvas[data-view="restaurant"]')?.dataset.phase==='report',null,{timeout:20000});
- const reportCanvas=page.locator('.z2d2-report-stage canvas[data-view="restaurant"]'),reportBox=await reportCanvas.boundingBox(),ledgerBox=await page.locator('.z2d2-report-layout .z2c10-ledger').boundingBox();
+ await page.waitForFunction(()=>document.querySelector('.ui2-room-host canvas[data-view="restaurant"]')?.dataset.phase==='report',null,{timeout:20000});
+ const reportCanvas=page.locator('.ui2-room-host canvas[data-view="restaurant"]'),reportBox=await reportCanvas.boundingBox(),ledgerBox=await page.locator('.z2d2-report-layout .z2c10-ledger').boundingBox();
  assert.ok(reportBox.height>=100&&ledgerBox.y>=reportBox.y&&ledgerBox.y+ledgerBox.height<=reportBox.y+reportBox.height+1);assert.equal(await reportCanvas.getAttribute('data-order-count'),'0');assert.equal(await reportCanvas.getAttribute('data-guest-count'),'0');
  await page.screenshot({path:out+'/z2d2-report-'+width+'.png'});
  const c=newGame(15742);c.onboarding.enabled=false;c.phase='research';assert.ok(beginLiveResearch(c,['mushroom','garlic'],'WOK'));assert.ok(dropLiveIngredient(c,'mushroom'));await load(c);await page.waitForFunction(()=>document.documentElement.dataset.oddpotResearch3d==='active',null,{timeout:20000});assert.ok(await page.locator('canvas[data-oddpot-research="3d"]').count());assert.ok(await page.locator('[data-live-drop="garlic"]').isEnabled());await page.locator('[data-live-drop="garlic"]').click();await page.waitForFunction(()=>document.querySelector('[data-live-drop="garlic"]')?.disabled);await page.screenshot({path:out+'/research-'+width+'.png'});
