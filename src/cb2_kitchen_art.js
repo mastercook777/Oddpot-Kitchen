@@ -50,6 +50,7 @@ export function makeKitchenArt(T,{work,range,cook,mat,group,box,cyl,lathe,ring,m
  const smokeM=shader('smoke'),flameM=shader('flame'),wisps=[],flames=[];
  for(let i=0;i<9;i++)wisps.push(mesh(fx,plane,smokeM,0,0,0));
  for(let i=0;i<7;i++)flames.push(mesh(root,plane,flameM,0,0,0));
+ const grillFlames=Array.from({length:5},()=>mesh(fx,plane,flameM,0,0,0));
  const rippleMat=new T.MeshBasicMaterial({color:'#ffdc99',transparent:true,opacity:.37,depthWrite:false});mats.add(rippleMat);
  const ripples=Array.from({length:6},()=>ring(fx,rippleMat,.20,.008,0));
  const fleckMat=mat('#ffd58b');fleckMat.emissive.set('#e67821');fleckMat.emissiveIntensity=.8;
@@ -64,6 +65,7 @@ export function makeKitchenArt(T,{work,range,cook,mat,group,box,cyl,lathe,ring,m
   for(let i=0;i<wisps.length;i++){const o=wisps[i],q=(time*(f.type==='WOK'?.80:.43)+i*.137)%1,a=i*2.399;const surge=vent?1.3:smoke?1.12:1;o.visible=lit&&(f.type!=='STEAM'||vent||i<5);o.quaternion.copy(camera.quaternion);o.position.set(smoke?-.85+i*.21+q*.39:Math.cos(a)*(.18+q*.35),.66+q*.85*surge,smoke?f.workbench.z:Math.sin(a)*.26);o.scale.set((.24+q*.25)*surge,(.55+q*.65)*surge,1);}
   flameM.uniforms.uTime.value=time;flameM.uniforms.uStrength.value=.92;glow.intensity=lit?2.6+Math.sin(time*13)*.45:0;
   for(let i=0;i<flames.length;i++){const o=flames[i];o.visible=lit;o.position.set((i-3)*.19,.27+Math.sin(time*9+i*2)*.035,1.56);o.scale.set(.28,.36+Math.sin(time*7+i*1.9)*.07,1);o.rotation.y=.06*Math.sin(i);}
+  for(let i=0;i<grillFlames.length;i++){const o=grillFlames[i];o.visible=lit&&f.type==='GRILL'&&f.lane!=='edge';o.quaternion.copy(camera.quaternion);o.position.set((i-2)*.45,.43+Math.sin(time*10+i)*.025,-.45+(i%2)*.20);o.scale.set(.19,f.lane==='flame'?.40:.25,1);}
   ember.emissiveIntensity=lit?1.05+.36*Math.sin(time*8):.15;
   broth.color.copy(soupColor).lerp(reducedColor,f.reduction<1?.72:0);broth.roughness=f.reduction<1?.27:.43;
   for(let i=0;i<ripples.length;i++){const o=ripples[i],q=(time*(f.action==='gentle'?1.8:.72)+i/6)%1,a=i*2.4;o.visible=lit&&f.type==='POT';o.position.set(f.action==='gentle'?0:Math.cos(a)*.43,soup.position.y+.026+i*.001,f.action==='gentle'?0:Math.sin(a)*.43);o.scale.setScalar(.22+q*(f.action==='gentle'?3.25:1.20));}
