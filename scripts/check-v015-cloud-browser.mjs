@@ -61,7 +61,7 @@ try{
   assert.equal(await page.locator('[data-menu-pick="2:steam_cloud_rice"]').isDisabled(),true,'third cookware is blocked at selection');
   await page.screenshot({path:`${out}/menu-limit-${width}.png`});
   const setup=cloud(width);await open(setup);
-  await page.locator('[data-act="buy-steamer"]').click();
+  await page.locator('[data-act="growth-offer:center"]').click();await page.locator('[data-act="growth-buy:buy-steamer"]').click();
   const bought=await page.evaluate(k=>JSON.parse(localStorage.getItem(k)),key);
   assert.equal(bought.kitchen.steamerOwned,true);
   assert.equal(bought.ledger.filter(x=>x.id==='cloud-steamer').length,1);

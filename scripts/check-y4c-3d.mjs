@@ -82,23 +82,21 @@ for(const [width,height] of [[320,568],[375,667],[390,844]]){
  let page;const errors=[];
  async function load(s,gate=null){if(page)await page.close();page=await browser.newPage({viewport:{width,height},deviceScaleFactor:2,isMobile:true,hasTouch:true});page.on('pageerror',e=>errors.push(e.message));page.on('console',m=>{if(m.type()==='warning'||m.type()==='error')console.log('browser',m.text());if(/Shader Error|VALIDATE_STATUS|GL_INVALID_OPERATION.*program/i.test(m.text()))errors.push(m.text());});
  await page.route('https://cdn.jsdelivr.net/npm/three@0.170.0/build/**',async route=>{const name=new URL(route.request().url()).pathname.split('/').at(-1);if(!/^three[.a-z]+\.js$/.test(name))return route.abort();await route.fulfill({status:200,contentType:'text/javascript',headers:{'access-control-allow-origin':'*'},body:await readFile('node_modules/three/build/'+name,'utf8')});});
- if(gate)await page.route(/\/src\/three_y2_diner\.js\?v=z2d3a(?:&.*)?$/,async route=>{await gate;await route.continue();});
+ if(gate)await page.route(/\/src\/three_y2_diner\.js\?v=z2ed1b(?:&.*)?$/,async route=>{await gate;await route.continue();});
  await page.addInitScript(s=>localStorage.setItem('oddpot-prototype-v04',JSON.stringify(s)),s);await page.goto(url+'?render=3d',{waitUntil:'domcontentloaded'});}
  // Growth preview must render actual geometry and update after a real purchase.
  const growth=newGame(15742);growth.onboarding.enabled=false;growth.phase='upgrade';growth.day=3;growth.reputation=2;growth.coins=500;
  await load(growth);const growth3d=page.locator('.z2c11-growth-scene canvas[data-phase="upgrade"]');
  await page.waitForFunction(()=>document.documentElement.dataset.oddpot3d==='active'&&document.querySelector('.z2c11-growth-scene canvas[data-phase="upgrade"]')?.dataset.tableCount==='2',null,{timeout:20000});
  assert.equal(await growth3d.count(),1);
- assert.equal(await growth3d.getAttribute('data-view'),'growth-preview');assert.ok(Number(await growth3d.getAttribute('data-camera-half'))<8.35);
- const g=await growth3d.boundingBox(),work=await page.locator('.z2c11-growth-work').boundingBox();assert.ok(g.height>100&&g.y+g.height<=work.y+1);
- await page.locator('[data-act="expand-room"]').click();
+ assert.equal(await growth3d.getAttribute('data-view'),'restaurant');assert.ok(Number(await growth3d.getAttribute('data-camera-half'))>=8.35);
+ const g=await growth3d.boundingBox(),work=await page.locator('.z2ed1-growth-tools').boundingBox();assert.ok(g.height>100&&work.y>=g.y&&work.y+work.height<=g.y+g.height+1);
+ await page.locator('[data-act="growth-offer:table"]').click();assert.equal(await page.evaluate(()=>JSON.parse(localStorage.getItem('oddpot-prototype-v04')).coins),500);
+ await page.locator('[data-act="growth-buy:expand-room"]').click();
  await page.waitForFunction(()=>document.querySelector('.z2c11-growth-scene canvas[data-phase="upgrade"]')?.dataset.tableCount==='3',null,{timeout:10000});
  assert.equal(await page.evaluate(()=>JSON.parse(localStorage.getItem('oddpot-prototype-v04')).dining.tableCount),3);
- await page.waitForFunction(()=>document.querySelector('.z2c11-growth-scene canvas[data-phase="upgrade"]')?.dataset.view==='growth-tables');
- await page.screenshot({path:out+'/z2d2-growth-tables-'+width+'.png'});
- await page.locator('[data-act="growth-view:kitchen"]').click();
- await page.waitForFunction(()=>document.querySelector('.z2c11-growth-scene canvas[data-phase="upgrade"]')?.dataset.view==='growth-preview');
- await page.screenshot({path:out+'/z2d2-growth-kitchen-'+width+'.png'});
+ assert.equal(await growth3d.getAttribute('data-view'),'restaurant');
+ await page.screenshot({path:out+'/z2ed1-growth-'+width+'.png'});
  const s=newGame(15742);s.onboarding.enabled=false;s.phase='service';s.crew.helper.hired=true;s.dining.tableCount=width===320?2:width===375?3:4;assert.ok(createService(s,{walkable:true}));setServicePaused(s,false);for(let i=0;i<9;i++)tick(s,1);
  // Controlled test-only queue: force future guests to arrive while real seats remain occupied.
  const free=s.service.orders.filter(o=>o.tableId==null&&o.status==='waiting');for(const o of free)o.arrival=s.service.time;tick(s,1);const expectedQueue=s.service.orders.filter(o=>o.status==='waiting'&&o.arrival<=s.service.time).length;const ready=s.service.orders.find(o=>o.tableId!=null&&['queued','cooking','entering','ordering'].includes(o.status));assert.ok(ready,'fixture has a real seated order');Object.assign(ready,{status:'pickup',recipeId:ready.recipeId||'mushroom_stir',pickupAt:s.service.time});await load(s);

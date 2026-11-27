@@ -155,17 +155,17 @@ try{
    }
    if(phase==='upgrade'){
     assert.equal(await page.locator('.z2c11-hud').count(),1);
-    const scene=page.locator('.z2c11-growth-scene'),work=page.locator('.z2c11-growth-work');
-    const a=await scene.boundingBox(),d=await work.boundingBox();assert.ok(a.height>=110&&a.y+a.height<=d.y+1&&a.height>=layout.stageHeight*.39);
+    const scene=page.locator('.z2c11-growth-scene'),work=page.locator('.z2ed1-growth-tools');
+    const a=await scene.boundingBox(),d=await work.boundingBox();assert.ok(a.height>=layout.stageHeight*.90&&d.y>=a.y&&d.y+d.height<=a.y+a.height+1);
     assert.equal(await scene.locator('#diner-canvas').count(),1);
-    assert.equal(await page.locator('.z2c11-growth-group').count(),3);
+    assert.equal(await page.locator('.z2c11-growth-group').count(),0);await page.locator('[data-act="growth-overview"]').click();assert.equal(await page.locator('.z2c11-growth-group').count(),3);await page.keyboard.press('Escape');
     const before=await page.evaluate(k=>JSON.parse(localStorage.getItem(k)),storageKey);
-    await page.locator('[data-act="expand-room"]').click();
+    await page.locator('[data-act="growth-offer:table"]').click();assert.equal(await page.evaluate(k=>JSON.parse(localStorage.getItem(k)).coins,storageKey),before.coins);await page.locator('[data-act="growth-buy:expand-room"]').click();
     const after=await page.evaluate(k=>JSON.parse(localStorage.getItem(k)),storageKey);
     assert.equal(after.dining.tableCount,3);assert.equal(after.coins,before.coins-ROOM_EXPANSION_COST);
     assert.match(await page.locator('.z2c11-scene-caption').innerText(),/3 桌 · 6 席/);
     const a2=await scene.boundingBox();assert.ok(Math.abs(a2.y-a.y)<1&&Math.abs(a2.height-a.height)<1);
-    await page.locator('[data-act="upgrade-bag"]').click();
+    await page.locator('[data-act="growth-offer:bag"]').click();await page.locator('[data-act="growth-buy:upgrade-bag"]').click();
     const bag=await page.evaluate(k=>JSON.parse(localStorage.getItem(k)),storageKey);
     assert.equal(bag.bagSlots,(after.bagSlots||8)+2);
     assert.equal(bag.coins,after.coins-60);
