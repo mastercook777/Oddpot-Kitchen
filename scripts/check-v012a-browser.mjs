@@ -69,7 +69,7 @@ try{
  const room=base();room.phase='upgrade';room.chapterProgress.stars=1;
  room.dining.tableCount=3;room.coins=500;
  await open('index.html',room);
- await page.locator('[data-act="expand-room"]').click();
+ await page.locator('[data-act="growth-offer:table"]').click();await page.locator('[data-act="growth-buy:expand-room"]').click();
  const expanded=await read(page);
  assert.equal(expanded.dining.tableCount,4);
  assert.equal(expanded.coins,280);
