@@ -608,3 +608,7 @@ html:not([data-oddpot3d="active"]) .z2d2-view-switch{display:none}
 .v075-event-card .v075-event-choice{min-height:44px;flex:none;touch-action:pan-y;overflow-wrap:anywhere}
 .v075-event-card .v075-event-choice:focus-visible,.action-forest[data-z2d3-event-key] .field-event button:focus-visible{outline:2px solid #be7b32;outline-offset:2px}
 @media(max-height:568px){.v075-event-shade{padding:5px 7px}.v075-event-shade .v075-event-card{padding:9px 10px}.v075-event-card p{margin:5px 0 8px}.v075-event-options{gap:5px}}
+
+/* Z2e-D0: one physical control preference, shared by field and diner. */
+#app :is(.floating-joystick,.diner-float-stick).z2ed0-fixed{width:114px;height:114px;margin:0;transform:translate(-50%,-50%);border:2px solid #e8c897a8;background:radial-gradient(circle,#ffecc42c 0 31%,#173a31b9 33% 62%,#0d2b27b4 64%);box-shadow:0 0 0 3px #092e2877,inset 0 0 15px #ffeca74d;opacity:.86;pointer-events:none}
+.z2ed0-controls{margin:8px 0 12px;padding:10px;background:#dfc99f;border:1px solid #a88653;border-radius:8px}.z2ed0-stick-options{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin:6px 0 8px}.z2ed0-stick-options .game-btn{min-height:44px;font-size:14px}.z2ed0-stick-options [aria-pressed=true]{background:#38583e;color:#ffedc3;border-color:#c79b60;box-shadow:inset 0 0 0 1px #c79b60}
