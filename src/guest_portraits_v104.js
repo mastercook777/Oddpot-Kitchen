@@ -19,8 +19,8 @@ export function drawGuestPortrait(canvas,kind){
 export function drawGuestPortraits(root){
  if(!root||typeof root.querySelectorAll!=='function')return 0;
  let drawn=0;
- for(const node of root.querySelectorAll('canvas[data-guest-portrait]')){
-  if(drawGuestPortrait(node,node.dataset.guestPortrait))drawn++;
+ for(const node of root.querySelectorAll('canvas[data-guest-portrait],canvas[data-ui2-guest-portrait]')){
+  if(drawGuestPortrait(node,(node.dataset.guestPortrait||node.dataset.ui2GuestPortrait)))drawn++;
  }
  return drawn;
 }
