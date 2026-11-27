@@ -33,7 +33,7 @@ try {
   const two=state(2);
   await page.addInitScript(([key,v])=>localStorage.setItem(key,JSON.stringify(v)),[storageKey,two]);
   await page.reload({waitUntil:'networkidle'});
-  assert.match(await page.locator('.v12-star-invite').first().innerText(),/芽角鹿客/);
+  await page.locator('.ui2-room-dock [data-act="ui2-prep"]').click();assert.match(await page.locator('.v12-star-invite').first().innerText(),/芽角鹿客/);
   const garden=page.locator('[data-act="promo:garden"]');
   assert.equal(await garden.count(),1);
   await page.locator('.v014-marketing summary').click();
