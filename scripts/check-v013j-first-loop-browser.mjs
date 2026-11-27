@@ -24,10 +24,10 @@ try{
   const s=newGame();const page=await seededPage(s,{width,height});
   const errors=[];page.on('pageerror',e=>errors.push(e.message));
   assert.match(await page.locator('.v013j-guide').innerText(),/第一天，从这间小厨房开始/);
-  const layout=await page.evaluate(()=>({button:document.querySelector('.z2c2-threshold[data-act="to-field"]').getBoundingClientRect(),preview:document.querySelector('.v076-preview').getBoundingClientRect()}));
+  const layout=await page.evaluate(()=>({button:document.querySelector('.ui2-spot[data-act="to-field"]').getBoundingClientRect(),preview:document.querySelector('.ui2-room-host').getBoundingClientRect()}));
   assert.ok(layout.button.bottom<=height&&layout.button.height>=44&&layout.preview.height>=80,'guide keeps scene and threshold hotspot usable '+width);
   await page.screenshot({path:`${dir}/new-${width}.png`});
-  await page.locator('[data-act="to-field"]').click();
+  await page.locator('.ui2-spot[data-act="to-field"]').click();
   assert.match(await page.locator('.v013j-guide').innerText(),/去找今晚的食材/);
   assert.equal(await page.locator('[data-route]').count(),2);
   await page.locator('[data-act="guide-skip"]').click();
