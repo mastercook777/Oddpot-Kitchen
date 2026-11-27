@@ -1,0 +1,2 @@
+# UI2 player preview
+Snapshot of PR #163 commit `cedaf32b281f3686ee456702a9243179871c34dc`. Production entry and save remain unchanged. The preview copies the existing save once into `oddpot-ui2-preview-v04` and saves separately. Joystick preference is also isolated. Candidate CI and player acceptance are pending. This directory is temporary and should be removed after the final integrated release.

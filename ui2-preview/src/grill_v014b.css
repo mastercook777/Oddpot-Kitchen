@@ -1,0 +1,10 @@
+.v014b-grill-unlock{display:grid;gap:8px;margin:12px 0;padding:14px;border:2px solid #d8a867;border-radius:18px;background:#3d5e49;color:#fff0c7}
+.v014b-grill-unlock strong{font-size:18px}
+.v014b-grill-unlock small{line-height:1.35;color:#e7e2c6}
+.v014b-grill-unlock .game-btn{min-height:48px}
+.v063-vessels{display:flex;gap:7px}
+.v063-vessels .v063-vessel{flex:1;min-width:0;padding-inline:4px}
+.v063-live-pan.grill{background:repeating-linear-gradient(90deg,#433a2e 0 8px,#b57540 8px 12px,#433a2e 12px 20px);border-color:#dda668}
+.v063-live-pan.grill .v063-bowl{background:#855332;border-color:#e0a260}
+.v014b-sides{display:block;margin-top:2px;color:#f7d294;font-size:10px;font-style:normal;white-space:nowrap}
+@media(max-width:350px){.v063-vessels .v063-vessel{font-size:12px}.v063-vessels .v063-vessel small{font-size:9px}.v014b-sides{font-size:9px}}

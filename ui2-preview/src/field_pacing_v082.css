@@ -1,0 +1,29 @@
+/* v0.8.2: shield status and clear expedition risk communication. */
+.v082-shield-status{
+ position:absolute;z-index:4;top:109px;left:11px;
+ background:#244c3cd6;color:#e9ffd7;
+ font:800 11px/1.25 system-ui;letter-spacing:.1px;
+ padding:5px 9px;border:1px solid #cbe8a2a8;
+ border-radius:12px;pointer-events:none;
+ text-shadow:0 1px #12362b;
+}
+.v082-shield-status.charging{
+ color:#f1c6a5;background:#382e2ad9;border-color:#b6a28e99;
+}
+.v082-boss-promise{
+ font:700 12px/1.5 system-ui;color:#fff1cf;
+ background:#634335b8;border:1px solid #f2b56b99;
+ padding:8px;border-radius:9px;
+}
+.v082-bag-warning{color:#ffe6ac;font:700 11px/1.5 system-ui}
+.v082-bag-reminder{font:600 11px/1.3 system-ui;color:#d8ddbb}
+.v082-manage-bag{
+ font:700 11px system-ui;background:#315a4a;color:#faf0cf;
+ border:1px solid #e4cf99;border-radius:7px;
+ padding:7px;min-height:34px;
+}
+@media (max-height:620px){
+ .v082-shield-status{top:96px;font-size:10px}
+ .v082-boss-promise{font-size:11px;padding:6px}
+ .v082-bag-reminder{margin:0}
+}

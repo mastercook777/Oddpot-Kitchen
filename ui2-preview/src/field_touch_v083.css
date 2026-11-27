@@ -1,0 +1,80 @@
+/* v0.8.3 - iOS game gesture surface, including the lower left thumb dock.
+   Protect text, context menus and Safari long-press callout during play.
+   Game controls stay tappable; book/sheet inputs remain editable. */
+.game-shell.is-field-playing,
+.game-shell.is-field-playing .stage.field,
+.game-shell.is-field-playing .dock,
+.game-shell.is-field-playing .action-forest,
+.game-shell.is-field-playing .action-field-dock,
+.game-shell.is-field-playing .field-touch-tip,
+.game-shell.is-field-playing .action-hud,
+.game-shell.is-field-playing .field-action-notice,
+.game-shell.is-field-playing .v082-shield-status {
+ -webkit-user-select:none;
+ user-select:none;
+ -webkit-touch-callout:none;
+ -webkit-tap-highlight-color:transparent;
+}
+.game-shell.is-field-playing .stage.field *,
+.game-shell.is-field-playing .dock *,
+.game-shell.is-field-playing .hud *,
+.game-shell.is-field-playing .day-strip *{
+ -webkit-user-select:none;
+ user-select:none;
+ -webkit-touch-callout:none;
+ -webkit-user-drag:none;
+}
+.game-shell.is-field-playing .action-forest,
+.game-shell.is-field-playing .forest-canvas,
+.game-shell.is-field-playing .floating-joystick,
+.game-shell.is-field-playing .field-touch-tip,
+.game-shell.is-field-playing .action-field-dock{
+ touch-action:none;
+}
+.game-shell.is-field-playing .action-field-dock{
+ cursor:crosshair;
+}
+.game-shell.is-field-playing .action-field-dock button,
+.game-shell.is-field-playing .field-skill,
+.game-shell.is-field-playing .field-bag-chip,
+.game-shell.is-field-playing .hud-gear {
+ touch-action:manipulation;
+ cursor:pointer;
+}
+.game-shell.is-field-playing input,
+.game-shell.is-field-playing textarea,
+.game-shell.is-field-playing [contenteditable="true"]{
+ -webkit-user-select:text;
+ user-select:text;
+ -webkit-touch-callout:default;
+ touch-action:auto;
+}
+
+/* Z1 mobile input contract: game text is not document text. The actual
+   gesture surfaces own native gestures, not the entire page. */
+#app,#app .game-shell,#app .game-shell *{
+ -webkit-user-select:none;
+ user-select:none;
+ -webkit-touch-callout:none;
+ -webkit-user-drag:none;
+ -webkit-tap-highlight-color:transparent;
+}
+#app :is(input,textarea,select,[contenteditable]:not([contenteditable="false"]),[data-allow-selection]),
+#app :is([contenteditable]:not([contenteditable="false"]),[data-allow-selection]) *{
+ -webkit-user-select:text!important;
+ user-select:text!important;
+ -webkit-touch-callout:default!important;
+ -webkit-user-drag:auto;
+ touch-action:auto;
+}
+#app .is-diner-playing .diner-world,
+#app .is-diner-playing .diner-canvas,
+#app .is-diner-playing .diner-float-stick,
+#app .is-diner-playing .diner-float-knob,
+#app [data-live-pan]{
+ touch-action:none;
+}
+#app :is(button,a,summary,[role="button"]){touch-action:manipulation;}
+#app :is(.sheet-body,.book-list,.route-panel,.v063-setup,.menu-scene,.kitchen-prep-card,.report-scene,.kitchen-upgrade-card){overscroll-behavior:contain;touch-action:pan-y;}
+#app .target-scroller{touch-action:pan-x;}
+#app :is(.floating-joystick,.diner-float-stick){pointer-events:none;}

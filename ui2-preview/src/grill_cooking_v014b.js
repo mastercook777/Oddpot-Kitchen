@@ -1,0 +1,49 @@
+import {ING,RECIPES,RECIPE_INDEX,recipeSignature} from './data.js';
+
+const MIN_FACE={beef:3.2,chicken:3.0,garlic:1.5,chili:1.5,mushroom:2.0,cabbage:1.8,onion:1.9,potato:3.1};
+const MAX_FACE={beef:8.4,chicken:8.2,garlic:8.0,chili:8.0,mushroom:8.2,cabbage:8.0,onion:8.1,potato:8.5};
+export function grillHeatBounds(id){return {low:MIN_FACE[id]??2.2,high:MAX_FACE[id]??8};}
+// One deterministic base cooking clock for workshop preview, adjudication and 3D.
+export const AUTO_GRILL_PERIOD=2;
+export function automaticGrillState(elapsed){
+ const t=Math.max(0,elapsed),n=Math.floor(t/AUTO_GRILL_PERIOD),rest=t-n*AUTO_GRILL_PERIOD;
+ return {turnCount:n,side:n%2,sinceTurn:rest,frontSeconds:Math.ceil(n/2)*AUTO_GRILL_PERIOD+(n%2===0?rest:0),backSeconds:Math.floor(n/2)*AUTO_GRILL_PERIOD+(n%2?rest:0)};
+}
+export function grillHeat(id,elapsed,actions=[],rate=1.05,automatic=false){
+ const turn=actions.find(x=>x.type==='turn');
+ let faceA=Math.max(0,Math.min(elapsed,turn?.t??elapsed))*rate;
+ let faceB=turn?Math.max(0,elapsed-turn.t)*rate:0;
+ if(automatic){const state=automaticGrillState(elapsed);faceA=state.frontSeconds*rate;faceB=state.backSeconds*rate;}
+ const {low,high}=grillHeatBounds(id);
+ const state=faceA>high||faceB>high?'焦糊':faceA<low||faceB<low?'偏生':'熟透';
+ return {front:faceA,back:faceB,frontProgress:Math.min(100,Math.round(faceA/low*100)),backProgress:Math.min(100,Math.round(faceB/low*100)),state,tone:state==='焦糊'?'bad':state==='熟透'?'good':'warming'};
+}
+export function grillTechnique(recipeId,style){
+ if(!RECIPES[recipeId]||RECIPES[recipeId].station!=='GRILL')return null;
+ const recipe=RECIPES[recipeId];
+ const guestFitDelta=Object.fromEntries(Object.entries({adventurer:['肉','辣','饱腹'],critic:['辣','香'],family:['温和','菌香','甜香'],regular:['清爽','菌香','鲜'],stargazer:['清爽','甜香','菌香'],gardener:['蔬食','清爽','温和']})
+  .filter(([,likes])=>likes.some(tag=>recipe.tags.includes(tag))).map(([guest])=>[guest,5]));
+ if(style==='glazed')return {affinity:'signature',affinityLabel:'招牌适配',priceDeltaCoins:1,timeDeltaSeconds:1,
+  guestFitDelta,
+  reason:'及时翻面并刷香料，两面熟透后形成这道烤串的招牌风味。'};
+ return {affinity:'ordinary',affinityLabel:'普通',priceDeltaCoins:0,timeDeltaSeconds:0,guestFitDelta:{},reason:'两面熟透，保留食材本味。'};
+}
+export function evaluateGrillCook(ids,drops,actions,elapsed){
+ const recipeId=RECIPE_INDEX[recipeSignature(ids,'GRILL')]||null,recipe=RECIPES[recipeId];
+ const missing=ids.filter(id=>!drops.some(d=>d.id===id));
+ const states=drops.map(d=>({id:d.id,label:grillHeat(d.id,elapsed-d.t,actions.map(a=>({...a,t:a.t-d.t}))).state}));
+ const bad=states.find(x=>x.label!=='熟透');
+ const turn=actions.find(a=>a.type==='turn'),brush=actions.find(a=>a.type==='brush');
+ const glazed=!!(turn&&brush&&brush.t>=turn.t&&brush.t-turn.t<=3.5&&brush.with.length===ids.length);
+ const style=glazed?'glazed':'even',tech=grillTechnique(recipeId,style);
+ const sellable=!!recipe&&!missing.length&&!bad;
+ const quality=Math.max(35,Math.min(85,72+(turn?8:0)+(glazed?5:0)));
+ const status=!recipe?'未知组合':missing.length?'漏下料':bad?.label==='焦糊'?'焦糊失败':bad?'夹生失败':'成功';
+ return {recipeId,recipeName:recipe?.name||'未识别料理',ids:[...ids],vessel:'GRILL',quality,sellable,status,style,
+  styleLabel:glazed?'双面刷香':'双面原味',secondaryTrait:glazed?'香料焦边':'双面火候',affinity:tech?.affinity||'ordinary',
+  affinityLabel:tech?.affinityLabel||'普通',culinaryReason:tech?.reason||'食材组合不能上架',events:drops.map(d=>({...d})),
+  actions:actions.map(a=>({...a,with:[...a.with]})),duration:+elapsed.toFixed(2),
+  doneness:[...states,...missing.map(id=>({id,label:'未下锅'}))],
+  reason:sellable?tech.reason:status,
+  facts:{frontBack:ids.map(id=>({id,...grillHeat(id,elapsed-(drops.find(d=>d.id===id)?.t||0),actions)})),turnedAt:turn?.t??null,brushedAt:brush?.t??null}};
+}
