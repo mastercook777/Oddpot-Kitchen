@@ -3,9 +3,57 @@ import assert from 'node:assert/strict';
 import {fixture,identify,collect,budget,applyDeck,summary,AFFIX,rarityOf,baseTier,sample} from '../src/cooking_build_v2.js';
 import {beginLiveResearch,dropLiveIngredient,performLiveAction,stepLiveResearch,finishLiveResearch,createService,tick,resumeBreak,closeService,setServicePaused,prepDish,recipeCraftSnapshot,canMenu,selectArrivalDish,stationDuration,threadGrillIngredient,placeGrillSkewer,grillCookPreview,liveCookPreview} from '../src/engine.js';
 import {ING,RECIPES} from '../src/data.js';
-const result={sellable:true,recipeId:'mushroom_stir',vessel:'WOK',ids:['mushroom','garlic'],style:'home_even',styleLabel:'均匀翻炒',quality:85,actions:[{type:'flip'}],doneness:[{id:'mushroom',label:'熟透'},{id:'garlic',label:'熟透'}],facts:{evenHeat:true}};
-test('CB deterministic identity, rarity, ranges and pool',()=>{assert.equal(identify({...result,sellable:false},1,'x'),null);assert.equal(baseTier({...result,quality:65,actions:[],doneness:[{label:'受热中'}]}),1);const counts=[0,0,0,0,0,0],ids=new Set();for(let i=0;i<10000;i++){const v=identify(result,15742,'txn-'+i);counts[v.rarity]++;assert.equal(v.rarity,rarityOf(3,v.affixes));assert.ok(v.affixes.length>=1);assert.equal(new Set(v.affixes.map(a=>AFFIX[a.id].group)).size,v.affixes.length);for(const a of v.affixes){assert.ok(a.value>=AFFIX[a.id].min&&a.value<=AFFIX[a.id].max);ids.add(a.id)}}assert.ok(counts[3]>6500&&counts[4]>1200&&counts[5]>200);assert.equal(ids.size,8);assert.deepEqual(identify(result,1,'same'),identify(result,1,'same'));console.log('CB pool counts',counts)});
-test('real research consumes inventory once and distinct craft collection',()=>{const s=fixture();assert.ok(beginLiveResearch(s,['garlic','mushroom'],'WOK'));const t=s.cook.txn,old=s.inventory.garlic;assert.ok(dropLiveIngredient(s,'garlic'));for(let i=0;i<12;i++)stepLiveResearch(s,.1);assert.ok(dropLiveIngredient(s,'mushroom'));assert.ok(performLiveAction(s,'flip'));for(let i=0;i<30;i++)stepLiveResearch(s,.1);const r=finishLiveResearch(s);assert.ok(r.sellable);const v=identify(r,s.seed,t);assert.equal(v.rarity>=3,true);assert.equal(s.inventory.garlic,old-1);assert.equal(finishLiveResearch(s),false);assert.ok(collect(s,v));const n=s.cbExperiment.collection.length;assert.ok(collect(s,v));assert.equal(s.cbExperiment.collection.length,n)});
+import {evaluateLiveCook} from '../src/cooking_v063.js';
+import {evaluatePlacedGrill} from '../src/grill_cooking_v014c.js';
+import {judgeCooking} from '../src/cooking_quality_r1.js';
+const advance=(s,target)=>{while(s.cook&&s.cook.elapsed<target-1e-6){const dt=Math.min(.1,target-s.cook.elapsed);stepLiveResearch(s,dt)}};
+const testRecipes={WOK:['mushroom_stir','garlic_beef'],POT:['chicken_stew','onion_chicken'],STEAM:['steam_cloud_rice','steam_moss_egg'],GRILL:['grill_beef','grill_chicken']};
+function candidates(id,v){
+ const ids=RECIPES[id].ids,found={},blue=new Map();
+ for(const order of [ids,[...ids].reverse()])for(const delay of v==='GRILL'?[0]:[0,.5,1.5,2.5,4])for(const kind of v==='GRILL'?['turn','brush']:v==='STEAM'?['none','seal','vent']:v==='WOK'?['none','flip','toss']:['none','gentle','reduce'])for(const at of kind==='none'?[0]:[.5,1.5,2.5,4,5.5,7,8.5])for(let end=2;end<=18;end+=.5){
+  if(delay>=end||kind!=='none'&&(at<delay||at>=end))continue;
+  const actions=[];let r;
+  if(v==='GRILL'){actions.push({type:'turn',t:at,with:ids});if(kind==='brush'){if(at+1>=end)continue;actions.push({type:'brush',t:at+1,with:ids})}r=evaluatePlacedGrill({ids,skewer:order,lane:'middle',actions,elapsed:end})}
+  else{if(kind!=='none')actions.push({type:kind==='vent'?'seal':kind,t:at,with:ids});if(kind==='vent'){if(at+3>=end)continue;actions.push({type:'vent',t:at+3,with:ids})}r=evaluateLiveCook(ids,v,order.map((id,index)=>({id,index,t:index*delay})),actions,end)}
+  const j=judgeCooking(r,15742,'trajectory');if(!j.baseTier)continue;
+  const target=[0,44,64,88][j.baseTier],distance=Math.abs(j.internal.raw-target),p={order:[...order],delay,kind,actions,end,distance,r,j};
+  if(!found[j.baseTier]||distance<found[j.baseTier].distance)found[j.baseTier]=p;
+  if(j.baseTier===3){const k=order[0]+':'+kind;if(!blue.has(k)||distance<blue.get(k).distance)blue.set(k,p)}
+ }
+ return {found,blue:[...blue.values()].sort((a,b)=>a.distance-b.distance)};
+}
+function replay(id,v,p){
+ const s=fixture({world:v==='STEAM'?'cloud':'hearth',level:4,stations:3,third:v==='STEAM'?'STEAM':'GRILL'});
+ assert.ok(beginLiveResearch(s,p.order,v),id+' begin');const txn=s.cook.txn,old={...s.inventory},before=structuredClone(s.recipeVariants);
+ if(v==='GRILL'){for(const id of p.order)assert.ok(threadGrillIngredient(s,id));assert.ok(placeGrillSkewer(s,'middle'))}
+ else for(const [i,id] of p.order.entries()){advance(s,i*p.delay);assert.ok(dropLiveIngredient(s,id))}
+ for(const a of p.actions){advance(s,a.t);assert.ok(performLiveAction(s,a.type))}
+ advance(s,p.end);const r=finishLiveResearch(s);assert.ok(r&&r.sellable,id+' '+JSON.stringify(p));assert.ok(r.doneness.every(d=>d.label==='熟透'));assert.deepEqual(s.recipeVariants,before);for(const id of p.order)assert.equal(s.inventory[id],old[id]-1);assert.equal(finishLiveResearch(s),false);assert.equal(r.cbVerdict.baseTier,p.j.baseTier,id+' '+JSON.stringify(p));return {s,r,txn};
+}
+test('R1 eight real recipes, four cookware, reachable fully cooked white green blue and multiple excellent trajectories',()=>{
+ for(const [v,ids] of Object.entries(testRecipes))for(const id of ids){const {found,blue}=candidates(id,v);assert.ok(found[1]&&found[2]&&found[3],id+' all tiers');assert.ok(blue.length>=2,id+' multiple routes');
+ for(const tier of [1,2,3]){const {s,r,txn}=replay(id,v,found[tier]);const item=identify(r,s.seed,txn);assert.equal(item.baseTier,tier);if(tier<3){assert.ok(r.cbVerdict.tip);assert.equal(item.affixes.length,0)}else assert.ok(item.affixes.length);const n=s.cbExperiment.collection.length;assert.ok(collect(s,item));assert.ok(collect(s,item));assert.equal(s.cbExperiment.collection.length,n+1)}
+ for(const p of blue.slice(0,2))assert.equal(replay(id,v,p).r.cbVerdict.baseTier,3);console.log('R1 actual trajectories',v,id,[1,2,3].map(k=>({kind:found[k].kind,order:found[k].order,delay:found[k].delay,end:found[k].end,raw:Math.round(found[k].j.internal.raw)})),blue.length);
+ }
+});
+test('R1 strict failure before discovery, actual once-only ingredients and old game unaffected',()=>{
+ const s=fixture();assert.ok(beginLiveResearch(s,['chicken','chili'],'WOK'));const old=s.inventory.chicken,recipes=structuredClone(s.recipes),variants=structuredClone(s.recipeVariants),learned=structuredClone(s.learned);
+ assert.ok(dropLiveIngredient(s,'chicken'));assert.ok(dropLiveIngredient(s,'chili'));advance(s,4);const r=finishLiveResearch(s);assert.ok(r.doneness.some(x=>x.label==='受热中'));assert.equal(r.sellable,false);assert.equal(r.cbVerdict.baseTier,0);assert.equal(identify(r,s.seed,r.cbTxn),null);assert.ok(r.cbVerdict.tip.includes('熟透'));assert.deepEqual(s.recipes,recipes);assert.deepEqual(s.recipeVariants,variants);assert.deepEqual(s.learned,learned);assert.equal(s.inventory.chicken,old-1);assert.equal(finishLiveResearch(s),false);
+ for(const [ids,v,actions,end] of [[['garlic','mushroom'],'WOK',[],15],[['beef','garlic'],'GRILL',[],6]]){const q=fixture();assert.ok(beginLiveResearch(q,ids,v));if(v==='GRILL'){for(const id of ids)assert.ok(threadGrillIngredient(q,id));assert.ok(placeGrillSkewer(q,'middle'))}else for(const id of ids)assert.ok(dropLiveIngredient(q,id));advance(q,end);const rr=finishLiveResearch(q);assert.equal(rr.sellable,false);assert.equal(rr.cbVerdict.baseTier,0)}
+ const q=fixture();assert.ok(beginLiveResearch(q,['garlic','mushroom'],'WOK'));assert.ok(dropLiveIngredient(q,'garlic'));advance(q,3);assert.equal(finishLiveResearch(q).cbVerdict.baseTier,0);
+ const legacy=fixture();delete legacy.cbExperiment;assert.ok(beginLiveResearch(legacy,['chicken','chili'],'WOK'));dropLiveIngredient(legacy,'chicken');dropLiveIngredient(legacy,'chili');advance(legacy,4);assert.equal(finishLiveResearch(legacy).sellable,true);
+});
+test('R1 identical excellent trajectories independent open pool, all rolls and stable transactions',()=>{
+ const {blue}=candidates('garlic_beef','WOK'),p=blue.find(x=>x.order[0]==='garlic'),q=blue.find(x=>x.order[0]==='beef');assert.ok(p&&q);
+ const results=[replay('garlic_beef','WOK',p).r,replay('garlic_beef','WOK',q).r],counts=[],rolls={};
+ for(const [j,result] of results.entries()){const rarity=[0,0,0,0,0,0],first={};for(let i=0;i<10000;i++){const v=identify(result,15742,'txn-'+i);rarity[v.rarity]++;assert.equal(v.rarity,rarityOf(3,v.affixes));assert.ok(v.affixes.length>=1);assert.equal(new Set(v.affixes.map(a=>AFFIX[a.id].group)).size,v.affixes.length);first[v.affixes[0].id]=(first[v.affixes[0].id]||0)+1;for(const a of v.affixes){assert.ok(a.value>=AFFIX[a.id].min&&a.value<=AFFIX[a.id].max);(rolls[a.id]||=new Set()).add(a.value)}}
+ assert.equal(Object.keys(first).length,6);for(const n of Object.values(first))assert.ok(n>1450&&n<1900);assert.ok(rarity[3]>6500&&rarity[4]>1200&&rarity[5]>200);counts.push({rarity,first});assert.deepEqual(identify(result,1,'same'),identify(result,1,'same'))}
+ assert.deepEqual(counts[0],counts[1]);for(const [id,a] of Object.entries(AFFIX)){assert.equal(rolls[id].size,a.max-a.min+1,id+' all inclusive values');}console.log('R1 open pool 2 x 10000',counts,Object.fromEntries(Object.entries(rolls).map(([id,x])=>[id,[Math.min(...x),Math.max(...x),x.size]])));
+});
+test('R1 boundary randomness never bypasses failure or jumps two tiers',()=>{
+ const result=evaluateLiveCook(['mushroom','garlic'],'WOK',[{id:'mushroom',t:0,index:0},{id:'garlic',t:.5,index:1}],[{type:'flip',t:1.5,with:['mushroom','garlic']}],5);
+ const grades=new Set(Array.from({length:200},(_,i)=>judgeCooking(result,i,'same').baseTier));assert.ok(Math.max(...grades)-Math.min(...grades)<=1);const bad={...result,sellable:false};for(let i=0;i<100;i++)assert.equal(judgeCooking(bad,i,'same').baseTier,0);
+});
 const choose=(s,id,rarity=1)=>s.cbExperiment.collection.find(v=>v.recipeId===id&&v.rarity===rarity).variantId;
 function run(s,deck){assert.ok(applyDeck(s,deck));assert.ok(canMenu(s));s.phase='prep';assert.ok(prepDish(s,s.menu[0]));s.phase='service';assert.ok(createService(s,{walkable:false}));setServicePaused(s,false);for(let i=0;i<110&&!s.service.done;i++){if(s.service.breakAt)resumeBreak(s);tick(s,1)}assert.ok(s.service.done);assert.ok(closeService(s));assert.equal(closeService(s),false);assert.ok(s.service.orders.every(o=>['served','left','rejected'].includes(o.status)));assert.equal(s.service.income,s.ledger.filter(e=>e.type==='sale').reduce((n,e)=>n+e.amount,0));assert.ok(Object.values(s.inventory).every(n=>n>=0));assert.equal(new Set(s.ledger.map(e=>e.id)).size,s.ledger.length);return summary(s)}
 test('real one-night A/B, immutable snapshot, budget and deterministic replay',()=>{const base=fixture({level:1,guest:'adventure',pressure:'high'});const a=[choose(base,'garlic_beef',5),choose(base,'chicken_stew'),choose(base,'veg_stir')],b=[choose(base,'mushroom_stir',3),choose(base,'chicken_stew',3),choose(base,'veg_stir')];assert.equal(budget(base,a).used,7);assert.equal(budget(base,b).used,7);assert.equal(budget(base,[...a,choose(base,'mushroom_stir')]).valid,false);const x=structuredClone(base),y=structuredClone(base);const ra=run(x,a),rb=run(y,b);assert.deepEqual(ra,run(structuredClone(base),a));assert.ok(ra.guests===14&&rb.guests===14);assert.ok(ra.rows.some(row=>row.events.some(e=>e.affix==='stars'||e.affix==='aroma')));assert.ok(rb.rows.some(row=>row.events.some(e=>e.affix==='quick'||e.affix==='aftertaste')));console.log('CB real A/B',JSON.stringify({a:ra,b:rb}))});

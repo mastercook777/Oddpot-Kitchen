@@ -1,3 +1,4 @@
+import {judgeCooking} from './cooking_quality_r1.js?v=cb2r1';
 import {fieldHarvestTargetSuffix} from './field_target_v012f.js?v=0.13.0-alpha.9';
 import {craftedPrice} from './recipe_value_v013j.js';
 import {makeSpecialEncounterPlan,previewSpecialEncounter,SPECIAL_ENCOUNTER_KINDS} from './field_encounters_v011c.js';
@@ -1721,11 +1722,14 @@ export function finishLiveResearch(s){
  const c=s.cook;
  if(!['v063-live','v014c-grill'].includes(c?.mode)||!c.live||c.elapsed<1.2)return false;
  const result=c.mode==='v014c-grill'?evaluatePlacedGrill(c):evaluateLiveCook(c.ids,c.vessel,c.dropped,c.actions,c.elapsed);
+ if(s.cbExperiment){result.cbVerdict=judgeCooking(result,s.cbExperiment.config.seed,c.txn);result.sellable=result.cbVerdict.baseTier>0;result.status=result.cbVerdict.status;result.reason=result.cbVerdict.tip||result.culinaryReason;result.cbTxn=c.txn;}
  // Every attempted cook uses real resources, including failed recipes.
  if(!consume(s,c.ids,c.txn))return false;
  s.cook=null;s.lastCook=result;s.researchReceipt=true;
  result.firstDiscovery=!s.recipes[result.recipeId];
  result.ingredientCost=c.ids.reduce((sum,id)=>sum+ING[id].cost,0);
+ // Workshop has independent immutable variants; only collection confirmation registers them.
+ if(s.cbExperiment)return result;
  if(result.sellable){
   const id=result.recipeId;
   // The recipe did not exist before this cook: avoid inventing a fake
