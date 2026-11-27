@@ -173,6 +173,8 @@ function overlayMarkup(){if(!overlay)return '';
    body='<h2>👩‍🍳 食堂伙伴</h2><p class="sheet-lead">'+(activeWorld(game)==='cloud'?'云港可在首枚星章后再聘一名跑堂，双跑堂各自认领一盘并行送餐、各计工资与经验；':'')+'每位帮厨按本人实际完成的订单获得经验；增加厨位必须配备人手才能真正出餐。开门前直接选择左、中、右优先站位；已选位置不可重复安排。营业时，空闲帮厨仍会自动走到缺人的炉台支援。</p><div class="staff-roster">'+row('helper')+row('waiter')+(crew.helper2.hired?row('helper2'):'')+(activeWorld(game)==='cloud'?row('waiter2'):'')+'</div>';
  }else if(overlay==='settings'){
   body=`<h2>⚙ 游戏设置</h2><p class="sheet-lead">ODDPOT · v0.15.0-alpha.11 · 单机本地存档</p><section class="z2ed0-controls"><h3>移动摇杆</h3><div class="z2ed0-stick-options" role="group" aria-label="移动摇杆模式">${['floating','fixed'].map(m=>`<button type="button" class="game-btn secondary" data-act="stick-mode:${m}" aria-pressed="${stickMode===m}">${m==='floating'?'浮动摇杆':'固定摇杆'}</button>`).join('')}</div><p class="sheet-lead">${stickMode==='floating'?'在场景内按下即可移动。':'左下常驻摇杆，按住拖动。'} 野外与营业共用，自动保存。</p></section>${b('guide-replay','重看第一轮引导','secondary')}${b('reset','重置存档，从第 1 天重新开始','danger')}<p class="sheet-lead">切到后台时营业会自动暂停。更换设备不会同步存档。</p>`;
+ }else if(overlay==='harvest-result'){
+  body=harvestResult(game.field);
  }else if(overlay==='departure-notebook'){
   body=departureNotebook();
  }else if(overlay==='growth-overview'){
@@ -185,8 +187,8 @@ function overlayMarkup(){if(!overlay)return '';
   const r=game.report;body=r?`<h2>营业账本详情</h2><p class="sheet-lead">本日订单由真实食材库存、工位工作秒数和顾客等待事件计算。</p><div class="book-list">${Object.entries(r.byDish).map(([id,d])=>`<div class="detail-row">${RECIPES[id].emoji} ${RECIPES[id].name}：售出 ${d.count} 份 · 满意 ${Math.round(d.totalSat/d.count)}</div>`).join('')}<div class="detail-row">左厨位占用 ${r.congestion.WOK||0} 秒 / 右厨位 ${r.congestion.POT||0} 秒${r.congestion.CENTER!==undefined?' / 中厨位 '+r.congestion.CENTER+' 秒':''}</div><div class="detail-row">食材耗用估值 ${r.cost} · 宣传 ${r.finance?.marketingCost||0} · 工资 ${r.finance?.wage||0} · 招待支出 ${r.hospitalityCost||0} · 收入 ${r.revenue} · 经营利润 ${r.profit} · 现金净变动 ${r.finance?.cashChange??'旧版无记录'}</div></div>`:'';
  }
  const kind=overlay.startsWith('menu:')?'menu':overlay.startsWith('growth-offer:')?'growth-offer':overlay;
- const titles={book:bookTab==='guests'?'客人图鉴':'料理工艺图鉴','service-ledger':'营业账册','field-bag':kind==='field-bag'&&game.field?'野外背包 · '+fieldBagSlotsUsed(game.field)+'/'+(game.field.capacity||8)+' 格':'野外背包',stock:'食材采购',premium:'隐藏菜单',menu:'更换第 '+(Number(overlay.split(':')[1])+1)+' 道上架菜',bento:'今日探索便当',crew:'食堂伙伴',settings:'游戏设置',details:'营业账本详情','growth-overview':'食堂成长总览','growth-offer':'扩建与强化','growth-portal':'传送门','departure-notebook':'旅厨笔记'};
- const icons={book:bookTab==='guests'?'queue':'ledger','service-ledger':'ledger','field-bag':'bag',stock:'bag',premium:'star',menu:'menu',bento:'bento',crew:'queue',settings:'gear',details:'ledger','growth-overview':'ledger','growth-offer':'home','growth-portal':'route','departure-notebook':'ledger'};
+ const titles={book:bookTab==='guests'?'客人图鉴':'料理工艺图鉴','service-ledger':'营业账册','field-bag':kind==='field-bag'&&game.field?'野外背包 · '+fieldBagSlotsUsed(game.field)+'/'+(game.field.capacity||8)+' 格':'野外背包',stock:'食材采购',premium:'隐藏菜单',menu:'更换第 '+(Number(overlay.split(':')[1])+1)+' 道上架菜',bento:'今日探索便当',crew:'食堂伙伴',settings:'游戏设置',details:'营业账本详情','growth-overview':'食堂成长总览','growth-offer':'扩建与强化','growth-portal':'传送门','departure-notebook':'旅厨笔记','harvest-result':'探索收获'};
+ const icons={book:bookTab==='guests'?'queue':'ledger','service-ledger':'ledger','field-bag':'bag',stock:'bag',premium:'star',menu:'menu',bento:'bento',crew:'queue',settings:'gear',details:'ledger','growth-overview':'ledger','growth-offer':'home','growth-portal':'route','departure-notebook':'ledger','harvest-result':'bag'};
  const title=titles[kind]||'游戏面板';body=body.replace(/<h2>[\s\S]*?<\/h2>/,'');
  let nav='';if(kind==='book'){const m=body.match(/^<div class="v102-book-tabs z2c13-book-nav"[\s\S]*?<\/div>/);if(m){nav=m[0];body=body.slice(nav.length);}}
  return `<div class="sheet-backdrop" data-act="close-sheet"></div><section class="sheet z2c13-sheet ${kind==='book'?'v104-book-sheet':''}" data-sheet-kind="${kind}" role="dialog" aria-modal="true" aria-labelledby="z2c13-sheet-title"><div class="sheet-header"><span class="sheet-handle" aria-hidden="true"></span><h2 id="z2c13-sheet-title">${z2a2Icon(icons[kind]||'ledger')} ${esc(title)}</h2><button type="button" class="game-btn sheet-close" data-act="close-sheet" aria-label="关闭面板">✕</button></div>${nav}<div class="sheet-body" tabindex="0">${body}</div></section>`;
@@ -356,6 +358,13 @@ function bossHint(region){
  const first=!game.bossCleared?.[hot?'ember_king':'spore_king'];
  return {boss,name:ING[ingredient].name,qty:first?2:1,icon:ingredientIconHtml(ingredient,20)};
 }
+function harvestResult(f){
+ if(!f?.settled||!f.winnings)return '';
+ const entries=Object.entries(f.winnings).filter(([id,n])=>ING[id]&&n>0),total=entries.reduce((n,[,q])=>n+q,0);
+ const loss=Object.entries(f.bag||{}).reduce((n,[id,q])=>n+Math.max(0,q-(f.winnings[id]||0)),0);
+ const title=f.reason==='faint'?'安全回到食堂':f.reason==='completed'?'探索完成':'带着收获回店';
+ return `<section class="z2ed3-harvest"><div class="z2ed3-harvest-head">${z2a2Icon('bag')}<strong>${title}</strong><span>${total} 份食材已入库</span></div>${f.reason==='faint'?'<p class="z2ed3-loss">晕倒损失 '+loss+' 份本次收获，原仓库未受影响。</p>':''}<div class="z2ed3-harvest-items">${entries.length?entries.map(([id,q])=>'<div>'+ingredientIconHtml(id,42)+'<b>×'+q+'</b><small>'+esc(ING[id].name)+'</small></div>').join(''):'<p>这次没有带回食材。</p>'}</div><p class="sheet-lead">收获已结算，无需再次领取。</p>${b('harvest-confirm','继续 · 料理研发','primary wide')}</section>`;
+}
 function field(){
  const f=game.field;
  if(!f){
@@ -365,7 +374,7 @@ function field(){
  }
  if(f.segmentStatus==='choice'){
   const boss=bossHint(f.region),slots=fieldBagSlotsUsed(f),full=slots>=f.capacity;
-  return [`<div class="forest-scene v08-branch-scene"><div class="v08-branch-panel"><small>第 ${f.segmentIndex}/3 段探索完成</small><h2>${f.region==='cloud'?'继续穿过风道，还是返港？':'继续深入，还是回饭店？'}</h2>
+  return [`<div class="forest-scene v08-branch-scene z2ed3-branch-scene"><canvas id="forest-canvas" class="forest-canvas" aria-hidden="true"></canvas><div class="v08-branch-panel z2ed3-field-dialog" role="dialog" aria-modal="true" aria-label="探索路线选择"><div class="z2ed3-field-title">${z2a2Icon('route')} <b>旅途分岔</b></div><div class="z2ed3-field-body"><small>第 ${f.segmentIndex}/3 段探索完成</small><h2>${f.region==='cloud'?'继续穿过风道，还是返港？':'继续深入，还是回饭店？'}</h2>
   <p>背包 ${slots}/${f.capacity} 格 · 生命 ${f.hp}/3 · ${f.weapon?.type||'WOK'} Lv${f.weapon?.level||1}</p>
   ${f.dangerCommitment&&f.region!=='cloud'?`<div class="v082-boss-promise">⚔️ 第三段必遇 ${boss.boss} · ${boss.icon}${boss.name} ×${boss.qty}</div>`:''}
   <div class="v08-branch-cards">${f.choices.map(c=>`<button class="v08-branch-card" data-branch="${c.choiceId}">
@@ -373,12 +382,12 @@ function field(){
   <small>${c.danger?`狩猎深入 · 最终挑战 ${boss.boss}，击败可拾取 ${boss.name}`:'🌱 采集为主 · 普通食材与奇遇'}</small>
   </button>`).join('')}</div>
   ${full?`<div class="v082-bag-warning">🎒 背包已满！Boss 奖励需要空格。可从背包丢弃一格材料。</div><button class="v082-manage-bag" data-act="field-bag">整理背包</button>`:`<p class="v082-bag-reminder">🎒 建议为后续稀有食材保留至少 1 格。</p>`}
-  <button type="button" class="v08-home-choice" data-act="retreat">${z2a2Icon('home')} 带着收获回饭店</button></div></div>`, ''];
+  </div><footer class="z2ed3-field-actions"><button type="button" class="v08-home-choice" data-act="retreat">${z2a2Icon('home')} 带着收获回饭店</button></footer></div></div>`, ''];
  }
  const readyToFinish=f.nodes?.some(n=>n.key==='target'&&n.claimed)&&!(f.segmentIndex===3&&f.enemies?.some(e=>e.isBoss&&e.hp>0));
  const bag=Object.entries(f.bag).map(([id,n])=>`${ING[id].name}${n}`).join(' · ')||'空';
  const event=f.activeEvent&&f.nodes.find(n=>n.key===f.activeEvent);
- return [`<div class="forest-scene action-forest" ${event?`data-z2d3-event-key="field:${esc(event.key)}"`:''}><canvas id="forest-canvas" class="forest-canvas"></canvas><div class="floating-joystick" id="field-stick" aria-hidden="true"><div class="floating-joystick-knob" id="field-stick-knob"></div></div><div class="field-action-notice" id="field-action-notice" hidden></div>${f.weapon?.type==='WOK'?`<div class="v082-shield-status" id="v082-shield-status" aria-label="锅盖被动防御状态">${z2a2Icon('shield')} <span id="z2a2-shield-value">${f.shieldCharge!==false?'就绪':'蓄能 '+Math.ceil(f.shieldCooldown||0)+'s'}</span></div>`:''}${f.bento?`<div class="v063-field-bento">${z2a2Icon('bento')} <span id="v063-bento-effect">${f.bento.used?"已触发":"待触发"}</span></div>`:""}<button data-act="skill" data-cookware="${f.weapon?.type||'WOK'}" class="field-skill" aria-label="${f.weapon?.type==='GRILL'?'扇形火焰':f.weapon?.type==='POT'?'沸汤爆裂':f.weapon?.type==='STEAM'?'凝雾结界':'旋风斩'}"><span class="skill-glyph" aria-hidden="true">${z2a2Icon(({GRILL:'grill',WOK:'wok',STEAM:'steam',POT:'pot'})[f.weapon?.type]||'wok')}</span><span class="skill-caption">${f.weapon?.type==='GRILL'?'喷焰':f.weapon?.type==='POT'?'爆裂':f.weapon?.type==='STEAM'?'凝雾':'旋风'}</span><span class="skill-cooldown" id="skill-cooldown" hidden></span></button>${event?(event.offer?specialEncounterHtml(game,event):`<div class="field-event"><strong>野外遭遇 · 流浪调味师</strong><p>你在野外遇见流浪调味师。本次机会只有一次，要交换还是继续赶路？</p><button data-event="trade">蘑菇 ×1 → 火椒 ×1（野外背包）</button><button data-event="forage">深入调查：损失生命，争取两份材料</button><button data-event="leave">绕开，保留现有收获</button></div>`):''}</div>`,
+ return [`<div class="forest-scene action-forest" ${event?`data-z2d3-event-key="field:${esc(event.key)}"`:''}><canvas id="forest-canvas" class="forest-canvas"></canvas><div class="floating-joystick" id="field-stick" aria-hidden="true"><div class="floating-joystick-knob" id="field-stick-knob"></div></div><div class="field-action-notice" id="field-action-notice" hidden></div>${f.weapon?.type==='WOK'?`<div class="v082-shield-status" id="v082-shield-status" aria-label="锅盖被动防御状态">${z2a2Icon('shield')} <span id="z2a2-shield-value">${f.shieldCharge!==false?'就绪':'蓄能 '+Math.ceil(f.shieldCooldown||0)+'s'}</span></div>`:''}${f.bento?`<div class="v063-field-bento">${z2a2Icon('bento')} <span id="v063-bento-effect">${f.bento.used?"已触发":"待触发"}</span></div>`:""}<button data-act="skill" data-cookware="${f.weapon?.type||'WOK'}" class="field-skill" aria-label="${f.weapon?.type==='GRILL'?'扇形火焰':f.weapon?.type==='POT'?'沸汤爆裂':f.weapon?.type==='STEAM'?'凝雾结界':'旋风斩'}"><span class="skill-glyph" aria-hidden="true">${z2a2Icon(({GRILL:'grill',WOK:'wok',STEAM:'steam',POT:'pot'})[f.weapon?.type]||'wok')}</span><span class="skill-caption">${f.weapon?.type==='GRILL'?'喷焰':f.weapon?.type==='POT'?'爆裂':f.weapon?.type==='STEAM'?'凝雾':'旋风'}</span><span class="skill-cooldown" id="skill-cooldown" hidden></span></button>${event?(event.offer?specialEncounterHtml(game,event):`<div class="field-event z2ed3-field-dialog" role="dialog" aria-modal="true" aria-label="野外遭遇"><strong>野外遭遇 · 流浪调味师</strong><p>你在野外遇见流浪调味师。本次机会只有一次，要交换还是继续赶路？</p><button data-event="trade">蘑菇 ×1 → 火椒 ×1（野外背包）</button><button data-event="forage">深入调查：损失生命，争取两份材料</button><button data-event="leave">绕开，保留现有收获</button></div>`):''}</div>`,
  `<div class="action-field-dock field-compact-dock"><span class="field-touch-tip" aria-label="按住场景拖动移动">${z2a2Icon('move')} 移动</span>${readyToFinish?b('finish-segment',z2a2Icon('next')+' '+(f.segmentIndex===3?'结束探索':'下一站'),'primary'):''}${b('retreat',z2a2Icon('home')+' 回店','secondary')} </div>`]
 }
 
@@ -663,6 +672,7 @@ function render(){
  // Restoring horizontal chip position prevents the target selector from snapping
  // back to the first ingredient on every tap; same for an open reference sheet.
  const previousEvent=eventScrollState(app);
+ if(game.phase==='research'&&game.field?.settled&&game.field.winnings&&app.querySelector('.stage.field'))overlay='harvest-result';
  const prevTargetScroll=app.querySelector('.target-scroller')?.scrollLeft||0;
  const prevPantryScroll=app.querySelector('.z2b-pantry')?.scrollTop||0;
  const previousSheet=app.querySelector('.z2c13-sheet');
@@ -678,9 +688,10 @@ function render(){
  const prevLastCookOpen=app.querySelector('.z2b-last-cook')?.open||false;
  const stageScrollSelector='.route-panel,.v063-setup,.menu-scene,.z2b-prep-work,.kitchen-prep-card,.report-scene,.z2c11-growth-work,.kitchen-upgrade-card';
  const prevStageScroll=app.querySelector('.stage')?.classList.contains(game.phase)?app.querySelector(stageScrollSelector)?.scrollTop||0:0;
- const previousDiner=app.querySelector('#diner-canvas'),previousDinerPhase=app.querySelector('.stage')?.classList;
+ const previousDiner=app.querySelector('#diner-canvas'),previousDinerPhase=app.querySelector('.stage')?.classList,previousForest=app.querySelector('#forest-canvas');
  const [stage,dock]=({forecast,field,research,menu,prep,service,report,upgrade}[game.phase])();
  app.innerHTML=shell(stage,dock);
+ const nextForest=app.querySelector('#forest-canvas');if(previousForest&&nextForest&&game.phase==='field')nextForest.replaceWith(previousForest);
  const nextDiner=app.querySelector('#diner-canvas');if(previousDiner&&nextDiner&&['service','report','upgrade','forecast','prep'].includes(game.phase))nextDiner.replaceWith(previousDiner);
  globalThis.__oddpotDepartureRenderer?.rebind?.(app);
  if(game.phase==='upgrade'&&portalAvailable(game))app.querySelector('.upgrade-card')?.insertAdjacentHTML('afterbegin',portalPanel());
@@ -710,6 +721,7 @@ function render(){
  const scroller=app.querySelector(stageScrollSelector);if(scroller)scroller.scrollTop=prevStageScroll;
  restoreEventScroll(app,previousEvent);
  drawerFocusAfterRender(previousKind,previousFocus,origin);
+ if(game.phase==='field'&&!overlay&&(game.field?.segmentStatus==='choice'||game.field?.activeEvent)){const dialog=app.querySelector('.z2ed3-field-dialog,.field-event');if(dialog){for(const child of app.querySelector('.game-shell').children)if(!child.classList.contains('stage'))child.inert=true;for(const child of dialog.parentElement.children)if(child!==dialog)child.inert=true;if(!dialog.contains(document.activeElement))drawerControls(dialog)[0]?.focus({preventScroll:true});}}
  if(game.phase==='report'&&!overlay){const result=app.querySelector('.z2ed1-result');const shell=app.querySelector('.game-shell');for(const child of shell.children)if(!child.classList.contains('stage'))child.inert=true;if(result&&(!previousDinerPhase?.contains('report')||!result.contains(document.activeElement)))result.querySelector('[data-act="to-upgrade"]')?.focus({preventScroll:true});}
  // Preserve the on-screen floating stick when a second finger uses the skill.
  if(stick.pointer!==null&&(!playingGameGestures()||stick.phase!==game.phase))releaseStick();
@@ -740,6 +752,7 @@ function action(act){
   else note('只能在预告或日结后的成长阶段、没有未完成探索时穿越。');return;
  }
  if(act==='hero-special'){if(activateWalkableSpecial(game)){message='主厨技能发动！';render()}return}
+ if(act==='harvest-confirm'&&overlay==='harvest-result'){overlay='';render();return}
  if(act==='close-sheet'){overlay='';render();return}
  if(act==='service-ledger'&&game.phase==='service'&&game.service?.walkable){releaseStick();overlay='service-ledger';render();return}
  if(act==='crew'){overlay='crew';render();return}
@@ -1088,4 +1101,4 @@ app.addEventListener('pointerup',e=>{
 },{passive:false});
 
 // Close a reference drawer without altering the underlying game phase.
-document.addEventListener('keydown',e=>{if(!overlay){if(game.phase==='report')drawerTab(e,app.querySelector('.z2ed1-result'),document.activeElement);return}if(e.key==='Escape'){e.preventDefault();overlay='';render();return;}drawerTab(e,app.querySelector('.z2c13-sheet'),document.activeElement);});
+document.addEventListener('keydown',e=>{if(!overlay){if(game.phase==='report')drawerTab(e,app.querySelector('.z2ed1-result'),document.activeElement);else if(game.phase==='field'&&(game.field?.segmentStatus==='choice'||game.field?.activeEvent))drawerTab(e,app.querySelector('.z2ed3-field-dialog,.field-event'),document.activeElement);return}if(e.key==='Escape'){e.preventDefault();overlay='';render();return;}drawerTab(e,app.querySelector('.z2c13-sheet'),document.activeElement);});
