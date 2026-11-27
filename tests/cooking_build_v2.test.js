@@ -1,5 +1,7 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
+import {readFileSync} from 'node:fs';
+import {CB_FORMULAS,CB_MAIN_IDS,resolveCBFormula} from '../src/cooking_formulas_p1.js';
 import {fixture,identify,collect,budget,applyDeck,summary,AFFIX,rarityOf,baseTier,sample} from '../src/cooking_build_v2.js';
 import {beginLiveResearch,dropLiveIngredient,performLiveAction,stepLiveResearch,finishLiveResearch,createService,tick,resumeBreak,closeService,setServicePaused,prepDish,recipeCraftSnapshot,canMenu,selectArrivalDish,stationDuration,threadGrillIngredient,placeGrillSkewer,grillCookPreview,liveCookPreview} from '../src/engine.js';
 import {ING,RECIPES} from '../src/data.js';
@@ -32,7 +34,7 @@ function replay(id,v,p){
 }
 test('R1 eight real recipes, four cookware, reachable fully cooked white green blue and multiple excellent trajectories',()=>{
  for(const [v,ids] of Object.entries(testRecipes))for(const id of ids){const {found,blue}=candidates(id,v);assert.ok(found[1]&&found[2]&&found[3],id+' all tiers');assert.ok(blue.length>=2,id+' multiple routes');assert.equal(new Set(blue.map(p=>p.kind)).size,2,id+' independent techniques');
- for(const tier of [1,2,3]){const {s,r,txn}=replay(id,v,found[tier]);const item=identify(r,s.seed,txn);assert.equal(item.baseTier,tier);if(tier<3){assert.ok(r.cbVerdict.tip);assert.equal(item.affixes.length,0)}else assert.ok(item.affixes.length);const n=s.cbExperiment.collection.length;assert.ok(collect(s,item));assert.ok(collect(s,item));assert.equal(s.cbExperiment.collection.length,n+1)}
+ for(const tier of [1,2,3]){const {s,r,txn}=replay(id,v,found[tier]);const item=identify(r,s.seed,txn);assert.equal(item.baseTier,tier);if(tier<3){assert.ok(r.cbVerdict.tip);assert.equal(item.affixes.length,0)}else assert.ok(item.affixes.length);const n=s.cbExperiment.collection.length,known=s.cbExperiment.collection.some(v=>v.variantId===item.variantId);assert.ok(collect(s,item));assert.ok(collect(s,item));assert.equal(s.cbExperiment.collection.length,n+(known?0:1))}
  for(const p of blue.slice(0,2))assert.equal(replay(id,v,p).r.cbVerdict.baseTier,3);console.log('R1 actual trajectories',v,id,[1,2,3].map(k=>({kind:found[k].kind,order:found[k].order,delay:found[k].delay,end:found[k].end,raw:Math.round(found[k].j.internal.raw)})),blue.length);
  }
 });
@@ -145,4 +147,60 @@ test('R1e ordinary plausible cooks stay mostly green; deliberate technique timin
   assert.ok(rate(dual)<=.55,v+' two-button '+dual);assert.ok(rate(skilled)>=.65&&rate(skilled)>rate(ordinary)+.30,v+' skilled '+skilled);
   console.log('R1e ordinary / dual / skilled',v,ordinary,dual,skilled);
  }
+});
+
+test('P1 explicit 177 signatures exactly match audited 55 main recipes and legacy mappings',()=>{
+ const catalog=JSON.parse(readFileSync(new URL('../docs/CB2_P0_RECIPE_CATALOG.json',import.meta.url),'utf8'));
+ assert.equal(CB_MAIN_IDS.length,55);assert.equal(Object.keys(CB_FORMULAS).length,177);
+ assert.deepEqual([...CB_MAIN_IDS].sort(),catalog.mainRecipes.map(x=>x.recipeId).sort());
+ for(const expected of catalog.formulas){const actual=resolveCBFormula(expected.ingredientIds.slice().reverse(),expected.vessel,expected.world);assert.ok(actual);for(const k of ['signature','recipeId','formulaId','kind','vessel','world','materialCost','ingredientIds'])assert.deepEqual(actual[k],expected[k]);assert.ok(!RECIPES[actual.recipeId].name.startsWith('秘制'));assert.equal(resolveCBFormula(actual.ingredientIds,actual.vessel,actual.world==='cloud'?'hearth':'cloud'),null)}
+ for(const old of catalog.legacySignatures){const actual=CB_FORMULAS[old.signature];assert.equal(actual?.recipeId??null,old.recipeId);assert.equal(actual?.formulaId??null,old.formulaId)}
+ assert.equal(catalog.legacyRecipes.length,198);assert.equal(catalog.legacySignatures.length,199);
+});
+function p1Cook(s,ids,vessel){
+ const before={...s.inventory};assert.ok(beginLiveResearch(s,ids,vessel));
+ if(vessel==='GRILL'){for(const id of ids)assert.ok(threadGrillIngredient(s,id));assert.ok(placeGrillSkewer(s,'middle'))}
+ else for(const id of ids)assert.ok(dropLiveIngredient(s,id));
+ let full=false;
+ for(let t=1.5;t<16;t+=.25){advance(s,t);const preview=vessel==='GRILL'?grillCookPreview(s).items:liveCookPreview(s).indicators;if(preview.every(x=>(x.baseState||x.state)==='熟透')){full=true;break}}
+ assert.ok(full,ids+' '+vessel);const result=finishLiveResearch(s);assert.ok(result);assert.equal(finishLiveResearch(s),false);
+ for(const id of ids)assert.equal(s.inventory[id],before[id]-1);
+ return result;
+}
+test('P1 real research discovery, valid alternative formulas, unknown fully cooked failure and chapter isolation',()=>{
+ const s=fixture({level:4,stations:3,third:'GRILL'}),discover=s.cbExperiment;
+ assert.equal(discover.discoveredRecipes.length,0);assert.equal(discover.discoveredFormulas.length,0);
+ const a=p1Cook(s,['beef','garlic'],'WOK'),b=p1Cook(s,['beef','garlic','mushroom'],'WOK');
+ assert.equal(a.recipeId,'garlic_beef');assert.equal(b.recipeId,a.recipeId);
+ assert.notEqual(a.formula.formulaId,b.formula.formulaId);
+ const av=identify(a,s.seed,a.cbTxn),bv=identify(b,s.seed,b.cbTxn);assert.ok(av&&bv);assert.notEqual(av.variantId,bv.variantId);
+ assert.ok(collect(s,av));assert.ok(collect(s,bv));assert.deepEqual(discover.discoveredRecipes,['garlic_beef']);assert.equal(discover.discoveredFormulas.length,2);
+ assert.ok(collect(s,bv));assert.equal(discover.discoveredFormulas.length,2);
+ assert.equal(bv.materialCost-av.materialCost,ING.mushroom.cost);assert.equal(bv.basePrice-av.basePrice,ING.mushroom.cost);assert.equal(bv.baseTime-av.baseTime,1.5);assert.ok(bv.recipeTags.includes('菌香'));assert.ok(!av.recipeTags.includes('菌香'));
+ const unknown=p1Cook(s,['beef','chicken'],'WOK');assert.ok(unknown.doneness.every(d=>d.label==='熟透'));assert.equal(unknown.sellable,false);assert.equal(unknown.recipeId,null);assert.equal(identify(unknown,s.seed,unknown.cbTxn),null);assert.equal(discover.discoveredRecipes.length,1);
+ const grill=p1Cook(s,['beef','garlic','onion'],'GRILL');assert.equal(grill.recipeId,'grill_beef');assert.ok(grill.sellable);
+ const cloud=fixture({world:'cloud',stations:3,third:'STEAM'});assert.equal(beginLiveResearch(cloud,['beef','garlic'],'WOK'),false);assert.equal(beginLiveResearch(cloud,['cloud_rice','cabbage'],'WOK'),false);
+ const steam=p1Cook(cloud,['cloud_rice','chicken','onion'],'STEAM');assert.equal(steam.recipeId,'steam_cloud_rice');assert.ok(steam.sellable);assert.ok(collect(cloud,identify(steam,cloud.seed,steam.cbTxn)));
+ const cloudUnknown=p1Cook(cloud,['cloud_rice','beef'],'STEAM');assert.equal(cloudUnknown.sellable,false);
+ const legacy=fixture();delete legacy.cbExperiment;const old=p1Cook(legacy,['beef','chicken'],'WOK');assert.equal(old.recipeId,'mix_wok_beef_chicken');assert.ok(old.sellable);
+});
+test('P1 formula snapshots actually change price, fit, prep consumption and service production',()=>{
+ const s=fixture({level:4,stations:3,third:'GRILL',helper:false,waiter:false,guest:'family',pressure:'high'});
+ const a=p1Cook(s,['beef','garlic'],'WOK'),b=p1Cook(s,['beef','garlic','mushroom'],'WOK'),av=identify(a,s.seed,a.cbTxn),bv=identify(b,s.seed,b.cbTxn);
+ assert.ok(collect(s,av));assert.ok(collect(s,bv));
+ const common=[choose(s,'chicken_stew'),choose(s,'veg_stir')],da=[av.variantId,...common],db=[bv.variantId,...common];assert.equal(budget(s,[av.variantId,bv.variantId,...common]).valid,false);
+ const sa=structuredClone(s),sb=structuredClone(s);assert.ok(applyDeck(sa,da));assert.ok(applyDeck(sb,db));
+ const ca=recipeCraftSnapshot(sa,'garlic_beef'),cb=recipeCraftSnapshot(sb,'garlic_beef');
+ assert.equal(cb.price-ca.price,3);assert.equal(cb.baseTime-ca.baseTime,1.5);assert.ok(cb.recipeTags.includes('菌香'));
+ // Actual selection fit, isolate a single candidate for this read-only comparison.
+ const fit=q=>{const x=structuredClone(q);x.menu=['garlic_beef'];return selectArrivalDish(x,{id:'fit',segment:'regular'}).score};
+ assert.ok(fit(sb)>fit(sa));
+ const duration=(q,craft)=>stationDuration(q,0,RECIPES.garlic_beef,{time:0,kitchenSnapshot:q.kitchen.slots,crew:{}},{craft});
+ assert.equal(duration(sb,cb)-duration(sa,ca),1.5);
+ const before=sb.inventory.mushroom;
+ const ra=run(sa,da),rb=run(sb,db);assert.ok(ra.guests===14&&rb.guests===14);
+ const prep=sb.ledger.find(e=>e.id.startsWith('prep-'));assert.equal(prep.items.mushroom,-1);
+ assert.ok(sb.inventory.mushroom<before);assert.equal(rb.rows.find(x=>x.id==='garlic_beef').formulaId,cb.formulaId);
+ for(const o of sb.service.orders.filter(o=>o.recipeId==='garlic_beef')){assert.equal(o.craft.formulaId,cb.formulaId);assert.deepEqual(o.craft.ingredientIds,cb.ingredientIds);const consumed=sb.ledger.find(e=>e.id==='service-cook-'+o.id);if(consumed)assert.equal(consumed.items.mushroom,-1)}
+ console.log('P1 actual comparison',JSON.stringify({base:ca,added:cb,a:ra,b:rb}));
 });
