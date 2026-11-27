@@ -1,4 +1,4 @@
-import {ui2Mount,ui2SlotGrid} from './formal_ui_v2.js?v=ui2';
+import {ui2Mount,ui2SlotGrid,ui2SyncPortraits} from './formal_ui_v2.js?v=ui2';
 import {departureEcologyZ2c4} from './field_ecology_v011b2.js?v=z2c4';
 import {z2a2Icon} from './ui_icons_z2a2.js?v=z2a3';
 import {selectOutdoorQueueSpeech} from './outdoor_queue_speech_v012f.js';
@@ -330,7 +330,7 @@ function forecastPanel(){
 }
 function forecast(){
  const g=dinerFloor(game),ready=game.bento?.day===game.cycle+'-'+game.day;
- return ui2Room('morning',ui2Spot('to-field','route','整装出发',g.entrance)+ui2Spot('ui2-forecast','target','今日预报',g.passFurniture),ui2Tool('stock','bag','库存')+ui2Tool('book','ledger','图鉴')+ui2Tool('crew','queue','伙伴')+ui2Tool('bento','bento',ready?'便当 ✓':'便当'),ui2Tool('to-field','route','出发',true),'今日营业 · '+serviceDayPlan(game).goal.label);
+ return ui2Room('morning',ui2Spot('to-field','route','整装出发',g.entrance)+ui2Spot('ui2-forecast','target','今日预报',g.passFurniture),ui2Tool('stock','bag','库存')+ui2Tool('book','ledger','图鉴')+ui2Tool('crew','queue','伙伴')+ui2Tool('bento','bento',ready?'便当 ✓':'便当'),ui2Tool('ui2-depart','route','出发',true),'今日营业 · '+serviceDayPlan(game).goal.label);
 }
 function bossHint(region){
  if(region==='cloud')return {boss:'风暴之王',name:ING.gale_core.name,qty:1,icon:ingredientIconHtml('gale_core',20)};
@@ -692,6 +692,7 @@ function render(){
  }
  if(overlay==='book'&&bookTab==='guests')drawGuestPortraits(app);
  if(overlay==='crew')drawCrewPortraits(app);
+ if(overlay==='crew'||overlay==='book')ui2SyncPortraits(app);
  const pantry=app.querySelector('.z2b-pantry');if(pantry)pantry.scrollTop=prevPantryScroll;
  const target=app.querySelector('.target-scroller');if(target)target.scrollLeft=prevTargetScroll;
  const sheet=app.querySelector('.sheet-body');if(sheet)sheet.scrollTop=prevSheetScroll;
@@ -751,7 +752,7 @@ function action(act){
  if(act==='reset'){if(confirm('清空本设备的 v0.4 试玩存档？')){localStorage.removeItem('oddpot-prototype-v04');game=newGame();selectedIngredients=['chicken','chili'];overlay='';note('新旅程开始，祝你研究出奇味料理！')}return}
  if(act.startsWith('buy:')){const [,id,n]=act.split(':'),count=n?Number(n):1;
   note(purchase(game,id,count)?'已采购 '+count+' 份，食材进入仓库。':'金币不足、当日售罄或当前阶段不能采购。');return}
- if(act==='to-field'){overlay='';ui2Back='';nextPhase(game,'field');note('想做什么菜，就去寻找那道菜缺少的食材。');return}
+ if(act==='to-field'||act==='ui2-depart'){overlay='';ui2Back='';nextPhase(game,'field');note('想做什么菜，就去寻找那道菜缺少的食材。');return}
  if(act==='back-from-departure'&&game.phase==='field'&&!game.field){overlay='';nextPhase(game,'forecast');note('返回食堂，尚未开始探索。');return}
  if(act==='departure-notebook'&&game.phase==='field'&&!game.field){overlay='departure-notebook';render();return}
  if(act==='skip-field'){skipField(game);note('跳过探索，直接开始今天的料理研发。');return}
