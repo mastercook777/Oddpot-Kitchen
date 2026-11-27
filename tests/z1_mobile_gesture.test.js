@@ -1,10 +1,11 @@
+import {stickOrigin,fixedStickAnchor} from '../src/ui_foundation_z2ed0.js';
 import test from 'node:test';import assert from 'node:assert/strict';import {readFileSync} from 'node:fs';
 const read=p=>readFileSync(new URL('../src/'+p,import.meta.url),'utf8'),src=read('app.js'),css=read('field_touch_v083.css');
 function setup(phase){
  const handlers={},win={},doc={},stick={pointer:null,x:0,y:0},game={phase,service:{walkable:true},field:{action:true}},gestureTouches=new Set(),keys=new Set();
  const app={addEventListener(n,f){(handlers[n]??=[]).push(f)},contains(){return true},querySelector(){return null},setPointerCapture(){},hasPointerCapture(){return true},releasePointerCapture(){}},window={getSelection:()=>({isCollapsed:true}),addEventListener(n,f){(win[n]??=[]).push(f)}},document={addEventListener(n,f){(doc[n]??=[]).push(f)}};
  const a=src.indexOf('// Z1: one selection policy'),b=src.indexOf('// Cooking gestures are optional',a);
- new Function('app','game','stick','gestureTouches','keys','window','document','joystickVector','let overlay="",livePanPointer=null;'+src.slice(a,b))(app,game,stick,gestureTouches,keys,window,document,()=>({x:.5,y:.2,knobX:27,knobY:10}));
+ new Function('app','game','stick','gestureTouches','keys','window','document','joystickVector','stickOrigin','fixedStickAnchor','let overlay="",livePanPointer=null,drag=null,stickMode="floating";'+src.slice(a,b))(app,game,stick,gestureTouches,keys,window,document,()=>({x:.5,y:.2,knobX:27,knobY:10}),stickOrigin,fixedStickAnchor);
  const target=(...tags)=>({closest(s){return tags.some(t=>s.split(',').includes(t))?this:null}});
  const send=(type,target,extra={},table=handlers)=>{const e={target,pointerId:1,button:0,clientX:50,clientY:50,cancelable:true,defaultPrevented:false,preventDefault(){this.defaultPrevented=true},...extra};for(const f of table[type]||[])f(e);return e.defaultPrevented;};
  return {game,stick,gestureTouches,target,send,win};
