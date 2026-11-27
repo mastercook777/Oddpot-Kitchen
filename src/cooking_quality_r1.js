@@ -50,14 +50,18 @@ function liveEvidence(r){
    // Each ingredient contributes by its culinary role. Aromatics are not judged as protein.
    const structural=involved.filter(d=>!aromatic(d));
    const focus=structural.length?structural:involved;
-   const weights=involved.map(d=>aromatic(d)&&structural.length?.32:1);
+   // Identify fast-cooking accompaniments relative to the slowest structural ingredient.
+   // Their useful technique stage is broader; do not reintroduce synchronized maturity.
+   const slowRate=Math.min(...focus.map(d=>liveHeatEvidence(d,d.t+1,[],v,!!r.baseOnly).ratio));
+   const secondary=d=>!aromatic(d)&&liveHeatEvidence(d,d.t+1,[],v,!!r.baseOnly).ratio>slowRate*1.45;
+   const weights=involved.map(d=>aromatic(d)&&structural.length?.32:secondary(d)?.55:1);
    const grades=involved.map((d,i)=>{
     const q=natural[i],age=Math.max(0,a.t-d.t);
     const contact=smooth(age,v==='WOK'?.45:.55,v==='WOK'?1.55:1.85);
-    const effective=aromatic(d)&&structural.length?(.75+.25*peak(q,2.8,2.9))*smooth(q,0,.3):peak(q,...window);
+    const effective=aromatic(d)&&structural.length?(.75+.25*peak(q,2.8,2.9))*smooth(q,0,.3):secondary(d)?peak(q,1.3,.72):peak(q,...window);
     return contact*effective;
    });
-   const core=focus.map(d=>liveHeatEvidence(d,a.t,[],v,!!r.baseOnly).ratio);
+   const core=focus.filter(d=>!secondary(d)).map(d=>liveHeatEvidence(d,a.t,[],v,!!r.baseOnly).ratio);
    const readiness=smooth(mean(core),.12,a.type==='reduce'?.65:.40);
    timing=readiness*grades.reduce((sum,q,i)=>sum+q*weights[i],0)/Math.max(.01,weights.reduce((a,b)=>a+b,0));
 
