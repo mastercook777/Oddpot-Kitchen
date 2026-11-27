@@ -185,7 +185,7 @@ test('P1 real research discovery, valid alternative formulas, unknown fully cook
  const legacy=fixture();delete legacy.cbExperiment;const old=p1Cook(legacy,['beef','chicken'],'WOK');assert.equal(old.recipeId,'mix_wok_beef_chicken');assert.ok(old.sellable);
 });
 test('P1 formula snapshots actually change price, fit, prep consumption and service production',()=>{
- const s=fixture({level:4,stations:3,third:'GRILL',helper:false,waiter:false,guest:'family',pressure:'high'});
+ const s=fixture({level:4,stations:3,third:'GRILL',helper:false,waiter:false,guest:'adventure',pressure:'high'});
  const a=p1Cook(s,['beef','garlic'],'WOK'),b=p1Cook(s,['beef','garlic','mushroom'],'WOK'),av=identify(a,s.seed,a.cbTxn),bv=identify(b,s.seed,b.cbTxn);
  assert.ok(collect(s,av));assert.ok(collect(s,bv));
  const common=[choose(s,'chicken_stew'),choose(s,'veg_stir')],da=[av.variantId,...common],db=[bv.variantId,...common];assert.equal(budget(s,[av.variantId,bv.variantId,...common]).valid,false);
@@ -201,6 +201,7 @@ test('P1 formula snapshots actually change price, fit, prep consumption and serv
  const ra=run(sa,da),rb=run(sb,db);assert.ok(ra.guests===14&&rb.guests===14);
  const prep=sb.ledger.find(e=>e.id.startsWith('prep-'));assert.equal(prep.items.mushroom,-1);
  assert.ok(sb.inventory.mushroom<before);assert.equal(rb.rows.find(x=>x.id==='garlic_beef').formulaId,cb.formulaId);
+ const cookedOrders=sb.service.orders.filter(o=>o.recipeId==='garlic_beef'&&sb.ledger.some(e=>e.id==='service-cook-'+o.id));assert.ok(cookedOrders.length>0,'at least one actual new formula production');
  for(const o of sb.service.orders.filter(o=>o.recipeId==='garlic_beef')){assert.equal(o.craft.formulaId,cb.formulaId);assert.deepEqual(o.craft.ingredientIds,cb.ingredientIds);const consumed=sb.ledger.find(e=>e.id==='service-cook-'+o.id);if(consumed)assert.equal(consumed.items.mushroom,-1)}
  console.log('P1 actual comparison',JSON.stringify({base:ca,added:cb,a:ra,b:rb}));
 });
