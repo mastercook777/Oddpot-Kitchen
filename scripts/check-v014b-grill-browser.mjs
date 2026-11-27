@@ -65,6 +65,7 @@ try{
   await openState(crafted);
   assert.ok((await page.locator('.kitchen-config-head').innerText()).includes('烤架'));
   const grillSlot=width===320?0:width===375?1:2;
+  await page.locator('.ui2-room-dock [data-act="ui2-prep"]').click();
   for(const i of [0,1,2])assert.ok(await page.locator(`[data-act="kitchen:${i}:GRILL"]`).isVisible());
   if(grillSlot===1)await page.locator('[data-act="kitchen:2:POT"]').click();
   await page.locator(`[data-act="kitchen:${grillSlot}:GRILL"]`).click();
