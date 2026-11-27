@@ -1,3 +1,4 @@
+import {judgeCooking,seeded} from './cooking_quality_r1.js?v=cb2r1';
 import {ING,RECIPES} from './data.js';
 import {newGame,ensureKitchen,ensureCrew,chapterRecipeAvailable,recipeCookware,serviceDayPlan,recipeCraftSnapshot,canUse,createService,closeService} from './engine.js';
 export const TIERS=['','普通','良好','优秀','史诗','传说'];
@@ -10,24 +11,24 @@ export const AFFIX={
  aftertaste:{name:'回味无穷',tier:1,group:'sat',min:3,max:8,desc:v=>'满意度 +'+v},
  wait:{name:'望梅止渴',tier:1,group:'patience',min:10,max:20,desc:v=>'等待耐心 +'+v+'%'},
  frugal:{name:'精打细算',tier:1,group:'refund',min:5,max:15,desc:v=>v+'% 概率返还一份基础食材'},
- solo:{name:'独门绝技',tier:2,group:'time',min:15,max:15,desc:v=>'菜单唯一该厨具时出餐 −'+v+'%'},
- stars:{name:'众星捧月',tier:3,group:'price',min:8,max:8,desc:v=>'其他每道普通菜售价 +'+v+'%（最多3道）'}
+ solo:{name:'独门绝技',tier:2,group:'time',min:12,max:18,desc:v=>'菜单唯一该厨具时出餐 −'+v+'%'},
+ stars:{name:'众星捧月',tier:3,group:'price',min:6,max:8,desc:v=>'其他每道普通菜售价 +'+v+'%（最多3道）'}
 };
 export const hash=(str,seed=2166136261)=>{let h=seed>>>0;for(const c of String(str)){h=Math.imul(h^c.charCodeAt(0),16777619)>>>0}return h};
 function rng(seed){let h=seed>>>0;return ()=>{h=(h+0x6D2B79F5)>>>0;let t=h;t=Math.imul(t^t>>>15,t|1);t^=t+Math.imul(t^t>>>7,t|61);return ((t^t>>>14)>>>0)/4294967296}}
-export function baseTier(result){if(!result?.sellable)return 0;const full=result.doneness?.every(x=>x.label==='熟透');return full&&(result.actions?.length||result.quality>=82)?3:result.quality>=70?2:1}
+export function baseTier(result,seed=0,txn='preview'){return result?.cbVerdict?.baseTier??(result?judgeCooking(result,seed,txn).baseTier:0)}
 export function rarityOf(base,affixes){if(base!==3)return base;return affixes.some(a=>AFFIX[a.id]?.tier===3)?5:affixes.length>=2?4:3}
 export function signature(v){return [v.recipeId,v.vessel,v.style,v.baseTier,...v.ingredientIds.slice().sort(),...v.affixes.map(a=>a.id+':'+a.value).sort()].join('|')}
 export function identify(result,seed,txn){
- const base=baseTier(result);if(!base)return null;const random=rng(hash(txn,seed)),affixes=[];
- const weight=id=>1+((id==='quick'&&(result.facts?.burst||result.facts?.evenHeat))||(id==='aroma'&&result.facts?.aromaLead)||(id==='aftertaste'&&result.vessel==='POT')||(id==='fine'&&result.quality>=85)?1:0);
- function add(tiers){const pool=Object.entries(AFFIX).filter(([id,a])=>tiers.includes(a.tier)&&!affixes.some(x=>AFFIX[x.id].group===a.group)&&(id!=='frugal'||result.ids.some(x=>['beef','chicken','chili','garlic','mushroom','cabbage','onion','potato','cloud_rice','sky_moss','storm_egg','sour_bell'].includes(x))));let n=random()*pool.reduce((s,[id])=>s+weight(id),0);const hit=pool.find(([id])=>(n-=weight(id))<0)||pool.at(-1);if(!hit)return false;const [id,a]=hit;affixes.push({id,value:a.min+Math.floor(random()*(a.max-a.min+1))});return true}
+ const base=baseTier(result,seed,txn);if(!base)return null;const random=seeded(seed,txn,'cb2r1-affix-selection'),rollValue=seeded(seed,txn,'cb2r1-affix-value'),affixes=[];
+ const weight=()=>1; // R1 open pool baseline; no technique-to-affix mapping.
+ function add(tiers){const pool=Object.entries(AFFIX).filter(([id,a])=>tiers.includes(a.tier)&&!affixes.some(x=>AFFIX[x.id].group===a.group)&&(id!=='frugal'||result.ids.some(x=>['beef','chicken','chili','garlic','mushroom','cabbage','onion','potato','cloud_rice','sky_moss','storm_egg','sour_bell'].includes(x))));let n=random()*pool.reduce((s,[id])=>s+weight(id),0);const hit=pool.find(([id])=>(n-=weight(id))<0)||pool.at(-1);if(!hit)return false;const [id,a]=hit;affixes.push({id,value:a.min+Math.floor(rollValue()*(a.max-a.min+1))});return true}
  if(base===3){add([1]);const roll=random();if(roll<.05){if(add([3])&&random()<.5)add([1,2]);else if(affixes.length===1)add([1,2])}else if(roll<.25)add([1,2]);}
  const v={recipeId:result.recipeId,vessel:result.vessel,style:result.style,styleLabel:result.styleLabel,ingredientIds:[...result.ids],baseTier:base,rarity:rarityOf(base,affixes),affixes,source:txn};
  v.variantId='cb-'+hash(signature(v)).toString(36)+'-'+hash(signature(v),12345).toString(36);return v;
 }
 export function sample(id,affixes=[],base=affixes.length?3:1){const r=RECIPES[id],v={recipeId:id,vessel:recipeCookware(r),style:'sample',styleLabel:'预置工艺',ingredientIds:[...r.ids],baseTier:base,rarity:rarityOf(base,affixes),affixes,source:'sample'};v.variantId='cb-'+hash(signature(v)).toString(36)+'-'+hash(signature(v),12345).toString(36);return v}
-export function collect(s,v){if(!v)return false;const list=s.cbExperiment.collection;if(list.some(x=>signature(x)===signature(v)))return true;if(list.filter(x=>x.recipeId===v.recipeId).length>=12)return false;list.push(v);return true}
+export function collect(s,v){if(!v)return false;const list=s.cbExperiment.collection;if(list.some(x=>signature(x)===signature(v)))return true;if(list.filter(x=>x.recipeId===v.recipeId).length>=12)return false;list.push(v);s.recipes[v.recipeId]=Math.max(s.recipes[v.recipeId]||0,[0,66,76,86][v.baseTier]);s.learned[v.recipeId]=true;return true}
 export function budget(s,deck){const cfg=s.cbExperiment.config,variants=deck.map(id=>s.cbExperiment.collection.find(v=>v.variantId===id));const used=variants.reduce((n,v)=>n+(v?.rarity||0),0),limit=LEVELS[cfg.level-1],slots=cfg.level===4?4:3;const reasons=[];if(deck.length<3||deck.length>slots)reasons.push('需配置3至'+slots+'道菜');if(variants.some(v=>!v))reasons.push('未知工艺');if(new Set(variants.map(v=>v?.recipeId)).size!==variants.length)reasons.push('同菜不可重复');if(used>limit)reasons.push('超出容量');if(variants.some(v=>v&&(!chapterRecipeAvailable(s,v.recipeId)||!s.kitchen.slots.some(k=>k.type===v.vessel))))reasons.push('缺少对应厨具或章节不符');return {used,limit,slots,variants,valid:!reasons.length,reasons}}
 export function applyDeck(s,deck){
  const b=budget(s,deck);if(!b.valid)return false;const crafts={};s.menu=b.variants.map(v=>v.recipeId);s.premiumMenu=null;
