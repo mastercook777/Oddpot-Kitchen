@@ -1,16 +1,16 @@
 import {ING,RECIPES,RECIPE_INDEX,recipeSignature} from './data.js';
-import {grillHeat,grillTechnique} from './grill_cooking_v014b.js?v=0.14.0-alpha.5';
+import {grillHeat,grillTechnique} from './grill_cooking_v014b.js?v=cb2r1b';
 
 export const GRILL_LANES=Object.freeze({edge:{name:'边火',rate:.86},middle:{name:'均火',rate:1.05},flame:{name:'猛火',rate:1.22}});
 export function grillPreview(c){
  if(c?.mode!=='v014c-grill')return null;
  const rate=GRILL_LANES[c.lane]?.rate||0;
- return {elapsed:c.elapsed,lane:c.lane,items:c.skewer.map(id=>({id,...grillHeat(id,c.elapsed,c.actions,rate)}))};
+ return {elapsed:c.elapsed,lane:c.lane,items:c.skewer.map(id=>({id,...grillHeat(id,c.elapsed,c.actions,rate,!!c.cbTiming)}))};
 }
 export function evaluatePlacedGrill(c){
  const ids=c.ids,recipeId=RECIPE_INDEX[recipeSignature(ids,'GRILL')]||null,recipe=RECIPES[recipeId];
  const rate=GRILL_LANES[c.lane]?.rate||0;
- const states=c.skewer.map(id=>({id,label:grillHeat(id,c.elapsed,c.actions,rate).state}));
+ const states=c.skewer.map(id=>({id,label:grillHeat(id,c.elapsed,c.actions,rate,!!c.cbTiming).state}));
  const turn=c.actions.find(a=>a.type==='turn'),brush=c.actions.find(a=>a.type==='brush');
  const glazed=!!(turn&&brush&&brush.t>=turn.t&&brush.t-turn.t<=3.5);
  const ordered=!!recipe&&c.skewer.every((id,i)=>id===recipe.ids[i]);
@@ -25,5 +25,5 @@ export function evaluatePlacedGrill(c){
   affinityLabel:tech?.affinityLabel||'普通',culinaryReason:tech?.reason||'食材组合不能上架',
   events:c.skewer.map((id,index)=>({id,t:0,index})),actions:c.actions.map(a=>({...a,with:[...a.with]})),
   duration:+c.elapsed.toFixed(2),doneness:[...states,...missing.map(id=>({id,label:'未穿串'}))],reason:sellable?tech.reason:status,
-  facts:{lane:c.lane,skewer:[...c.skewer],ordered,frontBack:c.skewer.map(id=>({id,...grillHeat(id,c.elapsed,c.actions,rate)})),turnedAt:turn?.t??null,brushedAt:brush?.t??null}};
+  facts:{lane:c.lane,skewer:[...c.skewer],ordered,frontBack:c.skewer.map(id=>({id,...grillHeat(id,c.elapsed,c.actions,rate,!!c.cbTiming)})),turnedAt:turn?.t??null,brushedAt:brush?.t??null}};
 }
