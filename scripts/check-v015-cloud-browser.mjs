@@ -44,7 +44,7 @@ try{
   assert.equal(entered.activeWorld,'cloud');assert.equal(entered.coins,120);
   assert.equal(entered.crew.helper.level,1);assert.equal(entered.crew.waiter.hired,false);
   assert.deepEqual(entered.menu,['','','']);
-  assert.ok((await page.locator('.v12-star-invite').first().innerText()).includes('云港'));
+  await page.locator('[data-act="ui2-forecast"]').click();assert.ok((await page.locator('.v12-star-invite').first().innerText()).includes('云港'));await page.keyboard.press('Escape');
   await page.screenshot({path:`${out}/portal-${width}.png`});
   await page.locator('.ui2-spot[data-act="to-field"]').click();
   assert.ok(await page.locator('[data-route="cloud_safe"]').isVisible());
@@ -88,7 +88,7 @@ try{
  await offline.goto(url+'standalone.html',{waitUntil:'networkidle'});
  await offline.locator('[data-act="ui2-forecast"]').click();assert.ok(await offline.locator('[data-act="portal-travel"]').isVisible());
  await offline.locator('[data-act="portal-travel"]').click();
- assert.ok((await offline.locator('.v12-star-invite').first().innerText()).includes('云港'));
+ await offline.locator('[data-act="ui2-forecast"]').click();assert.ok((await offline.locator('.v12-star-invite').first().innerText()).includes('云港'));
  await offline.screenshot({path:`${out}/offline-390.png`});await offline.close();
  console.log('v0.15 Chrome 320/375/390: third-star invitation, cloud portal, route, steamer research and offline entry passed');
 }finally{await browser?.close();server.kill('SIGTERM');staticServer.kill('SIGTERM')}
