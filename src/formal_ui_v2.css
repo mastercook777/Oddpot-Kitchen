@@ -80,3 +80,5 @@
 .ui2-shell .z2c13-sheet .v102-book-tabs button.active{color:#fff0c7;background:#4b7049;border-color:#d6ac70}
 @media(max-height:620px){.ui2-tool{min-height:50px}.ui2-tool .z2a3-art{width:23px;height:23px}.ui2-slot{min-height:57px}.ui2-menu-slots .menu-line{min-height:95px}.ui2-shell .z2c13-sheet .sheet-body{padding:8px!important}}
 @media(prefers-reduced-motion:reduce){.ui2-shell *{animation:none!important;transition:none!important}}
+
+.ui2-kitchen-slots{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:6px;margin:8px 0}.ui2-kitchen-slots .ui2-slot .z2a3-art{width:30px;height:30px}.ui2-tool:disabled{opacity:.52;cursor:default}.ui2-shell .z2c13-sheet .sheet-body .v013e-warehouse-details{padding:8px 0;border:0;background:none;color:#473321}.ui2-shell .z2c13-sheet .sheet-body .v013e-warehouse-details summary{min-height:44px;color:#63452a;font-weight:850}.ui2-shell .z2c13-sheet .ui2-slot[disabled]{opacity:.55}
