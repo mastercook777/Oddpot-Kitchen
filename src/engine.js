@@ -1,10 +1,10 @@
-import {judgeCooking} from './cooking_quality_r1.js?v=cb2r1';
+import {judgeCooking} from './cooking_quality_r1.js?v=cb2r1b';
 import {fieldHarvestTargetSuffix} from './field_target_v012f.js?v=0.13.0-alpha.9';
 import {craftedPrice} from './recipe_value_v013j.js';
 import {makeSpecialEncounterPlan,previewSpecialEncounter,SPECIAL_ENCOUNTER_KINDS} from './field_encounters_v011c.js';
 import {ING,RECIPES,CUSTOMERS,FORECAST,DEFAULT_INVENTORY,SHOP_STAPLES,MARKET_ROTATION_STAPLES,CLOUD_MARKET_STAPLES} from './data.js?v=0.15.0-alpha.8';
 import {LIVE_ACTIONS,evaluateLiveCook,liveIngredientState,liveIngredientHeatFeedback,legacyVariant,makeLiveVariant,resolveTechnique,liveRecipeId} from './cooking_v063.js?v=0.15.0-alpha.11';
-import {GRILL_LANES,grillPreview,evaluatePlacedGrill} from './grill_cooking_v014c.js?v=0.15.0-alpha.3';
+import {GRILL_LANES,grillPreview,evaluatePlacedGrill} from './grill_cooking_v014c.js?v=cb2r1b';
 import {RECIPE_PROFILES} from './recipe_profiles_v063.js?v=0.13.0-alpha.9';
 import {generateBiomeMap,getFieldBiome} from './field_biomes_v081.js?v=0.13.0-alpha.9';
 import {makeFieldEncounterPlan,insertPlannedFieldEncounter} from './field_encounter_plan_v011b.js?v=0.13.0-alpha.9';
@@ -1673,7 +1673,7 @@ export function beginLiveResearch(s,ids,vessel='WOK'){
  ensureRecipeVariants(s);
  const txn='live-research-'+s.cycle+'-'+s.day+'-'+s.step++;
  s.cook={mode:vessel==='GRILL'?'v014c-grill':'v063-live',context:'research',vessel,ids:[...ids],
-   dropped:[],skewer:[],lane:null,actions:[],elapsed:0,live:false,txn};
+   dropped:[],skewer:[],lane:null,actions:[],elapsed:0,live:false,txn,...(s.cbExperiment?{cbTiming:true}:{})};
  s.lastCook=null;s.researchReceipt=false;return true;
 }
 export function threadGrillIngredient(s,id){
@@ -1697,7 +1697,9 @@ export function dropLiveIngredient(s,id){
 export function performLiveAction(s,type){
  const c=s.cook;
  if(c?.mode==='v014c-grill'){
-  if(!c.lane||c.elapsed>=19||!['turn','brush'].includes(type)||c.actions.some(a=>a.type===type)||
+  const lastTurn=c.actions.filter(a=>a.type==='turn').at(-1);
+  if(!c.lane||c.elapsed>=19||!['turn','brush'].includes(type)||
+    (c.cbTiming&&type==='turn'?lastTurn&&c.elapsed-lastTurn.t<.65:c.actions.some(a=>a.type===type))||
     type==='brush'&&!c.actions.some(a=>a.type==='turn'))return false;
   c.actions.push({type,t:+c.elapsed.toFixed(3),with:[...c.skewer]});return true;
  }
