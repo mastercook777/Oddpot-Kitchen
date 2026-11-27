@@ -28,7 +28,7 @@ function liveEvidence(r){
  const texture=hs.map((h,i)=>{
   const p=clamp(Math.max((h.age-h.age/Math.max(1,h.ratio))/Math.max(.1,h.ageLimit-h.age/Math.max(1,h.ratio)),h.dense?(h.ratio-1)/2.4:0));
   // Aromatics can release flavor early; long stew exposure is not a texture defect by itself.
-  return {p,grade:.25+.75*(aromatic(drops[i])?band(p,.04,v==='POT'?.68:.63,.18,.37):band(p,.08,v==='POT'?.48:.36,.16,.55))};
+  return {p,grade:.25+.75*(aromatic(drops[i])?band(p,.04,v==='POT'?.68:.63,.18,.37):band(p,.08,v==='POT'?.32:.26,.16,.43))};
  });
  const progress=texture.map(x=>x.p),heat=mean(texture.map(x=>x.grade));
  // Shared time to integrate flavor, not synchronized readiness. Order has no independent bonus.
@@ -43,7 +43,7 @@ function liveEvidence(r){
   // A short-lived aromatic must not make a barely heated main ingredient look ready.
   if(v==='WOK'||v==='POT'){
    const natural=involved.map(d=>liveHeatEvidence(d,a.t,[],v,!!r.baseOnly).ratio);
-   const window=a.type==='flip'?[.30,1.65,.30,1.65]:a.type==='toss'?[.50,1.8,.50,1.65]:a.type==='gentle'?[.27,1.45,.27,1.6]:[.78,1.95,.68,1.7];
+   const window=a.type==='flip'?[.43,1.12,.40,.85]:a.type==='toss'?[.60,1.30,.48,.90]:a.type==='gentle'?[.38,1.05,.35,.85]:[.85,1.42,.60,.85];
    // Each ingredient contributes by its culinary role. Aromatics are not judged as protein.
    const structural=involved.filter(d=>!aromatic(d));
    const focus=structural.length?structural:involved;
@@ -62,7 +62,7 @@ function liveEvidence(r){
   else if(r.baseOnly&&v==='STEAM'){const recent=involved.length?Math.min(...involved.map(d=>a.t-d.t)):0;const window=a.type==='seal'?[.28,1.25,.28,1.5]:[.65,1.9,.6,1.5];timing=smooth(recent,.55,1.65)*smooth(Math.min(...ratios),.10,.38)*mean(ratios.map(q=>band(q,...window)));}
   else if(a.type==='seal')timing=1-smooth(mean(ratios),.60,1.6);
   else if(a.type==='vent'){const seal=actions.find(x=>x.type==='seal');timing=seal?band(a.t-seal.t,2,8,2,5)*band(mean(ratios),.65,2.25,.65,1.4):0}
-  return {type:a.type,grade:clamp(timing*(.60+.40*coverage)),early:involved.some(d=>a.t-d.t<1.25)||mean(ratios)<.35};
+  return {type:a.type,grade:clamp(timing*(.60+.40*coverage)*smooth(t-a.t,.12,v==='POT'?1.25:.85)),early:involved.some(d=>a.t-d.t<1.25)||mean(ratios)<.35};
  });
  // A good technique is enough; optional extra technique is not a checklist.
  let tech=.12;
@@ -75,7 +75,7 @@ function grillEvidence(r){
  const faces=r.facts.frontBack||[],heatSamples=faces.flatMap(f=>{const {low,high}=grillHeatBounds(f.id);return [f.front,f.back].map(x=>clamp((x-low)/(high-low)))});
  const heat=mean(heatSamples.map(x=>.25+.75*band(x,.12,.43,.15,.5)));
  const balance=mean(faces.map(f=>1-smooth(Math.abs(f.front-f.back),.55,4.6)));
- // Different ingredients share a fire; score compatible heat windows, not a recipe-index skewer answer.
+ // Each skewer has two faces; judge balance within each ingredient, never between different ingredients.
  const coordination=.45+.55*balance;
  const turn=r.actions.find(a=>a.type==='turn'),brush=r.actions.find(a=>a.type==='brush');
  let brushGrade=0;if(turn&&brush){const gap=brush.t-turn.t;brushGrade=band(gap,.35,2.7,.35,2.5)}
