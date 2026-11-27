@@ -144,7 +144,7 @@ function createDiner(T){
  return {element,draw(canvas,s,t,w,h,actors){
   const parent=canvas.parentElement;if(!parent)return;if(element.parentElement!==parent)parent.insertBefore(element,canvas);
   const dpr=Math.min(devicePixelRatio||1,1.5),rw=Math.round(w*dpr),rh=Math.round(h*dpr);
-  const layout=y2Layout(s),frame=y2CameraFrame(s.phase,w,h,layout,s.growthCameraZ2d2),viewKey=frame.view+':'+(s.phase==='upgrade'?layout.tables.length:0);
+  const layout=y2Layout(s),frame=y2CameraFrame(s.z2ed1FullRoom?'forecast':s.phase,w,h,layout,s.growthCameraZ2d2),viewKey=frame.view+':'+(s.phase==='upgrade'?layout.tables.length:0);
   if(rw!==lastW||rh!==lastH||viewKey!==lastView){renderer.setSize(rw,rh,false);y2ApplyCamera(camera,frame);lastW=rw;lastH=rh;lastView=viewKey;}
   element.dataset.view=frame.view;element.dataset.cameraHalf=String(frame.half);
   const v=s.service,guide=dinerGuide(s);pass.position.set(wx(layout.floor.passFurniture.x),0,wz(layout.floor.passFurniture.y));guideMark.visible=!!guide?.target;if(guide?.target){guideMark.position.set(wx(guide.target.x),0,wz(guide.target.y));arrow.position.y=.55+Math.sin(t*4)*.085;arrow.rotation.y=t*.9;markerMat.color.set(guide.mode==='serve'?'#b8f1ac':'#ffdf8b');}alcoves.forEach((a,i)=>a.visible=layout.tables.length>=i+3);
