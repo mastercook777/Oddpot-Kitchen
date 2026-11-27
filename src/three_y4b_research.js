@@ -17,9 +17,11 @@ export function researchFrame(c,preview){
  }
  return {id:d.id,x,y,z,rot,tone:h?.tone||'idle',progress:h?.progress??Math.min(h?.frontProgress||0,h?.backProgress||0)};
  });
- const turned=actions.some(a=>a.type==='turn'),sealed=actions.some(a=>a.type==='seal')&&!actions.some(a=>a.type==='vent');
+ const turns=actions.filter(a=>a.type==='turn'),lastTurn=turns.at(-1),turned=turns.length>0;
+ const turnAngle=c.cbTiming&&lastTurn?Math.PI*(turns.length-1+clamp((t-lastTurn.t)/durations.turn)):(latest?.type==='turn'?Math.PI*p:turned?Math.PI:0);
+ const sealed=actions.some(a=>a.type==='seal')&&!actions.some(a=>a.type==='vent');
  return {type,t,items,action:latest?.type||null,beat,p,lit:grill?!!c.lane:items.length>0,lane:c.lane||null,
- turn:latest?.type==='turn'?Math.PI*p:turned?Math.PI:0,sealed,vent:latest?.type==='vent'?beat:0,
+ turn:turnAngle,sealed,vent:latest?.type==='vent'?beat:0,
  reduction:actions.some(a=>a.type==='reduce')?.66:1,tilt:latest?.type==='toss'?Math.sin(p*Math.PI*2)*.19:latest?.type==='flip'?Math.sin(p*Math.PI*3)*.06:0};
 }
 export function receiptFrame(result){
