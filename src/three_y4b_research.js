@@ -1,8 +1,9 @@
+import {automaticGrillState} from './grill_cooking_v014b.js?v=cb2r1c';
 import {createRecovery,sharedThree,visibleHost} from './three_y6a_recovery.js?v=y6a';
 // Y4b read-only research presentation. All adjudication remains in the engine.
 import {roundedFactory} from './three_y1_models.js?v=y1';
 const clamp=(x,a=0,b=1)=>Math.min(b,Math.max(a,x));
-const durations={flip:1.15,toss:.88,gentle:1.35,reduce:1.55,seal:.65,vent:.9,turn:.65,brush:.85};
+const durations={flip:1.15,toss:.88,gentle:1.35,reduce:1.55,seal:.65,vent:.9,turn:.65,brush:.85,smoke:1.6};
 export function researchFrame(c,preview){
  if(!c||!['v063-live','v014c-grill'].includes(c.mode))return null;
  const grill=c.mode==='v014c-grill',type=grill?'GRILL':c.vessel,t=Math.max(0,c.elapsed||0),actions=c.actions||[];
@@ -17,9 +18,12 @@ export function researchFrame(c,preview){
  }
  return {id:d.id,x,y,z,rot,tone:h?.tone||'idle',progress:h?.progress??Math.min(h?.frontProgress||0,h?.backProgress||0)};
  });
- const turned=actions.some(a=>a.type==='turn'),sealed=actions.some(a=>a.type==='seal')&&!actions.some(a=>a.type==='vent');
+ const turns=actions.filter(a=>a.type==='turn'),lastTurn=turns.at(-1),turned=turns.length>0;
+ const auto=grill&&c.cbTiming&&c.lane?automaticGrillState(t):null;
+ const turnAngle=auto?Math.PI*(Math.max(0,auto.turnCount-1)+(auto.turnCount?clamp(auto.sinceTurn/durations.turn):0)):(latest?.type==='turn'?Math.PI*p:turned?Math.PI:0);
+ const sealed=c.cbTiming&&type==='STEAM'?raw.length>0:actions.some(a=>a.type==='seal')&&!actions.some(a=>a.type==='vent');
  return {type,t,items,action:latest?.type||null,beat,p,lit:grill?!!c.lane:items.length>0,lane:c.lane||null,
- turn:latest?.type==='turn'?Math.PI*p:turned?Math.PI:0,sealed,vent:latest?.type==='vent'?beat:0,
+ turn:turnAngle,sealed,vent:latest?.type==='vent'?beat:0,smoke:latest?.type==='smoke'?beat:0,baseOnly:!!c.cbTiming,
  reduction:actions.some(a=>a.type==='reduce')?.66:1,tilt:latest?.type==='toss'?Math.sin(p*Math.PI*2)*.19:latest?.type==='flip'?Math.sin(p*Math.PI*3)*.06:0};
 }
 export function receiptFrame(result){
@@ -100,9 +104,9 @@ function makeWorkbench(T){
   const aspect=w/h,half=Math.max(r?.98:2.0,(r?1.68:3.05)/aspect);camera.left=-half*aspect;camera.right=half*aspect;camera.top=half;camera.bottom=-half;camera.lookAt(0,r?.32:.62,0);camera.updateProjectionMatrix();
   work.visible=!!f;plateRoot.visible=!!r;reveal.visible=false;if(hint){hint.textContent=f?.items.length?'':f?.type==='GRILL'?'轻点食材，依次穿串':'轻点下方食材下锅';}for(const x of foodPool.values())x.root.visible=false;
   if(f){for(const [k,g] of Object.entries(vessels))g.visible=k===f.type;fire.visible=f.lit;cook.rotation.z=f.tilt;stick.visible=f.type==='GRILL';stick.position.set(0,f.lane?.58:.60,f.lane?({edge:.62,middle:0,flame:-.62}[f.lane]||0):.94);stick.rotation.x=f.turn;soup.position.y=.36+.17*f.reduction;
-   lid.visible=f.sealed||f.action==='seal'||f.action==='vent';lid.position.set(0,.64+(f.action==='seal'?(1-f.p)*.75:f.action==='vent'?f.p*.75:0),0);lid.rotation.z=f.action==='vent'?f.p*.34:0;
+   lid.visible=f.sealed||f.action==='seal'||f.action==='vent';lid.position.set(0,.64+(f.baseOnly?(f.action==='vent'?.28*f.beat:0):f.action==='seal'?(1-f.p)*.75:f.action==='vent'?f.p*.75:0),0);lid.rotation.z=f.action==='vent'?(f.baseOnly?f.beat:f.p)*.34:0;
    tool.visible=['flip','gentle','brush','reduce'].includes(f.action);toolHead.visible=f.action==='flip';ladle.visible=['gentle','reduce'].includes(f.action);brush.visible=f.action==='brush';tool.position.set(Math.sin(f.p*Math.PI*2)*.62,.72+f.beat*.12,.30);tool.rotation.set(-.72,0,Math.sin(f.p*6.28)*.4);
-   for(const [i,o] of vapor.entries()){const q=(f.t*.66+i/12)%1,a=i*2.4;o.visible=f.lit&&(f.type!=='STEAM'||!f.sealed||f.vent>0||i<3);o.position.set(Math.cos(a)*(.15+q*.40),.65+q*(.8+f.vent*.6),Math.sin(a)*(.12+q*.29));o.scale.set(.09+q*.12,.13+q*.15,.09+q*.12);}
+   for(const [i,o] of vapor.entries()){const q=(f.t*.66+i/12)%1,a=i*2.4;o.visible=f.lit&&(f.type!=='STEAM'||!f.sealed||f.vent>0||i<3);o.position.set(Math.cos(a)*(.15+q*.40),.65+q*(.8+f.vent*.6+(f.smoke||0)*.8),Math.sin(a)*(.12+q*.29));o.scale.set(.09+q*.12+(f.smoke||0)*.12,.13+q*.15+(f.smoke||0)*.15,.09+q*.12+(f.smoke||0)*.12);}
    for(const [i,o] of sparks.entries()){o.visible=f.lit&&(['toss','flip','brush'].includes(f.action));const q=(f.p+i*.11)%1;o.position.set(Math.cos(i*2.4)*(.35+q*.72),.50+Math.sin(q*Math.PI)*.85,Math.sin(i*2.4)*(.35+q*.55));}
   }
   if(r){if(lastReceipt!==receiptKey){lastReceipt=receiptKey;revealAt=now;}const q=clamp((now-revealAt)/850);plateRoot.scale.setScalar(.88+.12*Math.sin(q*Math.PI/2));plateRoot.rotation.y=(1-q)*-.35;reveal.visible=r.discovery&&q<1;reveal.rotation.y=q*1.6;resultSoup.visible=r.type==='POT';resultStick.visible=r.type==='GRILL';}
