@@ -133,7 +133,7 @@ try{
    if(phase==='service'){assert.ok(await page.locator('#diner-canvas').isVisible());await page.locator('[data-act="service-ledger"]').click();await page.locator('.sheet [data-act="settings"]').click();await page.locator('[data-act="stick-mode:fixed"]').click();await page.keyboard.press('Escape');const pad=page.locator('#diner-stick');await pad.waitFor({state:'visible'});assert.ok(await pad.evaluate(e=>e.classList.contains('z2ed0-fixed')));const box=await pad.boundingBox();const center={x:box.x+box.width/2,y:box.y+box.height/2};await page.mouse.move(center.x,center.y);await page.mouse.down();await page.mouse.move(center.x+30,center.y-15);assert.notEqual(await page.locator('#diner-stick-knob').evaluate(e=>e.style.transform),'translate(0px, 0px)');await page.mouse.up();assert.ok(await pad.evaluate(e=>e.classList.contains('z2ed0-fixed')));assert.equal(await page.locator('#diner-stick-knob').evaluate(e=>e.style.transform),'translate(0px, 0px)');}
    if(phase==='report'){
     const sceneBox=await page.locator('.z2d2-report-stage').boundingBox(),ledgerBox=await page.locator('.z2d2-report-layout .z2c10-ledger').boundingBox();
-    assert.ok(sceneBox.height>=100&&sceneBox.y+sceneBox.height<=ledgerBox.y+1&&ledgerBox.height>0);
+    const resultBox=await page.locator('.z2ed1-result').boundingBox(),actions=await page.locator('.z2ed1-result-actions').boundingBox();assert.ok(sceneBox.height>=layout.stageHeight*.90&&resultBox.y>=sceneBox.y&&resultBox.y+resultBox.height<=sceneBox.y+sceneBox.height+1&&ledgerBox.y+ledgerBox.height<=actions.y+1&&actions.height>=44,'mandatory result overlays full restaurant, scroll body separate from actions');assert.equal(await page.locator('.z2ed1-result').getAttribute('role'),'dialog');await page.evaluate(()=>globalThis.__d1Canvas=document.querySelector('#diner-canvas'));await page.keyboard.press('Escape');assert.equal(await page.locator('.stage.report').count(),1);
     assert.equal(await page.locator('.z2d2-report-stage #diner-canvas').count(),1);
     assert.ok(await page.locator('.z2c10-paper .report-stats').isVisible());
     const title=await page.locator('.z2c10-paper .report-header').evaluate(el=>({color:getComputedStyle(el).color,weight:Number(getComputedStyle(el).fontWeight),size:parseFloat(getComputedStyle(el).fontSize)}));assert.equal(title.color,'rgb(69, 51, 40)');assert.ok(title.weight>=700&&title.size>=17);
@@ -151,7 +151,7 @@ try{
     await page.locator('[data-act="close-sheet"]').last().click();
     assert.notEqual(await page.locator('.v014-report-more').getAttribute('open'),null);
     await page.screenshot({path:output+'/z2c10-report-'+width+'.png'});
-    await page.locator('[data-act="to-upgrade"]').click();assert.equal(await page.locator('.stage.upgrade').count(),1);
+    await page.locator('[data-act="to-upgrade"]').click();assert.equal(await page.locator('.stage.upgrade').count(),1);assert.ok(await page.evaluate(()=>globalThis.__d1Canvas===document.querySelector('#diner-canvas')),'same canvas survives report to growth');
    }
    if(phase==='upgrade'){
     assert.equal(await page.locator('.z2c11-hud').count(),1);
