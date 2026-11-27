@@ -164,6 +164,7 @@ try{
     assert.equal(await page.locator('.z2c11-hud').count(),1);
     const scene=page.locator('.z2c11-growth-scene'),work=page.locator('.z2ed1-growth-tools');
     const a=await scene.boundingBox(),d=await work.boundingBox();assert.ok(a.height>=layout.stageHeight*.90&&d.y>=a.y&&d.y+d.height<=a.y+a.height+1);
+    const layers=await page.evaluate(()=>{const r=s=>document.querySelector(s)?.getBoundingClientRect();return {hud:r('.ui2-hud-stack').bottom,caption:r('.z2c11-scene-caption').top,tools:r('.z2ed1-growth-tools').bottom,dock:r('.dock').top}});assert.ok(layers.hud<=layers.caption&&layers.tools<=layers.dock+1,'growth HUD/controls do not overlap '+JSON.stringify(layers));
     assert.equal(await page.locator('.ui2-room-host #diner-canvas').count(),1);
     await page.evaluate(()=>globalThis.__growthRoom=document.querySelector('#diner-canvas'));
     assert.equal(await page.locator('.z2c11-growth-group').count(),0);await page.locator('[data-act="growth-overview"]').click();assert.equal(await page.locator('.z2c11-growth-group').count(),3);await page.keyboard.press('Escape');

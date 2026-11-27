@@ -120,11 +120,20 @@ for(const [width,height] of [[320,568],[375,667],[390,844]]){
   for(const o of v.orders){o.status='review';o.reviewAt=v.time-.25;}
   await load(feast);await page.waitForFunction(()=>{const c=document.querySelector('canvas[data-phase="service"]');return c?.dataset.lifeVersion==='y6'&&Number(c.dataset.reviewCount)===6&&Number(c.dataset.mealCount)===6;},null,{timeout:20000});assert.equal(Number(await page.locator('canvas[data-phase="service"]').getAttribute('data-food-pieces')),0);await page.screenshot({path:out+'/y6-empty-plates.png'});
  }
+ const menuState=newGame(15742);menuState.onboarding.enabled=false;menuState.phase='menu';await load(menuState);
+ await page.waitForFunction(()=>document.querySelector('.ui2-room-host canvas[data-view="restaurant"]')?.dataset.phase==='menu'&&document.documentElement.dataset.oddpot3d==='active',null,{timeout:20000});
+ await page.locator('.ui2-room-dock [data-act="ui2-menu"]').click();assert.ok(await page.locator('.sheet').isVisible());
+ assert.equal(await page.locator('.ui2-room-host canvas[data-view="restaurant"]').getAttribute('data-phase'),'menu');
+ await page.screenshot({path:out+'/ui2-menu-3d-'+width+'.png'});
  const prep=newGame(15742);prep.onboarding.enabled=false;prep.phase='prep';await load(prep);await page.waitForFunction(()=>document.querySelector('.ui2-room-host canvas[data-view="restaurant"]')?.dataset.phase==='prep',null,{timeout:20000});const prepLayout=await page.locator('.ui2-room-host').boundingBox();assert.ok(prepLayout.height>=height*.95);await page.locator('.ui2-room-dock [data-act="ui2-prep"]').click();assert.ok(await page.locator('.sheet .kitchen-config-slot').count()>0);await page.screenshot({path:out+'/ui2-prep-'+width+'.png'});
  const closing=newGame(15742);closing.onboarding.enabled=false;closing.phase='service';assert.ok(createService(closing,{walkable:true}));setServicePaused(closing,false);
  for(let t=0;t<160&&!closing.service.done;t++){if(closing.service.breakAt)resumeBreak(closing);tick(closing,1);}assert.ok(closing.service.done);
  await load(closing);
  await page.waitForFunction(()=>document.querySelector('canvas[data-phase="service"]')&&document.documentElement.dataset.oddpot3d==='active',null,{timeout:20000});
+ const finishBounds=await page.locator('.v075-finish').boundingBox(),worldBounds=await page.locator('.stage').boundingBox();
+ assert.ok(finishBounds.height<=worldBounds.height*.60&&finishBounds.width<worldBounds.width-20,'closing result does not cover the room');
+ assert.equal(await page.locator('.z2a-hud').isVisible(),false,'finished service HUD cannot cover closing result');
+ await page.screenshot({path:out+'/ui2-close-card-'+width+'.png'});
  await page.locator('.v075-finish [data-act="close"]').click();
  await page.waitForFunction(()=>document.querySelector('.ui2-room-host canvas[data-view="restaurant"]')?.dataset.phase==='report',null,{timeout:20000});
  const reportCanvas=page.locator('.ui2-room-host canvas[data-view="restaurant"]'),reportBox=await reportCanvas.boundingBox(),ledgerBox=await page.locator('.z2d2-report-layout .z2c10-ledger').boundingBox();
