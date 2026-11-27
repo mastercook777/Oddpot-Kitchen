@@ -13,7 +13,7 @@ export const LIVE_ACTIONS={
 export const WORKSHOP_ACTIONS={...LIVE_ACTIONS,GRILL:[{id:'brush',name:'刷酱',emoji:'🖌️'},{id:'smoke',name:'熏香',emoji:'♨️'}],STEAM:[{id:'seal',name:'聚汽',emoji:'🫕'},{id:'vent',name:'排汽',emoji:'♨️'}]};
 export const LIVE_STYLES={
   home:'家常',home_even:'均匀翻炒',burst:'爆炒',aroma:'香味十足',
-  pot_home:'家常炖煮',gentle:'清润慢炖',reduced:'浓香收汁',steam_home:'自然蒸制',steam_even:'云汽匀蒸',steam_dry:'排汽过早',even:'双面原味',glazed:'双面刷香',legacy:'标准工艺'
+  pot_home:'家常炖煮',gentle:'清润慢炖',reduced:'浓香收汁',steam_home:'自然蒸制',steam_even:'云汽匀蒸',steam_dry:'排汽过早',steam_gather:'聚汽蒸制',steam_release:'排汽蒸制',steam_mix:'云汽调和',even:'双面原味',glazed:'双面刷香',legacy:'标准工艺'
 };
 export const LIVE_AFFINITY={signature:'招牌适配',viable:'适合',ordinary:'普通',off:'不契合'};
 const REQUIRE={beef:5.4,chicken:6.1,chili:1.3,garlic:1.3,mushroom:2.9,cabbage:2.5,onion:2.8,potato:6.2,mushroom_heart:3.9,ember_pepper:1.9,tide_sour_pulp:1.8,starlit_nectar:1.2,cloud_rice:5.4,sky_moss:2.7,storm_egg:5.0,sour_bell:1.9,gale_core:4.8};
@@ -118,6 +118,7 @@ export function evaluateLiveCook(ids,vessel,drops,actions,elapsed,baseOnly=false
  const recipe=id&&RECIPES[id];
  const sorted=[...drops].sort((a,b)=>a.t-b.t||a.index-b.index);
  const facts=readCookFacts(ids,vessel,sorted,actions,elapsed);
+ if(baseOnly&&vessel==='STEAM'){const gather=actions.some(a=>a.type==='seal'),release=actions.some(a=>a.type==='vent');facts.style=gather&&release?'steam_mix':gather?'steam_gather':release?'steam_release':'steam_home';}
  const missing=ids.filter(id=>!sorted.some(d=>d.id===id)),undercooked=[],burnt=[],slight=[];
  const doneness=sorted.map(d=>{
   const label=liveIngredientState(d,elapsed,actions,vessel,baseOnly);
@@ -128,6 +129,7 @@ export function evaluateLiveCook(ids,vessel,drops,actions,elapsed,baseOnly=false
  });
  const sellable=!!recipe&&!missing.length&&!undercooked.length&&!burnt.length;
  const technique=resolveTechnique(id,facts.style);
+ if(baseOnly&&vessel==='STEAM')technique.reason='蒸制完成，技法表现由实际时机评价。';
  const finishState=!recipe?'未知组合':missing.length?'漏下料':undercooked.length?'夹生失败':burnt.length?'焦糊失败':slight.length?'略欠火':'成功';
  let quality=72-slight.length*16;
  if(facts.aromaLead)quality+=4;
@@ -140,7 +142,7 @@ export function evaluateLiveCook(ids,vessel,drops,actions,elapsed,baseOnly=false
  // Suitability is not an auto-win or auto-90. All styles can succeed.
  quality=Math.min(90,Math.max(35,quality));
  const extra=facts.steamEven?'云汽匀蒸':facts.burst?'锅气':facts.aromaLead?'香气底味':facts.evenHeat?'均匀受热':facts.softStir?'柔和融合':facts.reduceGood?'浓厚酱汁':'自然烹制';
- return {baseOnly,recipeId:id,recipeName:recipe?.name||'未识别料理',
+ return {...(baseOnly?{baseOnly:true}:{}),recipeId:id,recipeName:recipe?.name||'未识别料理',
   ids:[...ids],vessel,quality,sellable,status:finishState,style:facts.style,
   styleLabel:LIVE_STYLES[facts.style],secondaryTrait:extra,
   affinity:technique.affinity,affinityLabel:technique.affinityLabel,
