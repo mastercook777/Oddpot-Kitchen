@@ -41,12 +41,10 @@ export function liveHeatEvidence(drop,t,actions,vessel){
 }
 export function liveIngredientState(drop,t,actions,vessel){
  if(!drop)return '待下锅';
- const ratio=liveCookAmount(drop,t,actions,vessel)/(REQUIRE[drop.id]*(vessel==='POT'?1.18:vessel==='STEAM'?1.05:1));
- const age=Math.max(0,t-drop.t);
+ const {ratio,age,ageLimit,dense}=liveHeatEvidence(drop,t,actions,vessel);
  if(ratio<.65)return '偏生';
  if(ratio<1)return '受热中';
- if((ratio>3.4&&['beef','chicken','potato'].includes(drop.id))||
-    age>(drop.id==='ember_pepper'&&vessel==='POT'?19:['garlic','chili','onion','ember_pepper'].includes(drop.id)?14:16))return '焦糊';
+ if((ratio>3.4&&dense)||age>ageLimit)return '焦糊';
  return '熟透';
 }
 // Presentation ONLY. Uses the exact maturity/burning rules above; its percent
@@ -57,12 +55,8 @@ export function liveIngredientHeatFeedback(drop,t,actions,vessel){
   const h=grillHeat(drop.id,t-drop.t,(actions||[]).map(a=>({...a,t:a.t-drop.t})));
   return {state:h.state,baseState:h.state,progress:Math.min(h.frontProgress,h.backProgress),frontProgress:h.frontProgress,backProgress:h.backProgress,tone:h.tone,nearBurn:false};
  }
- const divisor=REQUIRE[drop.id]*(vessel==='POT'?1.18:vessel==='STEAM'?1.05:1);
- const ratio=liveCookAmount(drop,t,actions,vessel)/divisor,age=Math.max(0,t-drop.t);
+ const {ratio,age,ageLimit,dense}=liveHeatEvidence(drop,t,actions,vessel);
  const baseState=liveIngredientState(drop,t,actions,vessel);
- const ageLimit=drop.id==='ember_pepper'&&vessel==='POT'?19:
-  ['garlic','chili','onion','ember_pepper'].includes(drop.id)?14:16;
- const dense=['beef','chicken','potato'].includes(drop.id);
  const nearBurn=baseState==='熟透'&&(age>=ageLimit-2||(dense&&ratio>=2.9));
  const state=nearBurn?'将焦':baseState;
  const tone=baseState==='焦糊'?'bad':nearBurn?'warning':baseState==='熟透'?'good':'warming';
