@@ -4,7 +4,7 @@ export function ui2Mount(root,markup,phase,hasField){
  const t=document.createElement('template');t.innerHTML=markup.trim();const incoming=t.content.firstElementChild,newStage=incoming.querySelector('.stage'),scene=ui2Scene(phase,hasField);
  let shell=root.querySelector('.game-shell'),stage=shell?.querySelector('.stage'),room=stage?.querySelector(':scope > .ui2-room-host');
  if(!shell){shell=document.createElement('div');stage=document.createElement('main');shell.append(stage);root.replaceChildren(shell)}
- shell.className=incoming.className+' ui2-shell';shell.dataset.ui2Scene=scene;shell.dataset.ui2Mode=phase;stage.className=newStage.className;
+ const oldScene=shell.dataset.ui2Scene;shell.className=incoming.className+' ui2-shell';shell.dataset.ui2Transition=String(!!oldScene&&oldScene!==scene);shell.dataset.ui2Scene=scene;shell.dataset.ui2Mode=phase;stage.className=newStage.className;
  // Keep the real room canvas AND its renderer parent connected across modes.
  const nextRoom=scene==='room'?newStage.querySelector('#diner-canvas')?.parentElement:null;
  if(nextRoom){
