@@ -7,8 +7,8 @@ export function grillPreview(c){
  const rate=GRILL_LANES[c.lane]?.rate||0;
  return {elapsed:c.elapsed,lane:c.lane,...(c.cbTiming?{auto:automaticGrillState(c.elapsed)}:{}),items:c.skewer.map(id=>({id,...grillHeat(id,c.elapsed,c.actions,rate,!!c.cbTiming)}))};
 }
-export function evaluatePlacedGrill(c){
- const ids=c.ids,recipeId=RECIPE_INDEX[recipeSignature(ids,'GRILL')]||null,recipe=RECIPES[recipeId];
+export function evaluatePlacedGrill(c,recipeOverride=undefined){
+ const ids=c.ids,recipeId=recipeOverride===undefined?(RECIPE_INDEX[recipeSignature(ids,'GRILL')]||null):recipeOverride,recipe=RECIPES[recipeId];
  const rate=GRILL_LANES[c.lane]?.rate||0;
  const states=c.skewer.map(id=>({id,label:grillHeat(id,c.elapsed,c.actions,rate,!!c.cbTiming).state}));
  const turn=c.actions.find(a=>a.type==='turn'),brush=c.actions.find(a=>a.type==='brush');
