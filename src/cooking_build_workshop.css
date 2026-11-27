@@ -40,3 +40,15 @@
 #pan[data-vessel=GRILL] .cb-fallback-vessel:before{content:"";position:absolute;left:4%;right:4%;top:48%;height:5px;background:linear-gradient(90deg,#d4bb87 0 85%,#67472f 85%);border-radius:5px}
 @media(max-width:350px){.cb-cook-controls .cb-tray .cb-card{grid-template-columns:25px minmax(0,1fr);padding:3px}.cb-tray .cb-card img,.cb-tray .cb-card svg{width:24px;height:24px}}
 @media(max-height:600px){#lab[data-mode=cook] #cook-stage{inset:calc(43px + env(safe-area-inset-top)) 0 calc(191px + env(safe-area-inset-bottom))}.cb-cook-controls .cb-tray .cb-card{min-height:53px}}
+
+/* R2b: the real control deck height drives the stage; no absolute overlap. */
+#lab[data-mode=cook]{display:grid;grid-template-rows:auto minmax(100px,1fr) auto auto;gap:4px;padding:calc(5px + env(safe-area-inset-top)) 0 calc(6px + env(safe-area-inset-bottom));box-sizing:border-box}
+#lab[data-mode=cook] #hud{position:relative;inset:auto;grid-row:1;margin:0 9px;min-height:30px;align-items:center}
+#lab[data-mode=cook] #world{position:relative;inset:auto;grid-row:2;width:100%;height:100%;min-height:100px;overflow:hidden;background:#514333}
+#lab[data-mode=cook] #cook-stage{inset:0;min-height:100px}
+#lab[data-mode=cook] #panel{position:relative;inset:auto;grid-row:3;margin:0 8px;padding:0;min-height:0;max-height:42dvh;overflow:auto;pointer-events:auto}
+#lab[data-mode=cook] #dock{position:relative;inset:auto;grid-row:4;margin:0 8px}
+#lab[data-mode=cook] .cb-cook-controls{flex-shrink:0;box-shadow:none}
+#lab[data-mode=cook] .cb-tray{display:grid;grid-template-columns:repeat(auto-fit,minmax(100px,1fr));gap:4px}
+#lab[data-mode=cook] .cb-tray .cb-card{min-width:0;width:100%;min-height:49px}
+@media(max-height:600px){#lab[data-mode=cook] .cb-tray .cb-card{min-height:46px}#lab[data-mode=cook] .cb-cook-controls{padding:4px;gap:2px}}
