@@ -10,6 +10,7 @@ export const LIVE_ACTIONS={
   STEAM:[{id:'seal',name:'封笼',emoji:'🫕'},{id:'vent',name:'排汽',emoji:'♨️'}],
   GRILL:[{id:'turn',name:'翻面',emoji:'🍢'},{id:'brush',name:'刷香料',emoji:'🖌️'}]
 };
+export const WORKSHOP_ACTIONS={...LIVE_ACTIONS,GRILL:[{id:'brush',name:'刷酱',emoji:'🖌️'},{id:'smoke',name:'熏香',emoji:'♨️'}],STEAM:[{id:'seal',name:'聚汽',emoji:'🫕'},{id:'vent',name:'排汽',emoji:'♨️'}]};
 export const LIVE_STYLES={
   home:'家常',home_even:'均匀翻炒',burst:'爆炒',aroma:'香味十足',
   pot_home:'家常炖煮',gentle:'清润慢炖',reduced:'浓香收汁',steam_home:'自然蒸制',steam_even:'云汽匀蒸',steam_dry:'排汽过早',even:'双面原味',glazed:'双面刷香',legacy:'标准工艺'
@@ -21,27 +22,27 @@ const MAIN_PRIORITY=['beef','chicken','potato','cloud_rice','storm_egg','cabbage
 const PRIMARY_AROMATIC={garlic:true,onion:true,chili:true,mushroom:true,ember_pepper:true,tide_sour_pulp:true,starlit_nectar:true};
 export const liveRecipeId=(ids,station)=>RECIPE_INDEX[recipeSignature(ids,station)]||null;
 
-export function liveCookAmount(drop,t,actions,vessel){
- const rate=vessel==='POT'?.92:vessel==='STEAM'?(actions?.some(a=>a.type==='seal')?1.02:.63):1.10;
+export function liveCookAmount(drop,t,actions,vessel,baseOnly=false){
+ const rate=vessel==='POT'?.92:vessel==='STEAM'?(baseOnly||actions?.some(a=>a.type==='seal')?1.02:.63):1.10;
  let count=Math.max(0,t-drop.t)*rate;
- for(const a of actions||[]){
+ for(const a of baseOnly?[]:actions||[]){
   if(!a.with?.includes(drop.id))continue;
   count+=({flip:.9,toss:.45,gentle:.75,reduce:.35,seal:.85,vent:.2}[a.type]||0);
  }
  return count;
 }
 // Shared read-only heat evidence. Does not change existing maturity rules.
-export function liveHeatEvidence(drop,t,actions,vessel){
+export function liveHeatEvidence(drop,t,actions,vessel,baseOnly=false){
  const divisor=REQUIRE[drop.id]*(vessel==='POT'?1.18:vessel==='STEAM'?1.05:1);
- const ratio=liveCookAmount(drop,t,actions,vessel)/divisor;
+ const ratio=liveCookAmount(drop,t,actions,vessel,baseOnly)/divisor;
  const age=Math.max(0,t-drop.t),dense=['beef','chicken','potato'].includes(drop.id);
  const ageLimit=drop.id==='ember_pepper'&&vessel==='POT'?19:
   ['garlic','chili','onion','ember_pepper'].includes(drop.id)?14:16;
  return {ratio,age,ageLimit,dense};
 }
-export function liveIngredientState(drop,t,actions,vessel){
+export function liveIngredientState(drop,t,actions,vessel,baseOnly=false){
  if(!drop)return '待下锅';
- const {ratio,age,ageLimit,dense}=liveHeatEvidence(drop,t,actions,vessel);
+ const {ratio,age,ageLimit,dense}=liveHeatEvidence(drop,t,actions,vessel,baseOnly);
  if(ratio<.65)return '偏生';
  if(ratio<1)return '受热中';
  if((ratio>3.4&&dense)||age>ageLimit)return '焦糊';
@@ -49,14 +50,14 @@ export function liveIngredientState(drop,t,actions,vessel){
 }
 // Presentation ONLY. Uses the exact maturity/burning rules above; its percent
 // describes progress to readiness, not an invented power/temperature stat.
-export function liveIngredientHeatFeedback(drop,t,actions,vessel){
+export function liveIngredientHeatFeedback(drop,t,actions,vessel,baseOnly=false){
  if(!drop)return {state:'待下锅',baseState:'待下锅',progress:0,tone:'idle',nearBurn:false};
  if(vessel==='GRILL'){
   const h=grillHeat(drop.id,t-drop.t,(actions||[]).map(a=>({...a,t:a.t-drop.t})));
   return {state:h.state,baseState:h.state,progress:Math.min(h.frontProgress,h.backProgress),frontProgress:h.frontProgress,backProgress:h.backProgress,tone:h.tone,nearBurn:false};
  }
- const {ratio,age,ageLimit,dense}=liveHeatEvidence(drop,t,actions,vessel);
- const baseState=liveIngredientState(drop,t,actions,vessel);
+ const {ratio,age,ageLimit,dense}=liveHeatEvidence(drop,t,actions,vessel,baseOnly);
+ const baseState=liveIngredientState(drop,t,actions,vessel,baseOnly);
  const nearBurn=baseState==='熟透'&&(age>=ageLimit-2||(dense&&ratio>=2.9));
  const state=nearBurn?'将焦':baseState;
  const tone=baseState==='焦糊'?'bad':nearBurn?'warning':baseState==='熟透'?'good':'warming';
@@ -111,7 +112,7 @@ export function resolveTechnique(recipeId,style){
    curated:!!profile
  };
 }
-export function evaluateLiveCook(ids,vessel,drops,actions,elapsed){
+export function evaluateLiveCook(ids,vessel,drops,actions,elapsed,baseOnly=false){
  if(vessel==='GRILL')return evaluateGrillCook(ids,drops,actions,elapsed);
  const id=liveRecipeId(ids,vessel);
  const recipe=id&&RECIPES[id];
@@ -119,7 +120,7 @@ export function evaluateLiveCook(ids,vessel,drops,actions,elapsed){
  const facts=readCookFacts(ids,vessel,sorted,actions,elapsed);
  const missing=ids.filter(id=>!sorted.some(d=>d.id===id)),undercooked=[],burnt=[],slight=[];
  const doneness=sorted.map(d=>{
-  const label=liveIngredientState(d,elapsed,actions,vessel);
+  const label=liveIngredientState(d,elapsed,actions,vessel,baseOnly);
   if(label==='偏生')undercooked.push(d.id);
   if(label==='受热中')slight.push(d.id);
   if(label==='焦糊')burnt.push(d.id);
@@ -139,7 +140,7 @@ export function evaluateLiveCook(ids,vessel,drops,actions,elapsed){
  // Suitability is not an auto-win or auto-90. All styles can succeed.
  quality=Math.min(90,Math.max(35,quality));
  const extra=facts.steamEven?'云汽匀蒸':facts.burst?'锅气':facts.aromaLead?'香气底味':facts.evenHeat?'均匀受热':facts.softStir?'柔和融合':facts.reduceGood?'浓厚酱汁':'自然烹制';
- return {recipeId:id,recipeName:recipe?.name||'未识别料理',
+ return {baseOnly,recipeId:id,recipeName:recipe?.name||'未识别料理',
   ids:[...ids],vessel,quality,sellable,status:finishState,style:facts.style,
   styleLabel:LIVE_STYLES[facts.style],secondaryTrait:extra,
   affinity:technique.affinity,affinityLabel:technique.affinityLabel,
