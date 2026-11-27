@@ -274,12 +274,10 @@ function departureRoutes(){return activeWorld(game)==='cloud'?[{id:'cloud_safe',
 function departureLowStock(){return [...new Set((game.menu||[]).flatMap(id=>RECIPES[id]?.ids||[]))].filter(id=>(game.inventory[id]||0)<6);}
 function departureNotebook(){const routes=departureRoutes(),lowStock=departureLowStock();
  const cloud=activeWorld(game)==='cloud',region=cloud?'cloud':selectedRegion==='spring'?'spring':'forest';
- const regions=cloud?[['cloud','云港浮岛']]:[['forest','晨露森林'],['spring','热泉峡谷']];
- const eco=departureEcologyZ2c4(region),supplies=eco.resources,enemyNames={"chicken":"鸡怪","boar":"铁角野牛","sporeling":"孢怪","steam_crab":"蒸汽蟹","pepper":"椒怪","gust_moth":"风蛾"};
  const choices=fieldWeaponChoices(game),selected=selectedFieldWeaponType(game),w=choices.find(q=>q.type===selected)||choices[0];
  const info=w?z2c2WeaponText(w.type,w.level):null;
 
- return ` <section class="v013h-supply-hint z2c2-note" aria-label="经营备料提示"><div class="z2c2-note-pin"></div><div><b>今日备料便笺</b><span>${lowStock.length?'菜单库存偏低 · 先找这些食材':'库存相对充足，今天不妨寻找新味道。'}</span></div>${lowStock.length?`<div class="z2c2-note-food">${lowStock.map(id=>`<span>${ingredientIconHtml(id,22)} ${esc(ING[id].name)} <small>${game.inventory[id]||0}份</small></span>`).join('')}</div>`:''}</section> <section class="z2ed3-travel-details"><h3>路线与装备</h3><div>${routes.map(r=>`<p><b>${r.name}</b> · ${esc(r.subtitle)}${/risk/.test(r.id)&&!cloud?' · 第三段挑战'+bossHint(region).boss+'，预留背包格':''}</p>`).join('')}${info?`<p><b>${info.name}</b> · ${w.fitted?(['左','右','中'][w.slotIndex]||'')+'厨位装配':'背包备用'} · ${info.stats}</p>`:''}<p>${cloud?'三段航路，可随时返港。':'三段路，可随时回店。'}生态决定主要产物，不保证指定食材掉落。库存少于6份时标为偏低。</p></div></section>`;
+ return ` <section class="v013h-supply-hint z2c2-note" aria-label="经营备料提示"><div class="z2c2-note-pin"></div><div><b>今日备料便笺</b><span>${lowStock.length?'菜单库存偏低 · 先找这些食材':'库存相对充足，今天不妨寻找新味道。'}</span></div>${lowStock.length?`<div class="z2c2-note-food">${lowStock.map(id=>`<span>${ingredientIconHtml(id,22)} ${esc(ING[id].name)} <small>${game.inventory[id]||0}份</small></span>`).join('')}</div>`:''}</section> <section class="z2ed3-travel-details"><h3>路线与装备</h3><div>${routes.map(r=>`<p><b>${r.name}</b> · ${esc(r.subtitle)}${/risk/.test(r.id)&&!cloud?' · 第三段挑战'+bossHint(region).boss+'，预留背包格':''}</p>`).join('')}${info?`<p><b>${info.name}</b> · ${w.fitted?(['左','右','中'][w.slotIndex]||'')+'厨位装配':'背包备用'} · ${info.stats}</p><p>${esc(info.flavor||'')}</p>`:''}<p>${cloud?'三段航路，可随时返港。':'三段路，可随时回店。'}生态决定主要产物，不保证指定食材掉落。库存少于6份时标为偏低。</p></div></section>`;
 }
 function z2c2Departure(routes,lowStock){
  const cloud=activeWorld(game)==='cloud',region=cloud?'cloud':selectedRegion==='spring'?'spring':'forest';
