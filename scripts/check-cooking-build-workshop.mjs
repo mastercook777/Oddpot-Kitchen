@@ -28,12 +28,15 @@ for(const [v,ingredients,world] of [['WOK',['garlic','mushroom'],'hearth'],['POT
  await p.screenshot({path:out+'/fallback-food-'+v+'.png'});
  if(v==='GRILL'){
   await act('drop:'+ingredients[1]).click();await act('lane:middle').click();
-  await act('action:turn').click();assert.ok(await act('action:turn').isDisabled());
-  await p.waitForFunction(()=>parseFloat(document.getElementById('cook-clock').textContent.replace('烹饪 ',''))>=4);
-  assert.ok(await act('action:turn').isEnabled());await act('action:turn').click();
+  assert.equal(await act('action:turn').count(),0);assert.ok(await act('action:brush').isEnabled());assert.ok(await act('action:smoke').isEnabled());
+  await p.waitForFunction(()=>document.getElementById('cook-clock').textContent.includes('反面朝火'),null,{timeout:15000});
+  await act('action:smoke').click();assert.ok(await act('action:smoke').isDisabled());
+  await p.waitForFunction(()=>parseFloat(document.getElementById('cook-clock').textContent.replace('烹饪 ',''))>=5);
+  await act('action:brush').click();
   await p.waitForFunction(()=>[...document.querySelectorAll('[data-heat]')].every(e=>e.textContent==='熟透'),null,{timeout:20000});
-  await p.screenshot({path:out+'/grill-recovered.png'});await act('finish').click();await act('save').waitFor({state:'visible'});assert.ok(await act('save').isEnabled());
+  await p.screenshot({path:out+'/grill-auto.png'});await act('finish').click();await act('save').waitFor({state:'visible'});assert.ok(await act('save').isEnabled());
  }
+
  await p.close();
 }
 console.log('CB01a empty and filled cookware 3D host dimensions, four offline fallbacks verified');
