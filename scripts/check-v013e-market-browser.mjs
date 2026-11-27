@@ -36,6 +36,7 @@ async function checkFour(page,s,{legacy=false}={}){
  }
  const first=expected.find(x=>ensureDailyMarket(s).goods[x].stock>0);
  const price=ensureDailyMarket(s).goods[first].price,before=s.coins,qty=ensureDailyMarket(s).goods[first].stock;
+ const marketIds=await rows.evaluateAll(es=>es.map(e=>e.dataset.marketId));await page.locator('.sheet .ui2-slots').first().locator('.ui2-slot').nth(marketIds.indexOf(first)).click();
  const target=page.locator('.stock-list[aria-label="今日可采购食材"] .stock-line[data-market-id="'+first+'"]');
  await target.locator('[data-act="buy:'+first+'"]').click();
  const result=await page.evaluate(k=>JSON.parse(localStorage.getItem(k)),key);
