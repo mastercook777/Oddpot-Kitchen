@@ -712,6 +712,7 @@ function walkTo(x,y){if(walking)clearInterval(walking);const path=findPath(x,y);
 function action(act){
  if(game.phase==='upgrade'&&(act==='growth-overview'||act==='growth-portal'||act.startsWith('growth-offer:'))){overlay=act;render();return}
  if(act.startsWith('growth-buy:')){const id=act.slice(11),o=growthOffers(game).find(o=>o.id===id);if(!o?.affordable)return;overlay='';action(id);return}
+ if(game.phase==='upgrade'&&overlay==='growth-overview'){const o=growthOffers(game).find(o=>o.id===act);if(o){overlay='growth-offer:'+o.group;render();return}}
  if(act==='stick-mode:fixed'||act==='stick-mode:floating'){releaseStick();keys.clear();stickMode=writeStickMode(deviceStorage(),act.split(':')[1]);render();return}
  if(game.phase==='upgrade'&&['growth-view:kitchen','growth-view:tables'].includes(act)){growthCameraZ2d2=act.split(':')[1];render();return}
  if(act==='guide-ack'){game.onboarding.seen??=[];if(!game.onboarding.seen.includes(game.phase))game.onboarding.seen.push(game.phase);render();return}
