@@ -25,11 +25,11 @@ try{
   let page;const errors=[];
   const openState=async state=>{if(page)await page.close();page=await browser.newPage({viewport:{width,height},isMobile:true,hasTouch:true,locale:'zh-CN'});page.on('pageerror',e=>errors.push(e.message));await page.addInitScript(([k,s])=>localStorage.setItem(k,JSON.stringify(s)),[key,state]);await page.goto(url,{waitUntil:'networkidle'});};
   await openState(base('upgrade',width));
-  await page.locator('[data-act="buy-grill"]').click();
-  assert.ok(await page.locator('.v014b-grill-unlock').innerText().then(x=>x.includes('已购入')));
-  assert.ok(await page.locator('[data-act="upgrade-kitchen:GRILL"]').isVisible());
-  await page.locator('[data-act="upgrade-kitchen:GRILL"]').click();
-  assert.ok((await page.locator('.kitchen-upgrade-card').innerText()).includes('烤架 · 全店共享 Lv.2'));
+  await page.locator('[data-act="growth-offer:center"]').click();await page.locator('[data-act="growth-buy:buy-grill"]').click();
+  await page.locator('[data-act="growth-overview"]').click();assert.ok(await page.locator('.v014b-grill-unlock').innerText().then(x=>x.includes('已购入')));await page.keyboard.press('Escape');
+  await page.locator('[data-act="growth-offer:center"]').click();assert.ok(await page.locator('[data-act="growth-buy:upgrade-kitchen:GRILL"]').isVisible());
+  await page.locator('[data-act="growth-buy:upgrade-kitchen:GRILL"]').click();
+  await page.locator('[data-act="growth-overview"]').click();assert.ok((await page.locator('.kitchen-upgrade-card').innerText()).includes('烤架 · 全店共享 Lv.2'));await page.keyboard.press('Escape');
   await page.screenshot({path:`${out}/upgrade-${width}.png`});
   const purchased=await page.evaluate(k=>JSON.parse(localStorage.getItem(k)),key);
   assert.equal(purchased.kitchen.grillOwned,true);assert.equal(purchased.kitchen.mastery.GRILL,2);
