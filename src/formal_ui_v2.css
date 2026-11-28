@@ -133,3 +133,15 @@
 
 /* Recovered real resources in a dedicated chip; no second overlay. */
 .ui2-shell .ui2-hud-meta{font-size:11px;min-height:23px}.ui2-shell .ui2-hud-meta .z2a3-art{width:17px;height:17px}.ui2-shell .ui2-hud-side>.ui2-mode-label{display:block;font-size:10px;padding:3px 6px}.ui2-shell[data-ui2-mode=upgrade] .z2c11-scene-caption{top:calc(var(--ui2-hud-top) + 106px)!important}.ui2-shell:not([data-ui2-mode=research])>.v013j-guide{top:calc(var(--ui2-hud-top) + 90px)!important}
+
+/* F2.5: compact resource row, scoped to non-service restaurant phases. */
+#app .ui2-shell:is([data-ui2-mode=forecast],[data-ui2-mode=menu],[data-ui2-mode=prep],[data-ui2-mode=upgrade])>.ui2-hud{display:flex!important;align-items:center;gap:5px;left:8px!important;right:8px!important}
+.ui2-shell:is([data-ui2-mode=forecast],[data-ui2-mode=menu],[data-ui2-mode=prep],[data-ui2-mode=upgrade]) .ui2-hud-stack{display:flex;align-items:center;gap:4px;flex:1;min-width:0}
+.ui2-shell:is([data-ui2-mode=forecast],[data-ui2-mode=menu],[data-ui2-mode=prep],[data-ui2-mode=upgrade]) .ui2-hud-chip{flex:1 1 auto;min-width:0;min-height:32px;padding:3px 5px;justify-content:center;gap:3px;font-size:12px;line-height:1.2;overflow:hidden;text-overflow:ellipsis}
+.ui2-shell:is([data-ui2-mode=forecast],[data-ui2-mode=menu],[data-ui2-mode=prep],[data-ui2-mode=upgrade]) .ui2-hud-chip .z2a3-art{width:18px;height:18px}
+.ui2-shell:is([data-ui2-mode=forecast],[data-ui2-mode=menu],[data-ui2-mode=prep],[data-ui2-mode=upgrade]) .ui2-hud-side{display:flex;align-items:center;flex:none;gap:0}
+.ui2-shell:is([data-ui2-mode=forecast],[data-ui2-mode=menu],[data-ui2-mode=prep],[data-ui2-mode=upgrade]) .ui2-hud-side>.ui2-mode-label{position:absolute;width:1px;height:1px;padding:0;overflow:hidden;clip-path:inset(50%);white-space:nowrap}
+#app .ui2-shell:is([data-ui2-mode=forecast],[data-ui2-mode=menu],[data-ui2-mode=prep],[data-ui2-mode=upgrade]) .ui2-hud-side .hud-gear{width:44px!important;height:44px!important;min-height:44px!important;padding:4px}
+.ui2-shell[data-ui2-mode=upgrade] .z2c11-scene-caption{top:calc(var(--ui2-hud-top) + 52px)!important}
+#app .ui2-shell:is([data-ui2-mode=forecast],[data-ui2-mode=menu],[data-ui2-mode=prep])>.v013j-guide{top:calc(var(--ui2-hud-top) + 52px)!important}
+@media(max-width:350px){.ui2-shell:is([data-ui2-mode=forecast],[data-ui2-mode=menu],[data-ui2-mode=prep],[data-ui2-mode=upgrade]) .ui2-hud-chip{font-size:10px;padding-inline:3px;gap:2px}.ui2-shell:is([data-ui2-mode=forecast],[data-ui2-mode=menu],[data-ui2-mode=prep],[data-ui2-mode=upgrade]) .ui2-hud-chip .z2a3-art{width:15px;height:15px}}

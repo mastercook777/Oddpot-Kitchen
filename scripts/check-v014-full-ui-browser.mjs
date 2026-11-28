@@ -39,6 +39,11 @@ try{
     return {shellBottom:shell.bottom,stageBottom:stage.bottom,stageHeight:stage.height};
    });
    assert.ok(layout.shellBottom<=height+1&&layout.stageBottom<=height+1&&layout.stageHeight>120,`${phase} fits ${width}×${height}: ${JSON.stringify(layout)}`);
+   if(['forecast','menu','prep','upgrade'].includes(phase)){
+    const hud=await page.evaluate(()=>{const chips=[...document.querySelectorAll('.ui2-hud-chip')].map(e=>e.getBoundingClientRect()),gear=document.querySelector('.ui2-hud .hud-gear').getBoundingClientRect();return {chips:chips.map(r=>({x:r.x,y:r.y,right:r.right,bottom:r.bottom})),gear:{x:gear.x,y:gear.y,right:gear.right,bottom:gear.bottom,width:gear.width,height:gear.height}};});
+    assert.equal(hud.chips.length,3);assert.ok(hud.chips.every((r,i)=>Math.abs((r.y+r.bottom)/2-(hud.chips[0].y+hud.chips[0].bottom)/2)<2&&(i===0||r.x>=hud.chips[i-1].right-1)));assert.ok(hud.gear.x>=hud.chips[2].right-1&&hud.gear.right<=width&&hud.gear.width>=44&&hud.gear.height>=44&&Math.abs(hud.gear.y+hud.gear.height/2-(hud.chips[0].y+hud.chips[0].bottom)/2)<3,'compact HUD '+JSON.stringify(hud));
+   }
+   if(['forecast','menu'].includes(phase)){const hotspot=page.locator('.ui2-spot[data-act="'+(phase==='forecast'?'ui2-forecast':'ui2-menu')+'"]');assert.equal((await hotspot.getAttribute('data-ui2-anchor')).split(',')[0],'0.5');const b=await hotspot.boundingBox();assert.ok(Math.abs(b.x+b.width/2-width/2)<3);}
    if(width!==375&&['prep','report'].includes(phase))await page.screenshot({path:`${output}/${phase}-${width}.png`});
    if(phase==='forecast'){
     assert.ok(await page.locator('.z2c-hud').isVisible());assert.equal(await page.locator('.day-strip').count(),0);assert.ok(await page.locator('.z2c-hud [data-game-icon="coin"]').isVisible());
@@ -110,7 +115,7 @@ try{
     await page.screenshot({path:output+'/z2b-live-'+width+'.png'});
    }
    if(phase==='menu'){
-    await page.evaluate(()=>globalThis.__menuRoom=document.querySelector('#diner-canvas'));await page.locator('.ui2-room-dock [data-act="ui2-menu"]').click();
+    await page.evaluate(()=>globalThis.__menuRoom=document.querySelector('#diner-canvas'));await page.locator('.ui2-spot[data-act="ui2-menu"]').click();
     assert.equal(await page.locator('.menu-line').count(),3);
     assert.equal(await page.locator('.v014-menu-value').count(),3);
     assert.equal(await page.locator('.menu-line .z2b-dish-art').count(),3);

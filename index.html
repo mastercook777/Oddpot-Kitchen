@@ -7,7 +7,7 @@
 body:has(.ui2-shell) #oddpot-build-label{left:50%;right:auto;transform:translateX(-50%);max-width:calc(100% - 16px);overflow:hidden;text-overflow:ellipsis;font-size:9px}
 #oddpot-build-label{position:fixed;right:4px;top:calc(env(safe-area-inset-top,0px) + 2px);z-index:9990;background:#203b30d9;color:#f6e7c7;padding:2px 5px;border-radius:4px;font:10px/1.3 system-ui,sans-serif;pointer-events:none;white-space:nowrap}
 #oddpot-retry-3d{position:fixed;right:4px;top:calc(env(safe-area-inset-top,0px) + 19px);z-index:9990;border:1px solid #d4bf97;border-radius:4px;background:#203b30;color:#f6e7c7;font:11px system-ui;padding:3px 6px}#oddpot-retry-3d[hidden]{display:none!important}
-</style><link rel="stylesheet" href="./src/formal_ui_v2.css?v=ui2-f2"/></head><body><div id="app"></div>
+</style><link rel="stylesheet" href="./src/formal_ui_v2.css?v=f25"/></head><body><div id="app"></div>
 <div id="oddpot-build-label" aria-label="当前构建版本">v0.16-Z.2e-D2 · Loading</div>
 <div id="oddpot-boot" role="status" aria-live="polite"><strong>怪味食堂</strong><small>ODDPOT KITCHEN · v0.16-Z.2e-D2</small><div id="oddpot-boot-status">正在加载游戏资源…</div><button id="oddpot-boot-retry" type="button" hidden>重新加载</button></div>
 <script type="module">
@@ -47,7 +47,7 @@ async function boot(){
  try{
   if(requested3d)start3D();
   status.textContent='正在初始化游戏与读取存档…';
-  await withTimeout(import('./src/app.js?v=0.15.0-alpha.11-v016-ui2-f2r1'),20000);
+  await withTimeout(import('./src/app.js?v=0.15.0-alpha.11-v016-f25-cb3a1'),20000);
   if(!document.getElementById('app').childElementCount)throw new Error('游戏界面未初始化');
   globalThis.__oddpotBuild.boot='ready';
   refreshLabel();bootScreen.hidden=true;setInterval(refreshLabel,600);
