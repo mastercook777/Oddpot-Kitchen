@@ -1833,27 +1833,62 @@ export function stageCB3Migration(s){
 export function formalCBChapter(s){
  const b=s.cbBuild,c=b?.chapters?.[activeWorld(s)];return b?.schema===1&&b.status==='active'&&c?.active===true?c:null;
 }
-export function activateCB3(s){
- if(s.cbExperiment||!cb3SafeBoundary(s)||!cb3MigrationCurrent(s))return false;
- const c=s.cbBuild.chapters[activeWorld(s)];if(!c||c.needsReview)return false;
- const b=evaluateCBDeck(s.cbBuild.collection,c.deck,c.level,v=>chapterRecipeAvailable(s,v.recipeId)&&cookwareOwned(s,RECIPES[v.recipeId]));
- if(!b.valid||new Set(b.variants.map(v=>v.vessel)).size>ensureKitchen(s).slots.length)return false;
- c.crafts=compileCBDeck(b.variants);c.active=true;s.cbBuild.status='active';s.menu=b.variants.map(v=>v.recipeId);
- for(const v of b.variants)s.recipes[v.recipeId]=Math.max(s.recipes[v.recipeId]||0,c.crafts[v.recipeId].quality);
- return true;
+// Re-read inactive worlds at their safe boundary without overwriting active ones.
+function cb3ChapterDeck(s,collection,deck,level){
+ const eligible=v=>(!v.world||v.world===activeWorld(s))&&chapterRecipeAvailable(s,v.recipeId)&&cookwareOwned(s,RECIPES[v.recipeId])&&resolveCBFormula(v.ingredientIds,v.vessel,activeWorld(s))?.formulaId===v.formulaId;
+ const b=evaluateCBDeck(collection,deck,level,eligible),selected=b.variants.filter(Boolean),fits=new Set(selected.map(v=>v.vessel)).size<=ensureKitchen(s).slots.length;
+ if(!fits){b.valid=false;b.reasons.push('超出厨位种类');}
+ const partial=evaluateCBDeck(collection,deck.filter(id=>id!==null),level,eligible);
+ b.partialValid=deck.length===b.slots&&deck.some(id=>id===null)&&partial.reasons.every(reason=>reason.startsWith('需配置3至'))&&fits;
+ return b;
+}
+function writeCB3ChapterDeck(s,c,b,deck){
+ c.deck=[...deck];c.needsReview=!b.valid;c.crafts=compileCBDeck(b.variants.filter(Boolean));
+ s.menu=b.variants.map(v=>v?.recipeId||'');
+ for(const v of b.variants.filter(Boolean))s.recipes[v.recipeId]=Math.max(s.recipes[v.recipeId]||0,c.crafts[v.recipeId].quality);
+}
+export function activateCB3(s,allowIncomplete=false){
+ if(s.cbExperiment||!cb3SafeBoundary(s)||s.cbBuild?.schema!==1)return false;
+ const w=activeWorld(s),prepared=clone(s),draft=clone(s.cbBuild);
+ if(draft.status==='staged'){
+  if(!cb3MigrationCurrent(s))return false;
+ }else if(draft.status==='active'){
+  if(draft.chapters[w]?.active)return false;
+  delete prepared.cbBuild;ensureRecipeVariants(prepared);
+  const fresh=createCB3Staging(prepared,prepared,recipeCraftSnapshot),chapter=fresh?.chapters?.[w];if(!chapter)return false;
+  for(const v of fresh.collection.filter(v=>v.world===w)){
+   const i=draft.collection.findIndex(x=>x.variantId===v.variantId);
+   if(i<0)draft.collection.push(v);
+   else if(!draft.lockedCrafts.includes(v.variantId)&&!Object.entries(draft.chapters).some(([key,c])=>key!==w&&c.deck.includes(v.variantId)))draft.collection[i]=v;
+  }
+  for(const row of fresh.retired.filter(row=>recipeAtlasRegion(row.oldId)===w)){
+   if(!draft.retired.some(x=>x.oldId===row.oldId&&x.legacyVariantId===row.legacyVariantId))draft.retired.push(row);
+  }
+  draft.chapters[w]=chapter;
+ }else return false;
+ const c=draft.chapters[w];if(!c||(!allowIncomplete&&c.needsReview))return false;
+ let deck=[...c.deck],b=cb3ChapterDeck(prepared,draft.collection,deck,c.level);
+ if(!b.valid){
+  if(!allowIncomplete)return false;
+  const clean=Array(b.slots).fill(null);
+  for(let i=0;i<clean.length;i++){
+   if(!deck[i])continue;const candidate=[...clean];candidate[i]=deck[i];
+   const check=cb3ChapterDeck(prepared,draft.collection,candidate,c.level);
+   if(check.valid||check.partialValid)clean[i]=deck[i];
+  }
+  deck=clean;b=cb3ChapterDeck(prepared,draft.collection,deck,c.level);
+  if(!b.valid&&!b.partialValid)return false;
+ }
+ c.active=true;draft.status='active';s.cbBuild=draft;writeCB3ChapterDeck(s,c,b,deck);return true;
 }
 export function formalCBDeck(s,deck){
- const c=formalCBChapter(s);if(!c)return null;
- const b=evaluateCBDeck(s.cbBuild.collection,deck,c.level,v=>chapterRecipeAvailable(s,v.recipeId)&&cookwareOwned(s,RECIPES[v.recipeId]));
- if(new Set(b.variants.filter(Boolean).map(v=>v.vessel)).size>ensureKitchen(s).slots.length){b.valid=false;b.reasons.push('超出厨位种类');}
- return b;
+ const c=formalCBChapter(s);if(!c||!Array.isArray(deck))return null;
+ return cb3ChapterDeck(s,s.cbBuild.collection,deck,c.level);
 }
 export function setFormalCBDeck(s,deck){
  const c=formalCBChapter(s);if(!c||s.phase!=='menu'||s.premiumMenu||!Array.isArray(deck)||Object.values(s.prep||{}).some(n=>n>0))return false;
- const b=formalCBDeck(s,deck);if(!b?.valid)return false;
- c.deck=[...deck];c.crafts=compileCBDeck(b.variants);s.menu=b.variants.map(v=>v.recipeId);
- for(const v of b.variants)s.recipes[v.recipeId]=Math.max(s.recipes[v.recipeId]||0,c.crafts[v.recipeId].quality);
- return true;
+ const b=formalCBDeck(s,deck);if(!b?.valid&&!(c.needsReview&&b?.partialValid))return false;
+ writeCB3ChapterDeck(s,c,b,deck);return true;
 }
 export function confirmFormalCBCraft(s){
  if(!formalCBChapter(s)||s.phase!=='research'||s.cook||!s.researchReceipt||!s.lastCook?.cbCandidate)return false;
