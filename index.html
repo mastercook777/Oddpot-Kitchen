@@ -47,7 +47,7 @@ async function boot(){
  try{
   if(requested3d)start3D();
   status.textContent='正在初始化游戏与读取存档…';
-  await withTimeout(import('./src/app.js?v=0.15.0-alpha.11-v016-cb3a2b-r1'),20000);
+  await withTimeout(import('./src/app.js?v=0.15.0-alpha.11-v016-cb3a2b-r2'),20000);
   if(!document.getElementById('app').childElementCount)throw new Error('游戏界面未初始化');
   globalThis.__oddpotBuild.boot='ready';
   refreshLabel();bootScreen.hidden=true;setInterval(refreshLabel,600);

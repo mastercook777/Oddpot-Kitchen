@@ -5785,6 +5785,7 @@ function countIds(ids){const o={};for(const id of ids)o[id]=(o[id]||0)+1;return 
 function consume(s,ids,txn,forPremium=false){if(!canUse(s,ids,forPremium))return false;return transact(s,txn,'consume',Object.fromEntries(Object.entries(countIds(ids)).map(([id,n])=>[id,-n]))) }
 function nextPhase(s,phase){s.phase=phase;s.step++;return s}
 function availableBento(s){
+ if(formalCBChapter(s))return s.cbBuild.collection.filter(v=>RECIPE_PROFILES[v.recipeId]?.bentoSpecific&&chapterRecipeAvailable(s,v.recipeId)).map(v=>{const craft=compileCBDeck([v])[v.recipeId],profile=RECIPE_PROFILES[v.recipeId].bentoSpecific;return {recipeId:v.recipeId,variantId:v.variantId,name:RECIPES[v.recipeId].name,craft,description:profile.base,enhanced:craft.style===profile.preferredStyle,canPrepare:canUse(s,craft.ingredientIds)};});
  ensureRecipeVariants(s);
  return Object.keys(s.recipes||{}).filter(id=>RECIPE_PROFILES[id]?.bentoSpecific&&chapterRecipeAvailable(s,id)).map(id=>{
   const craft=recipeCraftSnapshot(s,id),profile=RECIPE_PROFILES[id].bentoSpecific;
@@ -5796,11 +5797,11 @@ function availableBento(s){
 }
 // Bento is one purchased meal per day and is locked before departure.
 // Its buff is recipe-specific; a shared cooking word never grants global power.
-function prepareBento(s,recipeId){
+function prepareBento(s,recipeId,variantId=null){
  if(!['forecast','field'].includes(s.phase)||s.field||s.bento?.day===kitchenDayKey(s))return false;
  const p=RECIPE_PROFILES[recipeId]?.bentoSpecific;
  if(!s.recipes?.[recipeId]||!p||!chapterRecipeAvailable(s,recipeId))return false;
- const craft=recipeCraftSnapshot(s,recipeId);
+ const craft=formalCBChapter(s)?availableBento(s).find(x=>x.recipeId===recipeId&&x.variantId===variantId)?.craft:recipeCraftSnapshot(s,recipeId);
  if(!craft||!canUse(s,craft.ingredientIds))return false;
  const txn='bento-'+kitchenDayKey(s);
  if(!consume(s,craft.ingredientIds,txn))return false;
@@ -6395,7 +6396,8 @@ function chooseServiceEvent(s,choice){
  record(s,{type:'management_choice',wave,choice,cost});return true;
 }
 function swapBreakMenu(s,slot,id){
- if(s.cbExperiment||formalCBChapter(s))return false;
+ if(s.cbExperiment)return false;
+ if(formalCBChapter(s))return swapFormalCBWave(s,slot,id);
  const v=s.service;
  if(s.phase!=='service'||!v?.breakAt||v.breakUsed||!Number.isInteger(slot)||slot<0||slot>2||!s.recipes[id]||!chapterRecipeAvailable(s,id)||!v.kitchenSnapshot.some(k=>k.type===recipeCookware(RECIPES[id])))return false;
  const before=s.menu[slot];if(before===id)return false;s.menu[slot]=id;v.breakUsed=true;v.decisionFlash=`下一波新上架：${RECIPES[id].name}`;v.decisionAt=v.time;
@@ -6770,7 +6772,7 @@ const premiumReport={recipeId:v.premiumOffered?.recipeId||null,limit:v.premiumOf
 const regularGuests=v.events.filter(e=>e.type==='regular_visit').map(e=>({guestId:e.guestId,name:s.guestRelationships?.[e.guestId]?.name||'熟客',happyMeals:e.happyMeals,sat:e.sat}));
 const salvageStats=v.salvageStats||{recovered:0,reused:0};
  const salvageExpired=Math.max(0,(salvageStats.recovered||0)-(salvageStats.reused||0));
-s.report={salvage:{recovered:salvageStats.recovered||0,reused:salvageStats.reused||0,expired:salvageExpired},ferryEarned,rating,secondRating,premium:premiumReport,regularGuests,day:s.day,absoluteDay:totalBusinessDay(s),tableCount:v.tableCount,unseated:v.orders.filter(o=>o.tableId==null).length,queuePeak:v.queuePeak||0,queue:queueServiceReport(v),goal,scenario:v.scenario||'常规晚餐',totalOrders:v.orders.length,revenue,cost,profit:revenue-cost-hospitalityCost-eventExpense-finance.wage-(v.marketing?.cost||0),finance:{...finance,marketingCost:v.marketing?.cost||0,campaignId:v.marketing?.id||'none',promotionGuests:v.marketing?.guests||0,marketingArrived:v.orders.filter(o=>o.promotionGuest&&o.arrival<=v.time).length,marketingSeated:v.orders.filter(o=>o.promotionGuest&&o.doorAt!==undefined).length,marketingServed:served.filter(o=>o.promotionGuest).length,marketingRevenue:served.filter(o=>o.promotionGuest).reduce((n,o)=>n+(o.craft?.price??RECIPES[o.recipeId]?.price??0),0),cashChange:s.coins-ensureManagement(s).openingCoins},growth,hospitalityCost,eventExpense,choices:v.events.filter(e=>e.type==='management_choice'||e.type==='menu_swap'),served:served.length,left:left.length,rejected:rej.length,sat:Math.round(served.reduce((a,o)=>a+o.sat,0)/Math.max(1,served.length)),byDish,byCraft,orderedByDish,guestReviews:v.events.filter(e=>e.type==='reviewed').map(e=>({recipeId:e.recipeId,sat:e.sat,text:e.text,reason:e.reason})),congestion:v.congestion,kitchen:{slots:clone(v.kitchenSnapshot||ensureKitchen(s).slots),stats:clone(v.stationStats||{})},staff:{crew:clone(v.crew||{}),stats:clone(v.staffStats||{}),foodCost:staffFoodCost},synergy:synergyFor(s.menu,s.cbExperiment?.crafts),suggested,challenge,won};s.result=won?'win':challenge?'loss':null;
+s.report={salvage:{recovered:salvageStats.recovered||0,reused:salvageStats.reused||0,expired:salvageExpired},ferryEarned,rating,secondRating,premium:premiumReport,regularGuests,day:s.day,absoluteDay:totalBusinessDay(s),tableCount:v.tableCount,unseated:v.orders.filter(o=>o.tableId==null).length,queuePeak:v.queuePeak||0,queue:queueServiceReport(v),goal,scenario:v.scenario||'常规晚餐',totalOrders:v.orders.length,revenue,cost,profit:revenue-cost-hospitalityCost-eventExpense-finance.wage-(v.marketing?.cost||0),finance:{...finance,marketingCost:v.marketing?.cost||0,campaignId:v.marketing?.id||'none',promotionGuests:v.marketing?.guests||0,marketingArrived:v.orders.filter(o=>o.promotionGuest&&o.arrival<=v.time).length,marketingSeated:v.orders.filter(o=>o.promotionGuest&&o.doorAt!==undefined).length,marketingServed:served.filter(o=>o.promotionGuest).length,marketingRevenue:served.filter(o=>o.promotionGuest).reduce((n,o)=>n+(o.craft?.price??RECIPES[o.recipeId]?.price??0),0),cashChange:s.coins-ensureManagement(s).openingCoins},growth,hospitalityCost,eventExpense,choices:v.events.filter(e=>e.type==='management_choice'||e.type==='menu_swap'),served:served.length,left:left.length,rejected:rej.length,sat:Math.round(served.reduce((a,o)=>a+o.sat,0)/Math.max(1,served.length)),byDish,byCraft,orderedByDish,guestReviews:v.events.filter(e=>e.type==='reviewed').map(e=>({recipeId:e.recipeId,sat:e.sat,text:e.text,reason:e.reason})),congestion:v.congestion,kitchen:{slots:clone(v.kitchenSnapshot||ensureKitchen(s).slots),stats:clone(v.stationStats||{})},staff:{crew:clone(v.crew||{}),stats:clone(v.staffStats||{}),foodCost:staffFoodCost},synergy:synergyFor(s.menu,s.cbExperiment?.crafts||formalCBChapter(s)?.crafts),...(formalCBChapter(s)?{cbAffixEvents:clone(v.events.filter(e=>e.type==='cb_affix'))}:{}),suggested,challenge,won};s.result=won?'win':challenge?'loss':null;
  s.report.thirdRating=thirdRating;
  s.history??=[];s.history.push({day:totalBusinessDay(s),revenue:s.report.revenue,profit:s.report.profit,
    served:s.report.served,arrivals:s.report.totalOrders,unseated:s.report.unseated,
@@ -7035,12 +7037,37 @@ function confirmFormalCBCraft(s){
  s.lastCook.cbCollected=true;return true;
 }
 function removeFormalCBCraft(s,id){
- const b=s.cbBuild;if(!formalCBChapter(s)||s.phase!=='research'||s.cook||b.lockedCrafts.includes(id)||Object.values(b.chapters).some(c=>c.deck.includes(id)))return false;
+ const b=s.cbBuild;if(!formalCBChapter(s)||s.phase!=='research'||s.cook||b.lockedCrafts.includes(id)||formalCBReference(s,id))return false;
  const i=b.collection.findIndex(v=>v.variantId===id);if(i<0)return false;b.collection.splice(i,1);return true;
 }
 function toggleFormalCBLock(s,id){
  const b=s.cbBuild;if(!formalCBChapter(s)||s.phase!=='research'||s.cook||!b.collection.some(v=>v.variantId===id))return false;
  const i=b.lockedCrafts.indexOf(id);if(i<0)b.lockedCrafts.push(id);else b.lockedCrafts.splice(i,1);return true;
+}
+
+function formalCBWaveOptions(s,slot){
+ const c=formalCBChapter(s),v=s.service;if(!c||s.phase!=='service'||!v?.breakAt||v.breakUsed||!Number.isInteger(slot)||slot<0||slot>=c.deck.length)return [];
+ return s.cbBuild.collection.filter(craft=>{
+  if(craft.recipeId===s.menu[slot]||!v.kitchenSnapshot.some(k=>k.type===craft.vessel))return false;
+  const deck=[...c.deck];deck[slot]=craft.variantId;
+  const b=formalCBDeck(s,deck);
+  return b.valid&&b.variants.every(x=>v.kitchenSnapshot.some(k=>k.type===x.vessel));
+ });
+}
+function swapFormalCBWave(s,slot,variantId){
+ const choice=formalCBWaveOptions(s,slot).find(v=>v.variantId===variantId);if(!choice)return false;
+ const c=formalCBChapter(s),v=s.service,before=s.menu[slot],deck=[...c.deck];deck[slot]=variantId;
+ const b=formalCBDeck(s,deck);if(!b.valid)return false;
+ c.deck=deck;c.crafts=compileCBDeck(b.variants);s.menu=b.variants.map(x=>x.recipeId);
+ v.breakUsed=true;v.decisionFlash='下一波新上架：'+RECIPES[choice.recipeId].name;v.decisionAt=v.time;
+ record(s,{type:'menu_swap',wave:v.breakAt,slot,before,after:choice.recipeId,variantId});return true;
+}
+function formalCBReference(s,id){
+ if(Object.values(s.cbBuild?.chapters||{}).some(c=>c.deck.includes(id)))return true;
+ for(const chapter of [s,...Object.entries(s.worlds||{}).filter(([w])=>w!==activeWorld(s)).map(([,c])=>c)]){
+  if(chapter.bento?.variantId===id||chapter.premiumMenu?.variantId===id||chapter.service?.orders?.some(o=>o.craft?.variantId===id)||Object.values(chapter.prepVariants||{}).some(list=>list?.some(x=>x.variantId===id)))return true;
+ }
+ return false;
 }
 // G: readable mini-boss patterns and pixel bodies. Damage/drops stay owned
 // by field_v04. Callbacks use its real collision and damage protections.
@@ -11787,7 +11814,7 @@ function overlayMarkup(){if(!overlay)return '';
   const possibilities=availableBento(game);
   body=`<h2>🍱 今日探索便当</h2><p class="sheet-lead">出发前制作一份便当，扣除真实食材。菜谱决定能力、合适工艺能强化；当天研发的新菜明天才能带出门。</p>
   ${prepared?`<div class="detail-row">✅ 已准备 ${esc(RECIPES[game.bento.recipeId]?.name||'便当')} · ${esc(game.bento.styleLabel)}</div>`:
-  `<div class="book-list">${possibilities.map(item=>`<button class="book-item" data-bento="${item.recipeId}" ${item.canPrepare?'':'disabled'}>
+  `<div class="book-list">${possibilities.map(item=>`<button class="book-item" data-bento="${item.recipeId}" ${item.variantId?`data-bento-variant="${esc(item.variantId)}"`:""} ${item.canPrepare?'':'disabled'}>
      <span class="book-icon">${RECIPES[item.recipeId].emoji}</span><div><strong>${esc(item.name)} · ${esc(item.craft?.styleLabel||'标准工艺')}</strong>
      <small>${esc(item.description)}${item.enhanced?' · ✨ 工艺契合':''} · 食材 ${item.craft?.ingredientIds.map(x=>ingredientIconHtml(x,20)).join('')||''}</small></div>
      <span>${item.canPrepare?'准备':'缺料'}</span></button>`).join('')||'<p class="sheet-lead">尚未掌握特色便当菜谱。可以先探索研发，次日再带上。</p>'}</div>`}`;
@@ -12019,7 +12046,7 @@ function cb3AtlasPanel(){
  const tabs='<div class="v102-book-tabs">'+['WOK','POT','GRILL','STEAM'].map(v=>'<button data-recipe-type="'+v+'" class="'+(v===recipeType?'active':'')+'">'+cookName(v)+'</button>').join('')+'</div>';
  return tabs+'<p>已发现 '+cb.discoveredRecipes.length+' / 55 道 · '+cb.discoveredFormulas.length+' / 177 种配方</p>'+Object.entries(groups).map(([id,forms])=>{
   const known=cb.discoveredRecipes.includes(id)||cb.collection.some(v=>v.recipeId===id),variants=cb.collection.filter(v=>v.recipeId===id);
-  return '<details class="cb3-atlas-entry"><summary>'+esc(known?RECIPES[id].name:'未发现料理')+' · '+variants.length+' 工艺</summary>'+forms.map((f,i)=>{const seen=cb.discoveredFormulas.includes(f.formulaId),ready=game.phase==='research'&&!game.cook&&!game.researchReceipt&&cookwareOwned(game,RECIPES[id])&&canUse(game,f.ingredientIds);return '<div class="cb3-formula">'+esc(seen?f.ingredientIds.map(onlyName).join(' + '):'线索 '+(i+1)+' · '+onlyName(f.ingredientIds[0])+' + ?')+b('cb3-formula:'+encodeURIComponent(f.formulaId),'载入配方','secondary',!ready||!seen)+'</div>';}).join('')+variants.map(v=>cb3CraftDetails(v)+(game.phase==='research'&&!game.cook?'<div class="action-row">'+b('cb3-lock:'+encodeURIComponent(v.variantId),cb.lockedCrafts.includes(v.variantId)?'解锁':'锁定','secondary')+b('cb3-remove:'+encodeURIComponent(v.variantId),'移除','secondary',cb.lockedCrafts.includes(v.variantId)||Object.values(cb.chapters).some(c=>c.deck.includes(v.variantId)))+'</div>':'')).join('')+'</details>';
+  return '<details class="cb3-atlas-entry"><summary>'+esc(known?RECIPES[id].name:'未发现料理')+' · '+variants.length+' 工艺</summary>'+forms.map((f,i)=>{const seen=cb.discoveredFormulas.includes(f.formulaId),ready=game.phase==='research'&&!game.cook&&!game.researchReceipt&&cookwareOwned(game,RECIPES[id])&&canUse(game,f.ingredientIds);return '<div class="cb3-formula">'+esc(seen?f.ingredientIds.map(onlyName).join(' + '):'线索 '+(i+1)+' · '+onlyName(f.ingredientIds[0])+' + ?')+b('cb3-formula:'+encodeURIComponent(f.formulaId),'载入配方','secondary',!ready||!seen)+'</div>';}).join('')+variants.map(v=>cb3CraftDetails(v)+(game.phase==='research'&&!game.cook?'<div class="action-row">'+b('cb3-lock:'+encodeURIComponent(v.variantId),cb.lockedCrafts.includes(v.variantId)?'解锁':'锁定','secondary')+b('cb3-remove:'+encodeURIComponent(v.variantId),'移除','secondary',cb.lockedCrafts.includes(v.variantId)||formalCBReference(game,v.variantId))+'</div>':'')).join('')+'</details>';
  }).join('');
 }
 function cb3MenuPanel(){
@@ -12172,7 +12199,7 @@ function serviceLegacy(){const v=game.service;if(!v)return ['<div class="empty">
  situation.lastProblem?`缺料退单：${(situation.lastProblem.missing||[]).map(id=>ING[id]?.name||id).join('、')}`:'';
  const status=`第 ${Math.min(v.wave+1,3)}/3 波 · 营业 ${v.time}s · ${served}/${v.orders.length} 已送达`;
  const operationalHud=`<div class="service-operational-hud"><div class="service-demand-line"><b>${esc(v.scenario||'食堂营业')}</b><span>到店 ${situation.arrived}/${v.orders.length} · 待做 ${situation.queued} · 烹饪 ${situation.cooking}</span></div><div class="service-goal-progress ${goal?.success?'complete':''}"><span>🎯 ${esc(goal?.label||'经营目标')}</span><strong>${reached}/${goal?.target||1}${goal?.success?' ✓':''}</strong><i style="--fill:${Math.min(100,Math.round(100*reached/Math.max(1,goal?.target||1)))}%"></i></div>${shortageText?`<div class="service-stock-warning" role="status">⚠ ${esc(shortageText)}</div>`:v.goalCelebrated&&v.events.findLast(e=>e.type==='goal_reached'&&v.time-e.t<=4)?`<div class="service-goal-celebration">★ 今日任务完成！口碑奖励将在日报结算</div>`:''}</div>`;
- return [`<div class="scene-bg diner-bg service-scene">${restaurantView(true)}<div class="service-mini-hud"><strong>第 ${Math.min(v.wave+1,3)}/3 波</strong><span>${v.time}s</span><span>上菜 ${served}/${v.orders.length}</span>${v.paused?'<b class="paused-chip">暂停</b>':''}</div>${operationalHud}${v.breakAt&&currentServiceEvent(game)&&servicePanel==='event'?`<div class="management-card"><strong>${currentServiceEvent(game).title}</strong><p>${currentServiceEvent(game).description}</p>${currentServiceEvent(game).choices.map(ch=>`<button data-choice="${ch.id}"><b>${ch.label}</b><small>${ch.detail}</small></button>`).join('')}</div>`:''}${v.breakAt&&servicePanel==='swap'?`<div class="management-card"><strong>换一道下一波招牌菜</strong><p>下一波到店客人才会按照新菜单点单，当前桌位不受影响。</p>${game.menu.map((id,i)=>`<div class="break-choice-line">${i+1}·${RECIPES[id].name} <select data-swap-slot="${i}">${Object.keys(game.recipes).filter(r=>chapterRecipeAvailable(game,r)&&v.kitchenSnapshot.some(k=>k.type===recipeCookware(RECIPES[r]))).map(r=>`<option value="${r}" ${r===id?'selected':''}>${RECIPES[r].name}</option>`).join('')}</select><button data-apply-swap="${i}">替换</button></div>`).join('')}</div>`:''}${v.breakAt&&servicePanel==='prep'?`<div class="management-card"><strong>补一份应急餐点</strong><p>现在扣除食材；下一波同款订单可直接上桌，卖不完会计入报损。</p>${game.menu.map(id=>`<button data-breakprep="${id}" ${!canUse(game,recipeCraftSnapshot(game,id).ingredientIds)?'disabled':''}>${RECIPES[id].name} · 预制 1 份</button>`).join('')}</div>`:''}</div>`,
+ return [`<div class="scene-bg diner-bg service-scene">${restaurantView(true)}<div class="service-mini-hud"><strong>第 ${Math.min(v.wave+1,3)}/3 波</strong><span>${v.time}s</span><span>上菜 ${served}/${v.orders.length}</span>${v.paused?'<b class="paused-chip">暂停</b>':''}</div>${operationalHud}${v.breakAt&&currentServiceEvent(game)&&servicePanel==='event'?`<div class="management-card"><strong>${currentServiceEvent(game).title}</strong><p>${currentServiceEvent(game).description}</p>${currentServiceEvent(game).choices.map(ch=>`<button data-choice="${ch.id}"><b>${ch.label}</b><small>${ch.detail}</small></button>`).join('')}</div>`:''}${v.breakAt&&servicePanel==='swap'?`<div class="management-card"><strong>换一道下一波招牌菜</strong><p>下一波到店客人才会按照新菜单点单，当前桌位不受影响。</p>${game.menu.map((id,i)=>`<div class="break-choice-line">${i+1}·${RECIPES[id].name} <select data-swap-slot="${i}">${formalCBChapter(game)?'<option value="">选择合法工艺</option>'+formalCBWaveOptions(game,i).map(c=>'<option value="'+esc(c.variantId)+'">'+esc(RECIPES[c.recipeId].name)+' · '+TIERS[c.rarity]+' · Cost '+c.rarity+'</option>').join(''):Object.keys(game.recipes).filter(r=>chapterRecipeAvailable(game,r)&&v.kitchenSnapshot.some(k=>k.type===recipeCookware(RECIPES[r]))).map(r=>`<option value="${r}" ${r===id?'selected':''}>${RECIPES[r].name}</option>`).join('')}</select><button data-apply-swap="${i}">替换</button></div>`).join('')}</div>`:''}${v.breakAt&&servicePanel==='prep'?`<div class="management-card"><strong>补一份应急餐点</strong><p>现在扣除食材；下一波同款订单可直接上桌，卖不完会计入报损。</p>${game.menu.map(id=>`<button data-breakprep="${id}" ${!canUse(game,recipeCraftSnapshot(game,id).ingredientIds)?'disabled':''}>${RECIPES[id].name} · 预制 1 份</button>`).join('')}</div>`:''}</div>`,
  v.done?`<div class="dock-head"><span>✅ 今晚营业结束</span></div><div class="action-row">${b('close','📊 查看经营反馈','primary wide')}</div>`:
  v.breakAt?`<div class="dock-head"><span>第 ${v.breakAt} 波结束 · 本波只能选一项应急决策</span></div><div class="break-toolbar">${b('show-management','经营事件','primary',v.breakUsed)}${b('show-swap','临时换菜','secondary',v.breakUsed)}${b('show-prep','备菜','secondary',v.breakUsed)}${b('resume-break','继续迎客 ▶','primary')}</div>`:
  `<div class="dock-head"><span>${selected&&['queued','cooking'].includes(selected.status)?`${CUSTOMERS[selected.segment].name} · ${RECIPES[selected.recipeId]?.name||'挑选菜品'} · 剩余 ${Math.max(0,selected.patience-(v.time-selected.arrival))}s` :v.walkable?'靠近厨位自动烹饪 · 出餐台自动取菜':'点餐桌查看订单 · 厨房自动制作'}</span><span>${v.walkable?'⚡ '+(v.hero?.energy??6)+' / '+(v.hero?.maxEnergy??6):'招待 '+(v.treatUsed?'已用':'1次')}</span></div><div class="action-row">${selected&&selected.status==='queued'?b(`priority:${selected.id}`,'↑ 优先出餐','secondary'):b('clear-table','选择客人','secondary')}${selected&&!v.walkable?b(`soothe:${selected.id}`,'💛 招待客人','secondary',v.treatUsed||game.coins<5):''}${b('toggle-service',v.paused?'▶ 继续营业':'Ⅱ 暂停','primary wide')}</div>`]
@@ -12347,6 +12374,7 @@ function render(){
   const more=document.createElement('details');more.className='v014-report-more';
   const summary=document.createElement('summary');summary.textContent='翻看完整经营记录';more.append(summary);
   for(const name of detailClasses){for(const block of scene.querySelectorAll('.'+name))more.append(block);}
+  if(game.report.cbAffixEvents){const section=document.createElement('section');section.className='v063-craft-report';const head=document.createElement('strong');head.textContent='料理词缀 · 实际触发记录';section.append(head);const groups={};for(const ev of game.report.cbAffixEvents){const key=ev.recipeId+'|'+ev.affix;const row=groups[key]??={recipeId:ev.recipeId,affix:ev.affix,count:0};row.count++;}for(const row of Object.values(groups)){const p=document.createElement('p');p.textContent=(RECIPES[row.recipeId]?.name||row.recipeId)+' · '+(AFFIX[row.affix]?.name||row.affix)+'：'+row.count+' 次';section.append(p);}if(!Object.keys(groups).length){const p=document.createElement('p');p.textContent='本晚没有记录到词缀触发。';section.append(p);}more.append(section);}
   more.open=prevReportOpen;scene.append(more);
   const feedback=document.createElement('section');feedback.className='z2c10-feedback';feedback.setAttribute('aria-label','今晚成果与明日线索');
   for(const name of ['daily-goal-result','guest-verdict','recipe-lead']){const block=scene.querySelector('.'+name);if(block)feedback.append(block);}
@@ -12477,7 +12505,7 @@ app.addEventListener('click',e=>{
  const ch=e.target.closest('[data-choice]');if(ch){if(chooseServiceEvent(game,ch.dataset.choice)){if(game.service?.walkable)resumeBreak(game);servicePanel='';releaseStick();note(game.service.decisionFlash+'，已继续营业。')}else note('目前条件不足或已经处理过本波事件。');return}
  const bp=e.target.closest('[data-breakprep]');if(bp){servicePanel='';note(breakPrep(game,bp.dataset.breakprep)?game.service.decisionFlash+'，下波同款订单将优先出餐。':'原料不足或本波应急机会已用。');return}
  const swap=e.target.closest('[data-apply-swap]');if(swap){const slot=Number(swap.dataset.applySwap),id=app.querySelector(`[data-swap-slot="${slot}"]`)?.value;const ok=swapBreakMenu(game,slot,id);servicePanel='';note(ok?game.service.decisionFlash+'，只影响尚未入店的顾客。':'无法换菜：只能一次，或与现有菜相同。');return}
- const bento=e.target.closest('[data-bento]');if(bento){note(prepareBento(game,bento.dataset.bento)?'🍱 便当已制作，出门探索时自动生效。':'无法制作：材料不足或今天已经带了便当。');return}
+ const bento=e.target.closest('[data-bento]');if(bento){note(prepareBento(game,bento.dataset.bento,bento.dataset.bentoVariant||null)?'🍱 便当已制作，出门探索时自动生效。':'无法制作：材料不足或今天已经带了便当。');return}
  const feed=e.target.closest('[data-feed]');if(feed){const [role,id]=feed.dataset.feed.split(':');if(feedCrew(game,role,id)){note(`${crewRoleName(game,role)}吃下${RECIPES[id].name}，今晚能力已提升。`);}else note('已经吃过员工餐，或者材料不足。');return}
  const assign=e.target.closest('[data-assign]');if(assign){const [role,index]=assign.dataset.assign.includes(':')?assign.dataset.assign.split(':'):['helper',assign.dataset.assign];note(assignCrew(game,Number(index),role)?crewRoleName(game,role)+'的优先站位已设置。营业空闲时仍会动态支援。':'站位未变更或已有员工选择，请先安排空闲位置。');return}
  const a=e.target.closest('[data-act]');if(a){if(!a.disabled)action(a.dataset.act);return}
