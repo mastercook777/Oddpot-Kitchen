@@ -896,7 +896,7 @@ app.addEventListener('pointerup',e=>{if(!drag)return;const from=drag;drag=null;i
 document.addEventListener('keydown',e=>{if(keyboardMovementAllowed(game,overlay)){const map={ArrowUp:[0,-1],ArrowDown:[0,1],ArrowLeft:[-1,0],ArrowRight:[1,0],w:[0,-1],s:[0,1],a:[-1,0],d:[1,0]};if(map[e.key]){e.preventDefault();keys.add(e.key)}}});
 setInterval(()=>{if(document.hidden||overlay)return;if(game.phase==='service'&&game.service&&!game.service.walkable&&!game.service.paused&&!game.service.done&&!game.service.breakAt){tick(game,1);serviceTickAt=performance.now();if(game.service.done)message='今晚的顾客已经全部处理完毕，可以查看日报。';else if(game.service.breakAt){servicePanel='event';message='突发经营事件！请选择应对方案，或改菜单、备菜。';}render()}},750);
 document.addEventListener('keyup',e=>keys.delete(e.key));
-document.addEventListener('visibilitychange',()=>{if(document.hidden){releaseStick();livePanPointer=null;keys.clear();if(walking){clearInterval(walking);walking=null}if(game.phase==='service'&&game.service&&!game.service.paused){game.service.paused=true;game.service.clockAccumulator=0;releaseStick();message='已自动暂停营业，返回后继续。'}save(game)}else if(game.phase==='service'&&game.service?.walkable){render()}});
+document.addEventListener('visibilitychange',()=>{lastFrame=0;if(document.hidden){releaseStick();livePanPointer=null;keys.clear();if(walking){clearInterval(walking);walking=null}if(game.phase==='service'&&game.service&&!game.service.paused){game.service.paused=true;game.service.clockAccumulator=0;releaseStick();message='已自动暂停营业，返回后继续。'}save(game)}else if(game.phase==='service'&&game.service?.walkable){render()}});
 render();
 
 // The simulation and visual rendering are decoupled: canvas runs each frame,
@@ -917,7 +917,7 @@ function frame(now){
  requestAnimationFrame(frame);
  safeSceneFrame('loop',()=>advanceFrame(now));
 }
-function advanceFrame(now){const delta=Math.min(.045,(now-(lastFrame||now))/1000);lastFrame=now;gameClock+=delta;
+function advanceFrame(now){const elapsed=Math.max(0,(now-(lastFrame||now))/1000),delta=Math.min(.045,elapsed);lastFrame=now;gameClock+=delta;
  if(game.phase==='field'&&game.field?.action&&game.field.segmentStatus!=='choice'&&!document.hidden&&!overlay){
   const [dx,dy]=analogAxis(),evt=stepActionField(game,dx,dy,delta);
   if(evt==='harvest'&&game.field?.nodes?.some(n=>n.key==='target'&&n.claimed)){releaseStick();render();}
@@ -962,7 +962,9 @@ function advanceFrame(now){const delta=Math.min(.045,(now-(lastFrame||now))/1000
    }
  }
  if(['v063-live','v014c-grill'].includes(game.cook?.mode)&&!document.hidden&&!overlay){
-  const auto=stepLiveResearch(game,delta);
+  // Research uses bounded wall-clock substeps, even when the 3D renderer is slow.
+  let auto=null,remaining=game.cook.cbTiming?Math.min(.25,elapsed):delta;
+  while(remaining>1e-6&&game.cook&&!auto){const step=Math.min(.1,remaining);auto=stepLiveResearch(game,step);remaining-=step;}
   if(auto){message=auto.sellable?'自动出锅：'+auto.recipeName+' · '+auto.styleLabel:'自动出锅失败：'+auto.reason;render();}
   else if(game.cook?.mode==='v014c-grill'){
    const p=grillCookPreview(game),clock=app.querySelector('#v014c-clock');researchPreviewCache=p;if(clock)clock.textContent=p.lane?p.elapsed.toFixed(1)+'s':'未入炉';

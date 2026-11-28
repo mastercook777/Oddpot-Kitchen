@@ -1,5 +1,6 @@
 import test from 'node:test';import assert from 'node:assert/strict';import {readFileSync} from 'node:fs';
 import {ING,RECIPES} from '../src/data.js';
+import {formalCBChapter} from '../src/engine.js';
 import {z2a2Icon} from '../src/ui_icons_z2a2.js';
 // Test markup bindings without requiring browser-only raster Canvas generation.
 const ingredientIconHtml=id=>Object.hasOwn(ING,id)?'<img data-ingredient-icon="'+id+'">':'';
@@ -8,7 +9,7 @@ function fixture(selected,method,kitchen){
  const game={inventory:{chicken:5,chili:2,mushroom:3},phase:'research',kitchen};
  const onlyName=id=>ING[id]?.name||id,cookName=t=>({WOK:'炒锅',POT:'炖锅',STEAM:'云汽蒸笼',GRILL:'烤架'})[t],esc=x=>String(x??'');
  const start=app.indexOf('const z2bPhase='),end=app.indexOf('function z2a2Health',start);
- return new Function('game','selectedIngredients','selectedMethod','z2a2Icon','ingredientIconHtml','onlyName','cookName','esc','ensureKitchen',app.slice(start,end)+';return {z2bPhase,z2bCookIcon,z2bMethod,z2bDishArt,z2bVesselButtons,z2bSelectedTray}')(game,selected,method,z2a2Icon,ingredientIconHtml,onlyName,cookName,esc,s=>s.kitchen);
+ return new Function('game','selectedIngredients','selectedMethod','z2a2Icon','ingredientIconHtml','onlyName','cookName','esc','ensureKitchen','formalCBChapter',app.slice(start,end)+';return {z2bPhase,z2bCookIcon,z2bMethod,z2bDishArt,z2bVesselButtons,z2bSelectedTray}')(game,selected,method,z2a2Icon,ingredientIconHtml,onlyName,cookName,esc,s=>s.kitchen,formalCBChapter);
 }
 test('Z2b workbench draws exactly three actual selection slots and owned cookware, without mutating inputs',()=>{
  for(const ids of [[],['chicken'],['chicken','chili'],['chicken','chili','mushroom']])for(const method of ['stir','stew','steam','grill']){

@@ -154,9 +154,9 @@ for(const [width,height] of [[320,568],[375,667],[390,844]]){
   await art.waitFor({state:'visible',timeout:20000});assert.equal(await art.getAttribute('data-cookware'),v);
   if(v==='GRILL'){for(const id of ids)await page.locator('[data-grill-thread="'+id+'"]').click();await page.locator('[data-grill-lane="middle"]').click();assert.equal(await page.locator('[data-act="live-action:turn"]').count(),0);assert.ok(await page.locator('[data-act="live-action:smoke"]').isVisible());}
   else for(const id of ids)await page.locator('[data-live-drop="'+id+'"]').click();
-  await page.locator('[data-act="live-action:'+tech+'"]').click();assert.ok(await page.locator('[data-act="live-action:'+tech+'"]').isDisabled());
+  await page.locator('[data-act="live-action:'+tech+'"]').click();console.log('formal CB3 workbench',v,'action',tech,'clock',await page.locator('#v063-clock,#v014c-clock').textContent());assert.ok(await page.locator('[data-act="live-action:'+tech+'"]').isDisabled());
   assert.equal(await art.getAttribute('data-workbench'),'cb2-r2b');await page.screenshot({path:out+'/formal-cb3-'+v+'-'+width+'.png'});
-  await page.waitForFunction(()=>{const c=document.querySelector('#v063-clock,#v014c-clock');return c&&parseFloat(c.textContent)>=8.5},null,{timeout:22000});
+  await page.waitForFunction(()=>{const c=document.querySelector('#v063-clock,#v014c-clock');return c&&parseFloat(c.textContent)>=8.5},null,{timeout:90000});
   await page.locator('[data-act="live-finish"]').click();const collect=page.locator('[data-act="cb3-collect"]');await collect.waitFor({state:'visible',timeout:5000});await collect.click();
   await page.waitForFunction(()=>{const s=JSON.parse(localStorage.getItem('oddpot-prototype-v04'));return s.lastCook?.cbCollected===true});const saved=await page.evaluate(()=>JSON.parse(localStorage.getItem('oddpot-prototype-v04')));assert.equal(saved.cbExperiment,undefined);for(const id of ids)assert.equal(saved.inventory[id],9);
   await page.locator('[data-act="receipt-menu"]').click();await page.locator('.ui2-room-dock [data-act="ui2-menu"]').click();assert.match(await page.locator('.sheet .menu-title').innerText(),/Cost/);
