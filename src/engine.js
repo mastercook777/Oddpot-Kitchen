@@ -1,3 +1,5 @@
+import {identify,evaluateCBDeck,compileCBDeck} from './cb_build_rules.js?v=cb3a2';
+import {cb3SafeBoundary} from './cb3_migration_a1.js?v=cb3a1';
 import {createCB3Staging,cb3MigrationCurrent,discardCB3Migration} from './cb3_formal_data.js?v=cb3a2';
 export {cb3MigrationCurrent,discardCB3Migration};
 import {cb3MigrationPlan} from './cb3_migration_a1.js?v=cb3a1';
@@ -257,6 +259,7 @@ export function premiumMenuOptions(s){
    return {id,name:r.name,stock,price:Math.round(craft.price*PREMIUM_PRICE_FACTOR),quality:craft.quality,recipe:r};});
 }
 export function setPremiumMenu(s,id,limit=1){
+ if(formalCBChapter(s)&&id!==null)return false; // Until shared premium budget is wired.
  if(s.phase!=='menu')return false;
  if(id===null){s.premiumMenu=null;return true}
  if(!Number.isInteger(limit)||limit<1||limit>PREMIUM_MAX_SERVINGS)return false;
@@ -483,6 +486,7 @@ export function buyKitchenUpgrade(s,index){
 // benefits. Never attach economic effects to style labels globally.
 export function recipeCraftSnapshot(s,recipeId,variant=null){
  if(s.cbExperiment?.crafts?.[recipeId])return clone(s.cbExperiment.crafts[recipeId]);
+ const formal=formalCBChapter(s);if(!variant&&formal?.crafts?.[recipeId])return clone(formal.crafts[recipeId]);
  const r=RECIPES[recipeId];if(!r)return null;
  const v=variant||activeRecipeVariant(s,recipeId);
  const pair=v&&!v.legacy?resolveTechnique(recipeId,v.style):null;
@@ -593,6 +597,7 @@ export function countIds(ids){const o={};for(const id of ids)o[id]=(o[id]||0)+1;
 export function consume(s,ids,txn,forPremium=false){if(!canUse(s,ids,forPremium))return false;return transact(s,txn,'consume',Object.fromEntries(Object.entries(countIds(ids)).map(([id,n])=>[id,-n]))) }
 export function nextPhase(s,phase){s.phase=phase;s.step++;return s}
 export function availableBento(s){
+ if(formalCBChapter(s))return s.cbBuild.collection.filter(v=>RECIPE_PROFILES[v.recipeId]?.bentoSpecific&&chapterRecipeAvailable(s,v.recipeId)).map(v=>{const craft=compileCBDeck([v])[v.recipeId],profile=RECIPE_PROFILES[v.recipeId].bentoSpecific;return {recipeId:v.recipeId,variantId:v.variantId,name:RECIPES[v.recipeId].name,craft,description:profile.base,enhanced:craft.style===profile.preferredStyle,canPrepare:canUse(s,craft.ingredientIds)};});
  ensureRecipeVariants(s);
  return Object.keys(s.recipes||{}).filter(id=>RECIPE_PROFILES[id]?.bentoSpecific&&chapterRecipeAvailable(s,id)).map(id=>{
   const craft=recipeCraftSnapshot(s,id),profile=RECIPE_PROFILES[id].bentoSpecific;
@@ -604,11 +609,11 @@ export function availableBento(s){
 }
 // Bento is one purchased meal per day and is locked before departure.
 // Its buff is recipe-specific; a shared cooking word never grants global power.
-export function prepareBento(s,recipeId){
+export function prepareBento(s,recipeId,variantId=null){
  if(!['forecast','field'].includes(s.phase)||s.field||s.bento?.day===kitchenDayKey(s))return false;
  const p=RECIPE_PROFILES[recipeId]?.bentoSpecific;
  if(!s.recipes?.[recipeId]||!p||!chapterRecipeAvailable(s,recipeId))return false;
- const craft=recipeCraftSnapshot(s,recipeId);
+ const craft=formalCBChapter(s)?availableBento(s).find(x=>x.recipeId===recipeId&&x.variantId===variantId)?.craft:recipeCraftSnapshot(s,recipeId);
  if(!craft||!canUse(s,craft.ingredientIds))return false;
  const txn='bento-'+kitchenDayKey(s);
  if(!consume(s,craft.ingredientIds,txn))return false;
@@ -842,7 +847,7 @@ export function purchase(s,id,n=1){
  if(!transact(s,`buy-${s.cycle}-${s.day}-${s.step++}`,'purchase',{[id]:n},-item.price*n))return false;
  item.stock-=n;return true;
 }
-export function startCook(s,ids,method='stir',context='research',orderId=null){const premium=!!(context==='service'&&s.service?.orders?.find(o=>o.id===orderId)?.premium);if(!['stir','stew'].includes(method)||!['research','service'].includes(s.phase)||s.cook||ids.length<2||ids.length>3||!canUse(s,ids,premium))return false;const txn=`cook-${s.cycle}-${s.day}-${s.step++}`;if(context==='research'&&s.phase!=='research')return false;const tiles=Array(9).fill(null);const defaults=[0,1,4];ids.forEach((id,i)=>tiles[defaults[i]]={id,heat:0});s.cook={context,orderId,method,tiles,movedThisBeat:false,beats:0,adj:{spice:0,umami:0},effects:[],flame:0,txn};return true}
+export function startCook(s,ids,method='stir',context='research',orderId=null){if(formalCBChapter(s)&&context==='research')return false;const premium=!!(context==='service'&&s.service?.orders?.find(o=>o.id===orderId)?.premium);if(!['stir','stew'].includes(method)||!['research','service'].includes(s.phase)||s.cook||ids.length<2||ids.length>3||!canUse(s,ids,premium))return false;const txn=`cook-${s.cycle}-${s.day}-${s.step++}`;if(context==='research'&&s.phase!=='research')return false;const tiles=Array(9).fill(null);const defaults=[0,1,4];ids.forEach((id,i)=>tiles[defaults[i]]={id,heat:0});s.cook={context,orderId,method,tiles,movedThisBeat:false,beats:0,adj:{spice:0,umami:0},effects:[],flame:0,txn};return true}
 export function moveTile(s,from,to){const c=s.cook;if(!c||c.beats>=3||(c.beats>0&&c.movedThisBeat)||from<0||from>8||to<0||to>8)return false;[c.tiles[from],c.tiles[to]]=[c.tiles[to],c.tiles[from]];if(c.beats>0)c.movedThisBeat=true;return true}
 const neighbors=(p,q)=>Math.abs(Math.floor(p/3)-Math.floor(q/3))+Math.abs(p%3-q%3)===1;
 export function setFlame(s,flame){
@@ -877,8 +882,9 @@ const effects=[...new Set([...c.effects,...(c.adj.spice>=2&&good.every(Boolean)?
 let synergy=effects.length>=2?25:effects.length?18:10;let technique=id?15:0;let quality=clamp(Math.round(heatScore+synergy+technique),0,100);const sellable=Boolean(id)&&!undersafe&&quality>=40;return {recipeId:id,quality,heatScore:Math.round(heatScore),effects,ids,tiles:clone(c.tiles),sellable,reason:!id?'未匹配已开放的料理配方':undersafe?'肉类未达到安全熟度':quality<40?'火候偏差过大':'成功',heat:tiles.map(t=>({id:t.id,heat:t.heat,ideal:`${ING[t.id].lo}–${ING[t.id].hi}`}))};}
 export function finishCook(s){const c=s.cook;if(!c||c.beats!==3)return false;const r=cookOutcome(c,s.tech);const fee=c.context==='research',premium=!!(!fee&&s.service?.orders?.find(o=>o.id===c.orderId)?.premium);const ok=consume(s,r.ids,c.txn,premium);if(!ok)return false;if(premium)s.service.premiumConsumed=(s.service.premiumConsumed||0)+1;s.lastCook=r;s.cook=null;if(fee&&r.sellable){s.recipes[r.recipeId]=Math.max(s.recipes[r.recipeId]||0,Math.min(r.quality,90));s.learned[r.recipeId]=true;}if(!fee&&s.service){s.manualCost+=materialCost(r.ids);const order=s.service.orders.find(o=>o.id===c.orderId);if(order&&order.status==='queued'){order.manual={quality:r.quality,sellable:r.sellable,recipeId:r.recipeId};order.manualMaterialsConsumed=true;order.manualTimePaid=false;}}return r;}
 export function synergyFor(menu,crafts=null){const rs=[...new Set(menu)].map(id=>RECIPES[id]&&({...RECIPES[id],tags:crafts?.[id]?.recipeTags||RECIPES[id].tags})).filter(Boolean);if(rs.some(r=>r.tags.includes('辣')&&r.tags.includes('肉'))&&rs.some(r=>r.station==='POT'))return '辛香暖胃';if(rs.filter(r=>r.tags.includes('菌香')).length>=2)return '菌香组合';return null}
-export function canMenu(s){if(s.cbExperiment){const e=s.cbExperiment,cap=[7,9,11,13][e.config.level-1];return s.menu.length>=3&&s.menu.length<=(e.config.level===4?4:3)&&new Set(s.menu).size===s.menu.length&&s.menu.every(id=>e.crafts[id]&&s.recipes[id]&&chapterRecipeAvailable(s,id)&&cookwareOwned(s,RECIPES[id]))&&s.menu.reduce((n,id)=>n+e.crafts[id].rarity,0)<=cap;}return s.menu.length===3&&s.menu.every(id=>s.recipes[id]&&chapterRecipeAvailable(s,id)&&cookwareOwned(s,RECIPES[id]))&&new Set(s.menu.map(id=>recipeCookware(RECIPES[id]))).size<=ensureKitchen(s).slots.length;}
+export function canMenu(s){const formal=formalCBChapter(s);if(formal){const b=formalCBDeck(s,formal.deck);return b.valid&&JSON.stringify(s.menu)===JSON.stringify(b.variants.map(v=>v.recipeId));}if(s.cbExperiment){const e=s.cbExperiment,cap=[7,9,11,13][e.config.level-1];return s.menu.length>=3&&s.menu.length<=(e.config.level===4?4:3)&&new Set(s.menu).size===s.menu.length&&s.menu.every(id=>e.crafts[id]&&s.recipes[id]&&chapterRecipeAvailable(s,id)&&cookwareOwned(s,RECIPES[id]))&&s.menu.reduce((n,id)=>n+e.crafts[id].rarity,0)<=cap;}return s.menu.length===3&&s.menu.every(id=>s.recipes[id]&&chapterRecipeAvailable(s,id)&&cookwareOwned(s,RECIPES[id]))&&new Set(s.menu.map(id=>recipeCookware(RECIPES[id]))).size<=ensureKitchen(s).slots.length;}
 export function selectMenuRecipe(s,slot,id){
+ if(formalCBChapter(s))return false;
  if(s.phase!=='menu'||!Number.isInteger(slot)||slot<0||slot>2||!s.recipes?.[id]||!chapterRecipeAvailable(s,id)||!cookwareOwned(s,RECIPES[id]))return false;
  const next=[...s.menu];next[slot]=id;
  if(new Set(next.filter(x=>s.recipes?.[x]&&chapterRecipeAvailable(s,x)).map(x=>recipeCookware(RECIPES[x]))).size>ensureKitchen(s).slots.length)return false;
@@ -930,9 +936,9 @@ function customerFit(r,customerId,syn,craft=null){if(craft?.formulaId)r={...r,ta
 export function selectArrivalDish(s,o){
  // Only select food when the customer reaches the door: changing a menu at
  // intermission affects future orders, never rewrites an already seated order.
- const syn=synergyFor(s.menu,s.cbExperiment?.crafts),options=[...new Set(s.menu)].filter(id=>s.recipes[id]&&chapterRecipeAvailable(s,id)&&RECIPES[id]).map(id=>{const craft=recipeCraftSnapshot(s,id);return {id,craft,score:customerFit(RECIPES[id],o.segment,syn,craft),price:craft.price}}).sort((a,b)=>b.score-a.score||a.price-b.price||a.id.localeCompare(b.id));
+ const syn=synergyFor(s.menu,s.cbExperiment?.crafts||formalCBChapter(s)?.crafts),options=[...new Set(s.menu)].filter(id=>s.recipes[id]&&chapterRecipeAvailable(s,id)&&RECIPES[id]).map(id=>{const craft=recipeCraftSnapshot(s,id);return {id,craft,score:customerFit(RECIPES[id],o.segment,syn,craft),price:craft.price}}).sort((a,b)=>b.score-a.score||a.price-b.price||a.id.localeCompare(b.id));
  const themed=firstChallenge(s)&&o.id===(s.service?.judgeOrderId||s.service?.orders?.[6]?.id)?options.filter(x=>(x.craft.recipeTags||RECIPES[x.id].tags).some(t=>['辣','爆香'].includes(t))):[];
- const stocked=s.cbExperiment?options.filter(x=>canUse(s,x.craft.ingredientIds)||(s.prepVariants?.[x.id]||[]).some(p=>p.variantId===x.craft.variantId)):options;
+ const stocked=(s.cbExperiment||formalCBChapter(s))?options.filter(x=>canUse(s,x.craft.ingredientIds)||(s.prepVariants?.[x.id]||[]).some(p=>p.variantId===x.craft.variantId)):options;
  const eligible=themed.length?themed:stocked.length?stocked:options,best=eligible[0];
  // Genuine favorite dishes still dominate. Similar-fit alternatives may be
  // chosen; menu duplicates must not multiply demand. No rerolls on UI refresh.
@@ -945,8 +951,8 @@ export function selectArrivalDish(s,o){
  const key=String(o.id||'')+'|'+String(o.segment||'');
  const hash=[...key].reduce((h,c)=>rand((h^c.charCodeAt(0))>>>0),s.service?.scenarioSeed??s.seed??0);
  const roll=rand(hash)/4294967296;
- const weights=choices.map(x=>Math.exp((x.score-(best?.score||0))*.055)/(1+(counts[x.id]||0)*.38)*(1+(s.cbExperiment?(x.craft.cb?.aroma||0):0)/100));
- if(s.cbExperiment)for(const x of choices)if(x.craft.cb?.aroma)record(s,{type:'cb_affix',affix:'aroma',order:o.id,recipeId:x.id,value:x.craft.cb.aroma});
+ const weights=choices.map(x=>Math.exp((x.score-(best?.score||0))*.055)/(1+(counts[x.id]||0)*.38)*(1+((s.cbExperiment||formalCBChapter(s))?(x.craft.cb?.aroma||0):0)/100));
+ if(s.cbExperiment||formalCBChapter(s))for(const x of choices)if(x.craft.cb?.aroma)record(s,{type:'cb_affix',affix:'aroma',order:o.id,recipeId:x.id,value:x.craft.cb.aroma});
  const total=weights.reduce((n,w)=>n+w,0);
  let cursor=roll*total,chosen=best;
  for(let i=0;i<choices.length;i++){cursor-=weights[i];if(cursor<0||i===choices.length-1){chosen=choices[i];break;}}
@@ -1081,7 +1087,7 @@ export function serviceGoalResult(v){
   served.filter(o=>RECIPES[o.recipeId]?.tags?.includes('辣')).length;
  return {kind:goal.kind,label:goal.label,value,target:goal.target,success:value>=goal.target};
 }
-export function createService(s,options={}){if(s.phase!=='service'||s.service||!kitchenHasMenuCoverage(s)||(s.cbExperiment&&!canMenu(s)))return false;
+export function createService(s,options={}){if(s.phase!=='service'||s.service||!kitchenHasMenuCoverage(s)||((s.cbExperiment||formalCBChapter(s))&&!canMenu(s)))return false;
  const plan=s.cbExperiment?.plan||serviceDayPlan(s),size=plan.count;
  if(s.coins<plan.marketingCost)return false;
  if(plan.marketingCost&&!transact(s,`marketing-${kitchenDayKey(s)}`,'marketing',{},-plan.marketingCost))return false;
@@ -1203,6 +1209,7 @@ export function chooseServiceEvent(s,choice){
 }
 export function swapBreakMenu(s,slot,id){
  if(s.cbExperiment)return false;
+ if(formalCBChapter(s))return swapFormalCBWave(s,slot,id);
  const v=s.service;
  if(s.phase!=='service'||!v?.breakAt||v.breakUsed||!Number.isInteger(slot)||slot<0||slot>2||!s.recipes[id]||!chapterRecipeAvailable(s,id)||!v.kitchenSnapshot.some(k=>k.type===recipeCookware(RECIPES[id])))return false;
  const before=s.menu[slot];if(before===id)return false;s.menu[slot]=id;v.breakUsed=true;v.decisionFlash=`下一波新上架：${RECIPES[id].name}`;v.decisionAt=v.time;
@@ -1234,7 +1241,7 @@ function finishOrder(s,o,quality){
  const v=s.service;
  if(o.status==='left'||o.status==='rejected')return;
  o.quality=quality;
- if(s.cbExperiment&&o.started!=null&&o.craft?.cb?.refund){const key=[...o.id].reduce((h,c)=>rand((h^c.charCodeAt(0))>>>0),v.scenarioSeed^0x2a7a);const ids=o.craft.ingredientIds.filter(id=>['beef','chicken','chili','garlic','mushroom','cabbage','onion','potato','cloud_rice','sky_moss','storm_egg','sour_bell'].includes(id));if(ids.length&&rand(key)/4294967296<o.craft.cb.refund/100){const id=ids[key%ids.length];if(transact(s,'cb-refund-'+o.id,'cb_refund',{[id]:1})){v.cost-=ING[id].cost;record(s,{type:'cb_affix',affix:'frugal',order:o.id,recipeId:o.recipeId,value:1,ingredient:id});}}}
+ if((s.cbExperiment||formalCBChapter(s))&&o.started!=null&&o.craft?.cb?.refund){const key=[...o.id].reduce((h,c)=>rand((h^c.charCodeAt(0))>>>0),v.scenarioSeed^0x2a7a);const ids=o.craft.ingredientIds.filter(id=>['beef','chicken','chili','garlic','mushroom','cabbage','onion','potato','cloud_rice','sky_moss','storm_egg','sour_bell'].includes(id));if(ids.length&&rand(key)/4294967296<o.craft.cb.refund/100){const id=ids[key%ids.length];if(transact(s,'cb-refund-'+o.id,'cb_refund',{[id]:1})){v.cost-=ING[id].cost;record(s,{type:'cb_affix',affix:'frugal',order:o.id,recipeId:o.recipeId,value:1,ingredient:id});}}}
  if(v.walkable){
   o.status='pickup';o.pickupAt=v.time;
   record(s,{type:'plate_ready',order:o.id,recipeId:o.recipeId});
@@ -1382,14 +1389,14 @@ function advanceGuestMeals(s){
   if(o.status==='flying'&&v.time-o.flightAt>=DINER_TIMING.flight){
    o.status='eating';o.landedAt=v.time;o.served=v.time;
    const price=o.craft?.price??RECIPES[o.recipeId]?.price??0;
-   if(transact(s,`sale-${o.id}`,'sale',{},price)){v.income+=price;if(s.cbExperiment&&o.craft?.cb?.gain)record(s,{type:'cb_affix',affix:o.craft.affixes.some(a=>a.id==='stars')?'stars':'fine',order:o.id,recipeId:o.recipeId,value:price-o.craft.basePrice});}
+   if(transact(s,`sale-${o.id}`,'sale',{},price)){v.income+=price;if((s.cbExperiment||formalCBChapter(s))&&o.craft?.cb?.gain)record(s,{type:'cb_affix',affix:o.craft.affixes.some(a=>a.id==='stars')?'stars':'fine',order:o.id,recipeId:o.recipeId,value:price-o.craft.basePrice});}
    record(s,{type:'landed',order:o.id,recipeId:o.recipeId});
   }
   if(o.status==='eating'&&v.time-o.landedAt>=DINER_TIMING.eat){
    const wait=clamp(o.landedAt-o.arrival,0,o.patience);
    const serviceScore=clamp(Math.round(100*(1-wait/o.patience)),0,100);
    o.sat=clamp(Math.round(.5*o.fit+.3*o.quality+.2*serviceScore+(v.guestMood||0)*(o.wave===v.eventMoodWave?1:0)),0,100);
-   if(s.cbExperiment&&o.craft?.cb?.sat){const old=o.sat;o.sat=clamp(o.sat+o.craft.cb.sat,0,100);record(s,{type:'cb_affix',affix:'aftertaste',order:o.id,recipeId:o.recipeId,value:o.sat-old});}
+   if((s.cbExperiment||formalCBChapter(s))&&o.craft?.cb?.sat){const old=o.sat;o.sat=clamp(o.sat+o.craft.cb.sat,0,100);record(s,{type:'cb_affix',affix:'aftertaste',order:o.id,recipeId:o.recipeId,value:o.sat-old});}
    const review=guestReview(o);o.reviewText=review.text;o.reviewType=review.type;
    o.status='review';o.reviewAt=v.time;
    s.reputation+=o.sat>=70?1:o.sat<50?-1:0;
@@ -1420,7 +1427,7 @@ function advanceGuestOrders(s){
    o.basePatience=o.patience;const bonus=Math.min(12,(v.crew?.waiter?.patience||0)+(v.crew?.waiter2?.patience||0));
    // Outdoor waiting uses up real customer patience; reset at ordering must not be a free time bank.
    const queuePenalty=Math.min(24,Math.round((o.queueSeconds||0)*1.15));
-   const cbWait=s.cbExperiment?Math.round(o.patience*(o.craft?.cb?.wait||0)/100):0;if(cbWait)record(s,{type:'cb_affix',affix:'wait',order:o.id,recipeId:o.recipeId,value:cbWait});
+   const cbWait=(s.cbExperiment||formalCBChapter(s))?Math.round(o.patience*(o.craft?.cb?.wait||0)/100):0;if(cbWait)record(s,{type:'cb_affix',affix:'wait',order:o.id,recipeId:o.recipeId,value:cbWait});
    o.patience=Math.max(8,o.patience+bonus-queuePenalty+cbWait);v.staffStats.waiterBonus+=bonus;if(bonus)v.staffStats.waiterOrders++;
    o.status='queued';o.arrival=v.time; o.orderedAt=v.time;
    v.queued.push(o.id);record(s,{type:'ordered',order:o.id,recipeId:o.recipeId,table:o.tableId,seat:o.seatId});
@@ -1517,7 +1524,7 @@ if(!canUse(s,materialIds,!!o.premium)){o.status='rejected';o.rejectReason='食�
 if(!consume(s,materialIds,`service-cook-${id}`,!!o.premium)){o.status='rejected';o.rejectReason='食材不足';record(s,{type:'rejected',order:id,reason:'食材不足'});continue;}
 if(o.premium)v.premiumConsumed=(v.premiumConsumed||0)+1;
 v.cost+=materialCost(materialIds);o.status='cooking';o.started=v.time;v.stations[st]={orderId:id,left:stationDuration(s,st,r,v,o),quality:o.craft?.quality||s.recipes[o.recipeId]||72};v.stationStats[st].count++;v.stationStats[st].secondsSaved+=Math.max(0,(o.craft?.formulaId?o.craft.baseTime:r.time)-v.stations[st].left);
- if(s.cbExperiment&&o.craft?.cb?.discount){const base=stationDuration(s,st,r,v,{...o,craft:{...o.craft,timeDelta:0}});const saved=Math.max(0,base-v.stations[st].left);record(s,{type:'cb_affix',affix:o.craft.affixes.some(a=>a.id==='solo')?'solo':'quick',order:o.id,recipeId:o.recipeId,value:saved});}
+ if((s.cbExperiment||formalCBChapter(s))&&o.craft?.cb?.discount){const base=stationDuration(s,st,r,v,{...o,craft:{...o.craft,timeDelta:0}});const saved=Math.max(0,base-v.stations[st].left);record(s,{type:'cb_affix',affix:o.craft.affixes.some(a=>a.id==='solo')?'solo':'quick',order:o.id,recipeId:o.recipeId,value:saved});}
  const role=shiftHelperAt(v.crew,ix);
  if(role){const withoutHelper=Math.max(1,(o.craft?.baseTime??r.time)+(o.craft?.timeDelta||0)-(slot.level-1)*2-(v.eventEffects?.[r.station]||0));const prefix=role==='helper2'?'helper2':'helper';v.staffStats[prefix+'Seconds']+=Math.max(0,withoutHelper-v.stations[st].left);v.staffStats[prefix+'Orders']++;}
  record(s,{type:'started',order:id,station:st,cookType:r.station,level:slot.level});}
@@ -1577,7 +1584,7 @@ const premiumReport={recipeId:v.premiumOffered?.recipeId||null,limit:v.premiumOf
 const regularGuests=v.events.filter(e=>e.type==='regular_visit').map(e=>({guestId:e.guestId,name:s.guestRelationships?.[e.guestId]?.name||'熟客',happyMeals:e.happyMeals,sat:e.sat}));
 const salvageStats=v.salvageStats||{recovered:0,reused:0};
  const salvageExpired=Math.max(0,(salvageStats.recovered||0)-(salvageStats.reused||0));
-s.report={salvage:{recovered:salvageStats.recovered||0,reused:salvageStats.reused||0,expired:salvageExpired},ferryEarned,rating,secondRating,premium:premiumReport,regularGuests,day:s.day,absoluteDay:totalBusinessDay(s),tableCount:v.tableCount,unseated:v.orders.filter(o=>o.tableId==null).length,queuePeak:v.queuePeak||0,queue:queueServiceReport(v),goal,scenario:v.scenario||'常规晚餐',totalOrders:v.orders.length,revenue,cost,profit:revenue-cost-hospitalityCost-eventExpense-finance.wage-(v.marketing?.cost||0),finance:{...finance,marketingCost:v.marketing?.cost||0,campaignId:v.marketing?.id||'none',promotionGuests:v.marketing?.guests||0,marketingArrived:v.orders.filter(o=>o.promotionGuest&&o.arrival<=v.time).length,marketingSeated:v.orders.filter(o=>o.promotionGuest&&o.doorAt!==undefined).length,marketingServed:served.filter(o=>o.promotionGuest).length,marketingRevenue:served.filter(o=>o.promotionGuest).reduce((n,o)=>n+(o.craft?.price??RECIPES[o.recipeId]?.price??0),0),cashChange:s.coins-ensureManagement(s).openingCoins},growth,hospitalityCost,eventExpense,choices:v.events.filter(e=>e.type==='management_choice'||e.type==='menu_swap'),served:served.length,left:left.length,rejected:rej.length,sat:Math.round(served.reduce((a,o)=>a+o.sat,0)/Math.max(1,served.length)),byDish,byCraft,orderedByDish,guestReviews:v.events.filter(e=>e.type==='reviewed').map(e=>({recipeId:e.recipeId,sat:e.sat,text:e.text,reason:e.reason})),congestion:v.congestion,kitchen:{slots:clone(v.kitchenSnapshot||ensureKitchen(s).slots),stats:clone(v.stationStats||{})},staff:{crew:clone(v.crew||{}),stats:clone(v.staffStats||{}),foodCost:staffFoodCost},synergy:synergyFor(s.menu,s.cbExperiment?.crafts),suggested,challenge,won};s.result=won?'win':challenge?'loss':null;
+s.report={salvage:{recovered:salvageStats.recovered||0,reused:salvageStats.reused||0,expired:salvageExpired},ferryEarned,rating,secondRating,premium:premiumReport,regularGuests,day:s.day,absoluteDay:totalBusinessDay(s),tableCount:v.tableCount,unseated:v.orders.filter(o=>o.tableId==null).length,queuePeak:v.queuePeak||0,queue:queueServiceReport(v),goal,scenario:v.scenario||'常规晚餐',totalOrders:v.orders.length,revenue,cost,profit:revenue-cost-hospitalityCost-eventExpense-finance.wage-(v.marketing?.cost||0),finance:{...finance,marketingCost:v.marketing?.cost||0,campaignId:v.marketing?.id||'none',promotionGuests:v.marketing?.guests||0,marketingArrived:v.orders.filter(o=>o.promotionGuest&&o.arrival<=v.time).length,marketingSeated:v.orders.filter(o=>o.promotionGuest&&o.doorAt!==undefined).length,marketingServed:served.filter(o=>o.promotionGuest).length,marketingRevenue:served.filter(o=>o.promotionGuest).reduce((n,o)=>n+(o.craft?.price??RECIPES[o.recipeId]?.price??0),0),cashChange:s.coins-ensureManagement(s).openingCoins},growth,hospitalityCost,eventExpense,choices:v.events.filter(e=>e.type==='management_choice'||e.type==='menu_swap'),served:served.length,left:left.length,rejected:rej.length,sat:Math.round(served.reduce((a,o)=>a+o.sat,0)/Math.max(1,served.length)),byDish,byCraft,orderedByDish,guestReviews:v.events.filter(e=>e.type==='reviewed').map(e=>({recipeId:e.recipeId,sat:e.sat,text:e.text,reason:e.reason})),congestion:v.congestion,kitchen:{slots:clone(v.kitchenSnapshot||ensureKitchen(s).slots),stats:clone(v.stationStats||{})},staff:{crew:clone(v.crew||{}),stats:clone(v.staffStats||{}),foodCost:staffFoodCost},synergy:synergyFor(s.menu,s.cbExperiment?.crafts||formalCBChapter(s)?.crafts),...(formalCBChapter(s)?{cbAffixEvents:clone(v.events.filter(e=>e.type==='cb_affix'))}:{}),suggested,challenge,won};s.result=won?'win':challenge?'loss':null;
  s.report.thirdRating=thirdRating;
  s.history??=[];s.history.push({day:totalBusinessDay(s),revenue:s.report.revenue,profit:s.report.profit,
    served:s.report.served,arrivals:s.report.totalOrders,unseated:s.report.unseated,
@@ -1665,20 +1672,21 @@ export function activeRecipeVariant(s,id){
    (s.recipeVariants[id]||[])[0]||null;
 }
 export function chooseRecipeVariant(s,id,variantId){
- if(s.cbExperiment)return false;
+ if(s.cbExperiment||formalCBChapter(s))return false;
  if(!s.recipes?.[id]||!Array.isArray(s.recipeVariants?.[id])||
     !s.recipeVariants[id].some(v=>v.valid&&v.variantId===variantId))return false;
  s.activeVariantIds[id]=variantId;return true;
 }
 export function beginLiveResearch(s,ids,vessel='WOK'){
+ const formal=formalCBChapter(s);if(formal&&(!resolveCBFormula(ids,vessel,activeWorld(s))||s.researchReceipt&&s.lastCook?.cbCandidate&&!s.lastCook.cbCollected))return false;
  if(s.phase!=='research'||s.cook||!['WOK','POT','GRILL','STEAM'].includes(vessel)||vessel==='GRILL'&&!ensureKitchen(s).grillOwned||vessel==='STEAM'&&(activeWorld(s)!=='cloud'||!ensureKitchen(s).steamerOwned)||
   !Array.isArray(ids)||ids.length<2||ids.length>3||new Set(ids).size!==ids.length||
   ids.some(id=>!ING[id])||!canUse(s,ids)||
-  (s.cbExperiment?!cbFormulaIngredientsAllowed(activeWorld(s),ids,vessel):activeWorld(s)==='cloud'&&!chapterRecipeAvailable(s,liveRecipeId(ids,vessel))))return false;
+  ((s.cbExperiment||formal)?!cbFormulaIngredientsAllowed(activeWorld(s),ids,vessel):activeWorld(s)==='cloud'&&!chapterRecipeAvailable(s,liveRecipeId(ids,vessel))))return false;
  ensureRecipeVariants(s);
  const txn='live-research-'+s.cycle+'-'+s.day+'-'+s.step++;
  s.cook={mode:vessel==='GRILL'?'v014c-grill':'v063-live',context:'research',vessel,ids:[...ids],
-   dropped:[],skewer:[],lane:null,actions:[],elapsed:0,live:false,txn,...(s.cbExperiment?{cbTiming:true}:{})};
+   dropped:[],skewer:[],lane:null,actions:[],elapsed:0,live:false,txn,...((s.cbExperiment||formal)?{cbTiming:true}:{})};
  s.lastCook=null;s.researchReceipt=false;return true;
 }
 export function threadGrillIngredient(s,id){
@@ -1726,11 +1734,12 @@ export function liveCookPreview(s){
 export function finishLiveResearch(s){
  const c=s.cook;
  if(!['v063-live','v014c-grill'].includes(c?.mode)||!c.live||c.elapsed<1.2)return false;
- const formula=s.cbExperiment?resolveCBFormula(c.ids,c.vessel,activeWorld(s)):undefined;
- const override=s.cbExperiment?formula?.recipeId??null:undefined;
+ const formal=formalCBChapter(s),cb=!!(s.cbExperiment||formal);
+ const formula=cb?resolveCBFormula(c.ids,c.vessel,activeWorld(s)):undefined;
+ const override=cb?formula?.recipeId??null:undefined;
  const result=c.mode==='v014c-grill'?evaluatePlacedGrill(c,override):evaluateLiveCook(c.ids,c.vessel,c.dropped,c.actions,c.elapsed,!!c.cbTiming,override);
  if(formula)result.formula=clone(formula);
- if(s.cbExperiment){result.cbVerdict=judgeCooking(result,s.cbExperiment.config.seed,c.txn);result.sellable=result.cbVerdict.baseTier>0;result.status=result.cbVerdict.status;result.reason=result.cbVerdict.tip||result.culinaryReason;result.cbTxn=c.txn;}
+ if(cb){result.cbVerdict=judgeCooking(result,s.cbExperiment?.config.seed??s.seed,c.txn);result.sellable=result.cbVerdict.baseTier>0;result.status=result.cbVerdict.status;result.reason=result.cbVerdict.tip||result.culinaryReason;result.cbTxn=c.txn;}
  // Every attempted cook uses real resources, including failed recipes.
  if(!consume(s,c.ids,c.txn))return false;
  s.cook=null;s.lastCook=result;s.researchReceipt=true;
@@ -1738,6 +1747,7 @@ export function finishLiveResearch(s){
  result.ingredientCost=c.ids.reduce((sum,id)=>sum+ING[id].cost,0);
  // Workshop has independent immutable variants; only collection confirmation registers them.
  if(s.cbExperiment)return result;
+ if(formal){result.cbCandidate=result.sellable?identify(result,s.seed,c.txn):null;result.firstDiscovery=!!result.cbCandidate&&!s.cbBuild.discoveredRecipes.includes(result.recipeId);return result;}
  if(result.sellable){
   const id=result.recipeId;
   // The recipe did not exist before this cook: avoid inventing a fake
@@ -1798,4 +1808,76 @@ export function stageCB3Migration(s){
  const draft=createCB3Staging(s,prepared,recipeCraftSnapshot);
  if(!draft)return {status:'unsafe'};
  s.cbBuild=draft;return {status:'staged'};
+}
+
+/* Formal CB3: no fixture or experimental attendance plan. */
+export function formalCBChapter(s){
+ const b=s.cbBuild,c=b?.chapters?.[activeWorld(s)];return b?.schema===1&&b.status==='active'&&c?.active===true?c:null;
+}
+export function activateCB3(s){
+ if(s.cbExperiment||!cb3SafeBoundary(s)||!cb3MigrationCurrent(s))return false;
+ const c=s.cbBuild.chapters[activeWorld(s)];if(!c||c.needsReview)return false;
+ const b=evaluateCBDeck(s.cbBuild.collection,c.deck,c.level,v=>chapterRecipeAvailable(s,v.recipeId)&&cookwareOwned(s,RECIPES[v.recipeId]));
+ if(!b.valid||new Set(b.variants.map(v=>v.vessel)).size>ensureKitchen(s).slots.length)return false;
+ c.crafts=compileCBDeck(b.variants);c.active=true;s.cbBuild.status='active';s.menu=b.variants.map(v=>v.recipeId);
+ for(const v of b.variants)s.recipes[v.recipeId]=Math.max(s.recipes[v.recipeId]||0,c.crafts[v.recipeId].quality);
+ return true;
+}
+export function formalCBDeck(s,deck){
+ const c=formalCBChapter(s);if(!c)return null;
+ const b=evaluateCBDeck(s.cbBuild.collection,deck,c.level,v=>chapterRecipeAvailable(s,v.recipeId)&&cookwareOwned(s,RECIPES[v.recipeId]));
+ if(new Set(b.variants.filter(Boolean).map(v=>v.vessel)).size>ensureKitchen(s).slots.length){b.valid=false;b.reasons.push('超出厨位种类');}
+ return b;
+}
+export function setFormalCBDeck(s,deck){
+ const c=formalCBChapter(s);if(!c||s.phase!=='menu'||s.premiumMenu||!Array.isArray(deck)||Object.values(s.prep||{}).some(n=>n>0))return false;
+ const b=formalCBDeck(s,deck);if(!b?.valid)return false;
+ c.deck=[...deck];c.crafts=compileCBDeck(b.variants);s.menu=b.variants.map(v=>v.recipeId);
+ for(const v of b.variants)s.recipes[v.recipeId]=Math.max(s.recipes[v.recipeId]||0,c.crafts[v.recipeId].quality);
+ return true;
+}
+export function confirmFormalCBCraft(s){
+ if(!formalCBChapter(s)||s.phase!=='research'||s.cook||!s.researchReceipt||!s.lastCook?.cbCandidate)return false;
+ const v=s.lastCook.cbCandidate,b=s.cbBuild;
+ if(!b.collection.some(x=>x.variantId===v.variantId)){
+  if(b.collection.filter(x=>x.recipeId===v.recipeId).length>=12)return false;
+  b.collection.push(clone(v));
+ }
+ if(!b.discoveredRecipes.includes(v.recipeId))b.discoveredRecipes.push(v.recipeId);
+ if(!b.discoveredFormulas.includes(v.formulaId))b.discoveredFormulas.push(v.formulaId);
+ s.recipes[v.recipeId]=Math.max(s.recipes[v.recipeId]||0,[0,66,76,86][v.baseTier]);s.learned[v.recipeId]=true;
+ s.lastCook.cbCollected=true;return true;
+}
+export function removeFormalCBCraft(s,id){
+ const b=s.cbBuild;if(!formalCBChapter(s)||s.phase!=='research'||s.cook||b.lockedCrafts.includes(id)||formalCBReference(s,id))return false;
+ const i=b.collection.findIndex(v=>v.variantId===id);if(i<0)return false;b.collection.splice(i,1);return true;
+}
+export function toggleFormalCBLock(s,id){
+ const b=s.cbBuild;if(!formalCBChapter(s)||s.phase!=='research'||s.cook||!b.collection.some(v=>v.variantId===id))return false;
+ const i=b.lockedCrafts.indexOf(id);if(i<0)b.lockedCrafts.push(id);else b.lockedCrafts.splice(i,1);return true;
+}
+
+export function formalCBWaveOptions(s,slot){
+ const c=formalCBChapter(s),v=s.service;if(!c||s.phase!=='service'||!v?.breakAt||v.breakUsed||!Number.isInteger(slot)||slot<0||slot>=c.deck.length)return [];
+ return s.cbBuild.collection.filter(craft=>{
+  if(craft.recipeId===s.menu[slot]||!v.kitchenSnapshot.some(k=>k.type===craft.vessel))return false;
+  const deck=[...c.deck];deck[slot]=craft.variantId;
+  const b=formalCBDeck(s,deck);
+  return b.valid&&b.variants.every(x=>v.kitchenSnapshot.some(k=>k.type===x.vessel));
+ });
+}
+export function swapFormalCBWave(s,slot,variantId){
+ const choice=formalCBWaveOptions(s,slot).find(v=>v.variantId===variantId);if(!choice)return false;
+ const c=formalCBChapter(s),v=s.service,before=s.menu[slot],deck=[...c.deck];deck[slot]=variantId;
+ const b=formalCBDeck(s,deck);if(!b.valid)return false;
+ c.deck=deck;c.crafts=compileCBDeck(b.variants);s.menu=b.variants.map(x=>x.recipeId);
+ v.breakUsed=true;v.decisionFlash='下一波新上架：'+RECIPES[choice.recipeId].name;v.decisionAt=v.time;
+ record(s,{type:'menu_swap',wave:v.breakAt,slot,before,after:choice.recipeId,variantId});return true;
+}
+export function formalCBReference(s,id){
+ if(Object.values(s.cbBuild?.chapters||{}).some(c=>c.deck.includes(id)))return true;
+ for(const chapter of [s,...Object.entries(s.worlds||{}).filter(([w])=>w!==activeWorld(s)).map(([,c])=>c)]){
+  if(chapter.bento?.variantId===id||chapter.premiumMenu?.variantId===id||chapter.service?.orders?.some(o=>o.craft?.variantId===id)||Object.values(chapter.prepVariants||{}).some(list=>list?.some(x=>x.variantId===id)))return true;
+ }
+ return false;
 }

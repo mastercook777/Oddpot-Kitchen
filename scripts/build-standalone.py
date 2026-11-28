@@ -17,7 +17,7 @@ for path in ('recipe_profiles_v063.js','data.js','grill_cooking_v014b.js','grill
  s=(root/'src'/path).read_text()
  s='\n'.join(line for line in s.splitlines() if not line.startswith(('import ','export {')))
  s=s.replace('export const ','const ').replace('export function ','function ')
- scoped={'cooking_formulas_p1.js':'resolveCBFormula,cbFormulaIngredientsAllowed','cooking_quality_r1.js':'judgeCooking,seeded','cb3_migration_a1.js':'cb3MigrationPlan,cb3SafeBoundary','cb_build_rules.js':'evaluateCBDeck,compileCBDeck','cb3_formal_data.js':'createCB3Staging,cb3MigrationCurrent,discardCB3Migration'}
+ scoped={'cooking_formulas_p1.js':'CB_FORMULAS,resolveCBFormula,cbFormulaIngredientsAllowed','cooking_quality_r1.js':'judgeCooking,seeded','cb3_migration_a1.js':'cb3MigrationPlan,cb3SafeBoundary','cb_build_rules.js':'AFFIX,TIERS,COLORS,identify,evaluateCBDeck,compileCBDeck','cb3_formal_data.js':'createCB3Staging,cb3MigrationCurrent,discardCB3Migration'}
  if path in scoped:
   names=scoped[path]
   s='const {'+names+'}=(()=>{\n'+s+'\nreturn {'+names+'};\n})();'

@@ -1,4 +1,4 @@
-import {chromium} from 'playwright';import assert from 'node:assert/strict';import {spawn} from 'node:child_process';import {mkdir,readFile} from 'node:fs/promises';import {newGame,createService,setServicePaused,tick,beginLiveResearch,dropLiveIngredient,enterField,buildFieldMap,resumeBreak,closeService} from '../src/engine.js';import {startActionField} from '../src/field_v04.js';
+import {chromium} from 'playwright';import assert from 'node:assert/strict';import {spawn} from 'node:child_process';import {mkdir,readFile} from 'node:fs/promises';import {stageCB3Migration,activateCB3,newGame,createService,setServicePaused,tick,beginLiveResearch,dropLiveIngredient,enterField,buildFieldMap,resumeBreak,closeService} from '../src/engine.js';import {startActionField} from '../src/field_v04.js';
 // Actual Three.js transforms, all eight equipment/level pairs on the new hero.
 import * as T from 'three';
 import {y2Layout,y2CameraFrame,y2ApplyCamera} from '../src/three_y2_diner.js';
@@ -140,6 +140,28 @@ for(const [width,height] of [[320,568],[375,667],[390,844]]){
  assert.ok(reportBox.height>=100&&ledgerBox.y>=reportBox.y&&ledgerBox.y+ledgerBox.height<=reportBox.y+reportBox.height+1);assert.equal(await reportCanvas.getAttribute('data-order-count'),'0');assert.equal(await reportCanvas.getAttribute('data-guest-count'),'0');
  await page.screenshot({path:out+'/z2d2-report-'+width+'.png'});
  const c=newGame(15742);c.onboarding.enabled=false;c.phase='research';assert.ok(beginLiveResearch(c,['mushroom','garlic'],'WOK'));assert.ok(dropLiveIngredient(c,'mushroom'));await load(c);await page.waitForFunction(()=>document.documentElement.dataset.oddpotResearch3d==='active',null,{timeout:20000});assert.ok(await page.locator('canvas[data-oddpot-research="3d"]').count());assert.ok(await page.locator('[data-live-drop="garlic"]').isEnabled());await page.locator('[data-live-drop="garlic"]').click();await page.waitForFunction(()=>document.querySelector('[data-live-drop="garlic"]')?.disabled);await page.screenshot({path:out+'/research-'+width+'.png'});
+
+
+ // Formal CB3 uses the already-approved enhanced workbench, not the lab page.
+ if(width===375)for(const [v,ids,tech] of [
+  ['WOK',['garlic','mushroom'],'flip'],['POT',['chicken','mushroom'],'gentle'],['GRILL',['beef','garlic'],'brush'],['STEAM',['cloud_rice','chicken'],'vent']]){
+  const s=newGame(15742);s.onboarding.enabled=false;
+  if(v==='GRILL')s.kitchen.grillOwned=true;
+  if(v==='STEAM'){s.activeWorld='cloud';s.cloudProgress={localCrew:true};s.menu=['cloud_rice_chicken','sour_rice','cloud_potato_rice'];s.recipes=Object.fromEntries(s.menu.map(id=>[id,72]));s.kitchen.steamerOwned=true;}
+  for(const id of ids)s.inventory[id]=10;
+  assert.equal(stageCB3Migration(s).status,'staged');assert.ok(activateCB3(s));s.phase='research';assert.ok(beginLiveResearch(s,ids,v));await load(s);
+  const art=page.locator('canvas[data-oddpot-research="3d"][data-workbench="cb2-r2b"]');
+  await art.waitFor({state:'visible',timeout:20000});assert.equal(await art.getAttribute('data-cookware'),v);
+  if(v==='GRILL'){for(const id of ids)await page.locator('[data-grill-thread="'+id+'"]').click();await page.locator('[data-grill-lane="middle"]').click();assert.equal(await page.locator('[data-act="live-action:turn"]').count(),0);assert.ok(await page.locator('[data-act="live-action:smoke"]').isVisible());}
+  else for(const id of ids)await page.locator('[data-live-drop="'+id+'"]').click();
+  await page.locator('[data-act="live-action:'+tech+'"]').click();console.log('formal CB3 workbench',v,'action',tech,'clock',await page.locator('#v063-clock,#v014c-clock').textContent());assert.ok(await page.locator('[data-act="live-action:'+tech+'"]').isDisabled());
+  assert.equal(await art.getAttribute('data-workbench'),'cb2-r2b');await page.screenshot({path:out+'/formal-cb3-'+v+'-'+width+'.png'});
+  await page.waitForFunction(()=>{const c=document.querySelector('#v063-clock,#v014c-clock');return c&&parseFloat(c.textContent)>=8.5},null,{timeout:90000});
+  await page.locator('[data-act="live-finish"]').click();const collect=page.locator('[data-act="cb3-collect"]');await collect.waitFor({state:'visible',timeout:5000});await collect.click();
+  await page.waitForFunction(()=>{const s=JSON.parse(localStorage.getItem('oddpot-prototype-v04'));return s.lastCook?.cbCollected===true});const saved=await page.evaluate(()=>JSON.parse(localStorage.getItem('oddpot-prototype-v04')));assert.equal(saved.cbExperiment,undefined);for(const id of ids)assert.equal(saved.inventory[id],9);
+  await page.locator('[data-act="receipt-menu"]').click();await page.locator('.ui2-room-dock [data-act="ui2-menu"]').click();assert.match(await page.locator('.sheet .menu-title').innerText(),/Cost/);
+  await page.screenshot({path:out+'/formal-cb3-deck-'+v+'-'+width+'.png'});
+ }
 
  const expedition=newGame(15742);expedition.onboarding.enabled=false;expedition.phase='field';expedition.kitchen.mastery={...expedition.kitchen.mastery,POT:2};await load(expedition);
  await page.waitForFunction(()=>document.documentElement.dataset.oddpotDeparture3d==='active',null,{timeout:20000});
