@@ -1,6 +1,7 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import {readFileSync} from 'node:fs';
+const publishedBuild=()=>{const index=readFileSync(new URL('../index.html',import.meta.url),'utf8');const m=index.match(/const build='(v0\.16-[A-Za-z0-9.-]+)'/);assert.ok(m,'published build must be declared');return m[1];};
 import {spawnSync} from 'node:child_process';
 import {newGame,serviceDayPlan,ensureKitchen,availableBento,nextPhase} from '../src/engine.js';
 
@@ -10,16 +11,16 @@ const index=source('../index.html'),pkg=JSON.parse(source('../package.json'));
 
 test('the internal, browser, offline and package versions all target v0.15.0-alpha.11',()=>{
  assert.equal(pkg.version,'0.15.0-alpha.11');
- assert.match(index,/<title>怪味食堂 · Oddpot Kitchen v0\.16-[YZ]\.\d+(?:[a-z]\d*)*(?:-D\d+)?<\/title>/);
+ assert.ok(index.includes('<title>怪味食堂 · Oddpot Kitchen '+publishedBuild()+'</title>'));
  assert.match(index,/coreVersion:\s*['"]0\.15\.0-alpha\.11['"]/);
  assert.match(index,/id="oddpot-build-label"/);
  assert.match(index,/src\/app\.js\?v=0\.15\.0-alpha\.11/);
  assert.match(index,/forecast_home_v076\.css\?v=0\.9\.3/);
- assert.match(app,/ODDPOT · v0\.15\.0-alpha\.11/);
+ assert.ok(app.includes('ODDPOT · '+publishedBuild()+' · 单机本地存档'));
  assert.match(index,/full_game_ui_v014\.css/);
  const script=source('../scripts/build-standalone.py');
  assert.match(script,/forecast_home_v076\.css/);
- assert.match(script,/v0\.15\.0-alpha\.11 离线版/);
+ assert.ok(script.includes('怪味食堂 · '+publishedBuild()+' 离线版'));
 });
 test('home is a mode in the shared real room and floating dock, not a separate page',()=>{
  const shell=app.slice(app.indexOf('function shell('),app.indexOf('\nfunction overlayMarkup(',app.indexOf('function shell(')));
@@ -46,7 +47,7 @@ test('the compact game HUD shows the current phase and a journey, with version i
  assert.match(hud,/v014-journey/);
  assert.match(hud,/phaseLabels\[game\.phase\]/);
  assert.doesNotMatch(hud,/ODDPOT · v/);
- assert.match(app,/ODDPOT · v0\.15\.0-alpha\.11/);
+ assert.ok(app.includes('ODDPOT · '+publishedBuild()+' · 单机本地存档'));
 });
 test('small-phone responsive CSS protects the preview, touch targets and bottom safe area',()=>{
  assert.match(css,/\.v076-preview\{flex:1 1 0/);

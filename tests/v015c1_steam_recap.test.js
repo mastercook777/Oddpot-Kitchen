@@ -1,6 +1,7 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import {readFileSync} from 'node:fs';
+const publishedBuild=()=>{const index=readFileSync(new URL('../index.html',import.meta.url),'utf8');const m=index.match(/const build='(v0\.16-[A-Za-z0-9.-]+)'/);assert.ok(m,'published build must be declared');return m[1];};
 import {evaluateLiveCook,reviewLiveCook,liveCookAmount} from '../src/cooking_v063.js';
 
 const ids=['sky_moss','storm_egg'];
@@ -71,7 +72,7 @@ test('Pages entry and offline bundle both contain the corrected steam recap',()=
  assert.match(app,/cooking_v063\.js\?v=0\.15\.0-alpha\.11/);
  // Workshop and formal engine share the same thermal module; its cache key was refreshed for R1c.
  assert.match(engine,/cooking_v063\.js\?v=cb2p1/);
- assert.match(html,/v0\.15\.0-alpha\.11 离线版/);
+ assert.ok(html.includes('怪味食堂 · '+publishedBuild()+' 离线版'));
  assert.match(html,/封笼形成保温云汽/);
  assert.match(html,/云汽匀蒸 · 品质 \+8/);
 });

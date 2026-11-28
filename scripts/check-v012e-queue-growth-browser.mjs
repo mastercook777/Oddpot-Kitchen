@@ -2,6 +2,7 @@ import {chromium} from 'playwright';
 import {spawn} from 'node:child_process';
 import {mkdir} from 'node:fs/promises';
 import assert from 'node:assert/strict';
+import {expectedOfflineTitle} from './published-build.mjs';
 import {newGame,createService,setServicePaused,tick,closeService,resumeBreak} from '../src/engine.js';
 import {DINER_FLOOR} from '../src/restaurant_scene_v075.js';
 
@@ -102,7 +103,7 @@ try{
  offline.on('pageerror',e=>errors.push(e.message));
  await offline.addInitScript(([k,s])=>localStorage.setItem(k,JSON.stringify(s)),[key,done()]);
  await offline.goto('http://127.0.0.1:5173/standalone.html',{waitUntil:'networkidle'});
- assert.match(await offline.title(),/alpha\.\d+/);
+ assert.equal(await offline.title(),expectedOfflineTitle(),'offline release must match production build');
  assert.equal(await offline.locator('.v12e-promotion-alert').count(),1);
  await offline.locator('.v014-report-more summary').click();
  assert.equal(await offline.locator('.v12e-promotion-alert').isVisible(),true);

@@ -1,4 +1,4 @@
-<!doctype html><html lang="zh-CN"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1.0,maximum-scale=1.0,viewport-fit=cover,user-scalable=no"><meta name="apple-mobile-web-app-capable" content="yes"><meta name="theme-color" content="#1b3c2b"><title>怪味食堂 · v0.15.0-alpha.11 离线版</title><style>.ingredient-icon{display:inline-block;width:var(--ingredient-size,24px);height:var(--ingredient-size,24px);max-width:none;object-fit:contain;image-rendering:pixelated;vertical-align:-.24em;flex:none;pointer-events:none;user-select:none}
+<!doctype html><html lang="zh-CN"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1.0,maximum-scale=1.0,viewport-fit=cover,user-scalable=no"><meta name="apple-mobile-web-app-capable" content="yes"><meta name="theme-color" content="#1b3c2b"><title>怪味食堂 · v0.16-CB3-A2b-HUD3 离线版</title><style>.ingredient-icon{display:inline-block;width:var(--ingredient-size,24px);height:var(--ingredient-size,24px);max-width:none;object-fit:contain;image-rendering:pixelated;vertical-align:-.24em;flex:none;pointer-events:none;user-select:none}
 .stock-line>span .ingredient-icon{margin-right:3px}.target-chip .ingredient-icon{vertical-align:middle}.book-icon .ingredient-icon{display:block}
 .v063-food-icon .ingredient-icon{width:1em;height:1em;vertical-align:top;filter:none}.v063-receipt-line .ingredient-icon{vertical-align:middle}
 .v063-food-picker button>span,.v063-drop>span{line-height:1}.v063-food-picker .ingredient-icon,.v063-drop .ingredient-icon{vertical-align:top}
@@ -2140,16 +2140,16 @@ html:not([data-oddpot3d="active"]) .z2d2-view-switch{display:none}
 .ui2-shell .ui2-hud-meta{font-size:11px;min-height:23px}.ui2-shell .ui2-hud-meta .z2a3-art{width:17px;height:17px}.ui2-shell .ui2-hud-side>.ui2-mode-label{display:block;font-size:10px;padding:3px 6px}.ui2-shell[data-ui2-mode=upgrade] .z2c11-scene-caption{top:calc(var(--ui2-hud-top) + 106px)!important}.ui2-shell:not([data-ui2-mode=research])>.v013j-guide{top:calc(var(--ui2-hud-top) + 90px)!important}
 
 /* F2.5: compact resource row, scoped to non-service restaurant phases. */
-#app .ui2-shell:is([data-ui2-mode=forecast],[data-ui2-mode=menu],[data-ui2-mode=prep],[data-ui2-mode=upgrade])>.ui2-hud{display:flex!important;align-items:center;gap:5px;left:8px!important;right:8px!important}
-.ui2-shell:is([data-ui2-mode=forecast],[data-ui2-mode=menu],[data-ui2-mode=prep],[data-ui2-mode=upgrade]) .ui2-hud-stack{display:flex;align-items:center;gap:4px;flex:1;min-width:0}
-.ui2-shell:is([data-ui2-mode=forecast],[data-ui2-mode=menu],[data-ui2-mode=prep],[data-ui2-mode=upgrade]) .ui2-hud-chip{flex:1 1 auto;min-width:0;min-height:32px;padding:3px 5px;justify-content:center;gap:3px;font-size:12px;line-height:1.2;overflow:hidden;text-overflow:ellipsis}
-.ui2-shell:is([data-ui2-mode=forecast],[data-ui2-mode=menu],[data-ui2-mode=prep],[data-ui2-mode=upgrade]) .ui2-hud-chip .z2a3-art{width:18px;height:18px}
-.ui2-shell:is([data-ui2-mode=forecast],[data-ui2-mode=menu],[data-ui2-mode=prep],[data-ui2-mode=upgrade]) .ui2-hud-side{display:flex;align-items:center;flex:none;gap:0}
-.ui2-shell:is([data-ui2-mode=forecast],[data-ui2-mode=menu],[data-ui2-mode=prep],[data-ui2-mode=upgrade]) .ui2-hud-side>.ui2-mode-label{position:absolute;width:1px;height:1px;padding:0;overflow:hidden;clip-path:inset(50%);white-space:nowrap}
-#app .ui2-shell:is([data-ui2-mode=forecast],[data-ui2-mode=menu],[data-ui2-mode=prep],[data-ui2-mode=upgrade]) .ui2-hud-side .hud-gear{width:44px!important;height:44px!important;min-height:44px!important;padding:4px}
+#app .ui2-shell:is([data-ui2-mode=forecast],[data-ui2-mode=menu],[data-ui2-mode=prep],[data-ui2-mode=upgrade],[data-ui2-scene=departure])>.ui2-hud{display:flex!important;align-items:center;gap:5px;left:8px!important;right:8px!important}
+.ui2-shell:is([data-ui2-mode=forecast],[data-ui2-mode=menu],[data-ui2-mode=prep],[data-ui2-mode=upgrade],[data-ui2-scene=departure]) .ui2-hud-stack{display:flex;align-items:center;gap:4px;flex:1;min-width:0}
+.ui2-shell:is([data-ui2-mode=forecast],[data-ui2-mode=menu],[data-ui2-mode=prep],[data-ui2-mode=upgrade],[data-ui2-scene=departure]) .ui2-hud-chip{flex:1 1 auto;min-width:0;min-height:32px;padding:3px 5px;justify-content:center;gap:3px;font-size:12px;line-height:1.2;overflow:hidden;text-overflow:ellipsis}
+.ui2-shell:is([data-ui2-mode=forecast],[data-ui2-mode=menu],[data-ui2-mode=prep],[data-ui2-mode=upgrade],[data-ui2-scene=departure]) .ui2-hud-chip .z2a3-art{width:18px;height:18px}
+.ui2-shell:is([data-ui2-mode=forecast],[data-ui2-mode=menu],[data-ui2-mode=prep],[data-ui2-mode=upgrade],[data-ui2-scene=departure]) .ui2-hud-side{display:flex;align-items:center;flex:none;gap:0}
+.ui2-shell:is([data-ui2-mode=forecast],[data-ui2-mode=menu],[data-ui2-mode=prep],[data-ui2-mode=upgrade],[data-ui2-scene=departure]) .ui2-hud-side>.ui2-mode-label{position:absolute;width:1px;height:1px;padding:0;overflow:hidden;clip-path:inset(50%);white-space:nowrap}
+#app .ui2-shell:is([data-ui2-mode=forecast],[data-ui2-mode=menu],[data-ui2-mode=prep],[data-ui2-mode=upgrade],[data-ui2-scene=departure]) .ui2-hud-side .hud-gear{width:44px!important;height:44px!important;min-height:44px!important;padding:4px}
 .ui2-shell[data-ui2-mode=upgrade] .z2c11-scene-caption{top:calc(var(--ui2-hud-top) + 52px)!important}
 #app .ui2-shell:is([data-ui2-mode=forecast],[data-ui2-mode=menu],[data-ui2-mode=prep])>.v013j-guide{top:calc(var(--ui2-hud-top) + 52px)!important}
-@media(max-width:350px){.ui2-shell:is([data-ui2-mode=forecast],[data-ui2-mode=menu],[data-ui2-mode=prep],[data-ui2-mode=upgrade]) .ui2-hud-chip{font-size:10px;padding-inline:3px;gap:2px}.ui2-shell:is([data-ui2-mode=forecast],[data-ui2-mode=menu],[data-ui2-mode=prep],[data-ui2-mode=upgrade]) .ui2-hud-chip .z2a3-art{width:15px;height:15px}}
+@media(max-width:350px){.ui2-shell:is([data-ui2-mode=forecast],[data-ui2-mode=menu],[data-ui2-mode=prep],[data-ui2-mode=upgrade],[data-ui2-scene=departure]) .ui2-hud-chip{font-size:10px;padding-inline:3px;gap:2px}.ui2-shell:is([data-ui2-mode=forecast],[data-ui2-mode=menu],[data-ui2-mode=prep],[data-ui2-mode=upgrade],[data-ui2-scene=departure]) .ui2-hud-chip .z2a3-art{width:15px;height:15px}}
 
 /* CB3: the same scene-first workbench renderer as CB2-R2b, not a separate page. */
 .z2b-shell .cb3-live-workbench .v063-live-pan,.z2b-shell .cb3-live-workbench .v014c-hearth{flex:1 1 auto;min-height:130px;max-height:none;position:relative;overflow:hidden}
@@ -2158,6 +2158,13 @@ html:not([data-oddpot3d="active"]) .z2d2-view-switch{display:none}
 
 /* Formal CB3 uses the existing game window and research stage. */
 .cb3-craft-card{display:grid;gap:4px;text-align:left;padding:8px;border:2px solid var(--craft-color,#b18a58);border-radius:8px;background:#f0dfba;color:#49351e}.cb3-craft-card small,.cb3-craft-card span{font-size:11px;line-height:1.35}.cb3-craft-card strong{font-size:13px}.cb3-deck{display:grid;gap:7px}.cb3-deck .menu-line{display:block;width:100%;text-align:left;background:#e2c998;border:1px solid #a68050;border-radius:8px;color:#49351e;padding:5px}.cb3-deck .menu-line:disabled{opacity:.55}.cb3-atlas-entry{margin:6px 0;padding:6px;border:1px solid #b78e59;border-radius:8px}.cb3-atlas-entry summary{min-height:44px;display:flex;align-items:center;font-weight:800}.cb3-formula{display:flex;align-items:center;justify-content:space-between;gap:5px;font-size:12px}.cb3-formula button{flex:none}.cb3-atlas-entry .cb3-craft-card{margin-top:6px}
+
+/* Departure HUD: fixed clear header and dock, never scroll map beneath them. */
+.ui2-shell[data-ui2-scene=departure] .z2c2-expedition{position:absolute!important;inset:calc(var(--ui2-hud-top) + 52px) 0 calc(62px + env(safe-area-inset-bottom))!important;height:auto!important;min-height:0!important}
+.ui2-shell[data-ui2-scene=departure] .z2ed3-departure{padding-top:0!important;padding-bottom:4px!important;grid-template-rows:minmax(calc(35dvh + 2px),1.2fr) auto minmax(112px,1fr)!important}
+
+/* Explicit map minimum avoids fractional viewport rounding below the 35% contract. */
+.ui2-shell[data-ui2-scene=departure] .z2ed3-departure .z2c2-map{min-height:calc(35dvh + 2px)!important}
 </style></head><body><div id="app"></div><script>// v0.6.3-A: curated recipe × technique metadata. Curated benefits now resolved per recipe/technique in v0.6.3-B.
 // The engine applies these per-recipe overrides at order snapshot, never as universal style buffs.
 const RECIPE_PROFILES = {
@@ -11835,7 +11842,7 @@ function overlayMarkup(){if(!overlay)return '';
    };
    body='<h2>👩‍🍳 食堂伙伴</h2><p class="sheet-lead">'+(activeWorld(game)==='cloud'?'云港可在首枚星章后再聘一名跑堂，双跑堂各自认领一盘并行送餐、各计工资与经验；':'')+'每位帮厨按本人实际完成的订单获得经验；增加厨位必须配备人手才能真正出餐。开门前直接选择左、中、右优先站位；已选位置不可重复安排。营业时，空闲帮厨仍会自动走到缺人的炉台支援。</p><div class="staff-roster">'+row('helper')+row('waiter')+(crew.helper2.hired?row('helper2'):'')+(activeWorld(game)==='cloud'?row('waiter2'):'')+'</div>';
  }else if(overlay==='settings'){
-  body=`<h2>⚙ 游戏设置</h2><p class="sheet-lead">ODDPOT · v0.15.0-alpha.11 · 单机本地存档</p><section class="z2ed0-controls"><h3>移动摇杆</h3><div class="z2ed0-stick-options" role="group" aria-label="移动摇杆模式">${['floating','fixed'].map(m=>`<button type="button" class="game-btn secondary" data-act="stick-mode:${m}" aria-pressed="${stickMode===m}">${m==='floating'?'浮动摇杆':'固定摇杆'}</button>`).join('')}</div><p class="sheet-lead">${stickMode==='floating'?'在场景内按下即可移动。':'左下常驻摇杆，按住拖动。'} 野外与营业共用，自动保存。</p></section>${b('guide-replay','重看第一轮引导','secondary')}${b('reset','重置存档，从第 1 天重新开始','danger')}<p class="sheet-lead">切到后台时营业会自动暂停。更换设备不会同步存档。</p>`;
+  body=`<h2>⚙ 游戏设置</h2><p class="sheet-lead">ODDPOT · v0.16-CB3-A2b-HUD3 · 单机本地存档</p><section class="z2ed0-controls"><h3>移动摇杆</h3><div class="z2ed0-stick-options" role="group" aria-label="移动摇杆模式">${['floating','fixed'].map(m=>`<button type="button" class="game-btn secondary" data-act="stick-mode:${m}" aria-pressed="${stickMode===m}">${m==='floating'?'浮动摇杆':'固定摇杆'}</button>`).join('')}</div><p class="sheet-lead">${stickMode==='floating'?'在场景内按下即可移动。':'左下常驻摇杆，按住拖动。'} 野外与营业共用，自动保存。</p></section>${b('guide-replay','重看第一轮引导','secondary')}${b('reset','重置存档，从第 1 天重新开始','danger')}<p class="sheet-lead">切到后台时营业会自动暂停。更换设备不会同步存档。</p>`;
  }else if(overlay==='ui2-discard'){
   const st=game.field?.bagStacks?.find(x=>x.stackId===ui2DiscardId);body=st?'<div class="ui2-summary">'+ingredientIconHtml(st.ingredientId,48)+'<h3>丢弃 '+esc(ING[st.ingredientId]?.name)+' ×'+st.quantity+'？</h3><p>只减少本次探索的收获，无法撤销。</p></div>'+b('ui2-discard-confirm','确认丢弃','danger')+b('close-sheet','保留','secondary'):'<p>这个背包格已不存在。</p>';
  }else if(overlay==='ui2-star'){

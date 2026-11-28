@@ -1,5 +1,17 @@
 # 《怪味食堂》当前已实现状态 / 技术交接
 
+> **2026-11-28 · HUD R6（候选）**：R5真实19/20，唯一失败v0.13-B shared-cookware-crew独立脚本仍要求旧alpha离线title；原日志 run 46123663708。R6复用已验证共享published-build，保留严格真实title等值及所有玩法检查，仅此脚本和文档变化；游戏/存档/资源不变。全CI与Pages待核，未合main。
+
+> **2026-11-28 · 整备 HUD R5（候选）**：R4 13/20 CI，Core、完整移动UI、WebGL与完整玩法回归通过；七个失败工作流日志均为离线title旧alpha格式（六脚本）。R5共享published-build.mjs，浏览器实际title严格等于线上声明的build，所有操作/玩法断言保留。发布标识v0.16-CB3-A2b-HUD3，未改游戏或存档。全CI与Pages待核，未合main。[记录](DEPARTURE_HUD_CLEARANCE_FIX.md)。
+
+> **2026-11-28 · 整备 HUD R4（候选）**：R3完整三尺寸移动UI已通过，Core日志显示8个历史版本号硬编码断言失败，连带多个工作流；R4保留核心0.15.0-alpha.11与全部玩法/资源检查，旧版本断言改为严格核对index声明的正式build、页面/设置/离线同值。R3几何不改。新CI待核，未合main。[记录](DEPARTURE_HUD_CLEARANCE_FIX.md)。
+
+> **2026-11-28 · 整备 HUD R3（候选）**：PR168 R2真实19/20，WebGL通过，full UI 35%地图高度未达；R3地图/网格最小高度增加2px取整余量、保留原阈值并记录几何、等待boot ready；统一线上/设置/离线显示v0.16-CB3-A2b-HUD3，app/CSS缓存更新。核心/存档/CB3激活不变。新CI待核，尚未合main。[记录](DEPARTURE_HUD_CLEARANCE_FIX.md)。
+
+> **2026-11-28 · 整备 HUD R2（候选）**：PR168首轮CI暴露地图高度低于原35%合同与WebGL forest选择器误命中canvas，已保留原验收阈值、修正地图网格最小高度和button选择器，CSS缓存r2/离线同步。新CI待核；尚未合main。 [记录](DEPARTURE_HUD_CLEARANCE_FIX.md)。
+
+> **2026-11-28 · 整备 HUD 遮挡修复（候选）**：玩家iPhone截图显示金币/星日/背包纵向遮住地图左按钮、设置盖住右按钮。复用F2.5横排HUD至departure scene（非在途field），固定顶部留白与底部dock，地图/路线/装备独立滚动，不覆盖HUD。同步离线和CSS缓存，新增三尺寸WebGL地图双按钮真实几何/命中检查；待CI及玩家复验。CB3不变。[修复记录](DEPARTURE_HUD_CLEARANCE_FIX.md)。
+
 > **2026-11-28 · CB3-A2b R1/R2 已合 main**：PR166 head bab4c20 的20/20 Actions全部成功，合并2a72cd3与已测文件树完全相同。四厨具正式接线、鉴定/收藏/Deck、波次换菜、便当和真实词缀日报已实装；仍仅显式开发测试激活，玩家未开放。main合并触发工作流，Pages尚未核实。下一步A3a特供占正式槽位及Cost，随后跨章/厨房等级、真实多日经济和完整玩家入口。[交付记录](CB3_A2B_FORMAL_ENGINE.md)。
 
 > **2026-11-28 · CB3-A2b R1/R2（PR166）**：68ddd7e 真实CI11/20，旧Z2b测试未注入formalCBChapter及四厨具WebGL时钟22s超时；已修测试依赖、正式研发前台计时有界子步/切后台复位、真实浏览器等待90s并记录厨具。R2正式波次换菜复用Deck/冻结厨位，已有订单数组不变；便当显式选择收藏工艺并真实扣料、两章引用保护、日报显示真实词缀事件。离线实际23断言通过，7客营业收入164/利润104；新完整CI待核。未开放玩家启用，特供占槽、跨章迁移与厨房等级、多日和真机验证仍是正式完整试玩门槛。[实施记录](CB3_A2B_FORMAL_ENGINE.md)。
