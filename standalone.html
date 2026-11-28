@@ -2150,6 +2150,11 @@ html:not([data-oddpot3d="active"]) .z2d2-view-switch{display:none}
 .ui2-shell[data-ui2-mode=upgrade] .z2c11-scene-caption{top:calc(var(--ui2-hud-top) + 52px)!important}
 #app .ui2-shell:is([data-ui2-mode=forecast],[data-ui2-mode=menu],[data-ui2-mode=prep])>.v013j-guide{top:calc(var(--ui2-hud-top) + 52px)!important}
 @media(max-width:350px){.ui2-shell:is([data-ui2-mode=forecast],[data-ui2-mode=menu],[data-ui2-mode=prep],[data-ui2-mode=upgrade]) .ui2-hud-chip{font-size:10px;padding-inline:3px;gap:2px}.ui2-shell:is([data-ui2-mode=forecast],[data-ui2-mode=menu],[data-ui2-mode=prep],[data-ui2-mode=upgrade]) .ui2-hud-chip .z2a3-art{width:15px;height:15px}}
+
+/* CB3: the same scene-first workbench renderer as CB2-R2b, not a separate page. */
+.z2b-shell .cb3-live-workbench .v063-live-pan,.z2b-shell .cb3-live-workbench .v014c-hearth{flex:1 1 auto;min-height:130px;max-height:none;position:relative;overflow:hidden}
+.z2b-shell .cb3-live-workbench .v063-live-head,.z2b-shell .cb3-live-workbench .v014c-grill-head{flex:none}
+@media(max-height:620px){.z2b-shell .cb3-live-workbench .v063-live-pan,.z2b-shell .cb3-live-workbench .v014c-hearth{min-height:105px}}
 </style></head><body><div id="app"></div><script>// v0.6.3-A: curated recipe × technique metadata. Curated benefits now resolved per recipe/technique in v0.6.3-B.
 // The engine applies these per-recipe overrides at order snapshot, never as universal style buffs.
 const RECIPE_PROFILES = {
@@ -12033,8 +12038,8 @@ function grillResearch(c){
  const p=grillCookPreview(game),placed=!!c.lane,threaded=c.skewer.length===c.ids.length;
  const state=p.items.some(x=>x.state==='焦糊')?'焦糊':p.items.length&&p.items.every(x=>x.state==='熟透')?'双面熟透':placed?'继续烤制':'等待入炉';
  const reel=c.skewer.map((id,i)=>`<span class="v014c-bead" style="--i:${i}">${ingredientIconHtml(id,30)}</span>`).join('');
- return [`<section class="v014c-grill-scene" aria-label="烤架研发">
-  <header class="v014c-grill-head"><div><small>手工烤串 · ${placed?'火候操作':threaded?'选择火位':'穿串中'}</small><strong>${placed?z2a2Icon('energy')+' '+({edge:'边火',middle:'均火',flame:'猛火'}[c.lane]):z2bCookIcon('GRILL')+' 亲手穿串'}</strong></div><b id="v014c-clock">${placed?c.elapsed.toFixed(1)+'s':'未入炉'}</b></header>
+ return [`<section class="v014c-grill-scene${c.cbTiming?' cb3-live-workbench':''}" aria-label="烤架研发">
+  <header class="v014c-grill-head"><div><small>${c.cbTiming?'自动翻面 · ':'手工烤串 · '}${placed?'火候操作':threaded?'选择火位':'穿串中'}</small><strong>${placed?z2a2Icon('energy')+' '+({edge:'边火',middle:'均火',flame:'猛火'}[c.lane]):z2bCookIcon('GRILL')+' 亲手穿串'}</strong></div><b id="v014c-clock">${placed?c.elapsed.toFixed(1)+'s':'未入炉'}</b></header>
   <div class="v014c-hearth ${placed?'lit '+c.lane:''}" aria-label="烤炉">
    <div class="v014c-coals" aria-hidden="true"><i></i><i></i><i></i><i></i><i></i></div>
    <div class="v014c-rail"><div class="v014c-skewer ${placed?'cooking':''} ${c.actions.some(a=>a.type==='turn')?'turned':''}"><i class="v014c-stick"></i>${reel||'<span class="v014c-empty">轻点食材，依次穿到烤叉上</span>'}<i class="v014c-handle"></i></div></div>
@@ -12044,7 +12049,7 @@ function grillResearch(c){
   <div class="v014c-status" id="v014c-status">${placed?state:threaded?'选一个火位，把烤串摆上炉台':`已穿 ${c.skewer.length}/${c.ids.length}`}</div>
   ${!placed?`<div class="v014c-tray">${c.ids.map(id=>`<button type="button" data-grill-thread="${id}" ${c.skewer.includes(id)?'disabled':''}><span>${ingredientIconHtml(id,27)}</span><b>${ING[id].name}</b><small>${c.skewer.includes(id)?'已穿串':'轻点穿串'}</small></button>`).join('')}</div>`:''}
  </section>`,!placed?`<div class="v014c-dock"><div class="v014c-lanes">${[['edge','边火','慢烤'],['middle','均火','平衡'],['flame','猛火','快烤']].map(([id,name,tag])=>`<button type="button" data-grill-lane="${id}" ${threaded?'':'disabled'}><strong>${name}</strong><small>${tag}</small></button>`).join('')}</div></div>`:
- `<div class="v014c-dock"><div class="action-row">${b('live-action:turn',z2bCookIcon('GRILL')+' 翻面',c.actions.some(a=>a.type==='turn')?'chosen':'secondary',c.actions.some(a=>a.type==='turn'))}${b('live-action:brush',z2a2Icon('cook')+' 刷料',c.actions.some(a=>a.type==='brush')?'chosen':'secondary',!c.actions.some(a=>a.type==='turn')||c.actions.some(a=>a.type==='brush'))}${b('live-finish',z2a2Icon('plate')+' 出炉','primary wide',c.elapsed<1.2)}</div></div>`];
+ `<div class="v014c-dock"><div class="action-row">${c.cbTiming?b('live-action:smoke',z2a2Icon('cook')+' 熏烤',c.actions.some(a=>a.type==='smoke')?'chosen':'secondary',c.actions.some(a=>a.type==='smoke')):b('live-action:turn',z2bCookIcon('GRILL')+' 翻面',c.actions.some(a=>a.type==='turn')?'chosen':'secondary',c.actions.some(a=>a.type==='turn'))}${b('live-action:brush',z2a2Icon('cook')+' 刷料',c.actions.some(a=>a.type==='brush')?'chosen':'secondary',(!c.cbTiming&&!c.actions.some(a=>a.type==='turn'))||c.actions.some(a=>a.type==='brush'))}${b('live-finish',z2a2Icon('plate')+' 出炉','primary wide',c.elapsed<1.2)}</div></div>`];
 }
 
 function research(){const c=game.cook;
@@ -12052,8 +12057,8 @@ function research(){const c=game.cook;
  if(c?.mode==='v014c-grill')return grillResearch(c);
  if(!c||c.mode==='v063-live'){
   if(c){
-   const p=liveCookPreview(game),heat=liveHeatSummary(p.indicators),acts=LIVE_ACTIONS[c.vessel],order=c.dropped.map(d=>d.id),icons=c.dropped.map(d=>`<span class="v063-food-icon" data-live-icon="${d.id}">${ingredientIconHtml(d.id,40)}</span>`).join('');
-   return [`<div class="v063-live-scene">
+   const p=liveCookPreview(game),heat=liveHeatSummary(p.indicators),acts=(c.cbTiming?WORKSHOP_ACTIONS:LIVE_ACTIONS)[c.vessel],order=c.dropped.map(d=>d.id),icons=c.dropped.map(d=>`<span class="v063-food-icon" data-live-icon="${d.id}">${ingredientIconHtml(d.id,40)}</span>`).join('');
+   return [`<div class="v063-live-scene${c.cbTiming?' cb3-live-workbench':''}">
      <div class="v063-live-head"><b>${z2bCookIcon(c.vessel)} ${cookName(c.vessel)} · ${c.vessel==='STEAM'?'封笼排汽':c.vessel==='GRILL'?'双面火候':'实时火候'}</b><span id="v063-clock">${p.elapsed.toFixed(1)}s / 19s</span></div>
      <div class="v063-live-pan ${c.vessel==='GRILL'?'grill':c.vessel==='POT'?'pot':''}" data-live-pan="true">
        <div class="v063-bowl">${c.vessel==='POT'?'<div class="v063-broth"></div>':''}</div>
@@ -12065,7 +12070,7 @@ function research(){const c=game.cook;
      <div class="v063-live-msg v103-heat-status" id="v103-heat-status" data-heat-tone="${heat.tone}"><span aria-hidden="true">${z2a2Icon('energy')}</span><b id="v103-heat-label">${heat.label}</b><small id="v103-heat-detail">${heat.details}</small></div>
      <div class="v063-live-tray">${c.ids.map(id=>{const d=p.indicators.find(x=>x.id===id);return `<button class="v063-drop ${d.dropped?'added':''}" data-live-drop="${id}" data-heat-tone="${d.tone}" ${d.dropped?'disabled':''}><span>${ingredientIconHtml(id,28)}</span><b>${ING[id].name}</b><small data-live-status="${id}">${d.state}</small>${c.vessel==='GRILL'?`<i class="v014b-sides">正面 ${d.frontProgress||0}% · 反面 ${d.backProgress||0}%</i>`:''}<i class="v103-heat-meter" aria-hidden="true"><i data-heat-fill="${id}" style="width:${d.progress}%"></i></i></button>`}).join('')}</div>
    </div>`,
-   `<div class="v063-live-actions"><div class="action-row">${acts.map(a=>b('live-action:'+a.id,z2bCookIcon(c.vessel)+' '+a.name,c.actions.some(x=>x.type===a.id)?'chosen':'secondary',!c.dropped.length||c.actions.some(x=>x.type===a.id)||c.vessel==='STEAM'&&(c.dropped.length<c.ids.length||a.id==='vent'&&!c.actions.some(x=>x.type==='seal'))||c.vessel==='GRILL'&&(c.dropped.length<c.ids.length||a.id==='brush'&&!c.actions.some(x=>x.type==='turn')))).join('')}${b('live-finish',z2a2Icon('plate')+' 起锅','primary wide',!c.dropped.length||c.elapsed<1.2)}</div></div>`];
+   `<div class="v063-live-actions"><div class="action-row">${acts.map(a=>b('live-action:'+a.id,z2bCookIcon(c.vessel)+' '+a.name,c.actions.some(x=>x.type===a.id)?'chosen':'secondary',!c.dropped.length||c.actions.some(x=>x.type===a.id)||c.vessel==='STEAM'&&(c.dropped.length<c.ids.length||!c.cbTiming&&a.id==='vent'&&!c.actions.some(x=>x.type==='seal'))||c.vessel==='GRILL'&&(c.dropped.length<c.ids.length||a.id==='brush'&&!c.actions.some(x=>x.type==='turn')))).join('')}${b('live-finish',z2a2Icon('plate')+' 起锅','primary wide',!c.dropped.length||c.elapsed<1.2)}</div></div>`];
   }
   const candidate=selectedIngredients.length>=2?liveRecipeId(selectedIngredients,selectedMethod==='steam'?'STEAM':selectedMethod==='grill'?'GRILL':selectedMethod==='stir'?'WOK':'POT'):null;
    const featured=candidate&&(activeWorld(game)!=='cloud'||chapterRecipeAvailable(game,candidate))?candidate:null;

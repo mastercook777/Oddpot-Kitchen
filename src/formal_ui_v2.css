@@ -145,3 +145,8 @@
 .ui2-shell[data-ui2-mode=upgrade] .z2c11-scene-caption{top:calc(var(--ui2-hud-top) + 52px)!important}
 #app .ui2-shell:is([data-ui2-mode=forecast],[data-ui2-mode=menu],[data-ui2-mode=prep])>.v013j-guide{top:calc(var(--ui2-hud-top) + 52px)!important}
 @media(max-width:350px){.ui2-shell:is([data-ui2-mode=forecast],[data-ui2-mode=menu],[data-ui2-mode=prep],[data-ui2-mode=upgrade]) .ui2-hud-chip{font-size:10px;padding-inline:3px;gap:2px}.ui2-shell:is([data-ui2-mode=forecast],[data-ui2-mode=menu],[data-ui2-mode=prep],[data-ui2-mode=upgrade]) .ui2-hud-chip .z2a3-art{width:15px;height:15px}}
+
+/* CB3: the same scene-first workbench renderer as CB2-R2b, not a separate page. */
+.z2b-shell .cb3-live-workbench .v063-live-pan,.z2b-shell .cb3-live-workbench .v014c-hearth{flex:1 1 auto;min-height:130px;max-height:none;position:relative;overflow:hidden}
+.z2b-shell .cb3-live-workbench .v063-live-head,.z2b-shell .cb3-live-workbench .v014c-grill-head{flex:none}
+@media(max-height:620px){.z2b-shell .cb3-live-workbench .v063-live-pan,.z2b-shell .cb3-live-workbench .v014c-hearth{min-height:105px}}

@@ -58,7 +58,7 @@ export function receiptFrame(result){
  if(!result?.events)return null;
  return {type:result.vessel||'WOK',success:!!result.sellable,discovery:!!(result.sellable&&result.firstDiscovery),items:result.events.map((e,i)=>({id:e.id,x:Math.cos(i*2.4)*.52,z:Math.sin(i*2.4)*.44,y:0,rot:0,tone:result.doneness?.find(d=>d.id===e.id)?.label==='焦糊'?'bad':result.doneness?.find(d=>d.id===e.id)?.label==='熟透'?'good':'warming'}))};
 }
-let instance=null,entered=false,lastAt=-Infinity,lastCook=null,lastHost=null,workbenchMotion=null;const recovery=createRecovery();
+let instance=null,entered=false,lastAt=-Infinity,lastCook=null,lastHost=null,workbenchMotion=null,instanceEnhanced=false;const recovery=createRecovery();
 function state(v){document.documentElement.dataset.oddpotResearch3d=v;}
 function release(){lastCook=null;lastHost=null;lastAt=-Infinity;workbenchMotion=null;if(instance){const old=instance;instance=null;old.dispose();}}
 function leave(){if(!entered&&!instance)return;entered=false;release();recovery.reset();state('idle');}
@@ -71,10 +71,10 @@ export function enableY4b(){
   const host=live?app.querySelector(cook.mode==='v014c-grill'?'.v014c-hearth':'.v063-live-pan'):result?app.querySelector('.v063-receipt-head>span'):null;
   if(!host){leave();return;}entered=true;if(!visibleHost(host)||!recovery.canTry())return;
   const lib=sharedThree.value;if(!lib){sharedThree.tryLoad();state(sharedThree.exhausted?'fallback':'loading');return;}
-  const identity=cook||result,changed=lastCook!==identity||lastHost!==host;const enhanced=!!(s.cbExperiment&&cook?.cbTiming&&app.id==='lab');if(!changed&&now-lastAt<(enhanced?16:33))return;if(changed)workbenchMotion=null;lastAt=now;lastCook=identity;lastHost=host;
+  const identity=cook||result,changed=lastCook!==identity||lastHost!==host;const enhanced=!!(cook?.cbTiming&&(s.cbExperiment&&app.id==='lab'||s.cbBuild?.status==='active'&&s.cbBuild.chapters?.[s.activeWorld==='cloud'?'cloud':'hearth']?.active));if(!changed&&now-lastAt<(enhanced?16:33))return;if(changed)workbenchMotion=null;lastAt=now;lastCook=identity;lastHost=host;
   const frame=live?researchFrame(cook,preview):null,receipt=result?receiptFrame(result):null;if(!frame&&!receipt)return;
   if(enhanced&&frame){workbenchMotion=advanceWorkbenchPresentation(workbenchMotion,frame,now);frame.items=workbenchMotion.items.map(v=>{const h=preview?.items?.find(i=>i.id===v.id);return {...v,frontProgress:h?.frontProgress,backProgress:h?.backProgress};});frame.workbench={z:workbenchMotion.z,lift:workbenchMotion.lift,clock:workbenchMotion.clock,firstAge:workbenchMotion.clock-Math.min(workbenchMotion.clock,...Object.values(workbenchMotion.tracks).map(v=>v.born??workbenchMotion.clock))};}
-  try{if(!instance)instance=makeWorkbench(lib,enhanced);instance.draw(host,frame,receipt,s.lastCook,now);recovery.success();state('active');}catch(e){fail(e);}
+  try{if(instance&&live&&instanceEnhanced!==enhanced){const old=instance;instance=null;old.dispose();}if(!instance){instance=makeWorkbench(lib,enhanced);instanceEnhanced=enhanced;}instance.draw(host,frame,receipt,s.lastCook,now);recovery.success();state('active');}catch(e){fail(e);}
  }};
 }
 function makeWorkbench(T,enhanced=false){
