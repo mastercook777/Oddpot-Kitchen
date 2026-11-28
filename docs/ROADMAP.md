@@ -1,5 +1,7 @@
 # 《怪味食堂》ROADMAP · 当前经营与章节开发路线
 
+> **2026-11-28 · 整备 HUD R4（候选）**：R3完整三尺寸移动UI已通过，Core日志显示8个历史版本号硬编码断言失败，连带多个工作流；R4保留核心0.15.0-alpha.11与全部玩法/资源检查，旧版本断言改为严格核对index声明的正式build、页面/设置/离线同值。R3几何不改。新CI待核，未合main。[记录](DEPARTURE_HUD_CLEARANCE_FIX.md)。
+
 > **2026-11-28 · 整备 HUD R3（候选）**：PR168 R2真实19/20，WebGL通过，full UI 35%地图高度未达；R3地图/网格最小高度增加2px取整余量、保留原阈值并记录几何、等待boot ready；统一线上/设置/离线显示v0.16-CB3-A2b-HUD3，app/CSS缓存更新。核心/存档/CB3激活不变。新CI待核，尚未合main。[记录](DEPARTURE_HUD_CLEARANCE_FIX.md)。
 
 > **2026-11-28 · 整备 HUD R2（候选）**：PR168首轮CI暴露地图高度低于原35%合同与WebGL forest选择器误命中canvas，已保留原验收阈值、修正地图网格最小高度和button选择器，CSS缓存r2/离线同步。新CI待核；尚未合main。 [记录](DEPARTURE_HUD_CLEARANCE_FIX.md)。

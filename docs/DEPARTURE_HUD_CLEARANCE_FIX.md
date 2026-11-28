@@ -8,3 +8,6 @@
 
 ## R3 · 35%地图边界与发布标识
 R2实际19/20 CI，WebGL已通过，唯一full UI仍在35%地图高度边界失败；R1 WebGL日志320×568的地图为约198px，阈值198.8px。取整/边框余量是推断，非已测根因。R3直接设置地图及首行min-height/track calc(35dvh + 2px)，不降低原35%和正常三尺寸无滚动合同；full UI显式等待正式boot ready（另PR167曾出现forecast未初始化），打印实际几何。上线候选统一显示 v0.16-CB3-A2b-HUD3：页面title/boot/构建角标/设置/离线title与生成器同步；核心package版本和存档schema不改，app/CSS缓存更新。未自动开放CB3。新增静态合同；真实CI和Pages待核，未声称用户Safari修复。正式发布仍以实际Pages提交为准。
+
+## R4 · 发布标识回归
+R3实际完整移动UI workflow success，Core 8项失败均为历史可见版本硬编码（7个测试文件），无新玩法失败证据。R4仅更新这些断言为读取index的明确build并严格核对完整title/设置/离线，保留核心版本、加载入口、原玩法与渲染检查；未改变R3布局代码。待全CI绿后合main及Pages，未发布。
