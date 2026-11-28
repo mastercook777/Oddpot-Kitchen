@@ -104,6 +104,8 @@ try{
  await offline.goto('http://127.0.0.1:5173/standalone.html',{waitUntil:'networkidle'});
  assert.match(await offline.title(),/alpha\.\d+/);
  assert.equal(await offline.locator('.v12e-promotion-alert').count(),1);
+ await offline.locator('.v014-report-more summary').click();
+ assert.equal(await offline.locator('.v12e-promotion-alert').isVisible(),true);
  await offline.locator('.v12e-promotion-alert [data-act="crew"]').click();
  await offline.locator('.ui2-crew-slots .ui2-slot').nth(1).click();assert.equal(await offline.locator('[data-act="promote:waiter"]').isEnabled(),true);
  await offline.screenshot({path:output+'/offline-report-390.png'});

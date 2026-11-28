@@ -22,7 +22,7 @@ try {
   page.on('pageerror',e=>errors.push(e.message));
   const a=state(1);await page.addInitScript(([key,v])=>localStorage.setItem(key,JSON.stringify(v)),[storageKey,a]);
   await page.goto('http://127.0.0.1:5173/index.html',{waitUntil:'networkidle'});
-  await page.locator('[data-act="ui2-forecast"]').click();
+  await page.locator('.ui2-room-dock [data-act="ui2-prep"]').click();
   const enrol=page.locator('[data-act="second-star-request"]');
   assert.equal(await enrol.count(),1);
   assert.match(await page.locator('.v12-star-invite').first().innerText(),/第1\/2夜/);
@@ -48,7 +48,7 @@ try {
  await offline.addInitScript(([key,v])=>localStorage.setItem(key,JSON.stringify(v)),[storageKey,state(1)]);
  await offline.goto('http://127.0.0.1:5173/standalone.html',{waitUntil:'networkidle'});
  assert.match(await offline.title(),/0\.\d+\.\d+-alpha\.\d+/);
- await offline.locator('[data-act="ui2-forecast"]').click();assert.equal(await offline.locator('[data-act="second-star-request"]').count(),1);
+ await offline.locator('.ui2-room-dock [data-act="ui2-prep"]').click();const request=offline.locator('[data-act="second-star-request"]');assert.equal(await request.isVisible(),true);await request.click();assert.equal(await offline.evaluate(k=>JSON.parse(localStorage.getItem(k)).chapterProgress.secondAppraisal?.requestDay,storageKey),'4-1');
  await offline.close();
  console.log('v0.13-D: second-star requests, veggie marketing and standalone pass in 320/375/390 Chrome');
 } finally {if(browser)await browser.close();server.kill('SIGTERM')}

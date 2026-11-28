@@ -89,5 +89,12 @@ try{
  assert.match(await offline.title(),/0\.\d+\.\d+-alpha\.\d+/);
  await checkFour(offline,s);
  await offline.close();
+ const legacyOffline=await browser.newPage({viewport:{width:390,height:844}});
+ const old=states();old.market={dayKey:'1-1',schema:2,goods:{chicken:{initialStock:8,stock:4,price:7},garlic:{initialStock:7,stock:0,price:3},mushroom:{initialStock:9,stock:5,price:4}}};
+ await launchState(legacyOffline,old,'standalone.html');
+ const migrated=await legacyOffline.evaluate(k=>JSON.parse(localStorage.getItem(k)),key);
+ assert.equal(Object.keys(migrated.market.goods).length,4,'offline migration occurs before opening the market');
+ for(const id of ['chicken','garlic','mushroom'])assert.deepEqual(migrated.market.goods[id],old.market.goods[id]);
+ await checkFour(legacyOffline,old,{legacy:true});await legacyOffline.close();
  console.log('v0.13-E verified actual four displayed market rows, buy actions, spend, next-day rotation, old saves, 320/375/390 and offline');
 } finally{if(browser)await browser.close();server.kill('SIGTERM');}

@@ -330,6 +330,8 @@ function forecastPanel(){
  return '<div class="ui2-summary">'+z2a2Icon('target')+'<h3>'+esc(firstChallenge(game)?'爆炎厨王踢馆':plan.pressure)+'</h3><p>'+esc(plan.goal.label)+' · 预计 '+plan.count+' 位客人</p><p>仓库 '+stock+' 份食材</p></div>'+starInvite()+portalPanel();
 }
 function forecast(){
+ // Preserve the pre-UI2 market migration on entering the morning room.
+ ensureDailyMarket(game);
  const g=dinerFloor(game),ready=game.bento?.day===game.cycle+'-'+game.day;
  return ui2Room('morning',ui2Spot('to-field','route','整装出发',g.entrance)+ui2Spot('ui2-forecast','target','今日预报',g.passFurniture),ui2Tool('stock','bag','采购')+ui2Tool('book','ledger','图鉴')+ui2Tool('crew','queue','伙伴')+ui2Tool('bento','bento',ready?'便当 ✓':'便当'),ui2Tool('ui2-depart','route','出发',true),'今日营业 · '+serviceDayPlan(game).goal.label);
 }

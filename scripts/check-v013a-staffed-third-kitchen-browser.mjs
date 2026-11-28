@@ -42,8 +42,10 @@ try{
   assert.match(await page.locator('.kitchen-config-slot').last().innerText(),/中厨位/);
   await page.keyboard.press('Escape');await page.locator('.ui2-room-dock [data-act="crew"]').click();
   assert.equal(await page.locator('canvas[data-crew-portrait="helper2"]').count(),1,'different third employee portrait');
-  assert.match(await page.locator('.staff-roster').innerText(),/小炭/);
-  assert.equal(await page.locator('[data-assign="helper2:2"]').count(),1);
+  const third=page.locator('.ui2-crew-slots').getByRole('button',{name:/小炭/});
+  assert.equal(await third.isVisible(),true);await third.click();
+  assert.match(await page.locator('.staff-roster .staff-person:visible').innerText(),/小炭/);
+  assert.equal(await page.locator('[data-assign="helper2:2"]').isVisible(),true);
   await page.screenshot({path:out+'/prep-crew-'+width+'.png',fullPage:true});
   await page.locator('[data-act="close-sheet"]').last().click();
   const current=await page.evaluate(k=>JSON.parse(localStorage.getItem(k)),key);
