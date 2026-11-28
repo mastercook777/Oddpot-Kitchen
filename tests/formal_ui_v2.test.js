@@ -21,3 +21,11 @@ test('UI2 morning room migrates existing market before the first render saves it
  const offline=readFileSync(new URL('../standalone.html',import.meta.url),'utf8');
  for(const source of [app,offline])assert.match(source,/function forecast\(\)\{[^}]*ensureDailyMarket\(game\);/);
 });
+
+test('departure shares the compact HUD and reserves a fixed clear map viewport',()=>{
+ const css=readFileSync(new URL('../src/formal_ui_v2.css',import.meta.url),'utf8');
+ assert.match(css,/\[data-ui2-scene=departure\]\) \.ui2-hud-stack\{display:flex/);
+ assert.match(css,/\[data-ui2-scene=departure\] \.z2c2-expedition\{position:absolute!important;inset:calc\(var\(--ui2-hud-top\) \+ 52px\)/);
+ assert.match(css,/\[data-ui2-scene=departure\] \.z2ed3-departure\{padding-top:0!important/);
+ const html=readFileSync(new URL('../standalone.html',import.meta.url),'utf8');assert.ok(html.includes(css));
+});
