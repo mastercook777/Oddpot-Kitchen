@@ -1,3 +1,4 @@
+import {cb3MigrationPlan} from './cb3_migration_a1.js?v=cb3a1';
 import {resolveCBFormula,cbFormulaIngredientsAllowed} from './cooking_formulas_p1.js?v=cb2p1';
 import {judgeCooking} from './cooking_quality_r1.js?v=cb2r1e';
 import {fieldHarvestTargetSuffix} from './field_target_v012f.js?v=0.13.0-alpha.9';
@@ -1784,3 +1785,6 @@ export function resolveSpecialFieldEvent(s,choice){
  f.actionMessage=choice==='leave'?'你告别了这次奇遇，继续赶路。':'获得'+Object.entries(quote.gain).map(([id,q])=>ING[id].name+'×'+q).join('、')+'，仍在野外背包，回店后入库。';
  f.actionMessageTTL=4;return true;
 }
+
+// Formal migration preflight: never enables experiment or mutates saves.
+export function inspectCB3Migration(s){return cb3MigrationPlan(s);}
