@@ -122,7 +122,7 @@ for(const [width,height] of [[320,568],[375,667],[390,844]]){
  }
  const menuState=newGame(15742);menuState.onboarding.enabled=false;menuState.phase='menu';await load(menuState);
  await page.waitForFunction(()=>document.querySelector('.ui2-room-host canvas[data-view="restaurant"]')?.dataset.phase==='menu'&&document.documentElement.dataset.oddpot3d==='active',null,{timeout:20000});
- await page.locator('.ui2-room-dock [data-act="ui2-menu"]').click();assert.ok(await page.locator('.sheet').isVisible());
+ const centerSpot=page.locator('.ui2-spot[data-act="ui2-menu"]');assert.equal((await centerSpot.getAttribute('data-ui2-anchor')).split(',')[0],'0.5');await centerSpot.click();assert.ok(await page.locator('.sheet').isVisible());
  assert.equal(await page.locator('.ui2-room-host canvas[data-view="restaurant"]').getAttribute('data-phase'),'menu');
  await page.screenshot({path:out+'/ui2-menu-3d-'+width+'.png'});
  const prep=newGame(15742);prep.onboarding.enabled=false;prep.phase='prep';await load(prep);await page.waitForFunction(()=>document.querySelector('.ui2-room-host canvas[data-view="restaurant"]')?.dataset.phase==='prep',null,{timeout:20000});const prepLayout=await page.locator('.ui2-room-host').boundingBox();assert.ok(prepLayout.height>=height*.95);await page.locator('.ui2-room-dock [data-act="ui2-prep"]').click();assert.ok(await page.locator('.sheet .kitchen-config-slot').count()>0);await page.screenshot({path:out+'/ui2-prep-'+width+'.png'});
