@@ -2161,7 +2161,7 @@ html:not([data-oddpot3d="active"]) .z2d2-view-switch{display:none}
 
 /* Departure HUD: fixed clear header and dock, never scroll map beneath them. */
 .ui2-shell[data-ui2-scene=departure] .z2c2-expedition{position:absolute!important;inset:calc(var(--ui2-hud-top) + 52px) 0 calc(62px + env(safe-area-inset-bottom))!important;height:auto!important;min-height:0!important}
-.ui2-shell[data-ui2-scene=departure] .z2ed3-departure{padding-top:0!important;padding-bottom:4px!important}
+.ui2-shell[data-ui2-scene=departure] .z2ed3-departure{padding-top:0!important;padding-bottom:4px!important;grid-template-rows:minmax(35dvh,1.2fr) auto minmax(112px,1fr)!important}
 </style></head><body><div id="app"></div><script>// v0.6.3-A: curated recipe × technique metadata. Curated benefits now resolved per recipe/technique in v0.6.3-B.
 // The engine applies these per-recipe overrides at order snapshot, never as universal style buffs.
 const RECIPE_PROFILES = {
