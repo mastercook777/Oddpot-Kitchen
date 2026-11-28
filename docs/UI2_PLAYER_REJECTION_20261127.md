@@ -23,3 +23,8 @@ commit 327a04d：菜单加入正式3D eligible；移除营业引导相反方向�
 - 基线 PR163 032744b：实际 20 checks 中 9 成功、11 失败。八项先跑 Node 的工作流同一失败：v015_static_boot 缓存断言不接受 ui2-f1；两项实际离线浏览器超时，正式候选 standalone 未同步（缺 ui2-forecast）；全UI浏览器成长 HUD bottom=122、caption top=114，重叠8px。
 - 允许版本缓存后缀的多个连字符分段，原 portal stylesheet、动态启动和3D参数断言仍保留；成长统计牌相对HUD下移16px（90→106），正式CSS缓存 ui2-f2。以 main 1b5be4b 已同步离线包为基底，按原构建脚本剥离 import/export 并替换完整 app/full_game_ui CSS、追加 formal UI CSS 与 JS，核对原内容唯一匹配；候选相对该基线无其他离线输入差异。保留所有旧浏览器断言，不改变经济/存档/引擎及正式研究。
 - 本轮实际执行 V8 静态检查：缓存断言匹配真实 index，离线入口/员工槽、完整样式及模块内容、成长偏移和组合JS语法检查共6项通过。容器 git ls-remote DNS失败，未执行 npm test / npm run build / Python完整重建 / 实际Chrome或Safari。新提交 CI 结果、逐屏视觉、预览部署均未验证。仍按玩家拒收记录：不合main、不发布未核验候选，研发CB3继续暂停；下一步重跑完整CI、核对离线真实操作和六场景截图，再更新隔离预览给玩家验收。
+
+
+## 2026-11-28 · F2 工程解阻：同步主分支
+- 三方 Git tree 对比（共同祖先99d9e57，候选838ae43，main bae29c3）：唯一双边不同文件为 standalone.html；main 独有133个文件（隔离预览131个及两份历史记录），全部按原 blob 保留。候选离线包与以 main 已同步包替换两个变更模块、追加正式UI CSS/JS的生成结果逐字符一致，组合脚本通过V8语法解析；保留候选离线包，不回退至旧UI。合并方向为 main → 候选分支，不改 main 或当前线上预览。
+- 当前连接无法 DNS 解析 github.com，未运行实际 Node/Chrome/Python 完整构建；F2 head 的 Actions 检查为0，上一轮9/20。同步主分支后重新查询 CI；如未触发需单独恢复触发机制，禁止用旧 SHA 重跑代替新候选验证。正式发布/真机视觉仍未验收，CB3继续冻结。

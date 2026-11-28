@@ -1,0 +1,217 @@
+/* v0.5A: restaurant-building controls, intentionally non-modal. */
+.kitchen-prep-card{top:8%!important;left:5%!important;right:5%!important;max-height:88%!important;overflow-y:auto!important;padding:11px 12px!important;display:flex;flex-direction:column;gap:5px;text-align:left!important}
+.kitchen-prep-card h2{margin:0 0 3px!important;font-size:17px}
+.kitchen-config-head{font-weight:850;font-size:12px;color:#f7dda1;background:#45694b;border-radius:7px;padding:6px 9px}
+.kitchen-config-slots{display:grid;gap:6px}
+.kitchen-config-slot{display:flex;align-items:center;justify-content:space-between;background:#244b3b;border:1px solid #91ab82;border-radius:10px;padding:7px;gap:6px;min-height:46px}
+.kitchen-config-slot>span{display:flex;flex-direction:column;gap:2px;min-width:64px}
+.kitchen-config-slot b{font-size:12px;color:#ffeba9}.kitchen-config-slot small{font-size:10px;color:#c8d9c2}
+.kitchen-choice{display:flex;gap:5px}.kitchen-choice button{border:1px solid #8caa8e;background:#305c48;color:#e3e6d4;border-radius:8px;padding:8px 10px;font-size:12px;font-weight:900;min-height:38px}
+.kitchen-choice button.active{background:#efc579;color:#2e422e;border-color:#ffe5a6;box-shadow:inset 0 -2px #a87938}
+.kitchen-pressure{font-size:11px!important;font-weight:750;color:#e8d5ad!important;margin:2px 0!important}
+.kitchen-refit{font-size:10px!important;margin:0 0 3px!important;color:#abc4ad!important}
+.prep-divider{font-size:12px;color:#f1d297;font-weight:900;border-top:1px solid #76937a;padding-top:7px}
+.kitchen-prep-card .prep-items{gap:5px}.kitchen-prep-card .prep-item{min-height:41px;font-size:12px;padding:7px 9px}
+.kitchen-upgrade-card{top:12%!important;max-height:82%!important;overflow-y:auto!important;display:flex;flex-direction:column;gap:7px}
+.kitchen-upgrade-card h2{margin:0!important}.kitchen-upgrade-card p{margin:0!important}
+.kitchen-upgrade-row{display:flex;gap:8px;align-items:center;justify-content:space-between;padding:8px;background:#385b46;border:1px solid #93a878;border-radius:9px}
+.kitchen-upgrade-row div{display:flex;flex-direction:column;gap:3px;text-align:left}.kitchen-upgrade-row strong{font-size:12px}.kitchen-upgrade-row small{font-size:10px;color:#d6ddb9}
+.kitchen-upgrade-row .game-btn{font-size:11px;min-width:106px;max-width:135px;margin:0;padding:7px 5px}
+.kitchen-report{padding:8px 11px;background:#274638;border:1px solid #a2b38a;border-radius:10px;display:flex;flex-direction:column;gap:4px;font-size:12px;width:100%}
+.kitchen-report strong{color:#f2d18a}.kitchen-report span{color:#dce4c5}
+@media(max-width:350px){.kitchen-config-slot{padding:5px}.kitchen-choice button{padding:7px;font-size:11px}.kitchen-prep-card{top:3%!important;max-height:94%!important}.kitchen-upgrade-row .game-btn{min-width:95px}}
+@media(max-height:650px){
+ .kitchen-prep-card{top:1%!important;max-height:97%!important;padding:7px 9px!important;gap:2px}
+ .kitchen-prep-card h2{font-size:16px}
+ .kitchen-config-head{padding:4px 7px;font-size:11px}
+ .kitchen-config-slots{gap:4px}
+ .kitchen-config-slot{min-height:40px;padding:4px 7px}
+ .kitchen-choice button{min-height:35px;padding:5px 8px}
+ .kitchen-pressure{line-height:1.15}
+ .kitchen-refit{margin:0!important;line-height:1.2}
+ .prep-divider{padding-top:4px}
+ .kitchen-prep-card .prep-items{gap:4px}
+ .kitchen-prep-card .prep-item{min-height:38px;padding:6px 8px}
+}
+@media(max-height:650px){
+ .kitchen-upgrade-card{top:2%!important;max-height:95%!important;padding:7px 9px!important;gap:4px}
+ .kitchen-upgrade-card h2{font-size:16px}
+ .kitchen-upgrade-card p{font-size:10px;line-height:1.25}
+ .kitchen-upgrade-card .upgrade-feature{padding:6px;font-size:10px;margin-bottom:1px}
+ .kitchen-upgrade-row{padding:5px;min-height:45px}
+ .kitchen-upgrade-row .game-btn{min-height:37px}
+ .kitchen-upgrade-card>.game-btn{min-height:39px}
+}
+
+/* v0.9: actual room expansion shown alongside existing stove and backpack upgrades. */
+.v09-room-upgrade{border:1px solid #d6b77a;border-radius:10px;background:#203e32ee;padding:8px;display:flex;flex-direction:column;gap:5px;color:#f6ddaa}
+.v09-room-upgrade strong{font-size:12px}.v09-room-upgrade span{font-size:10px;line-height:1.4;color:#e7d9b4}
+.v09-room-upgrade .game-btn{width:100%;min-height:35px}
+
+/* v0.9.3: two bulk-buy choices fit small phone overlays without hiding the stock. */
+.stock-line{flex-wrap:wrap;row-gap:5px}
+/* Light parchment sheet requires dark text, not the old dark-panel cream. */
+.sheet .stock-line>small{flex:1 0 100%;color:#59462f;font-size:12px;font-weight:650;line-height:1.4}
+.stock-line .v093-buy-actions{display:flex;gap:6px;flex:1 0 100%;justify-content:flex-end}
+.v093-buy-actions .game-btn.small{min-height:34px;min-width:90px;padding:5px 8px}
+@media(max-width:350px){.stock-line>span{font-size:12px}.v093-buy-actions .game-btn.small{min-width:78px}}
+
+
+/* v0.9.5: one quiet, responsive stock check IN the existing prep card.
+   Reuse the day market sheet instead of opening a second modal system. */
+.v095-stock-check{display:flex;align-items:center;gap:8px;min-width:0;
+ min-height:48px;padding:6px 8px;border-radius:9px;background:#294d3d;
+ border:1px solid #80997a;text-align:left}
+.v095-stock-risk{border-color:#bd9765;background:#534632}
+.v095-stock-copy{display:flex;flex:1;flex-direction:column;gap:3px;min-width:0}
+.v095-stock-copy strong{font-size:12px;font-weight:850;line-height:1.25;color:#f5e8c8}
+.v095-stock-risk .v095-stock-copy strong{color:#ffdfa4}
+.v095-stock-copy small{font-size:10.5px;line-height:1.3;color:#d5ddc6;
+ display:-webkit-box;-webkit-box-orient:vertical;-webkit-line-clamp:2;overflow:hidden;overflow-wrap:anywhere}
+.v095-stock-risk .v095-stock-copy small{color:#f0dbbd}
+.v095-stock-action{flex:0 0 auto;min-width:64px;min-height:38px;padding:6px 8px;
+ border:1px solid #d2b580;border-radius:8px;background:#496752;color:#fff2d0;
+ font-size:12px;font-weight:900;white-space:nowrap}
+.v095-stock-action:active{transform:translateY(1px)}
+.v095-stock-action:focus-visible{outline:2px solid #ffe7a4;outline-offset:2px}
+@media(max-width:350px){
+ .v095-stock-check{gap:5px;padding:5px 6px}
+ .v095-stock-action{min-width:57px;padding:5px 6px;font-size:11px}
+ .v095-stock-copy strong{font-size:11px}
+ .v095-stock-copy small{font-size:10px}
+}
+@media(max-height:650px){
+ .v095-stock-check{min-height:42px;padding:4px 6px}
+ .v095-stock-action{min-height:34px}
+ .v095-stock-copy{gap:1px}
+}
+
+
+/* v0.10: one low-priority invitation underneath the familiar three menu rows. */
+.v010-premium-entry{display:flex;align-items:center;gap:8px;width:100%;margin:8px 0;
+ padding:9px 10px;border:1px dashed #d6aa73;border-radius:9px;
+ background:#493e30;color:#ffebc6;text-align:left;font-size:12px}
+.v010-premium-entry>span:first-child{white-space:nowrap;font-weight:800}
+.v010-premium-entry strong{flex:1;min-width:0;overflow:hidden;white-space:nowrap;text-overflow:ellipsis;font-weight:650}
+.v010-premium-entry>span:last-child{font-size:18px}
+.v010-premium-options{display:flex;flex-direction:column;gap:8px}
+.v010-premium-option{border-bottom:1px solid #c0a376;padding:9px 3px;display:flex;flex-direction:column;gap:8px}
+.v010-premium-meta{display:flex;align-items:center;gap:9px;min-width:0;color:#493621}
+.v010-premium-meta>span{font-size:25px;flex:0 0 auto}
+.v010-premium-meta>div{display:flex;flex-direction:column;gap:3px;min-width:0}
+.v010-premium-meta strong{font-size:14px;line-height:1.3}
+.v010-premium-meta small{color:#59462f;font-size:11px;line-height:1.5}
+.v010-premium-actions{display:flex;gap:8px;justify-content:flex-end}
+.v010-premium-actions button,.v010-premium-selected button{min-height:39px;min-width:92px;border:1px solid #a7ac7b;
+ border-radius:8px;background:#3e6a53;color:#fff4db;font-size:12px;font-weight:850}
+.v010-premium-actions button:disabled{opacity:.45}
+.v010-premium-selected{display:flex;align-items:start;flex-direction:column;gap:4px;
+ padding:10px;background:#e7d2a7;border:1px solid #b79962;border-radius:9px;
+ color:#493621;margin-bottom:9px}
+.v010-premium-selected small{color:#59462f;font-size:12px}
+.v010-premium-selected button{align-self:flex-end;min-height:32px;background:#6d5947}
+.v010-prep-premium{font-size:11px;line-height:1.35;color:#ffe8b5; background:#415443;
+ padding:6px 9px;border-radius:7px;max-width:100%;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+@media(max-width:350px){
+ .v010-premium-entry{padding:7px;font-size:11px}
+ .v010-premium-actions button{min-width:80px;padding:6px}
+ .v010-prep-premium{font-size:10px}
+}
+
+.v010-regular-report,.v010-premium-report{margin:7px 0;padding:8px 10px;border:1px solid #bfad81;border-radius:8px;background:#ead9b7;color:#4b3925;font-size:12px;line-height:1.45}
+.v010-premium-report{display:flex;flex-direction:column;gap:3px}
+.v010-premium-report span{color:#58452d;font-size:11px}
+
+
+/* v0.10.1: scroll instead of squeezing the inline premium row to zero height. */
+.kitchen-prep-card > *{flex-shrink:0}
+.v101-premium-summary{display:flex;align-items:center;gap:7px;min-height:49px;
+ width:100%;box-sizing:border-box;padding:7px 9px;border:1px solid #bda16b;
+ border-radius:9px;background:#354c3e;color:#f8ebc7;flex:0 0 auto}
+.v101-premium-summary>span{font-size:17px;flex:0 0 auto}
+.v101-premium-summary>div{min-width:0;display:flex;flex-direction:column;gap:2px}
+.v101-premium-summary strong{display:block;font-size:12px;font-weight:850;
+ white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.v101-premium-summary small{display:block;font-size:11px;color:#e8d5ac;line-height:1.3}
+.v101-serving-tag{display:block;margin-top:5px;font-size:12px;font-weight:850;
+ color:#305c45;line-height:1.4;white-space:normal}
+.v101-serving-tag.shortage{color:#99552f}
+.v101-menu-capacity{font-size:11px!important;font-weight:850;color:#d5ecc6!important}
+.v101-menu-capacity.shortage{color:#ffd09f!important}
+@media(max-width:350px){
+ .v101-premium-summary{padding:6px 7px;min-height:46px}
+ .v101-premium-summary strong{font-size:11px}
+ .v101-premium-summary small{font-size:10px}
+ .v101-serving-tag{font-size:11px}
+}
+
+
+/* v0.10.2 guest encyclopedia: shared compact sheet, not a second overlay. */
+.v102-book-tabs{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:7px;
+ margin:4px 0 12px;position:sticky;top:0;padding:4px 0;background:#f1dfb9;z-index:1}
+.v102-book-tabs button{min-width:0;min-height:41px;border-radius:9px;
+ border:1px solid #ad936b;background:#d9c7a4;color:#4a3a2b;
+ font-size:13px;font-weight:850}
+.v102-book-tabs button.active{background:#406b50;color:#fff3cf;border-color:#6b9274}
+.v102-book-tabs button:focus-visible{outline:3px solid #b37b40;outline-offset:1px}
+.v102-guest-list{display:flex;flex-direction:column;gap:9px;margin-bottom:15px}
+.v102-guest-card{display:flex;gap:11px;align-items:flex-start;
+ border:1px solid #c2a67a;border-radius:11px;background:#e8d5ae;padding:11px;min-width:0}
+.v102-guest-card.unknown{opacity:.82}
+.v102-guest-icon{width:40px;min-width:40px;height:44px;display:grid;place-items:center;
+ border:2px solid #b69872;border-radius:10px;background:#d6bd91;font-size:24px}
+.v102-guest-detail{min-width:0;display:flex;flex:1;flex-direction:column;gap:5px}
+.v102-guest-detail strong{color:#423323;font-size:14px;line-height:1.35;overflow-wrap:anywhere}
+.v102-guest-detail small{color:#59462f;font-size:11px;line-height:1.45;overflow-wrap:anywhere}
+.v102-regular-info{display:flex;flex-direction:column;gap:4px;margin-top:4px;
+ padding-top:7px;border-top:1px dashed #bda57c;color:#55452d}
+.v102-regular-info>span:first-child{font-size:11px;font-weight:800}
+.v102-guest-status{display:inline-block;align-self:flex-start;padding:3px 7px;
+ border-radius:8px;color:#644a32;background:#d7c4a3;font-size:10px;
+ line-height:1.4;max-width:100%;overflow-wrap:anywhere}
+.v102-guest-status.ready{color:#244b37;background:#cadcb7;font-weight:850}
+@media(max-width:350px){
+ .v102-book-tabs button{font-size:12px;min-height:39px}
+ .v102-guest-card{padding:8px;gap:8px}
+ .v102-guest-icon{width:34px;min-width:34px;height:38px;font-size:21px}
+ .v102-guest-detail strong{font-size:13px}
+ .v102-guest-detail small{font-size:10px}
+}
+
+
+/* v0.10.4: guest compendium actors match LIVE restaurant pixelActor, not emoji. */
+.v104-book-sheet .sheet-header{
+ height:57px;min-height:57px;flex:0 0 57px;position:relative;
+ border-bottom:1px solid #cfb992;
+}
+.v104-book-sheet .sheet-handle{align-self:flex-start;margin-top:12px}
+.v104-book-sheet .sheet-close{
+ position:absolute;z-index:3;right:11px;top:6px;
+ width:44px;min-width:44px;height:44px;min-height:44px;
+ padding:0;display:flex;align-items:center;justify-content:center;
+ border:1px solid #916e47;border-radius:11px;box-shadow:0 2px 0 #9d835a;
+ background:#c8a77b;color:#382b1f;font-size:17px;line-height:1;
+}
+.v104-book-sheet .sheet-body{padding-top:8px;min-height:0;overflow-y:auto}
+.v104-book-sheet .v102-book-tabs{
+ position:sticky;top:0;z-index:2;margin-top:0;margin-bottom:10px;
+ padding:2px 0 8px;background:#f1e2bc;
+}
+.v104-book-sheet .v102-book-tabs button{min-height:41px}
+.v104-book-sheet .v104-portrait-frame{
+ width:68px;min-width:68px;height:84px;padding:2px;
+ border:2px solid #b69872;border-radius:10px;background:#d6bd91;
+ display:flex;align-items:center;justify-content:center;overflow:hidden;
+}
+.v104-book-sheet .v104-guest-portrait{
+ display:block;width:64px;height:80px;object-fit:contain;flex:none;
+ image-rendering:pixelated;image-rendering:crisp-edges;
+}
+.v104-book-sheet .v104-guest-unknown{color:#776349;font-size:29px;font-weight:900;line-height:1}
+.v104-book-sheet .v102-guest-detail{padding-top:1px}
+@media(max-width:350px){
+ .v104-book-sheet .sheet-header{height:55px;min-height:55px;flex-basis:55px}
+ .v104-book-sheet .sheet-close{right:9px;top:5px}
+ .v104-book-sheet .v104-portrait-frame{width:62px;min-width:62px;height:78px}
+ .v104-book-sheet .v104-guest-portrait{width:58px;height:73px}
+}

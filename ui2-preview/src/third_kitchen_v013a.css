@@ -1,0 +1,6 @@
+/* v0.13-A: genuine bundled cooking + staffed expansion. No floating gameplay overlay. */
+.v13a-bundle-panel{display:flex;flex-direction:column;gap:7px;margin:11px 0;padding:12px;border-radius:12px;border:1px solid #bd9b69;background:#f4e6c8;color:#493d2e}
+.v13a-bundle-panel strong{font-size:14px;color:#73512f}
+.v13a-bundle-panel small,.v13a-bundle-panel span{font-size:11px;line-height:1.6;color:#66543a}
+.v13a-bundle-panel button{min-height:40px;white-space:normal;padding:7px 10px}
+@media(max-width:350px){.v13a-bundle-panel{padding:8px;gap:5px;margin:8px 0}.v13a-bundle-panel strong{font-size:12px}.v13a-bundle-panel button{min-height:38px;font-size:11px}.staff-assign{flex-wrap:wrap}}

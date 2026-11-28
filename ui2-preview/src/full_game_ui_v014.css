@@ -1,0 +1,646 @@
+/* v0.14: one visual language across the restaurant, field, lab and records.
+   This file follows older phase CSS so the existing interaction hit maps stay put. */
+:root{--v014-ink:#17352a;--v014-night:#122920;--v014-leaf:#284838;--v014-warm:#f4dfb1;--v014-gold:#f2c77d;--v014-line:#b68c54}
+.game-shell{background:linear-gradient(145deg,#2b4b38,#142d23 82%);box-shadow:0 0 0 1px #aa8b5d inset,0 0 65px #07150e}
+.hud,.v076-home-shell .v076-home-hud{height:calc(53px + env(safe-area-inset-top));padding:calc(5px + env(safe-area-inset-top)) 11px 5px;background:linear-gradient(180deg,#2d513c,#1c3b2e);border-bottom:1px solid #b18751}
+.brand .logo{display:grid;place-items:center;width:35px;height:35px;border:1px solid #be9a64;border-radius:9px;background:#193729;box-shadow:inset 0 1px #f7dca635;font-size:22px}
+.brand strong,.v076-home-hud .brand strong{font-size:18px;letter-spacing:.6px;color:#ffe8b8}
+.brand small,.v076-home-hud .brand small{display:block;font-size:10px;color:#d4ddbf;letter-spacing:.1px;margin-top:2px}
+.hud-meta{font-variant-numeric:tabular-nums;gap:6px;font-size:12px}
+.hud-meta>span{padding:4px 5px;border-radius:7px;background:#143327a1;white-space:nowrap}
+.hud-gear,.v076-home-hud .hud-gear{min-height:40px;min-width:40px;font-size:21px;color:#f6e3bc;border-radius:9px}
+.day-strip,.v076-home-shell .v076-home-day{height:29px;flex:none;padding:4px 11px;display:flex;align-items:center;gap:9px;background:#74583b;color:#fff0ca;border-bottom:1px solid #d6a965;font-size:11px}
+.day-strip>b{font-size:12px;white-space:nowrap}.day-strip .day-phase{margin-left:auto;color:#f8dfac;font-size:11px;white-space:nowrap}
+.v014-journey{display:flex;gap:5px;align-items:center;margin-left:3px}
+.v014-journey i{width:5px;height:5px;border-radius:50%;background:#e3d0a36b;border:1px solid #f6d6a67a}
+.v014-journey i.passed{background:#f8dfac}.v014-journey i.current{width:17px;border-radius:6px;background:#ffe4a9;box-shadow:0 0 6px #ffdb8d8c}
+.v013j-guide{min-height:42px;max-height:none;padding:5px 10px;gap:7px;background:#efd8a4;color:#263d30;border-bottom:2px solid #ad7949}
+.v013j-guide strong{font-size:12px}.v013j-guide small{font-size:11px;color:#425841;margin-top:2px}
+.v013j-guide button,.v013j-guide button:first-of-type{min-height:38px;min-width:38px;font-size:12px}
+.game-toast{border-top:1px solid #a88a57;border-bottom:0;background:#1a382c}
+.dock{border-top:2px solid #b18b53;background:linear-gradient(180deg,#2e503b,#1e382c);box-shadow:0 -6px 18px #091e1842}
+.dock-head{color:#f7e5c3;font-size:11px}.game-btn{border-radius:10px;border-color:#8daa80;background:#355a42;color:#fff1d4;font-weight:800;box-shadow:0 3px #10291f}
+.game-btn.primary{background:linear-gradient(#f6d897,#dca45d);border-color:#ffe3a7;color:#392d1d;box-shadow:0 3px #875e33}
+.game-btn.secondary{background:#365744;color:#f5e9cd;border-color:#809879}
+.game-btn:active,.v076-home-primary:active{transform:translateY(2px);box-shadow:0 1px #58402b}
+
+/* The home scene remains the largest object, and its notice is a compact prop. */
+.v076-home{background:linear-gradient(180deg,#274b37 0%,#1d392e 55%,#10291f);gap:7px}
+.v076-mission{position:relative;border:2px solid #d1a96d;border-radius:7px;background:repeating-linear-gradient(0deg,#4d382a,#4d382a 10px,#503b2c 11px);box-shadow:0 3px #17241b, inset 0 0 0 3px #77573a;padding:9px 12px}
+.v076-mission:before{content:'●';position:absolute;top:3px;left:7px;font-size:9px;color:#d8b98b}
+.v076-mission-meta{color:#f8d998;font-size:11px}.v076-mission h1{margin:3px 0;font-size:18px;color:#fff1cc}
+.v076-mission p{font-size:13px;line-height:1.35}
+.v076-mission details{font-size:11px;margin-top:4px;color:#e9d8b2}.v076-mission details summary{cursor:pointer}.v076-mission details small{margin-top:4px;color:#e9d8b2;font-size:11px}
+.v076-preview{border:3px solid #a27c4d;border-radius:9px;box-shadow:0 0 0 2px #203627,0 5px 13px #091c15b0}
+.v076-home-resources{font-size:11px}.v076-home-resources strong{font-size:12px}.v076-home-resources span{font-size:11px}
+.v076-home-shortcuts button{background:#31503c;border:1px solid #94a27a;border-radius:8px;box-shadow:0 2px #142b20}
+.v076-home-primary{border-radius:9px;box-shadow:0 3px #8c5e34}
+
+/* The two route cards read as destinations; details live with the choice. */
+.route-scene.ux-route{background:radial-gradient(circle at 60% 20%,#50754a,#294c38 56%,#142e24)}
+.ux-route .route-panel{padding:14px 13px 16px;gap:8px}
+.route-intro .ux-kicker{font-size:10px}.route-intro h2{font-size:21px}
+.v013h-supply-hint{font-size:12px;background:#1b3b2ee6;border-color:#c6a86a;padding:9px 11px}
+.v013h-supply-hint summary{font-size:11px;color:#e9d39c;margin-top:4px;cursor:pointer}
+.v013h-supply-hint details small{font-size:11px;color:#e9e0c2}
+.ux-route .ux-field-label strong{color:#ffe4b2;font-size:12px}
+.ux-route .route-card{background:#eddfba;border:2px solid #d2ac70;box-shadow:0 3px #182e22;border-radius:10px;min-height:84px}
+.ux-route .route-card.route-risk{background:#e9cfaa;border-color:#ca956a}
+.ux-route .route-card small{font-size:12px;line-height:1.3}
+.v08-branch-panel{border:2px solid #b89a63;background:#243c2ef5;box-shadow:0 5px 0 #15291e}
+.v08-branch-card{border:2px solid #a9b88a;box-shadow:0 2px #182f24}
+.field-event,.management-card,.v075-event-card{border-color:#bc955d;background:#f0dfb9;color:#3a3022;box-shadow:0 5px 0 #513b27,0 15px 24px #0a1a148c}
+.field-event>button,.management-card>button{border-color:#b79464;background:#fff1d1}
+.action-hud,.v075-status{box-shadow:0 2px 7px #071e186b}
+
+/* Research: ingredients form a tray, the pot owns the playing space. */
+.v063-setup{overflow-y:auto;overscroll-behavior:contain;background:radial-gradient(circle at 50% 12%,#3b5940,#193328 70%,#11281f);gap:9px}
+.v063-setup-title strong{font-size:19px}.v063-setup-title small{color:#e1ddc0;font-size:12px}
+.v063-vessel{border:2px solid #799176;background:#2e4d38;box-shadow:0 2px #112c20}
+.v063-vessel.chosen{background:#795535;border-color:#f1bf7b}
+.v063-food-picker button{min-height:70px;border:1px solid #8ca27e;background:#2d4d3a;box-shadow:0 2px #112b20}
+.v063-food-picker button.picked{border:2px solid #ffce88;background:#705036}
+.v063-recipe-clue{border:2px solid #b69a65;background:#4a382c;color:#fff0ce;box-shadow:0 3px #142b21;font-size:13px}
+.v063-recipe-clue strong{font-size:16px;color:#ffdda0}.v063-recipe-clue small{font-size:11px;color:#e3d5b5}
+.v063-live-scene{background:radial-gradient(circle at 50% 40%,#3a4f39,#132b23 77%)}
+.v063-live-pan{border:3px solid #ad8555;box-shadow:0 3px #11271e, inset 0 0 25px #030e0a88}
+.v063-receipt{background:radial-gradient(circle at 50% 0%,#4c5e3f,#20372b 65%,#142a23)}
+.v063-receipt-head h2{font-size:24px}.v063-receipt-metrics{margin:10px 0;gap:5px}
+.v063-receipt-metrics>div{border:2px solid #a99162;background:#2e4d38;padding:10px 2px;min-width:0}
+.v063-receipt-metrics b{font-size:21px}.v063-receipt-metrics small{text-align:center;font-size:10px;line-height:1.25}
+.v063-receipt-metrics .v014-value-gain{background:#684e32;border-color:#e9bb70}
+.v063-receipt-metrics .v014-value-gain b{color:#fff1c3}
+.v014-craft-details{margin:8px 0;border-top:1px solid #9aab86;padding-top:9px}
+.v014-craft-details summary{cursor:pointer;min-height:42px;padding:10px;color:#ffe1a1;font-weight:850;border:1px solid #78906f;background:#244334;border-radius:8px}
+.v014-craft-details section{margin:7px 0}
+
+/* The menu is a board the player edits, with value visible on every row. */
+.menu-scene{justify-content:flex-start;align-items:stretch;gap:10px;padding:16px 12px 20px;background:radial-gradient(circle at 50% 0%,#4b6645,#243c2f 60%,#152d24)}
+.menu-title{margin:0;text-align:center;font-size:20px;color:#ffe5ae}
+.menu-blackboard{width:100%;border:6px solid #84623b;background:#213c30;box-shadow:0 4px #3a2b20,inset 0 0 0 1px #c7a16a}
+.menu-line{min-height:72px;border:1px solid #78927a;border-radius:7px;background:#2d503e;box-shadow:0 2px #172f25;text-align:left}
+.menu-line>div{min-width:0}.menu-line strong{color:#fff0c9;font-size:15px}
+.v014-menu-value{display:flex;flex-wrap:wrap;align-items:center;gap:5px;margin-top:4px;font-size:11px;line-height:1.2}
+.v014-menu-value>*{font-style:normal;font-weight:800;background:#1c3c30;padding:3px 5px;border:1px solid #749073;border-radius:5px;color:#f5e5be;white-space:nowrap}
+.v014-menu-value b{background:#6b4c30;border-color:#c59b5b;color:#ffe0a1;font-size:13px}
+.v014-menu-value .shortage{color:#ffb5a0;border-color:#c9765e}
+.menu-line small{font-size:11px;color:#d2ddc8;margin-top:3px}
+.synergy-box{background:#695134;border:1px solid #dcaf68;margin:0;width:100%;padding:8px}
+.v014-menu-notes{border:1px solid #879b77;background:#294939;border-radius:8px;padding:0 10px;font-size:12px;color:#eee1c1}
+.v014-menu-notes summary{cursor:pointer;min-height:42px;padding:12px 0;font-weight:800}
+.v014-menu-notes p{margin:0 0 8px}.v014-menu-notes small{display:block;margin:8px 0 11px;font-size:11px}
+.v014-menu-notes .menu-balance{margin-bottom:6px}.v010-premium-entry{min-height:44px}
+
+/* Prep and growth expose the restaurant behind the workbench. */
+.stage.prep .kitchen-prep-card,.stage.upgrade .kitchen-upgrade-card{top:auto!important;bottom:2%!important;left:3%!important;right:3%!important;max-height:72%!important;border:3px solid #bb955f;border-radius:11px;background:#203b30f7;box-shadow:0 5px 0 #4e3926,0 0 25px #0c2019b5}
+.prep-card h2,.upgrade-card h2{color:#ffe2ab;font-size:19px}
+.kitchen-prep-card .service-day-brief{border-color:#ba995f}
+.v014-marketing,.v014-upgrade-notes{border:1px solid #8da17b;border-radius:8px;margin:8px 0;background:#294837;color:#f5e9c9}
+.v014-marketing>summary,.v014-upgrade-notes>summary{cursor:pointer;min-height:44px;padding:12px 10px;font-size:13px;font-weight:800}
+.v014-marketing .v12c-marketing{margin:2px 5px 7px}.v014-marketing .v12c-marketing-note{font-size:11px}
+.v014-upgrade-label{font-size:13px;color:#ffe1a5;margin:12px 0 5px}
+.v014-upgrade-notes p{padding:0 10px 10px;margin:0;font-size:12px;line-height:1.45}
+.v075-service .v075-status,.service-scene .service-mini-hud{border-color:#c5a36a}
+
+/* A report has an answer above the ledger; the ledger remains available. */
+.stage.report>.report-scene{background:radial-gradient(circle at 50% 0%,#586a48,#223c2d 60%,#152d23);gap:10px;padding:14px 12px 20px}
+.report-header{color:#ffe5b1}.report-stats>div{background:#314f3b;border:2px solid #a88e5e;box-shadow:0 2px #1b3025}
+.daily-goal-result,.guest-verdict,.recipe-lead{width:100%;margin:0;flex:none}
+.v014-report-more{width:100%;border:1px solid #b39868;border-radius:10px;padding:0 9px 8px;background:#203c2f}
+.v014-report-more summary{cursor:pointer;min-height:47px;padding:14px 3px 10px;font-size:13px;color:#ffe0aa;font-weight:850}
+.v014-report-more>*{max-width:100%;margin-left:0!important;margin-right:0!important}
+.v014-report-more .v063-craft-report{max-height:none;overflow:visible}
+
+/* Drawers are one consistent ledger surface, never a new full page. */
+.sheet{max-height:min(84dvh,700px);border:3px solid #ad8251;background:#f0dfbb;box-shadow:0 -6px 0 #5b4229,0 -14px 30px #091b14a8}
+.sheet-header{height:36px}.sheet-close{min-height:36px;min-width:42px;right:7px;top:1px}
+.sheet-body{padding:5px 14px 24px}.sheet-body h2{font-size:20px;color:#443322}
+.book-item,.detail-row{background:#fff1ce;border-color:#c5a272;box-shadow:0 2px #d5b989}
+.stock-line{border-color:#c4a77c}
+@media(max-height:700px){
+ .v013j-guide{padding:3px 7px;min-height:37px}.v013j-guide strong{font-size:11px}.v013j-guide small{font-size:10px}
+ .v076-mission{padding:6px 10px}.v076-mission h1{font-size:16px}
+ .stage.prep .kitchen-prep-card,.stage.upgrade .kitchen-upgrade-card{max-height:75%!important;bottom:1%!important}
+ .menu-scene{padding:8px 9px 12px;gap:7px}.menu-line{min-height:58px;padding:6px}
+ .v063-receipt-metrics>div{padding:6px 2px}.v063-receipt-metrics b{font-size:18px}
+}
+@media(max-width:350px){
+ .hud-meta{font-size:11px;gap:2px}.hud-meta>span{padding:3px}.brand strong{font-size:16px}
+ .v014-journey{gap:3px}.v014-journey i{width:4px}.v014-journey i.current{width:11px}
+ .v014-menu-value{gap:3px;font-size:10px}.v014-menu-value>*{padding:2px 3px}
+ .menu-line strong{font-size:13px}.menu-line .menu-icon{font-size:20px}
+}
+@media(prefers-reduced-motion:reduce){.v014-journey i,.game-btn,.v076-home-primary{transition:none!important}}
+
+/* v0.16-A1 · Border Hearth scene-first experiment. Only the forecast scene opts in. */
+.v076-home.v016-home{gap:0;padding:0;background:#302b23;overflow-y:auto;overscroll-behavior:contain}
+.v016-home .v016-notice{flex:none;padding:7px 12px;background:#302f26;border-bottom:1px solid #a98a59;color:#f7e1b5;line-height:1.35;font-size:12px}
+.v016-notice strong{font-size:13px;color:#ffe2a3}
+.v016-notice small{display:block;color:#d3c4a6;font-size:10px;margin-top:2px}
+.v016-home .v016-scene{flex:1 0 60%;min-height:245px;position:relative;border:0;border-radius:0;box-shadow:none;background:#78583c}
+.v016-home .v016-world-actions{display:block;position:absolute;inset:0;pointer-events:none}
+.v016-home .v016-world-actions button{position:absolute;transform:translate(-50%,-50%);pointer-events:auto;min-height:44px;min-width:64px;width:auto;padding:0 9px;border:0;border-radius:3px;background:transparent;color:#fff1c9;font-size:12px;box-shadow:none;text-shadow:0 2px 2px #23170f,1px 0 #23170f,-1px 0 #23170f;white-space:nowrap}
+.v016-home .v016-world-actions button::after{content:'';display:block;width:4px;height:4px;position:absolute;bottom:4px;left:calc(50% - 2px);background:#f9d58d;transform:rotate(45deg);box-shadow:0 0 5px #fff0a5}
+.v016-home .v016-world-actions button:focus-visible{outline:2px solid #ffe29e;outline-offset:-2px}
+.v016-home .v016-world-actions button:active{transform:translate(-50%,-50%) scale(.96);background:#2b1c1366}
+.v016-stock{left:17.5%;top:12%}.v016-book{left:82.5%;top:12%}
+.v016-bento{left:23%;top:43.5%}.v016-crew{left:77%;top:43.5%}
+.v016-home .v016-world-actions .v016-door{left:50%;top:auto;bottom:6px;transform:translateX(-50%);border:1px solid #d4b37b;border-radius:4px;background:#392b22e8;color:#ffe2a3;font-size:14px;min-width:118px;box-shadow:0 2px #241b16}
+.v016-home .v016-world-actions .v016-door::after{display:none}
+.v016-home .v016-world-actions .v016-door:active{transform:translateX(-50%) scale(.96)}
+.v016-home .v016-door span{font-size:13px;margin:0}
+.v016-foot{flex:none;display:flex;justify-content:space-between;gap:6px;padding:6px 10px calc(6px + env(safe-area-inset-bottom));font-size:10px;color:#cbb99a;background:#302b23}
+.v016-milestone{flex:none;padding:6px 10px;display:grid;gap:6px;background:#302b23}
+.v016-milestone .v12-star-invite{margin:0}
+@media(max-height:575px){.v016-home .v016-scene{min-height:225px}.v016-home .v016-world-actions .v016-door{bottom:4px}.v016-notice span{font-size:11px}}
+
+/* Milestone actions must remain reachable on small phones without covering the room. */
+.v016-home.has-milestone .v016-scene{flex:1 1 0;min-height:200px}
+
+/* Z2a live scenes: one edge rail, no stacked app chrome. */
+.z2a-live{--z-ink:#202d27;--z-line:#b9a278;--z-cream:#f7e9c9;--z-gold:#e9c47c;--z-safe:env(safe-area-inset-bottom,0px)}
+.z2a-hud{flex:0 0 auto;display:flex;align-items:center;gap:6px;min-height:calc(50px + env(safe-area-inset-top));padding:calc(3px + env(safe-area-inset-top)) 8px 3px;background:#23372c;color:var(--z-cream);border-bottom:1px solid #ac925e;z-index:10}
+.z2a-hud .v075-status,.z2a-hud .action-hud{position:static;inset:auto;display:flex;align-items:center;justify-content:space-between;gap:5px;flex:1;min-width:0;min-height:44px;padding:0;border:0;border-radius:0;box-shadow:none;background:none;font-size:13px;font-weight:800;white-space:nowrap;flex-wrap:nowrap;pointer-events:auto}
+.z2a-hud .v075-status>span{flex:0 1 auto;padding:0 3px}
+.z2a-hud button,.z2a-hud .v075-status button,.z2a-hud .action-hud button{min-width:44px;min-height:44px;height:44px;flex:none;padding:0 8px;color:var(--z-cream);background:#344a3a;border:1px solid #aa9b72;border-radius:8px;box-shadow:none;touch-action:manipulation;font-size:17px}
+.z2a-hud .v075-status button.z2a-ledger-btn{font-size:22px;color:var(--z-gold)}
+.z2a-hud .action-hud>*{border:0;background:none;box-shadow:none;border-radius:0;height:44px;min-width:0}
+.z2a-hud .action-hud .field-hp{min-width:0;padding:0;font-size:20px;letter-spacing:0;color:#ef9781}
+.z2a-hud .action-hud .field-bag-chip{min-width:66px;font-size:13px;padding:0 6px}
+.z2a-hud .action-hud .field-clock{min-width:0;padding:0 2px;font-size:13px}
+.z2a-live .v013j-guide{font-size:12px;padding:4px 8px;min-height:40px;max-height:85px}
+.z2a-live .v013j-guide button{min-width:44px;min-height:44px}
+.z2a-diner .v075-goal.z2a-goal-indicator{top:8px;left:8px;right:auto;width:max-content;padding:4px 7px;font-size:12px;background:#26392ce0}
+.z2a-diner .v075-notification{top:8px;left:auto;right:8px;max-width:72%;width:max-content;padding:5px 8px;font-size:12px}
+.z2a-diner .v4d-service-guide{left:50%;right:auto;transform:translateX(-50%);bottom:calc(8px + var(--z-safe));min-height:0;min-width:0;max-width:calc(100% - 105px);width:max-content;padding:6px 10px;gap:3px;border-radius:7px;background:#26362ce6}
+.z2a-diner .v4d-service-guide b{font-size:13px;line-height:1.25;overflow:hidden;white-space:nowrap;text-overflow:ellipsis}
+.z2a-diner .v4d-service-guide small{font-size:12px}.z2a-diner .v4d-service-guide small[hidden]{display:none}
+.z2a-diner .v075-service .diner-special{bottom:calc(8px + var(--z-safe));right:8px;min-width:48px;min-height:48px;border-radius:50%;background:#71513a;border:2px solid var(--z-gold);font-size:14px}
+.z2a-live .ingame-notice{top:36px;padding:5px 9px;max-width:calc(100% - 24px);font-size:12px;border-radius:7px}
+.z2a-field .stage.field:has(.action-forest)~.dock{min-height:calc(48px + var(--z-safe));height:calc(48px + var(--z-safe));padding:2px 8px calc(2px + var(--z-safe));border-top:1px solid #b7a278;gap:0;flex:0 0 auto}
+.z2a-field .field-compact-dock{height:44px;min-height:44px;gap:6px}
+.z2a-field .field-compact-dock .game-btn{min-width:70px;min-height:44px;padding:6px 10px;font-size:13px;border-radius:7px}
+.z2a-field .field-compact-dock .field-touch-tip{font-size:12px;white-space:nowrap}
+.z2a-field .action-forest .field-skill{width:64px;height:64px;right:9px;bottom:9px;border-width:2px;background:radial-gradient(circle at 35% 25%,#b98a57,#774b37 80%);box-shadow:0 3px 0 #4d3729,0 3px 8px #10251b77}
+.z2a-field .field-skill .skill-glyph{font-size:24px}.z2a-field .field-skill .skill-caption{font-size:12px}
+.z2a-field .v082-shield-status{top:8px;left:8px;right:auto;width:max-content;padding:4px 7px;font-size:12px}
+.z2a-field .v063-field-bento{top:8px;right:8px;left:auto;width:max-content;padding:4px 7px;font-size:12px}
+.z2a-field .field-action-notice{top:40px;padding:5px 9px;font-size:12px}
+.z2a-ledger-summary{display:grid;gap:7px;padding:12px;background:#f8ebcb;border:1px solid #c8ad7b;border-radius:8px;color:#3d3a2d;font-size:13px}
+.z2a-warning{color:#963d2d;font-weight:700}.z2a-order-list{display:grid;gap:6px;margin:8px 0 12px}
+.z2a-order{background:#fff4da;border:1px solid #c9b18a;border-radius:7px;padding:9px 10px;color:#3d372a;font-size:13px;display:grid;gap:5px}
+.z2a-order>div{display:flex;justify-content:space-between;gap:8px;align-items:baseline}.z2a-order>div>span:first-child{min-width:0;overflow-wrap:anywhere}
+.z2a-order strong{font-size:12px;color:#356047;white-space:nowrap}.z2a-order small{font-size:12px;color:#665a43;line-height:1.4}
+@media(max-width:350px){.z2a-hud{padding-left:5px;padding-right:5px;gap:4px}.z2a-hud .v075-status,.z2a-hud .action-hud{gap:3px;font-size:12px}.z2a-hud .v075-status>span{padding:0}.z2a-hud .action-hud .field-clock{font-size:12px}}
+
+/* Z2a2 authored heraldic/cookware UI, no platform emoji in live HUD. */
+.z2a2-icon{width:20px;height:20px;display:inline-block;vertical-align:middle;flex:none;pointer-events:none;overflow:visible}
+.z2a-hud .z2a2-icon{width:20px;height:20px;color:#e8c783}
+.z2a-hud .v075-status>span,.z2a-hud .action-hud .field-clock{display:flex;align-items:center;gap:3px;font-variant-numeric:tabular-nums}
+.z2a-hud .v075-status #v075-served{display:grid;justify-items:start;align-content:center;gap:0;line-height:1.05}
+.z2a2-count,.z2a2-queue{display:flex;align-items:center;gap:3px;white-space:nowrap}
+.z2a2-queue{font-size:11px;color:#e8c783;line-height:1.1}.z2a2-queue .z2a2-icon{width:12px;height:12px}
+.z2a-hud button,.z2a-hud .v075-status button,.z2a-hud .action-hud button{background:linear-gradient(145deg,#475547,#263a30);border-color:#a28a59;box-shadow:inset 0 1px #e2c18c35,inset 0 -2px #18291f;display:inline-flex;align-items:center;justify-content:center;gap:4px}
+.z2a-hud button:active{background:#516351;box-shadow:inset 0 2px #10291f}
+.z2a-hud .z2a-ledger-btn .z2a2-icon,.z2a-hud .z2a-settings .z2a2-icon{width:25px;height:25px}
+.z2a-hud .action-hud .field-hp{display:flex;gap:3px}
+.z2a-hud .field-hp .z2a2-icon{width:21px;height:21px;color:#dc917a}
+.z2a-hud .field-hp .is-full{fill:#b85645;filter:drop-shadow(0 1px #3c2720)}
+.z2a-hud .field-hp .is-empty{fill:#27352d;color:#8e7162}
+.z2a-hud .field-hp.taking-hit .is-full{fill:#ffe0a3;color:#ffe0a3}
+.z2a-live .v075-goal,.z2a-live .v075-notification,.z2a-live .v082-shield-status,.z2a-live .v063-field-bento{align-items:center;gap:4px}
+.z2a-live .v075-goal .z2a2-icon,.z2a-live .v075-notification .z2a2-icon,.z2a-live .v082-shield-status .z2a2-icon,.z2a-live .v063-field-bento .z2a2-icon{width:16px;height:16px}
+.z2a-diner .v4d-service-guide{grid-template-columns:23px minmax(0,1fr);align-items:center;column-gap:6px;box-shadow:inset 0 1px #d0b77b30,0 2px 5px #0b17136b}
+.z2a-diner #z2a2-guide-icon{grid-row:1 / span 2;color:#edcc88}.z2a-diner #z2a2-guide-icon .z2a2-icon{width:22px;height:22px}
+.z2a-diner .v4d-service-guide small,.z2a-diner .v4d-service-guide i{grid-column:2}
+.z2a-live .field-skill,.z2a-diner .diner-special{background:radial-gradient(circle at 35% 23%,#846244,#49372a 68%,#38291f);border:2px solid #d9b677;box-shadow:inset 0 0 0 3px #28291e99,inset 0 1px #fff1bc55,0 3px 0 #34271e,0 4px 10px #0b211a99;color:#f3d9a2}
+.z2a-live .field-skill .z2a2-icon{width:29px;height:29px;filter:drop-shadow(0 1px #281c13)}
+.z2a-diner .diner-special{display:flex;flex-direction:column;align-items:center;justify-content:center;gap:0;width:58px;height:58px;padding:4px}
+.z2a-diner .diner-special>.z2a2-icon{width:26px;height:26px}.z2a-diner .diner-special small{display:flex;align-items:center;gap:1px;font-size:11px}.z2a-diner .diner-special small .z2a2-icon{width:12px;height:12px}
+.z2a-live .field-compact-dock .z2a2-icon{width:17px;height:17px;color:inherit}
+.z2a-live .field-compact-dock .game-btn{display:inline-flex;align-items:center;justify-content:center;gap:4px}
+.z2a2-count b,.z2a-hud .field-clock b{font-weight:750}
+.z2a-ledger-summary .z2a2-icon{width:16px;height:16px}
+@media(max-width:350px){.z2a-hud .z2a2-icon{width:17px;height:17px}.z2a-hud .field-hp .z2a2-icon{width:19px;height:19px}.z2a2-queue .z2a2-icon{width:11px;height:11px}.z2a-hud .v075-status>span{gap:2px}.z2a-hud .v075-status button{padding:0}.z2a2-queue{font-size:10px}}
+
+/* Hearthcraft — object illustrations rather than line glyphs.
+   Preserve the compact Z2a rail and 44px touch targets. */
+.z2a3-art{overflow:visible;filter:drop-shadow(0 1px 0 #14251d55)}
+.z2a-hud .z2a3-art{width:23px;height:23px}
+.z2a-hud .z2a2-queue .z2a3-art{width:13px;height:13px}
+.z2a-hud .z2a-ledger-btn .z2a3-art,.z2a-hud .z2a-settings .z2a3-art{width:28px;height:28px}
+.z2a-hud button,.z2a-hud .v075-status button,.z2a-hud .action-hud button{background:linear-gradient(155deg,#4c513a 0%,#344432 42%,#26342a 100%);border:1px solid #b29460;border-radius:8px;box-shadow:inset 0 0 0 2px #2e372b,inset 0 1px #e2c18c6b,0 2px #16261c}
+.z2a-hud .field-hp .z2a3-art{width:22px;height:22px;fill:none}
+.z2a-hud .field-hp .is-empty{fill:none;filter:none}
+.z2a-hud .field-hp.taking-hit .is-full{fill:none;filter:brightness(1.5) drop-shadow(0 0 2px #e8ae72)}
+.z2a-live .field-skill .z2a3-art{width:37px;height:37px;filter:drop-shadow(0 2px 1px #1d251b)}
+.z2a-field .action-forest .field-skill{background:radial-gradient(ellipse at 42% 25%,#62796a,#344c40 53%,#25372c 75%);border-color:#c5a367;box-shadow:inset 0 0 0 3px #242c22,inset 0 0 0 4px #b58d5b88,0 3px 0 #372c22,0 4px 9px #0a1d15aa}
+.z2a-field .action-forest .field-skill[data-cookware="POT"]{background:radial-gradient(ellipse at 42% 25%,#678a91,#345b63 53%,#293c40 75%)}
+.z2a-field .action-forest .field-skill[data-cookware="GRILL"]{background:radial-gradient(ellipse at 42% 25%,#9b6340,#6d4130 53%,#452e26 75%)}
+.z2a-field .action-forest .field-skill[data-cookware="STEAM"]{background:radial-gradient(ellipse at 42% 25%,#8a9b88,#536d60 53%,#34473d 75%)}
+.z2a-diner .diner-special>.z2a3-art{width:31px;height:31px}
+.z2a-diner .diner-special small .z2a3-art{width:13px;height:13px}
+.z2a-diner #z2a2-guide-icon .z2a3-art{width:23px;height:23px}
+@media(max-width:350px){.z2a-hud .z2a3-art{width:18px;height:18px}.z2a-hud .field-hp .z2a3-art{width:19px;height:19px}.z2a-hud .z2a2-queue .z2a3-art{width:11px;height:11px}.z2a-hud .z2a-ledger-btn .z2a3-art,.z2a-hud .z2a-settings .z2a3-art{width:25px;height:25px}}
+
+/* Z2b: Hearthcraft kitchen workbench, paper dish tickets and a split prep room.
+   The underlying inputs, 3D mounts, recipes, stock and kitchen rules stay unchanged. */
+.z2b-shell .z2b-hud{display:flex;justify-content:space-between;min-height:calc(50px + env(safe-area-inset-top));gap:8px}
+.z2b-phase-title{display:flex;align-items:center;gap:7px;flex:1;min-width:0}
+.z2b-phase-title>.z2a3-art{width:30px;height:30px}
+.z2b-phase-title span{display:grid;gap:1px;line-height:1.15}
+.z2b-phase-title b{font-size:15px;color:#f6e3b8}.z2b-phase-title small{font-size:11px;color:#c8bda2}
+.z2b-coins{display:flex;align-items:center;gap:4px;font-variant-numeric:tabular-nums;font-size:13px}
+.z2b-shell .dock{flex:none;min-height:calc(52px + env(safe-area-inset-bottom));padding:5px 8px calc(5px + env(safe-area-inset-bottom));gap:4px}
+.z2b-shell .dock .action-row{display:flex;flex-wrap:nowrap;gap:5px;margin:0;min-height:44px}
+.z2b-shell .dock .game-btn{display:inline-flex;align-items:center;justify-content:center;gap:4px;min-height:44px;font-size:13px;padding:5px 8px;white-space:nowrap}
+.z2b-shell .dock .game-btn .z2a3-art{width:19px;height:19px}
+.z2b-shell .game-toast{flex:none;min-height:0;max-height:32px;font-size:11px;padding:3px 9px;line-height:1.3}
+.z2b-shell .v063-workbench,.z2b-shell .z2b-workbench{padding:7px 9px;gap:6px;overflow-y:auto;overscroll-behavior:contain;touch-action:pan-y;min-height:0;background:radial-gradient(ellipse at 50% 18%,#3b5340,#20382c 75%)}
+.z2b-bench{flex:none;position:relative;display:grid;grid-template-columns:minmax(68px,1fr) minmax(0,2.65fr);gap:4px 7px;padding:7px 7px 10px;border:2px solid #a77c4c;border-radius:9px;background:repeating-linear-gradient(0deg,#805a3e 0px,#805a3e 24px,#6c4934 25px,#966c49 27px);box-shadow:inset 0 2px #e5b67655,0 4px #402e24}
+.z2b-bench-title{grid-column:1/-1;display:flex;justify-content:space-between;align-items:center;font-size:13px;color:#fff0cc;font-weight:800;text-shadow:0 1px #402a20}
+.z2b-bench-title small{font-size:11px;font-weight:500;color:#f3d7a5}
+.z2b-bench-vessel{display:grid;align-content:center;justify-items:center;gap:2px;padding:3px;background:radial-gradient(ellipse,#d3a973,#9d744c 69%,#674a37 70%,#674a37 76%,transparent 77%);color:#fff0cc;font-size:12px;text-shadow:0 1px #3d2b21}
+.z2b-bench-vessel .z2a3-art{width:62px;height:62px;filter:drop-shadow(0 4px 2px #422b26)}
+.z2b-selected-tray{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:4px;background:#412f25;border:2px solid #bd9160;border-radius:7px;padding:4px;box-shadow:inset 0 1px 5px #1f2119}
+.z2b-tray-slot{position:relative;display:flex;flex-direction:column;align-items:center;justify-content:center;min-height:77px;min-width:0;padding:3px 1px;border-radius:5px;border:1px solid #9f7e52;background:#d4b384;color:#443525;gap:1px}
+.z2b-tray-slot.filled{background:radial-gradient(ellipse,#f5e4b9,#c3a274);box-shadow:inset 0 0 0 2px #ede0b24d}
+.z2b-tray-slot.filled:active{transform:translateY(1px);background:#bfa073}
+.z2b-tray-slot b{font-size:10px;line-height:1.15;max-width:100%;overflow-wrap:anywhere}
+.z2b-tray-slot small{font-size:10px}.z2b-tray-slot.filled i{position:absolute;right:3px;top:2px;color:#7c422e;font-size:12px;font-style:normal;font-weight:bold}
+.z2b-tray-slot.empty{border:1px dashed #ad8e64;background:#6b4f38;color:#e0c298}.z2b-tray-slot.empty i{font-size:21px;font-style:normal}
+.z2b-shell .z2b-vessels{display:flex;gap:5px;flex:none}
+.z2b-shell .z2b-vessels .v063-vessel{flex:1;display:flex;align-items:center;justify-content:center;gap:3px;min-width:0;min-height:48px;padding:4px 3px;border-radius:6px;border:1px solid #927f58;background:#2b4436;box-shadow:0 2px #172d22}
+.z2b-shell .z2b-vessels .v063-vessel.chosen{border:2px solid #efc58b;background:#6e4d33;box-shadow:inset 0 1px #e3b17466,0 2px #392b23}
+.z2b-vessels .v063-vessel>.z2a3-art{width:28px;height:28px}
+.z2b-vessels .v063-vessel span{display:grid;line-height:1.12;min-width:0}.z2b-vessels .v063-vessel b{font-size:12px}.z2b-vessels .v063-vessel small{font-size:9px;white-space:nowrap}
+.z2b-shell .z2b-pantry-head{margin:0;padding:2px 2px 0;color:#f6e3b8;font-size:13px}
+.z2b-shell .z2b-pantry{flex:1 1 auto;min-height:66px;overflow-y:auto;overscroll-behavior:contain;touch-action:pan-y;grid-template-columns:repeat(4,minmax(0,1fr));align-content:start;gap:4px;padding:4px;background:#4b3729;border:2px solid #b38a59;border-radius:6px;box-shadow:inset 0 2px 5px #221e17}
+.z2b-shell .z2b-pantry button{min-height:58px;border:1px solid #a88d62;border-radius:5px;background:linear-gradient(#d4b68a,#b88d62);box-shadow:inset 0 1px #ffebc3aa,0 2px #32271d;color:#3f3025;padding:3px 1px}
+.z2b-shell .z2b-pantry button b,.z2b-shell .z2b-pantry button small{color:#493526;font-size:11px}
+.z2b-shell .z2b-pantry button.picked{border:2px solid #f3ce84;background:linear-gradient(#b6c39c,#8caa80)}
+.z2b-shell .v063-recipe-clue{flex:none;min-height:34px;margin:0;padding:5px 8px;border:1px solid #b79c6a;border-radius:5px;background:#d7bd8f;color:#49382b;font-size:12px}
+.z2b-shell .v063-recipe-clue strong{color:#443326}.z2b-shell .v063-recipe-clue small{color:#5e4e3d;font-size:11px}
+.z2b-shell .v063-last-result{padding:5px 6px;font-size:11px;max-height:none}
+.z2b-shell .v063-live-scene{padding:7px 8px 5px;gap:5px}
+.z2b-shell .v063-live-head{font-size:13px}.z2b-shell .v063-live-head .z2a3-art{width:23px;height:23px}
+.z2b-shell .v063-live-pan{flex:1;min-height:120px;max-height:none;border-radius:9px;border:2px solid #aa8050;background-color:#59422e}
+.z2b-shell .v063-live-msg{min-height:34px;font-size:12px}
+.z2b-shell .v063-live-tray .v063-drop{min-height:56px}
+.z2b-shell .v063-live-tray{gap:5px}
+.z2b-shell .v063-live-actions,.z2b-shell .v014c-dock{gap:3px}
+.z2b-shell .v063-live-actions .action-row .game-btn,.z2b-shell .v014c-dock .action-row .game-btn{min-width:0;flex:1;padding:5px 4px}
+.z2b-shell .v014c-grill-scene{width:100%;height:100%;min-height:0;display:flex;flex-direction:column;justify-content:flex-start;overflow-y:auto;padding:7px 9px;gap:4px}
+.z2b-shell .v014c-grill-head{flex:none;margin:0}.z2b-shell .v014c-grill-head strong{font-size:15px}
+.z2b-shell .v014c-hearth{flex:1 0 135px;min-height:135px;max-height:330px}
+.z2b-shell .v014c-gauges,.z2b-shell .v014c-status,.z2b-shell .v014c-tray{flex:none;margin:3px 0}
+.z2b-shell .v014c-tray button,.z2b-shell .v014c-lanes button{min-height:44px}
+.z2b-menu-board{justify-content:flex-start!important;gap:9px!important;padding:12px 10px!important;background:repeating-linear-gradient(0deg,#59432e 0px,#654b31 42px,#483426 43px,#483426 45px)}
+.z2b-menu-board .menu-title{display:flex;align-items:center;gap:5px;text-shadow:0 1px #31231a;font-size:16px}
+.z2b-menu-board .menu-title small{margin-left:auto;color:#e2c798;font-size:11px;font-weight:500}
+.z2b-menu-board .menu-blackboard{border:6px ridge #ae8050;border-radius:6px;background:radial-gradient(ellipse,#385246,#213c30);padding:8px;gap:7px;box-shadow:0 5px #392a20,inset 0 0 14px #16261b}
+.z2b-menu-board .menu-line{position:relative;gap:6px;min-height:72px;padding:8px 5px;border:1px solid #a28356;border-radius:4px;background:linear-gradient(165deg,#f3e3ba,#d9bc8e);color:#493525;box-shadow:0 2px #15281d,inset 0 1px #fff2d3}
+.z2b-menu-board .menu-line:before{content:'';position:absolute;top:3px;left:50%;width:4px;height:4px;border-radius:50%;background:#96754a;box-shadow:0 1px #fff0c7}
+.z2b-menu-board .menu-line strong{color:#483525;font-size:14px;line-height:1.15}
+.z2b-menu-board .menu-line small{color:#6a5540;font-size:11px}
+.z2b-menu-board .menu-num{color:#87633d;font-size:10px}
+.z2b-menu-board .v014-menu-value{display:flex;flex-wrap:wrap;gap:3px 5px;align-items:center;font-size:11px}
+.z2b-menu-board .v014-menu-value b,.z2b-menu-board .v014-menu-value em,.z2b-menu-board .v014-menu-value i{color:#543d29;background:transparent;padding:0;font-size:11px;white-space:nowrap}
+.z2b-menu-board .v014-menu-value i.shortage{color:#a23629;font-weight:800}
+.z2b-menu-board .v014-menu-value .z2a3-art{width:13px;height:13px}
+.z2b-dish-art{display:inline-flex;position:relative;width:62px;height:46px;flex:none;align-items:flex-end;justify-content:center;border-radius:6px;background:radial-gradient(ellipse at 50% 63%,#c3a171 0%,#b28a5b 60%,transparent 62%);overflow:hidden}
+.z2b-dish-vessel{position:absolute;top:0;left:2px}.z2b-dish-vessel .z2a3-art{width:24px;height:24px}
+.z2b-dish-food{display:flex;align-items:center;justify-content:center;gap:0;max-width:100%;padding:0 2px 3px}
+.z2b-dish-food img{margin-left:-2px;filter:drop-shadow(0 2px 1px #63492e77)}
+.z2b-menu-board .menu-switch .z2a3-art{width:19px;height:19px}
+.z2b-menu-board .synergy-box,.z2b-menu-board .v010-premium-entry,.z2b-menu-board .v014-menu-notes{background:#2c4437;border:1px solid #b18c5c;border-radius:5px;color:#f4e2bc}
+.z2b-menu-group{display:flex;align-items:center;gap:5px;margin:10px 0 3px;color:#735334;font-size:13px}.z2b-menu-group .z2a3-art{width:24px;height:24px}
+.z2b-prep-layout{height:100%;min-height:0;display:flex;flex-direction:column;gap:0;overflow:hidden}
+.z2b-prep-scene{flex:0 0 43%;min-height:135px;position:relative;overflow:hidden;border-bottom:3px solid #b28a57;background:#61472e}
+.z2b-prep-scene .diner-world{height:100%;width:100%}
+.z2b-prep-caption{position:absolute;left:7px;top:7px;background:#25372be8;color:#f1dfb6;border:1px solid #be9b62;border-radius:5px;padding:4px 7px;font-size:11px;pointer-events:none}
+.z2b-prep-caption .z2a3-art{width:16px;height:16px}
+.z2b-prep-work{flex:1;min-height:0;overflow-y:auto;overflow-x:hidden;overscroll-behavior:contain;touch-action:pan-y;background:linear-gradient(#344737,#20382c);padding:6px 8px}
+.z2b-shell .stage.prep .kitchen-prep-card{position:static!important;inset:auto!important;max-height:none!important;width:100%;padding:0;background:none;border:0;border-radius:0;box-shadow:none;overflow:visible;transform:none}
+.z2b-prep-work .kitchen-prep-card h2{font-size:15px;margin:1px 0 5px;color:#f5e0b6}
+.z2b-prep-work .kitchen-config-head{font-size:12px;padding:4px 7px;margin:0 0 5px;background:#263b30;border:1px solid #b69c6c;border-radius:4px}
+.z2b-prep-work .kitchen-config-slots{display:grid;gap:5px;margin:0}
+.z2b-prep-work .kitchen-config-slot{display:flex;align-items:center;gap:4px;min-width:0;padding:4px;background:#5b4834;border:1px solid #ad8b58;border-radius:5px}
+.z2b-station-identity{display:flex;align-items:center;gap:2px;min-width:77px;flex:0 0 77px}
+.z2b-station-identity>.z2a3-art{width:28px;height:28px}
+.z2b-station-identity span{display:grid;line-height:1.1}.z2b-station-identity b{font-size:11px}.z2b-station-identity small{font-size:10px;color:#edce9c}
+.z2b-prep-work .kitchen-choice{display:flex;flex:1;min-width:0;gap:3px}
+.z2b-prep-work .kitchen-choice button{flex:1;min-width:44px;min-height:44px;padding:3px 1px;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:0;background:#354a3b;border:1px solid #9c956c;border-radius:4px}
+.z2b-prep-work .kitchen-choice button.active{border:2px solid #efc889;background:#9c7547}
+.z2b-prep-work .kitchen-choice button .z2a3-art{width:22px;height:22px}
+.z2b-prep-work .kitchen-choice button small{font-size:10px;line-height:1.05;color:#fff0ca}
+.z2b-prep-work .kitchen-pressure,.z2b-prep-work .kitchen-refit{font-size:11px;margin:5px 0;line-height:1.3;color:#e6d2a9}
+.z2b-prep-work .prep-divider{margin:9px 0 4px;font-size:13px;color:#f0d5a4}
+.z2b-prep-work .prep-items{display:grid;grid-template-columns:1fr;gap:4px}
+.z2b-prep-work .prep-item{display:flex;align-items:center;gap:6px;text-align:left;padding:4px 7px;background:#ded0a5;color:#493727;border:1px solid #b38d5b;border-radius:5px;min-height:45px}
+.z2b-prep-work .prep-item div{flex:1;display:grid;line-height:1.2}.z2b-prep-work .prep-item div b{font-size:12px}.z2b-prep-work .prep-item div small{font-size:11px;color:#6a533c}.z2b-prep-work .prep-item strong{color:#476f47}
+.z2b-prep-work .prep-item .z2b-dish-art{height:38px}
+.z2b-prep-work .staff-open-prep,.z2b-prep-work .v095-stock-action,.z2b-prep-work .v12-star-invite button{min-height:44px}
+.z2b-prep-work .v014-marketing summary,.z2b-menu-board .v014-menu-notes summary{min-height:44px;display:flex;align-items:center}
+@media(max-width:350px){
+ .z2b-bench-vessel .z2a3-art{width:48px;height:48px}.z2b-tray-slot{min-height:65px}.z2b-tray-slot img{width:30px;height:30px}
+ .z2b-vessels .v063-vessel{flex-direction:column}.z2b-vessels .v063-vessel>.z2a3-art{width:23px;height:23px}.z2b-vessels .v063-vessel small{display:none}
+ .z2b-shell .dock .game-btn{font-size:12px;padding:4px 5px}.z2b-shell .dock .game-btn .z2a3-art{width:16px;height:16px}
+ .z2b-menu-board .menu-line{gap:3px}.z2b-menu-board .z2b-dish-art{width:50px}.z2b-menu-board .z2b-dish-food img{width:17px;height:17px}
+ .z2b-prep-work .kitchen-config-slot{padding:3px}.z2b-station-identity{min-width:68px;flex-basis:68px}.z2b-station-identity>.z2a3-art{width:23px;height:23px}
+}
+@media(max-height:620px){.z2b-bench{padding:5px 6px 7px}.z2b-bench-vessel .z2a3-art{width:48px;height:48px}.z2b-tray-slot{min-height:64px}.z2b-shell .v063-live-pan{min-height:105px}.z2b-shell .v014c-hearth{flex-basis:115px;min-height:115px}.z2b-shell .v014c-gauge{min-height:30px}.z2b-shell .v063-live-tray .v063-drop{min-height:49px}.z2b-shell .v063-live-msg{min-height:26px}}
+
+.z2b-stock-shortcut{position:absolute;right:7px;top:5px;min-height:44px;min-width:66px;display:flex;align-items:center;justify-content:center;gap:4px;padding:4px 8px;background:#273d30e8;border:1px solid #b39461;border-radius:7px;color:#f0e0b9;font-weight:700;font-size:12px}
+.z2b-stock-shortcut.risk{background:#6b4034e8;border-color:#e1a77c;color:#ffe4bc}
+.z2b-stock-shortcut .z2a3-art{width:19px;height:19px}
+.z2b-menu-board .v014-menu-value>*{border:0;border-radius:0;font-variant-numeric:tabular-nums}
+.z2b-shell .z2b-last-cook summary{font-size:11px;min-height:24px;cursor:pointer}
+.z2b-shell .z2b-last-cook small{font-size:11px;padding-top:4px}
+.z2b-prep-work .kitchen-config-slot{flex-wrap:nowrap}
+.z2b-prep-work .kitchen-config-slot .kitchen-choice button{max-width:none}
+.z2b-prep-work .kitchen-prep-card .prep-item{min-height:45px}
+.z2b-shell .v063-live-tray .v063-drop small{font-size:11px}
+@media(max-width:380px){.z2b-vessels .v063-vessel:has(+.v063-vessel +.v063-vessel),.z2b-vessels:has(.v063-vessel:nth-child(3)) .v063-vessel{flex-direction:column}.z2b-vessels:has(.v063-vessel:nth-child(3)) .v063-vessel small{display:none}}
+
+/* Z2c1: the money on hand is L1; the detailed ledger remains L3. */
+.z2a-service-hud #v075-wallet{color:#ffe3a5;gap:2px;flex:none;font-variant-numeric:tabular-nums}
+.z2a-service-hud #v075-wallet b{font-size:14px;font-weight:850}
+.z2a-service-hud #v075-wallet .z2a3-art{width:20px;height:20px;flex:none}
+.z2a-service-hud .v075-status{gap:3px}
+.z2a-service-hud .v075-status button{padding:0;min-width:44px;width:44px}
+@media(max-width:350px){.z2a-service-hud .v075-status{gap:2px;font-size:11px}.z2a-service-hud #v075-wallet b{font-size:12px}.z2a-service-hud #v075-wallet .z2a3-art{width:16px;height:16px}.z2a-service-hud .v075-status>span{gap:1px;padding:0}}
+/* Single-strip morning/route HUD; no extra banner or scene overlay. */
+.z2c-hud{justify-content:space-between}
+.z2c-hud .z2b-phase-title{min-width:0;flex:1}
+.z2c-hud .z2b-phase-title b{font-size:15px;white-space:nowrap}
+.z2c-hud .z2b-phase-title small{font-size:11px;white-space:nowrap}
+.z2c-hud .z2c-resource{display:flex;gap:2px;align-items:center;color:#f7dfaa;font-size:13px;font-variant-numeric:tabular-nums;white-space:nowrap}
+.z2c-hud .z2c-resource .z2a3-art{width:20px;height:20px}
+.z2c-hud .hud-gear{padding:0;min-width:44px}
+@media(max-width:350px){.z2c-hud .z2b-phase-title>.z2a3-art{width:24px;height:24px}.z2c-hud .z2c-resource{font-size:12px}.z2c-hud .z2c-resource .z2a3-art{width:17px;height:17px}}
+.z2c-home .v016-notice{border-bottom:1px solid #b08c55;background:linear-gradient(90deg,#44352a,#302f26);padding:7px 10px}
+.z2c-home .v016-notice strong{font-size:14px}
+.z2c-home .v016-notice small{font-size:11px}
+.z2c-home .v076-home-shortcuts button .z2a3-art,.z2c-home .v076-home-primary .z2a3-art{width:20px;height:20px;vertical-align:middle;flex:none}
+.z2c-home .v076-home-shortcuts button{min-height:44px}
+.z2c-home .v076-home-primary{min-height:44px}
+.z2c-route .ux-route .route-panel{padding:9px 10px 12px;gap:6px}
+.z2c-route .route-intro{padding:5px 9px;border:1px solid #a38455;border-radius:5px;background:#44382b;color:#f4ddb0;box-shadow:inset 0 1px #e7c28b33}
+.z2c-route .route-intro .ux-kicker{color:#d0ba91}
+.z2c-route .route-intro h2{font-size:18px;color:#ffe1a4}
+.z2c-route .ux-route .region-tabs button{min-height:44px}
+.z2c-route .v08-weapon-pick{min-height:44px}
+.z2c-route .v08-weapon-pick .z2a3-art{width:24px;height:24px;vertical-align:middle;margin-right:3px}
+.z2c-route .route-card .route-emoji{display:grid;place-items:center;width:43px;height:43px;border:1px solid #9d8055;border-radius:50%;background:#365947;box-shadow:inset 0 0 0 2px #e4c17d44;flex:none}
+.z2c-route .route-card .route-emoji .z2a3-art{width:31px;height:31px}
+.z2c-route .route-card.route-risk .route-emoji{background:#79503b}
+.z2c-route .ux-route .route-card{border-radius:5px;min-height:72px;background:linear-gradient(105deg,#f3e2b9,#d9bf92);box-shadow:0 3px #2a3024,inset 0 0 0 2px #f9e8c455}
+.z2c-route .ux-route .route-card.route-risk{background:linear-gradient(105deg,#f0d7ad,#d3a87a)}
+.z2c-route .route-card>b .z2a3-art{width:18px;height:18px}
+.z2c-route .v08-branch-card .z2a3-art,.z2c-route .v08-home-choice .z2a3-art,.z2c-route .dock .z2a3-art{width:20px;height:20px;vertical-align:middle}
+.z2c-route .dock .game-btn{min-height:44px}
+@media(max-width:350px){.z2c-route .route-card .route-emoji{width:35px;height:35px}.z2c-route .route-card .route-emoji .z2a3-art{width:25px;height:25px}}
+
+/* Z2c2: world threshold, cartography, and a physical equipment rack. */
+.z2c-home .v016-notice{position:relative;margin:7px 11px 6px;padding:8px 12px;background:linear-gradient(105deg,#e5d0a1,#c4a575);color:#463325;border:1px solid #8b6243;border-radius:3px;box-shadow:0 2px #271f18,inset 0 0 0 2px #f9e5b455}
+.z2c-home .v016-notice:before{content:'';position:absolute;left:50%;top:-4px;width:8px;height:8px;border-radius:50%;background:#a67d47;box-shadow:inset 0 1px #f9e1a3,0 1px 2px #5d3a27}
+.z2c-home .v016-notice strong{color:#533b26;font-size:15px}.z2c-home .v016-notice small{color:#644d35}
+.z2c-home .v016-home .v016-world-actions .v016-door.z2c2-threshold{left:50%;top:92%;bottom:auto;transform:translate(-50%,-50%);min-width:44px;width:86px;min-height:44px;height:54px;padding:0;display:flex;flex-direction:column;justify-content:center;gap:0;border:0;background:transparent;box-shadow:none;color:#fff1c5;font-size:11px;line-height:1.05;text-shadow:0 2px 2px #1b1710,1px 0 #1b1710,-1px 0 #1b1710}
+.z2c-home .v016-world-actions .z2c2-threshold .z2a3-art{width:31px;height:31px;filter:drop-shadow(0 2px 2px #2d2215)}
+.z2c-home .v016-world-actions .z2c2-threshold span{font-size:11px;white-space:nowrap}
+.z2c-home .v016-home .v016-world-actions .z2c2-threshold:active{transform:translate(-50%,-50%) scale(.95)}
+.z2c2-cloud-home .v076-preview{min-height:220px}
+.z2c-home .z2c2-cloud-home .v016-world-actions .z2c2-threshold{top:89%}
+.z2c2-cloud-home .v076-home-shortcuts button{font-size:11px}
+.z2c2-expedition{background:radial-gradient(ellipse at 30% 10%,#4e6650,#263c30 70%);display:flex;min-height:0}
+.z2c2-scroll{width:100%;height:100%;min-height:0;overflow:auto;overflow-x:hidden;overscroll-behavior:contain;touch-action:pan-y;padding:8px 10px 12px;display:flex;flex-direction:column;gap:8px;box-sizing:border-box}
+.z2c2-note{position:relative;display:flex;flex-direction:column;gap:4px;flex:none;background:linear-gradient(100deg,#e8d6ae,#c9ad7e);border:1px solid #96704d;border-radius:3px;color:#483a2a;padding:7px 10px 7px 16px;box-shadow:0 2px #263025;line-height:1.25}
+.z2c2-note-pin{position:absolute;top:9px;left:5px;width:6px;height:6px;border-radius:50%;background:#a87b46;box-shadow:0 1px #65472e}
+.z2c2-note b{display:block;font-size:12px;color:#64482c}.z2c2-note span{font-size:12px}.z2c2-note-food{display:flex;flex-wrap:wrap;gap:3px 8px}.z2c2-note-food span{display:inline-flex;align-items:center;gap:3px;font-size:11px}.z2c2-note-food small{color:#79543a}
+.z2c2-map{position:relative;isolation:isolate;flex:none;width:100%;aspect-ratio:320/252;min-height:220px;max-height:360px;background:#d6ba83;border:3px solid #9b7047;border-radius:5px;overflow:hidden;box-shadow:0 3px #293027,inset 0 0 0 2px #eacb8c}
+.z2c2-map-art{position:absolute;inset:0;width:100%;height:100%;z-index:-1}
+.z2c2-map-regions{position:absolute;left:5%;right:5%;top:3%;display:flex;justify-content:space-between;gap:9px}
+.z2c2-region{display:flex;align-items:center;justify-content:center;min-height:44px;min-width:44px;padding:3px 10px;color:#443724;background:#ead9b2ed;border:1px solid #9c7a53;border-radius:3px;font-weight:850;font-size:13px;box-shadow:0 2px #86694866}
+.z2c2-region.current{background:#3c5c47;color:#fff0c7;border-color:#e9cb90;box-shadow:0 0 0 2px #8d6d46}
+.z2c2-map-caption{position:absolute;top:25%;left:0;right:0;text-align:center;color:#4c4734;font-size:11px;font-weight:750;text-shadow:0 1px #f4e5b8}
+.z2c2-map-stop{position:absolute;top:45%;width:43%;min-height:90px;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:2px;padding:3px 2px;color:#3f3426;background:linear-gradient(145deg,#f2e1b4e8,#dfc592e8);border:1px solid #8e754e;border-radius:6px;box-shadow:0 2px #66543766;font-size:13px;line-height:1.1;touch-action:manipulation}
+.z2c2-map-stop.gather{left:4%;border-color:#69805b}.z2c2-map-stop.danger{right:4%;background:linear-gradient(145deg,#f3d6b0ee,#d1a67cee);border-color:#a3674c}
+.z2c2-stop-seal{display:grid;place-items:center;position:absolute;top:-20px;left:calc(50% - 19px);width:38px;height:38px;background:#536e4e;border:2px solid #d9c28f;border-radius:50%;box-shadow:0 2px #62513b}.z2c2-map-stop.danger .z2c2-stop-seal{background:#945f48}
+.z2c2-stop-seal .z2a3-art{width:27px;height:27px}.z2c2-map-stop>b{margin-top:16px;font-size:13px}.z2c2-stop-food{display:flex;align-items:center;justify-content:center;gap:3px}.z2c2-stop-food img,.z2c2-stop-food canvas{width:23px;height:23px}.z2c2-map-stop small{font-size:10px;color:#69533b}
+.z2c2-map-origin{position:absolute;bottom:3%;left:50%;transform:translateX(-50%);color:#443522;background:#e4c993d9;padding:2px 5px;font-size:10px;white-space:nowrap}
+.z2c2-rack{flex:none;background:repeating-linear-gradient(0deg,#795436 0px,#795436 22px,#69462e 23px,#795436 25px);border:2px solid #a78254;border-radius:4px;padding:5px 6px;box-shadow:inset 0 0 0 1px #402d22,0 2px #182a22;color:#f2dfb3}
+.z2c2-rack-head{display:flex;justify-content:space-between;align-items:center;padding:0 3px 4px;font-size:12px}.z2c2-rack-head small{font-size:10px;color:#e0c49c}
+.z2c2-tools{display:flex;gap:5px;align-items:stretch}
+.z2c2-tool{flex:1;min-width:0;min-height:65px;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:2px;background:#382e2355;border:1px solid #aa835755;border-radius:3px;color:#f7e6c3;padding:2px;line-height:1.1}
+.z2c2-tool.chosen{background:#4b5e3c;border:1px solid #f0c784;box-shadow:inset 0 0 0 1px #b9a06f}
+.z2c2-tool .z2a3-art{width:35px;height:35px;filter:drop-shadow(0 2px 1px #33261f)}.z2c2-tool span{font-size:11px;font-weight:750;white-space:nowrap}.z2c2-tool small{font-size:10px;color:#ecd3a6}
+.z2c2-tool-flavor{font-size:11px;text-align:center;padding:4px 2px 0;color:#f6d6a0}
+.z2c2-travel-notes{flex:none;color:#ddc79e;font-size:12px;padding:0 6px}.z2c2-travel-notes summary{min-height:32px;display:list-item;padding:7px 0;cursor:pointer}.z2c2-travel-notes p{margin:5px 0;line-height:1.4}
+.z2c2-expedition~.game-toast{display:none}
+.z2c-route:has(.z2c2-expedition)>.game-toast{display:none}
+.z2c-route:has(.z2c2-expedition) .dock{min-height:0;padding:4px 8px calc(4px + env(safe-area-inset-bottom))}
+.z2c-route:has(.z2c2-expedition) .dock .game-btn{display:flex;align-items:center;justify-content:center;gap:4px;font-size:12px;background:#354838;border:1px solid #a68a5e;box-shadow:0 2px #213023}
+@media(max-width:350px){.z2c2-scroll{padding:6px;gap:6px}.z2c2-map{min-height:218px}.z2c2-region{padding:3px 6px;font-size:12px}.z2c2-tool .z2a3-art{width:30px;height:30px}.z2c2-tool span{font-size:10px}.z2c2-map-stop{min-height:84px}}
+
+/* Map destinations are pins with labels, not full-width cards on top of an illustration. */
+.z2c2-map-stop,.z2c2-map-stop.danger{width:37%;min-height:77px;top:48%;background:none;border:0;box-shadow:none;gap:3px}
+.z2c2-map-stop.gather{left:2%}.z2c2-map-stop.danger{right:2%}
+.z2c2-map-stop>b{background:#ecd6a6ed;border:1px solid #8b6d48;border-radius:3px;padding:4px 6px;margin-top:12px;box-shadow:0 1px #80624277}
+.z2c2-map-stop.danger>b{background:#e7bd94ed;border-color:#9d654a}
+.z2c2-stop-food{background:#f0e0b7b0;padding:1px 4px;border-radius:10px}
+.z2c2-map-stop small{background:#f0e0b7bb;border-radius:3px;padding:1px 4px;color:#5c432d}
+.z2c2-map-stop:focus-visible{outline:2px dashed #694d32;outline-offset:-2px}
+.z2c-home .v016-home .v016-world-actions .v016-door.z2c2-threshold:not([data-y2b-anchor]){top:88%}
+
+/* Z2c3 real rendered art. Only switch after BOTH canvases draw successfully. */
+.z2c2-map[data-z2c3-active]{aspect-ratio:320/330;max-height:460px;border:3px solid #795333;box-shadow:0 3px #261d16, inset 0 0 0 1px #c79a5b;background:#557557}
+.z2c2-map[data-z2c3-active] .z2c2-map-art{visibility:hidden}
+.z2c3-render{position:absolute;inset:0;width:100%;height:100%;pointer-events:none;display:block}
+.z2c2-map .z2c3-render{z-index:-1}
+.z2c2-map[data-z2c3-active] .z2c2-map-caption{color:#fff1cf;text-shadow:0 2px 3px #231e16;top:21%;font-size:12px}
+.z2c2-map[data-z2c3-active] .z2c2-map-stop{top:47%}
+.z2c2-map[data-z2c3-active] .z2c2-map-stop>b{background:#4d3b28ee;color:#fff0c7;border-color:#ccaa70}
+.z2c2-map[data-z2c3-active] .z2c2-map-stop.danger>b{background:#683c2cef}
+.z2c2-map[data-z2c3-active] .z2c2-stop-seal{display:none}
+.z2c2-map[data-z2c3-active] .z2c2-map-stop small{background:#382b1ed9;color:#ffdfaa}
+.z2c2-map[data-z2c3-active] .z2c2-stop-food{background:#ddc79ed9}
+.z2c2-map[data-z2c3-active] .z2c2-map-origin{bottom:3%;background:#402e21d9;color:#f4dab0}
+.z2c2-tools[data-z2c3-active]{position:relative;isolation:isolate;min-height:126px;gap:0;border:1px solid #936a43;overflow:hidden;border-radius:3px}
+.z2c2-tools[data-z2c3-active] .z2c3-render{z-index:-1}
+.z2c2-tools[data-z2c3-active] .z2c2-tool{position:relative;justify-content:flex-end;gap:2px;background:transparent;border:1px solid transparent;box-shadow:none;padding:3px 1px;min-height:126px}
+.z2c2-tools[data-z2c3-active] .z2c2-tool>.z2a3-art{visibility:hidden;position:absolute}
+.z2c2-tools[data-z2c3-active] .z2c2-tool span,.z2c2-tools[data-z2c3-active] .z2c2-tool small{background:#3d2b20da;padding:2px 3px;text-shadow:0 1px #24180f}
+.z2c2-tools[data-z2c3-active] .z2c2-tool.chosen{border-color:#f1c77a;box-shadow:inset 0 0 8px #f2b85b55}
+.z2c2-tools[data-z2c3-active] .z2c2-tool:focus-visible{outline:2px solid #f6e0a8;outline-offset:-3px}
+@media(max-width:350px){.z2c2-map[data-z2c3-active]{aspect-ratio:320/310}.z2c2-tools[data-z2c3-active],.z2c2-tools[data-z2c3-active] .z2c2-tool{min-height:112px}}
+
+/* Z2c3 short mobile viewport: preserve space for the actual objects. */
+@media(max-height:650px){.z2c2-map[data-z2c3-active]{aspect-ratio:320/270;max-height:300px}.z2c2-tools[data-z2c3-active],.z2c2-tools[data-z2c3-active] .z2c2-tool{min-height:108px}}
+.z2c2-map[data-z2c3-active] .z2c2-region{background:#553b26e8;color:#f1d9a7;border-color:#b48b54;box-shadow:0 2px #39291c}
+.z2c2-map[data-z2c3-active] .z2c2-region.current{background:#36593eea;border-color:#edc67b;box-shadow:0 0 0 1px #d7a55e}
+
+/* Z2c4: one ecology viewport per region, independent strategy cards, live chef. */
+.z2c-home .v016-home .v016-world-actions .v016-door.z2c2-threshold{width:120px;height:48px;min-height:44px;display:flex;flex-direction:row;gap:4px;justify-content:center;padding:4px 7px;border:2px solid #f2d28b;border-radius:9px;background:linear-gradient(#c58e45,#9b602f);box-shadow:0 4px #50311d,inset 0 2px #ffe4a6a0;color:#fff3ce;text-shadow:0 2px #694124;font-size:13px}
+.z2c-home .v016-world-actions .z2c2-threshold span{font-size:13px;font-weight:900}.z2c-home .v016-world-actions .z2c2-threshold .z2a3-art{width:24px;height:24px;flex:none}
+.z2c-home .v016-world-actions .z2c2-threshold i{font-size:20px;font-style:normal;line-height:1}
+.z2c-home .v016-home .v016-world-actions .v016-door.z2c2-threshold:active{filter:brightness(1.12);box-shadow:0 1px #50311d,inset 0 2px #69412488;transform:translate(-50%,-50%)}
+.z2c-home .v016-home .v016-world-actions .v016-door.z2c2-threshold:not([data-y2b-anchor]){top:87%}
+.z2c2-expedition .z2c2-map,.z2c2-expedition .z2c2-map[data-z2c3-active]{height:clamp(218px,max(68vw,35dvh),340px);min-height:0;max-height:none;aspect-ratio:auto;flex:none;border:2px solid #a18255;border-radius:5px;box-shadow:0 3px #2b3027}
+.z2c2-expedition .z2c2-map .z2c3-render{visibility:hidden}.z2c2-expedition .z2c2-map[data-z2c3-active] .z2c3-render{visibility:visible}
+.z2c2-expedition .z2c2-map-caption,.z2c2-expedition .z2c2-map[data-z2c3-active] .z2c2-map-caption{top:25%;font-size:11px;text-shadow:0 1px 2px #241b17}
+.z2c2-expedition .z2c2-map-regions{top:3%;gap:5px;left:3%;right:3%}.z2c2-expedition .z2c2-region{min-height:44px;font-size:12px}
+.z2c4-ecology{position:absolute;left:0;right:0;bottom:0;padding:5px 7px;display:flex;align-items:center;gap:5px;background:linear-gradient(transparent,#273b2bef 45%);color:#fff1ce;text-shadow:0 1px #172c20;font-size:11px}
+.z2c4-ecology small{font-size:10px;color:#e3c890;white-space:nowrap}.z2c4-ecology span{font-weight:750}
+.z2c4-routes{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:7px;flex:none}
+.z2c4-route-card{display:flex;flex-direction:column;justify-content:center;align-items:flex-start;gap:3px;min-height:70px;padding:5px 7px;text-align:left;color:#f6e5c2;background:linear-gradient(#536b47,#3c533b);border:1px solid #b4ac79;border-radius:5px;box-shadow:0 3px #263b2c,inset 0 1px #d2c38c55}
+.z2c4-route-card.danger{background:linear-gradient(#956644,#674630);border-color:#c3a074;box-shadow:0 3px #422e26,inset 0 1px #e6c18a55}
+.z2c4-route-head{display:flex;align-items:center;gap:3px;width:100%;font-size:13px}.z2c4-route-head .z2a3-art{width:23px;height:23px}.z2c4-route-head i{margin-left:auto;font-style:normal;font-size:19px;color:#f3d6a2}
+.z2c4-route-food{display:flex;gap:3px;height:21px;align-items:center}.z2c4-route-card small{font-size:10px;color:#f0d8aa;white-space:normal}
+.z2c4-route-card:active,.z2c4-tool-list .z2c2-tool:active{filter:brightness(1.12);transform:none}
+.z2c2-rack.z2c4-loadout{background:linear-gradient(110deg,#394b3a,#3b3025);border:1px solid #9f8055;padding:5px 6px;box-shadow:0 2px #233226}
+.z2c4-loadout-head{display:flex;justify-content:space-between;font-size:12px;color:#f2d6a3;padding:0 2px 4px}.z2c4-loadout-head small{font-size:10px}
+.z2c4-loadout-body{display:grid;grid-template-columns:minmax(0,1.05fr) minmax(0,1fr);gap:7px;align-items:stretch}
+.z2c4-hero{position:relative;isolation:isolate;height:192px;min-width:0;overflow:hidden;border-radius:4px;background:radial-gradient(ellipse at 50% 60%,#6c7850,#293e32 75%);border:1px solid #9c895c}
+.z2c4-hero .z2c3-render{z-index:-1;visibility:hidden}.z2c4-hero[data-z2c3-active] .z2c3-render{visibility:visible}.z2c4-hero[data-z2c3-active] .z2c4-hero-fallback{visibility:hidden}
+.z2c4-hero-fallback{display:flex;flex-direction:column;align-items:center;justify-content:center;height:100%;gap:7px;color:#f1d7a5;font-size:11px}.z2c4-hero-fallback .z2a3-art{width:62px;height:62px}
+.z2c4-tool-list{display:flex;flex-direction:column;justify-content:center;gap:3px;min-width:0}
+.z2c4-tool-list .z2c2-tool{display:flex;flex-direction:row;align-items:center;justify-content:flex-start;gap:4px;min-height:44px;flex:none;padding:3px 5px;background:#483a2b;border:1px solid #8c704c;border-radius:4px;text-align:left}
+.z2c4-tool-list .z2c2-tool.chosen{background:#4c6744;border-color:#eac379;box-shadow:inset 0 0 0 1px #bd9b61}
+.z2c4-tool-list .z2c2-tool .z2a3-art{width:26px;height:26px;flex:none}.z2c4-tool-list .z2c2-tool span{display:flex;flex-direction:column;gap:1px;font-size:11px;white-space:normal}.z2c4-tool-list .z2c2-tool small{font-size:10px;color:#e9c994}.z2c4-tool-list .z2c2-tool i{font-style:normal;color:#f1cd8a;margin-left:auto;font-size:13px}
+@media(max-width:350px){.z2c4-hero{height:192px}.z2c4-loadout-body{gap:4px}.z2c4-tool-list .z2c2-tool{padding:3px}.z2c4-tool-list .z2c2-tool .z2a3-art{width:23px;height:23px}.z2c4-route-card{padding:4px 5px}.z2c4-route-head{font-size:12px}}
+@media(prefers-reduced-motion:reduce){.z2c2-threshold,.z2c4-route-card,.z2c4-tool-list .z2c2-tool{transition:none!important}}
+
+/* Z2c10: a closing-night receipt rather than a dashboard of KPI cards. */
+.stage.report>.z2c10-ledger{justify-content:flex-start;align-items:stretch;overflow-y:auto;overscroll-behavior:contain;gap:10px;padding:12px 12px 20px;background:radial-gradient(ellipse at 50% 10%,#52664b,#253b30 68%,#172e26)}
+.z2c10-ledger>*{flex:none;min-width:0;width:100%;max-width:100%;box-sizing:border-box}
+.z2c10-paper{padding:15px 14px 12px;border:1px solid #b99b65;border-radius:5px;background:linear-gradient(145deg,#faedce,#ead5aa);box-shadow:0 4px 0 #182b24,0 6px 15px #15251b55;color:#463628}
+.z2c10-eyebrow{display:flex;align-items:center;gap:5px;color:#846341;font-size:11px;font-weight:800;letter-spacing:.04em}.z2c10-eyebrow .z2a3-art{width:19px;height:19px}
+.z2c10-paper .report-header{margin:7px 0 12px;text-align:left;color:#453328;font-size:19px;line-height:1.35;text-shadow:none}
+.z2c10-paper .report-stats{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:0;border-top:1px dashed #b69a69;border-bottom:1px dashed #b69a69;padding:3px 0;margin:0;width:100%}
+.z2c10-paper .report-stats>div{display:flex;flex-direction:column;align-items:flex-start;justify-content:center;gap:3px;padding:7px 6px;min-height:53px;background:none;border:0;border-radius:0;box-shadow:none;color:#453328;text-align:left}
+.z2c10-paper .report-stats>div:nth-child(odd){border-right:1px solid #c6ab7d80}.z2c10-paper .report-stats>div:nth-child(-n+2){border-bottom:1px solid #c6ab7d80}
+.z2c10-paper .report-stats small{color:#735e46;display:flex;align-items:center;gap:3px;font-size:12px}.z2c10-paper .report-stats b{font-size:24px;line-height:1.05;color:#38553b;font-variant-numeric:tabular-nums}.z2c10-paper .report-stats .z2c10-loss{color:#a03f32}.z2c10-paper .z2a3-art{width:17px;height:17px}
+.z2c10-outcome{display:flex;gap:6px 14px;flex-wrap:wrap;margin-top:9px;color:#755d42;font-size:11px}
+.z2c10-feedback{display:grid;gap:7px;padding:10px 11px;border:1px solid #ad996e;border-radius:6px;background:#e7d6ad;color:#443829;box-shadow:0 2px #182b24}
+.z2c10-feedback>.daily-goal-result,.z2c10-feedback>.guest-verdict,.z2c10-feedback>.recipe-lead{width:100%;max-width:none;margin:0;padding:7px 0;border:0;border-radius:0;background:none;box-shadow:none;color:#443829;text-align:left;min-height:0}
+.z2c10-feedback>*+*{border-top:1px dashed #bda87e!important}.z2c10-feedback strong,.z2c10-feedback b,.z2c10-feedback span,.z2c10-feedback small,.z2c10-feedback p{color:#443829;line-height:1.45;text-shadow:none}.z2c10-feedback p{margin:4px 0 0}
+.z2c10-ledger .v014-report-more{background:#284437;border-color:#a99161;padding:0 10px 8px}.z2c10-ledger .v014-report-more summary{min-height:44px}.stage.report .z2c10-ledger .v014-report-more[open]{display:grid;gap:7px}
+@media(max-width:350px){.stage.report>.z2c10-ledger{padding:9px 8px 16px}.z2c10-paper{padding:11px 10px}.z2c10-paper .report-header{font-size:17px}.z2c10-paper .report-stats b{font-size:22px}}
+
+/* Z2c11: keep the actual restaurant visible above the growth workbench. */
+.stage.upgrade>.z2c11-growth-layout{display:flex;flex-direction:column;width:100%;height:100%;min-height:0;overflow:hidden;background:#283d30}
+.z2c11-growth-scene{position:relative;flex:0 0 43%;min-height:120px;overflow:hidden;border-bottom:3px solid #b28a57;background:#61472e}
+.z2c11-growth-scene .diner-world{width:100%;height:100%}
+.z2c11-scene-caption{position:absolute;bottom:6px;left:8px;right:8px;display:flex;align-items:center;gap:5px;color:#f8e3b5;background:#253b30e8;border:1px solid #a78b59;border-radius:5px;padding:5px 8px;font-size:12px;pointer-events:none;z-index:2}
+.z2c11-scene-caption span{display:flex;align-items:center;gap:4px;margin-left:auto}.z2c11-scene-caption .z2a3-art{width:18px;height:18px}
+.z2c11-growth-work{flex:1;min-height:0;overflow-y:auto;overflow-x:hidden;overscroll-behavior:contain;touch-action:pan-y;background:linear-gradient(#344737,#20382c);padding:8px 10px 14px}
+.stage.upgrade .z2c11-growth-work .kitchen-upgrade-card{position:static!important;inset:auto!important;transform:none!important;width:100%;max-width:none;max-height:none!important;min-height:0;margin:0;padding:0;overflow:visible;border:0;background:none;box-shadow:none}
+.z2c11-growth-work .kitchen-upgrade-card h2{display:flex;align-items:center;gap:6px;font-size:17px;margin:4px 0 8px}.z2c11-growth-work .kitchen-upgrade-card h2 .z2a3-art{width:23px;height:23px}
+.z2c11-growth-group{display:grid;gap:7px;margin:0 0 10px;padding:9px 10px;border:1px solid #ae9161;border-radius:7px;background:#e7d4a9;color:#493827;box-shadow:0 2px #172c22}
+.z2c11-growth-group h3{display:flex;align-items:center;gap:5px;margin:0;color:#503a27;font-size:13px;font-weight:850}.z2c11-growth-group h3 .z2a3-art{width:20px;height:20px}
+.z2c11-growth-group .v09-room-upgrade,.z2c11-growth-group .v13a-bundle-panel,.z2c11-growth-group .v014b-grill-unlock,.z2c11-growth-group .kitchen-upgrade-row,.z2c11-growth-group .upgrade-feature{margin:0;padding:8px 0;background:none;border:0;border-radius:0;box-shadow:none;color:#493827;border-bottom:1px dashed #bca47b}
+.z2c11-growth-group .v09-room-upgrade strong,.z2c11-growth-group .v13a-bundle-panel strong,.z2c11-growth-group .v014b-grill-unlock strong,.z2c11-growth-group .kitchen-upgrade-row strong{color:#493827}.z2c11-growth-group small,.z2c11-growth-group span{color:#634e36;line-height:1.45}.z2c11-growth-group .game-btn{min-height:44px}.z2c11-growth-group .game-btn:disabled{opacity:.65}.z2c11-growth-group .z2c11-history{font-size:11px}.z2c11-history .z2a3-art,.z2c11-growth-group .v09-room-upgrade .z2a3-art{width:18px;height:18px;vertical-align:middle}
+@media(max-height:620px){.z2c11-growth-scene{flex-basis:40%;min-height:110px}.z2c11-growth-work{padding:6px 8px 10px}}
+
+/* Z2c13: report paper contrast and consistent drawer typography. */
+.stage.report .z2c10-paper h2.report-header{color:#453328!important;text-align:left;font-size:clamp(17px,4.4vw,20px);font-weight:800;line-height:1.4;margin:7px 0 12px;text-shadow:none!important;letter-spacing:0}
+.stage.report .z2c10-paper .z2c10-eyebrow{color:#6d5034;font-size:12px;line-height:1.45;font-weight:650}
+.stage.report .z2c10-paper .report-stats small{color:#624b34;font-size:12px;font-weight:600;line-height:1.4}
+.stage.report .z2c10-paper .report-stats b{font-size:clamp(22px,5.8vw,26px);font-weight:800;letter-spacing:0;line-height:1.12;font-variant-numeric:tabular-nums}
+.stage.report .z2c10-outcome{font-size:12px;color:#624b34;line-height:1.45}
+.stage.report .z2c10-feedback{font-size:13px;line-height:1.55}.stage.report .z2c10-feedback strong,.stage.report .z2c10-feedback b{font-size:13px;font-weight:750;color:#473522}.stage.report .z2c10-feedback small,.stage.report .z2c10-feedback p{font-size:12px;color:#523e29}
+.stage.report .v014-report-more summary{color:#ffe5ac;font-size:13px;line-height:1.45;font-weight:700;display:flex;align-items:center;gap:6px}.stage.report .v014-report-more summary:before{content:'▸';font-size:12px}.stage.report .v014-report-more[open] summary:before{content:'▾'}
+.z2c11-growth-scene .diner-world{position:absolute;inset:0;width:100%;height:100%;max-height:none;min-height:0}
+.game-shell .z2c13-sheet{display:flex;flex-direction:column;max-height:min(84dvh,720px);border:2px solid #ad8251;border-radius:13px 13px 0 0;color:#483727;background:#edddb7;box-shadow:0 -5px 0 #62472e,0 -12px 32px #0b2019aa}
+.game-shell .z2c13-sheet .sheet-header{flex:0 0 57px;height:57px;display:flex;align-items:center;justify-content:flex-start;padding:12px 53px 5px 13px;background:#284335;border-bottom:1px solid #ad8e5d;border-radius:10px 10px 0 0}
+.game-shell .z2c13-sheet .sheet-handle{position:absolute;top:5px;left:50%;transform:translateX(-50%);width:35px;height:3px;background:#b69b6a}
+.game-shell .z2c13-sheet .sheet-header h2{display:flex;align-items:center;gap:7px;margin:0;color:#ffedc3;font-size:17px;font-weight:750;line-height:1.35;text-shadow:none;letter-spacing:0;min-width:0}
+.game-shell .z2c13-sheet .sheet-header h2 .z2a3-art{width:23px;height:23px;flex:none}
+.game-shell .z2c13-sheet .sheet-close{top:9px;right:7px;min-width:44px;min-height:44px;padding:0 8px;background:#395747;color:#ffedc3;border:1px solid #b59a6a;box-shadow:none;border-radius:6px}
+.game-shell .z2c13-sheet .sheet-body{flex:1 1 auto;min-height:0;padding:12px 12px 20px;overflow:auto;overscroll-behavior:contain;touch-action:pan-y;color:#483727;line-height:1.45}
+.game-shell .z2c13-sheet .sheet-lead{font-size:12px;color:#624b34;line-height:1.55;margin:0 0 10px}
+.game-shell .z2c13-sheet .sheet-body h3{font-size:14px;color:#4f3a27;line-height:1.4}
+.game-shell .z2c13-sheet .z2c13-book-nav{flex:none;display:grid;grid-template-columns:1fr 1fr;gap:6px;padding:8px 12px;margin:0;background:#d6c297;border-bottom:1px solid #bca275}
+.game-shell .z2c13-sheet .v102-book-tabs button{display:flex;align-items:center;justify-content:center;gap:4px;min-height:40px;font-size:12px;font-weight:700;color:#51412f;background:#f4e5c4;border:1px solid #ae956d;border-radius:5px;white-space:normal;line-height:1.2}
+.game-shell .z2c13-sheet .v102-book-tabs button.active{background:#34533d;color:#ffebc1;border-color:#34533d}
+.game-shell .z2c13-sheet .v102-book-tabs .z2a3-art{width:19px;height:19px;flex:none}
+.game-shell .z2c13-sheet .v015-region-tabs,.game-shell .z2c13-sheet .v015-cook-tabs{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:4px;margin:0 0 6px}
+.game-shell .z2c13-sheet .v015-cook-tabs button{flex-direction:column;min-height:49px;padding:4px 2px}
+.z2c13-atlas-count{font-size:12px;color:#654e34;margin:8px 0 6px}.z2c13-empty{padding:22px 8px;text-align:center;font-size:13px;color:#624b34;border:1px dashed #b49a73;border-radius:6px}
+.game-shell .z2c13-sheet .book-item{border:1px solid #bca47d;border-radius:6px;background:#f8eacb;color:#493727;padding:8px;min-height:52px;gap:8px;line-height:1.4}
+.game-shell .z2c13-sheet .book-item strong{font-size:13px;color:#483727}.game-shell .z2c13-sheet .book-item small{font-size:12px;color:#665039;line-height:1.45}
+.game-shell .z2c13-sheet .z2c13-unknown{display:grid;place-items:center;width:38px;height:38px;background:#d6c29b;color:#795c3b;border:1px solid #b29b73;border-radius:6px;font-size:22px;font-weight:750}
+.game-shell .z2c13-sheet .v063-book-entry{min-width:0}.game-shell .z2c13-sheet .v015-atlas-status{font-size:12px;line-height:1.4;color:#654c34;overflow-wrap:anywhere}.game-shell .z2c13-sheet .v015-atlas-status.ready{color:#34583c}
+.game-shell .z2c13-sheet .v063-variant-chip{min-height:36px;font-size:12px;line-height:1.4;white-space:normal;overflow-wrap:anywhere}.game-shell .z2c13-sheet .v063-variant-chip.active{background:#35543d;color:#fff0c7}
+@media(max-width:350px){.game-shell .z2c13-sheet .sheet-body{padding:9px 8px 16px}.game-shell .z2c13-sheet .z2c13-book-nav{padding:6px 8px}.game-shell .z2c13-sheet .sheet-header h2{font-size:16px}.game-shell .z2c13-sheet .v102-book-tabs button{font-size:11px}}
+
+/* Z2d.1: shared drawer focus and touch targets, without shrinking the scene. */
+.game-shell .z2c13-sheet :is(button,summary,a,select,input,textarea,[tabindex]):focus-visible{outline:2px solid #79521d;outline-offset:-3px;box-shadow:inset 0 0 0 5px #ffe9ae}
+.game-shell .z2c13-sheet .sheet-close:focus-visible,.game-shell .z2c13-sheet button.active:focus-visible{outline-color:#ffdda0;box-shadow:inset 0 0 0 5px #294738}
+.game-shell .z2c13-sheet .v102-book-tabs button,.game-shell .z2c13-sheet .v063-variant-chip{min-height:44px;min-width:0;white-space:normal;overflow-wrap:anywhere}
+.game-shell .z2c13-sheet .v015-cook-tabs button{min-height:49px}
+.game-shell .z2c13-sheet .sheet-body{min-width:0;overflow-x:hidden}
+@media(max-width:350px){.game-shell .z2c13-sheet .v015-region-tabs{grid-template-columns:repeat(2,minmax(0,1fr))}.game-shell .z2c13-sheet .v015-cook-tabs{grid-template-columns:repeat(2,minmax(0,1fr))}}
+
+/* Z2d2: same management stage geometry as the accepted prep close-up. */
+.stage.report>.z2d2-report-layout{width:100%;height:100%;min-height:0;display:flex;flex-direction:column;overflow:hidden}
+.z2d2-report-stage,.stage.upgrade .z2c11-growth-scene{position:relative;flex:0 0 43%;min-height:135px;overflow:hidden;border-bottom:3px solid #b28a57;background:#61472e}
+.z2d2-report-stage .diner-world,.z2d2-report-stage .v075-world{position:absolute;inset:0;width:100%;height:100%;min-height:0;max-height:none}
+.stage.report .z2d2-report-layout>.z2c10-ledger{flex:1 1 0;min-height:0;width:100%;display:flex;flex-direction:column;justify-content:flex-start;align-items:stretch;overflow-y:auto;overflow-x:hidden;overscroll-behavior:contain;touch-action:pan-y;gap:10px;padding:12px 12px 20px;background:radial-gradient(ellipse at 50% 10%,#52664b,#253b30 68%,#172e26)}
+.z2d2-view-switch{position:absolute;top:7px;left:7px;display:flex;gap:3px;z-index:3;padding:3px;background:#253b30e8;border:1px solid #a78b59;border-radius:6px}
+.z2d2-view-switch button{min-width:52px;min-height:44px;padding:4px 8px;font-size:12px;font-weight:750;color:#ffe8b8;background:#344d3c;border:1px solid #a78b59;border-radius:4px}
+.z2d2-view-switch button[aria-pressed="true"]{background:#b58c55;color:#392b1e;border-color:#f2d7a1}
+.z2d2-view-switch button:focus-visible{outline:2px solid #ffe8b8;outline-offset:-3px}
+@media(max-width:350px){.stage.report .z2d2-report-layout>.z2c10-ledger{padding:9px 8px 16px}}
+
+/* The camera switch has no meaning in the original 2D fallback. */
+html:not([data-oddpot3d="active"]) .z2d2-view-switch{display:none}
+
+/* Z2d3: decisions own their scroll surface, never the combat joystick. */
+.action-forest[data-z2d3-event-key]{touch-action:pan-y}
+.action-forest[data-z2d3-event-key] .field-event{max-height:calc(100% - 16px);min-width:0;overflow-y:auto;overflow-x:hidden;overscroll-behavior:contain;touch-action:pan-y;-webkit-overflow-scrolling:touch;scroll-padding:8px}
+.action-forest[data-z2d3-event-key] .field-event button{min-height:44px;white-space:normal;overflow-wrap:anywhere;touch-action:pan-y}
+.v075-event-shade{min-height:0;overflow:hidden;touch-action:pan-y;padding:8px 10px}
+.v075-event-shade .v075-event-card{max-height:100%;min-height:0;overflow-y:auto;overflow-x:hidden;overscroll-behavior:contain;touch-action:pan-y;-webkit-overflow-scrolling:touch;scroll-padding:8px;box-sizing:border-box;background:#f0dfb9;color:#3a3022}
+.v075-event-card .v075-event-kicker{color:#76502e}
+.v075-event-card p,.v075-event-card>small{color:#634a31;overflow-wrap:anywhere}
+.v075-event-card .v075-event-choice{min-height:44px;flex:none;touch-action:pan-y;overflow-wrap:anywhere}
+.v075-event-card .v075-event-choice:focus-visible,.action-forest[data-z2d3-event-key] .field-event button:focus-visible{outline:2px solid #be7b32;outline-offset:2px}
+@media(max-height:568px){.v075-event-shade{padding:5px 7px}.v075-event-shade .v075-event-card{padding:9px 10px}.v075-event-card p{margin:5px 0 8px}.v075-event-options{gap:5px}}
+
+/* Z2e-D0: one physical control preference, shared by field and diner. */
+#app :is(.floating-joystick,.diner-float-stick).z2ed0-fixed{width:114px;height:114px;margin:0;transform:translate(-50%,-50%);border:2px solid #e8c897a8;background:radial-gradient(circle,#ffecc42c 0 31%,#173a31b9 33% 62%,#0d2b27b4 64%);box-shadow:0 0 0 3px #092e2877,inset 0 0 15px #ffeca74d;opacity:.86;pointer-events:none}
+.z2ed0-controls{margin:8px 0 12px;padding:10px;background:#dfc99f;border:1px solid #a88653;border-radius:8px}.z2ed0-stick-options{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin:6px 0 8px}.z2ed0-stick-options .game-btn{min-height:44px;font-size:14px}.z2ed0-stick-options [aria-pressed=true]{background:#38583e;color:#ffedc3;border-color:#c79b60;box-shadow:inset 0 0 0 1px #c79b60}
+
+/* Z2e-D1a: restaurant remains the stage; a mandatory result floats above it. */
+.game-shell:has(.z2ed1-result)>.dock,.game-shell:has(.z2ed1-result)>.game-toast{display:none!important}
+.stage.report>.z2d2-report-layout{position:relative;display:block;isolation:isolate;background:#20382c}
+.stage.report .z2d2-report-stage{position:absolute;inset:0;min-height:0;height:100%;width:100%;border:0;overflow:hidden}
+.stage.report .z2d2-report-stage:after{content:'';position:absolute;inset:0;background:linear-gradient(#0b211744,#0d201977);pointer-events:none}
+.stage.report .z2d2-report-stage .z2b-prep-caption{z-index:1;top:6px;bottom:auto}
+.z2ed1-result{position:absolute;z-index:4;left:50%;top:50%;transform:translate(-50%,-50%);width:min(calc(100% - 24px),420px);max-height:calc(100% - 34px);display:flex;flex-direction:column;min-height:0;overflow:hidden;border:3px solid #bd9861;border-radius:10px;background:#e9d7ad;box-shadow:0 5px 0 #5c422c,0 12px 35px #0a2019b5;color:#463628}
+.z2ed1-result-heading{display:flex;flex:none;align-items:center;gap:7px;min-height:42px;padding:6px 10px;background:#2d4937;color:#ffedc3;border-bottom:2px solid #bd9861}.z2ed1-result-heading .z2a3-art{width:23px;height:23px}.z2ed1-result-heading strong{font-size:16px}.z2ed1-result-heading small{margin-left:auto;font-size:11px;color:#e1cba0}
+.stage.report .z2ed1-result>.z2c10-ledger{position:relative;inset:auto;flex:1 1 auto;min-height:0;width:100%;height:auto;max-height:none;display:flex;flex-direction:column;justify-content:flex-start;align-items:stretch;gap:7px;overflow:auto;overscroll-behavior:contain;touch-action:pan-y;padding:8px;background:#ddc79c;box-sizing:border-box}
+.z2ed1-result .z2c10-paper{margin:0;box-shadow:0 2px #bba078;padding:10px}.z2ed1-result .z2c10-paper .report-stats b{font-size:25px}.z2ed1-result-actions{flex:none;padding:8px;background:#294334;border-top:2px solid #bd9861}.z2ed1-result-actions .action-row{display:flex;gap:6px;margin:0}.z2ed1-result-actions .game-btn{min-height:44px;white-space:normal;line-height:1.15}.z2ed1-result-actions .primary{flex:1}.z2ed1-star-award{display:flex;justify-content:center;gap:6px;padding:4px 0 6px}.z2ed1-star-award .z2a3-art{width:34px;height:34px;filter:drop-shadow(0 2px 2px #7c531a66);animation:z2ed1-star .45s ease-out both}.z2ed1-star-award .z2a3-art:nth-child(2){animation-delay:.12s}.z2ed1-star-award .z2a3-art:nth-child(3){animation-delay:.24s}@keyframes z2ed1-star{from{opacity:0;transform:scale(.55)}to{opacity:1;transform:scale(1)}}@media(prefers-reduced-motion:reduce){.z2ed1-star-award .z2a3-art{animation:none}}
+@media(max-height:575px){.z2ed1-result{width:calc(100% - 16px);max-height:calc(100% - 22px)}.z2ed1-result-heading{min-height:36px}.z2ed1-result-actions{padding:5px}.z2ed1-result .z2c10-paper .report-stats>div{min-height:45px}}
+
+/* D1b: growth lives on the room, not in a permanent upgrade list. */
+.stage.upgrade>.z2ed1-growth{position:relative;display:block;isolation:isolate;background:#20382c}.stage.upgrade .z2ed1-growth .z2c11-growth-scene{position:absolute;inset:0;width:100%;height:100%;min-height:0;border:0}.z2ed1-growth .z2c11-scene-caption{z-index:2;top:5px;bottom:auto;pointer-events:none}.z2ed1-hotspots{position:absolute;inset:0;z-index:3;pointer-events:none}.z2ed1-growth-hotspot{position:absolute;display:flex;align-items:center;justify-content:center;gap:2px;transform:translate(-50%,-50%);min-height:44px;min-width:44px;max-width:90px;padding:3px 5px;border:2px solid #d7b77c;border-radius:7px;background:#294936f5;color:#ffe7b5;box-shadow:0 3px 0 #553a28,0 0 12px #eac87c55;pointer-events:auto;touch-action:manipulation;font-weight:750;font-size:11px;white-space:nowrap}.z2ed1-growth-hotspot .z2a3-art{width:18px;height:18px;flex:none}.z2ed1-growth-hotspot i{position:absolute;right:-5px;top:-7px;font-style:normal;border:1px solid #b5945e;border-radius:50%;width:17px;height:17px;background:#f2d9a2;color:#3f592e;line-height:15px;text-align:center}.z2ed1-growth-tools{position:absolute;z-index:4;bottom:10px;left:8px;right:8px;display:flex;justify-content:center;gap:6px;flex-wrap:wrap}.z2ed1-growth-tools .game-btn{min-height:44px;display:flex;align-items:center;gap:4px;padding:5px 8px;white-space:nowrap}.z2ed1-growth-tools .z2a3-art{width:19px;height:19px}.z2ed1-growth-offer{display:grid;grid-template-columns:42px minmax(0,1fr);gap:8px;padding:10px 0;border-bottom:1px solid #b99a69}.z2ed1-growth-offer p{margin:3px 0;font-size:12px}.z2ed1-growth-offer span,.z2ed1-growth-offer small{display:block;font-size:12px}.z2ed1-growth-offer .z2a3-art{width:18px;height:18px;vertical-align:middle}.z2ed1-offer-icon{display:grid;place-items:center;width:42px;height:42px;border:1px solid #ad8853;border-radius:6px;background:#36543b}.z2ed1-offer-icon .z2a3-art{width:30px;height:30px}.z2ed1-growth-offer .game-btn{grid-column:2;min-height:44px}.sheet[data-sheet-kind=growth-overview] .upgrade-card{position:static!important;inset:auto!important;transform:none!important;width:100%;max-width:none;max-height:none!important;margin:0;padding:0;border:0;background:none;box-shadow:none;overflow:visible}.sheet[data-sheet-kind=growth-overview] .upgrade-card>h2{display:none}
+
+/* D3a: fixed departure workspace; only the travel notebook is a long window. */
+.z2c2-expedition .z2ed3-departure{display:grid;grid-template-rows:minmax(150px,1.2fr) auto minmax(112px,1fr);align-content:stretch;min-height:0;height:100%;overflow-y:auto;gap:5px;padding:5px 6px 7px;box-sizing:border-box}
+.z2c2-expedition .z2ed3-departure .z2c2-map,.z2c2-expedition .z2ed3-departure .z2c2-map[data-z2c3-active]{height:100%;min-height:0;max-height:none;width:100%;aspect-ratio:auto;box-sizing:border-box}
+.z2ed3-departure .z2c4-routes{gap:5px;min-height:0}.z2ed3-departure .z2c4-route-card{min-height:58px;padding:3px 6px;gap:2px}.z2ed3-departure .z2c4-route-food{height:19px}
+.z2ed3-departure .z2c4-loadout{display:flex;flex-direction:column;min-height:0;padding:4px;overflow:hidden;background:#47392b;border:2px solid #aa8958;box-sizing:border-box}
+.z2ed3-departure .z2c4-loadout-head{flex:none;padding:0 3px 3px}.z2ed3-departure .z2c4-loadout-body{flex:1;min-height:0;grid-template-columns:minmax(0,1.35fr) minmax(0,1fr);gap:4px}
+.z2ed3-departure .z2c4-hero{height:100%;min-height:0;border-color:#b29164;background:#a88b60}
+.z2ed3-departure .z2c4-tool-list{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));grid-auto-rows:minmax(44px,1fr);align-content:center;gap:3px}.z2ed3-departure .z2c4-tool-list .z2c2-tool{flex-direction:column;justify-content:center;align-items:center;min-height:44px;gap:1px;padding:2px;text-align:center;white-space:normal;position:relative}.z2ed3-departure .z2c4-tool-list .z2c2-tool span{display:block;font-size:10px;line-height:1.12}.z2ed3-departure .z2c4-tool-list .z2c2-tool small{display:block;font-size:9px}.z2ed3-departure .z2c4-tool-list .z2c2-tool i{position:absolute;right:3px;top:2px;font-size:11px}.z2ed3-departure .z2c4-tool-list .z2c2-tool .z2a3-art{width:24px;height:24px}
+.z2ed3-room-fallback{position:relative;isolation:isolate;background:linear-gradient(0deg,#6f4936 0 22%,transparent 22%),repeating-linear-gradient(90deg,#8b6242 0 5px,transparent 5px 36px),linear-gradient(#c2a67b,#997249);color:#fff0cb;text-shadow:0 1px 2px #35251a}
+.z2ed3-room-fallback:before,.z2ed3-room-fallback:after{content:'';position:absolute;z-index:-1;bottom:17%;width:25%;height:32%;border:2px solid #5b3e29;border-radius:2px;background:#89603f;box-shadow:inset 0 5px #c39a67}.z2ed3-room-fallback:before{left:4%}.z2ed3-room-fallback:after{right:4%;height:59%;background:#49634d;box-shadow:inset 0 0 0 4px #a48253}
+.z2ed3-travel-details{margin-top:10px;padding:9px;color:#513b28}.z2ed3-travel-details p{font-size:13px;line-height:1.5;margin:7px 0}
+.z2c-route:has(.z2ed3-departure)>.dock .action-row{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:4px}.z2c-route:has(.z2ed3-departure)>.dock .game-btn{min-width:0;min-height:44px;padding:3px 2px;white-space:normal;font-size:11px}.z2c-route:has(.z2ed3-departure)>.dock .game-btn .z2a3-art{width:18px;height:18px}
+@media(max-height:575px){.z2c2-expedition .z2ed3-departure{grid-template-rows:minmax(142px,1.2fr) auto minmax(110px,1fr);gap:4px;padding:4px}.z2ed3-departure .z2c4-route-card{min-height:54px}.z2ed3-departure .z2c4-tool-list .z2c2-tool .z2a3-art{width:20px;height:20px}.z2ed3-departure .z2c4-tool-list .z2c2-tool small{font-size:9px}}
+
+/* D3b: decisions keep the actual field as the backdrop. */
+.z2ed3-branch-scene{position:relative;isolation:isolate;display:flex;align-items:center;justify-content:center;overflow:hidden;background:#273e2d}.z2ed3-branch-scene>.forest-canvas{position:absolute;inset:0;width:100%;height:100%;z-index:0}.z2ed3-branch-scene:after{content:'';position:absolute;inset:0;background:#10261eb0;pointer-events:none;z-index:1}.z2ed3-branch-scene>.z2ed3-field-dialog{position:relative;z-index:2;width:calc(100% - 24px);max-width:420px;max-height:calc(100% - 20px);padding:0;display:flex;flex-direction:column;overflow:hidden;background:#e9d7ac;color:#45352a;border:3px solid #bd9861;border-radius:10px;box-shadow:0 5px #513a27,0 12px 30px #10241eaa}.z2ed3-field-title{display:flex;align-items:center;gap:6px;flex:none;background:#2d4937;color:#ffebbf;border-bottom:2px solid #bd9861;padding:8px 10px}.z2ed3-field-title .z2a3-art{width:24px;height:24px}.z2ed3-field-body{min-height:0;overflow:auto;overscroll-behavior:contain;touch-action:pan-y;padding:10px}.z2ed3-field-body .v08-branch-card{min-height:44px}.z2ed3-field-actions{flex:none;background:#294334;padding:7px;border-top:2px solid #bd9861}.z2ed3-field-actions .v08-home-choice{min-height:44px;width:100%}.action-forest[data-z2d3-event-key]>.field-event{border:3px solid #bd9861;border-radius:10px;padding:12px;background:#e9d7ad;color:#45352a}.action-forest[data-z2d3-event-key]>.field-event>strong{display:block;padding:9px;background:#2d4937;color:#ffebbf;border-radius:5px}.action-forest[data-z2d3-event-key]>.field-event button{border:1px solid #ac8d58;border-radius:6px;background:#f8e9c5}.action-forest[data-z2d3-event-key]>.field-event button:disabled{opacity:.6}.action-forest[data-z2d3-event-key]>.field-skill,.action-forest[data-z2d3-event-key]>.floating-joystick{visibility:hidden;pointer-events:none}.z2ed3-harvest-head{display:flex;flex-direction:column;align-items:center;gap:5px;padding:10px;border:1px solid #b99b65;border-radius:8px;background:#d5e0bc;color:#344d32}.z2ed3-harvest-head .z2a3-art{width:44px;height:44px}.z2ed3-harvest-head strong{font-size:18px}.z2ed3-harvest-head span{font-size:13px}.z2ed3-harvest-items{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:6px;margin:10px 0}.z2ed3-harvest-items>div{position:relative;display:flex;flex-direction:column;align-items:center;justify-content:center;min-height:74px;padding:5px;background:#cdb38a;border:1px solid #a78857;border-radius:6px}.z2ed3-harvest-items b{position:absolute;right:4px;top:3px;font-size:13px}.z2ed3-harvest-items small{font-size:11px}.z2ed3-harvest-items>p{grid-column:1/-1;text-align:center}.z2ed3-loss{padding:8px;background:#e7ba9c;border:1px solid #b98058;border-radius:5px}.z2ed3-harvest>.game-btn{width:100%;min-height:44px}

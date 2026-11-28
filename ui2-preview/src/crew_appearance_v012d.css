@@ -1,0 +1,10 @@
+/* v0.12-D: three-stage staff appearance. Portrait reuses original Canvas actor pixels. */
+.v12d-staff-identity{display:flex;align-items:center;gap:10px;padding:6px 7px;background:#1b4135;border:1px solid #779577;border-radius:9px;color:#fff0cb;min-height:76px}
+.v12d-staff-portrait{display:block;width:54px;height:65px;flex:0 0 54px;object-fit:contain;image-rendering:pixelated;background:radial-gradient(circle at 50% 45%,#59735c,#345546 82%);border:2px solid #a8aa7f;border-radius:8px}
+.v12d-staff-profile{min-width:0;display:flex;flex:1;flex-direction:column;gap:4px}
+.v12d-staff-profile strong{font-size:13px;line-height:1.25;color:#ffe1a0}
+.v12d-staff-profile small{font-size:10.5px;line-height:1.4;color:#dce6ce;overflow-wrap:anywhere}
+.v12d-tier{align-self:flex-start;flex:0 0 auto;padding:3px 6px;border:1px solid #dec17e;border-radius:7px;background:#78583a;color:#f9dda7;font-size:11px;font-weight:850}
+.staff-person .v12d-staff-identity + .staff-person-head{padding-top:2px}
+@media(max-width:350px){.v12d-staff-identity{padding:5px;gap:7px}.v12d-staff-portrait{width:46px;height:57px;flex-basis:46px}.v12d-staff-profile strong{font-size:12px}.v12d-staff-profile small{font-size:10px}.v12d-tier{font-size:10px;padding:2px 4px}}
+@media(max-height:650px){.v12d-staff-identity{min-height:63px;padding:4px 6px}.v12d-staff-portrait{width:46px;height:56px;flex-basis:46px}.staff-roster{gap:8px}}
