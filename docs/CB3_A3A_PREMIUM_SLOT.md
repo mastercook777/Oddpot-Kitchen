@@ -15,3 +15,6 @@
 
 ## R2 · HUD3基线重整
 旧候选190d8db实际19/20 Actions；full UI在320px forecast尚未初始化，HUD3已加正式boot ready等待。基线 main e5ac6cb（HUD3已20/20并部署）；将原特供app/engine/rules/离线补丁精确应用，完整保留HUD3 CSS和回归，更新线上/离线/设置版本及app/engine/rules缓存。实际V8执行原Node测试（真实离线引擎，JSON structuredClone shim）346断言通过，完整离线JS解析、HUD3 CSS完全一致。未运行本地npm/Chrome，新的20项CI及Pages待核，真机待验收。原八seed夹具不是自然经济。未改变CB3激活边界，不开放玩家。下一A3b跨章。
+
+## 正式合并与部署
+PR167 R2 718a541 20/20 Actions全部success，main 2c2b4403b71d065b6270ae9d54f084cf03bf9755，Pages 46129040429 success。仍未公开CB3；玩家真机/长期经济待验收。
