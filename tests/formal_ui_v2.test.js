@@ -29,3 +29,12 @@ test('departure shares the compact HUD and reserves a fixed clear map viewport',
  assert.match(css,/\[data-ui2-scene=departure\] \.z2ed3-departure\{padding-top:0!important/);
  const html=readFileSync(new URL('../standalone.html',import.meta.url),'utf8');assert.ok(html.includes(css));
 });
+
+test('departure map preserves the 35 percent floor with rounding margin and one published build label',()=>{
+ const css=readFileSync(new URL('../src/formal_ui_v2.css',import.meta.url),'utf8');
+ assert.match(css,/grid-template-rows:minmax\(calc\(35dvh \+ 2px\),1\.2fr\)/);
+ assert.match(css,/\.z2ed3-departure \.z2c2-map\{min-height:calc\(35dvh \+ 2px\)!important/);
+ const online=readFileSync(new URL('../index.html',import.meta.url),'utf8'),offline=readFileSync(new URL('../standalone.html',import.meta.url),'utf8'),app=readFileSync(new URL('../src/app.js',import.meta.url),'utf8'),builder=readFileSync(new URL('../scripts/build-standalone.py',import.meta.url),'utf8');
+ const version=online.match(/const build='([^']+)'/)[1];
+ assert.ok(online.includes('当前构建版本">'+version+' · Loading'));assert.ok(app.includes('ODDPOT · '+version+' · 单机本地存档'));assert.ok(offline.includes('怪味食堂 · '+version+' 离线版'));assert.ok(builder.includes('怪味食堂 · '+version+' 离线版'));
+});

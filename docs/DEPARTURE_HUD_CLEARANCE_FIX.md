@@ -5,3 +5,6 @@
 
 ## R2 CI修复
 首轮真实CI v0.14 full UI在320等尺寸地图高度低于原35%场景要求；WebGL新增点击森林时选择器同时命中canvas与button，非地图交互失败。保留原35%高度和正常三尺寸无滚动断言：整备网格首行minmax(35dvh,1.2fr)，原装备最小112px、路线和安全区保留；WebGL选择器明确button，原几何/命中断言不撤。缓存cb3a2b-departure-hud-r2，离线同步；新CI待核。首轮实际执行Core通过，新增WebGL几何已执行至森林点击，未完成全旅程。未直接核实用户Safari线上资源。
+
+## R3 · 35%地图边界与发布标识
+R2实际19/20 CI，WebGL已通过，唯一full UI仍在35%地图高度边界失败；R1 WebGL日志320×568的地图为约198px，阈值198.8px。取整/边框余量是推断，非已测根因。R3直接设置地图及首行min-height/track calc(35dvh + 2px)，不降低原35%和正常三尺寸无滚动合同；full UI显式等待正式boot ready（另PR167曾出现forecast未初始化），打印实际几何。上线候选统一显示 v0.16-CB3-A2b-HUD3：页面title/boot/构建角标/设置/离线title与生成器同步；核心package版本和存档schema不改，app/CSS缓存更新。未自动开放CB3。新增静态合同；真实CI和Pages待核，未声称用户Safari修复。正式发布仍以实际Pages提交为准。
