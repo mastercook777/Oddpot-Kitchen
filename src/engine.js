@@ -1680,7 +1680,7 @@ export function beginLiveResearch(s,ids,vessel='WOK'){
  if(s.phase!=='research'||s.cook||!['WOK','POT','GRILL','STEAM'].includes(vessel)||vessel==='GRILL'&&!ensureKitchen(s).grillOwned||vessel==='STEAM'&&(activeWorld(s)!=='cloud'||!ensureKitchen(s).steamerOwned)||
   !Array.isArray(ids)||ids.length<2||ids.length>3||new Set(ids).size!==ids.length||
   ids.some(id=>!ING[id])||!canUse(s,ids)||
-  (s.cbExperiment?!cbFormulaIngredientsAllowed(activeWorld(s),ids,vessel):activeWorld(s)==='cloud'&&!chapterRecipeAvailable(s,liveRecipeId(ids,vessel))))return false;
+  ((s.cbExperiment||formal)?!cbFormulaIngredientsAllowed(activeWorld(s),ids,vessel):activeWorld(s)==='cloud'&&!chapterRecipeAvailable(s,liveRecipeId(ids,vessel))))return false;
  ensureRecipeVariants(s);
  const txn='live-research-'+s.cycle+'-'+s.day+'-'+s.step++;
  s.cook={mode:vessel==='GRILL'?'v014c-grill':'v063-live',context:'research',vessel,ids:[...ids],

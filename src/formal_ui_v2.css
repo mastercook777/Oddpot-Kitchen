@@ -150,3 +150,6 @@
 .z2b-shell .cb3-live-workbench .v063-live-pan,.z2b-shell .cb3-live-workbench .v014c-hearth{flex:1 1 auto;min-height:130px;max-height:none;position:relative;overflow:hidden}
 .z2b-shell .cb3-live-workbench .v063-live-head,.z2b-shell .cb3-live-workbench .v014c-grill-head{flex:none}
 @media(max-height:620px){.z2b-shell .cb3-live-workbench .v063-live-pan,.z2b-shell .cb3-live-workbench .v014c-hearth{min-height:105px}}
+
+/* Formal CB3 uses the existing game window and research stage. */
+.cb3-craft-card{display:grid;gap:4px;text-align:left;padding:8px;border:2px solid var(--craft-color,#b18a58);border-radius:8px;background:#f0dfba;color:#49351e}.cb3-craft-card small,.cb3-craft-card span{font-size:11px;line-height:1.35}.cb3-craft-card strong{font-size:13px}.cb3-deck{display:grid;gap:7px}.cb3-deck .menu-line{display:block;width:100%;text-align:left;background:#e2c998;border:1px solid #a68050;border-radius:8px;color:#49351e;padding:5px}.cb3-deck .menu-line:disabled{opacity:.55}.cb3-atlas-entry{margin:6px 0;padding:6px;border:1px solid #b78e59;border-radius:8px}.cb3-atlas-entry summary{min-height:44px;display:flex;align-items:center;font-weight:800}.cb3-formula{display:flex;align-items:center;justify-content:space-between;gap:5px;font-size:12px}.cb3-formula button{flex:none}.cb3-atlas-entry .cb3-craft-card{margin-top:6px}
