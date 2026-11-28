@@ -6,7 +6,7 @@ test('Pages direct-static entry loads portal CSS as a stylesheet, not an unsuppo
  const html=readFileSync(new URL('../index.html',import.meta.url),'utf8');
  const app=readFileSync(new URL('../src/app.js',import.meta.url),'utf8');
  assert.match(html,/<link rel="stylesheet" href="\.\/src\/portal_v015\.css\?v=0\.15\.0-alpha\.11"\/>/);
- assert.match(html,/await withTimeout\(import\(['"]\.\/src\/app\.js\?v=0\.15\.0-alpha\.11(?:-v016-[a-z0-9]+)?['"]\)/);
+ assert.match(html,/await withTimeout\(import\(['"]\.\/src\/app\.js\?v=0\.15\.0-alpha\.11(?:-v016-[a-z0-9]+(?:-[a-z0-9]+)*)?['"]\)/);
  assert.match(html,/get\(['"]render['"]\)\s*===\s*['"]3d['"]/);
  assert.doesNotMatch(app,/^import\s+['"].*\.css['"];?/m);
 });

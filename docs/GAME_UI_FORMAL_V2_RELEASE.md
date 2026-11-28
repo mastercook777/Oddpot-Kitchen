@@ -11,3 +11,9 @@
 - 正式入口 index.html / offline build 已加载 formal_ui_v2.js + formal_ui_v2.css（v0.16-Z.2e-D2，缓存ui2）。持久shell/stage/room宿主；六餐厅phase映射room；原引擎和渲染器保留，不再 app.innerHTML 全量替换。清晨、菜单、备餐以真实房间和投影热点为入口。市场四品/全仓库、角色、客人/菜谱、换菜和野外背包为图标格+选中真实详情；备餐可选真实厨位。共用居中实体窗口、浮动HUD、底栏、星章/探索收获；原已结算食材和星级仅展示，不发奖励；丢弃需确认。研究原烹饪界面和规则保持，共用窗口除外。
 - 合并旧D1b、D3a/D3b候选的实现，保留原真实经营、探索、云港、市场、员工、隐藏菜、账本、菜单、厨房规则与旧存档；无引擎schema变更。D1b PR161原head20/20、D3a PR162原head19/19并不证明整体UI2通过。旧PR暂不单独发布，以单一main PR收敛。
 - 本轮实际V8执行 tests/formal_ui_v2.test.js 两组25断言（适配readFileSync及URL读取依赖）；app及修改脚本语法检查。新增三尺寸正式浏览器的常驻对象身份、全景、居中窗口/选择槽、真实换菜/备餐、离线及3D路径断言，更新多个历史测试入口。容器git ls-remote DNS失败，未在本地运行实际Node/Chrome/WebGL。完整Actions、移动截图、整日流程、Pages、玩家验收均待证实；若失败必须修复后才合main。个别管理详情（航运、长账本、特殊订单等）仍复用真实旧内容，不承诺完全视觉定版；独立场景的DOM复用不等于全部渲染资源常驻。下一步只处理本PR回归与视觉差距，不启动CB3。
+
+
+## 2026-11-28 · F2 回归修复候选
+- 基线 PR163 032744b：实际 20 checks 中 9 成功、11 失败。八项先跑 Node 的工作流同一失败：v015_static_boot 缓存断言不接受 ui2-f1；两项实际离线浏览器超时，正式候选 standalone 未同步（缺 ui2-forecast）；全UI浏览器成长 HUD bottom=122、caption top=114，重叠8px。
+- 允许版本缓存后缀的多个连字符分段，原 portal stylesheet、动态启动和3D参数断言仍保留；成长统计牌相对HUD下移16px（90→106），正式CSS缓存 ui2-f2。以 main 1b5be4b 已同步离线包为基底，按原构建脚本剥离 import/export 并替换完整 app/full_game_ui CSS、追加 formal UI CSS 与 JS，核对原内容唯一匹配；候选相对该基线无其他离线输入差异。保留所有旧浏览器断言，不改变经济/存档/引擎及正式研究。
+- 本轮实际执行 V8 静态检查：缓存断言匹配真实 index，离线入口/员工槽、完整样式及模块内容、成长偏移和组合JS语法检查共6项通过。容器 git ls-remote DNS失败，未执行 npm test / npm run build / Python完整重建 / 实际Chrome或Safari。新提交 CI 结果、逐屏视觉、预览部署均未验证。仍按玩家拒收记录：不合main、不发布未核验候选，研发CB3继续暂停；下一步重跑完整CI、核对离线真实操作和六场景截图，再更新隔离预览给玩家验收。
