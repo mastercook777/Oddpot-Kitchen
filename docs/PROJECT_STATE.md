@@ -1,5 +1,7 @@
 # 《怪味食堂》当前已实现状态 / 技术交接
 
+> **2026-11-28 · HUD R6（候选）**：R5真实19/20，唯一失败v0.13-B shared-cookware-crew独立脚本仍要求旧alpha离线title；原日志 run 46123663708。R6复用已验证共享published-build，保留严格真实title等值及所有玩法检查，仅此脚本和文档变化；游戏/存档/资源不变。全CI与Pages待核，未合main。
+
 > **2026-11-28 · 整备 HUD R5（候选）**：R4 13/20 CI，Core、完整移动UI、WebGL与完整玩法回归通过；七个失败工作流日志均为离线title旧alpha格式（六脚本）。R5共享published-build.mjs，浏览器实际title严格等于线上声明的build，所有操作/玩法断言保留。发布标识v0.16-CB3-A2b-HUD3，未改游戏或存档。全CI与Pages待核，未合main。[记录](DEPARTURE_HUD_CLEARANCE_FIX.md)。
 
 > **2026-11-28 · 整备 HUD R4（候选）**：R3完整三尺寸移动UI已通过，Core日志显示8个历史版本号硬编码断言失败，连带多个工作流；R4保留核心0.15.0-alpha.11与全部玩法/资源检查，旧版本断言改为严格核对index声明的正式build、页面/设置/离线同值。R3几何不改。新CI待核，未合main。[记录](DEPARTURE_HUD_CLEARANCE_FIX.md)。

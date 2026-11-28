@@ -14,3 +14,6 @@ R3实际完整移动UI workflow success，Core 8项失败均为历史可见版�
 
 ## R5 · 浏览器发布标识回归
 R4 实际13/20成功，7失败的原始日志均为 offline.title() 的历史 alpha 格式正则，涉及6个脚本（A/B共用 staffed-third-kitchen）。本轮新增共享 published-build.mjs，从 index.html 明确的 build 声明读取目标标题，逐个浏览器测试保留原动作/玩法检查，将旧正则替换为真实离线页面标题严格相等。R3 HUD及R4核心测试完全不改；不降级回归，不改变存档或激活CB3。待新head 20/20成功后才合main及验证Pages。尚未上线。
+
+## R6 · 最后一处旧版本断言
+R5 19/20，v0.13-B 独立脚本在66行仍检查旧alpha格式；日志 https://github.com/mastercook777/Oddpot-Kitchen/actions/runs/46123663708 。R6改用共享expectedOfflineTitle严格相等，未改变实际游戏与其他验收合同。语法检查通过，待20/20及Pages。
