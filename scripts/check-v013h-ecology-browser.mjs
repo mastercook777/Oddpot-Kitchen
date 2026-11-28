@@ -1,6 +1,7 @@
 import {chromium} from 'playwright';
 import {spawn} from 'node:child_process';
 import assert from 'node:assert/strict';
+import {expectedOfflineTitle} from './published-build.mjs';
 import {mkdir} from 'node:fs/promises';
 import {newGame,enterField,completeFieldSegment} from '../src/engine.js';
 
@@ -80,7 +81,7 @@ try{
  offline.on('pageerror',e=>errors.push(e.message));
  await offline.addInitScript(([k,state])=>localStorage.setItem(k,JSON.stringify(state)),[key,setup()]);
  await offline.goto(url+'standalone.html',{waitUntil:'networkidle'});
- assert.match(await offline.title(),/v0\.\d+\.\d+-alpha\.\d+/);
+ assert.equal(await offline.title(),expectedOfflineTitle(),'offline release must match production build');
  assert.equal(await offline.locator('[data-target]').count(),0);
  assert.equal(await offline.locator('[data-route]').count(),2);
  await offline.locator('[data-route="risk"]').click();

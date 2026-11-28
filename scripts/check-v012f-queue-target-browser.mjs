@@ -2,6 +2,7 @@ import {chromium} from 'playwright';
 import {spawn} from 'node:child_process';
 import {mkdir} from 'node:fs/promises';
 import assert from 'node:assert/strict';
+import {expectedOfflineTitle} from './published-build.mjs';
 import {newGame,createService,enterField,interactExplorer,completeFieldSegment,chooseFieldBranch} from '../src/engine.js';
 import {selectOutdoorQueueSpeech} from '../src/outdoor_queue_speech_v012f.js';
 
@@ -61,7 +62,7 @@ try{
  offline.on('pageerror',e=>errors.push(e.message));
  await offline.addInitScript(([key,s])=>localStorage.setItem(key,JSON.stringify(s)),[k,crowd()]);
  await offline.goto('http://127.0.0.1:5173/standalone.html',{waitUntil:'networkidle'});
- assert.match(await offline.title(),/alpha\.\d+/);
+ assert.equal(await offline.title(),expectedOfflineTitle(),'offline release must match production build');
  assert.match(await offline.locator('#v075-served').innerText(),/等位 1/);
  assert.ok(await offline.locator('#diner-canvas').evaluate(c=>c.width>0));
  await offline.screenshot({path:out+'/queue-standalone-390.png'});

@@ -2,6 +2,7 @@ import {chromium} from 'playwright';
 import {spawn} from 'node:child_process';
 import {mkdir} from 'node:fs/promises';
 import assert from 'node:assert/strict';
+import {expectedOfflineTitle} from './published-build.mjs';
 import {newGame} from '../src/engine.js';
 const dir='docs/screenshots/v013d-second-star';await mkdir(dir,{recursive:true});
 const server=spawn(process.execPath,['node_modules/vite/bin/vite.js','--host','127.0.0.1','--port','5173','--strictPort'],{stdio:'ignore'});
@@ -47,7 +48,7 @@ try {
  const offline=await browser.newPage({viewport:{width:390,height:844}});
  await offline.addInitScript(([key,v])=>localStorage.setItem(key,JSON.stringify(v)),[storageKey,state(1)]);
  await offline.goto('http://127.0.0.1:5173/standalone.html',{waitUntil:'networkidle'});
- assert.match(await offline.title(),/0\.\d+\.\d+-alpha\.\d+/);
+ assert.equal(await offline.title(),expectedOfflineTitle(),'offline release must match production build');
  await offline.locator('.ui2-room-dock [data-act="ui2-prep"]').click();const request=offline.locator('[data-act="second-star-request"]');assert.equal(await request.isVisible(),true);await request.click();assert.equal(await offline.evaluate(k=>JSON.parse(localStorage.getItem(k)).chapterProgress.secondAppraisal?.requestDay,storageKey),'4-1');
  await offline.close();
  console.log('v0.13-D: second-star requests, veggie marketing and standalone pass in 320/375/390 Chrome');

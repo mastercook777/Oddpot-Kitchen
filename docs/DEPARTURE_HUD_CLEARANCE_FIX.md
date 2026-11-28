@@ -11,3 +11,6 @@ R2实际19/20 CI，WebGL已通过，唯一full UI仍在35%地图高度边界失�
 
 ## R4 · 发布标识回归
 R3实际完整移动UI workflow success，Core 8项失败均为历史可见版本硬编码（7个测试文件），无新玩法失败证据。R4仅更新这些断言为读取index的明确build并严格核对完整title/设置/离线，保留核心版本、加载入口、原玩法与渲染检查；未改变R3布局代码。待全CI绿后合main及Pages，未发布。
+
+## R5 · 浏览器发布标识回归
+R4 实际13/20成功，7失败的原始日志均为 offline.title() 的历史 alpha 格式正则，涉及6个脚本（A/B共用 staffed-third-kitchen）。本轮新增共享 published-build.mjs，从 index.html 明确的 build 声明读取目标标题，逐个浏览器测试保留原动作/玩法检查，将旧正则替换为真实离线页面标题严格相等。R3 HUD及R4核心测试完全不改；不降级回归，不改变存档或激活CB3。待新head 20/20成功后才合main及验证Pages。尚未上线。
