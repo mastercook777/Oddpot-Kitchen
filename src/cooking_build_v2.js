@@ -1,45 +1,18 @@
 import {resolveCBFormula} from './cooking_formulas_p1.js?v=cb2p1';
-import {judgeCooking,seeded} from './cooking_quality_r1.js?v=cb2r1e';
 import {ING,RECIPES} from './data.js';
 import {newGame,ensureKitchen,ensureCrew,chapterRecipeAvailable,recipeCookware,serviceDayPlan,recipeCraftSnapshot,canUse,createService,closeService} from './engine.js?v=cb2p1';
-export const TIERS=['','普通','良好','优秀','史诗','传说'];
-export const COLORS=['','#a6a6a6','#67a967','#559add','#ac83db','#e1a44a'];
-export const LEVELS=[7,9,11,13];
-export const AFFIX={
- quick:{name:'快手',tier:1,group:'time',min:8,max:18,desc:v=>'出餐时间 −'+v+'%'},
- fine:{name:'珍馐',tier:1,group:'price',min:8,max:20,desc:v=>'售价 +'+v+'%'},
- aroma:{name:'香飘四溢',tier:1,group:'demand',min:10,max:30,desc:v=>'点单权重 +'+v+'%'},
- aftertaste:{name:'回味无穷',tier:1,group:'sat',min:3,max:8,desc:v=>'满意度 +'+v},
- wait:{name:'望梅止渴',tier:1,group:'patience',min:10,max:20,desc:v=>'等待耐心 +'+v+'%'},
- frugal:{name:'精打细算',tier:1,group:'refund',min:5,max:15,desc:v=>v+'% 概率返还一份基础食材'},
- solo:{name:'独门绝技',tier:2,group:'time',min:12,max:18,desc:v=>'菜单唯一该厨具时出餐 −'+v+'%'},
- stars:{name:'众星捧月',tier:3,group:'price',min:6,max:8,desc:v=>'其他每道普通菜售价 +'+v+'%（最多3道）'}
-};
-export const hash=(str,seed=2166136261)=>{let h=seed>>>0;for(const c of String(str)){h=Math.imul(h^c.charCodeAt(0),16777619)>>>0}return h};
+import {TIERS,COLORS,LEVELS,AFFIX,hash,baseTier,rarityOf,signature,identify,evaluateCBDeck,compileCBDeck} from './cb_build_rules.js?v=cb3a2';
+export {TIERS,COLORS,LEVELS,AFFIX,hash,baseTier,rarityOf,signature,identify};
 function rng(seed){let h=seed>>>0;return ()=>{h=(h+0x6D2B79F5)>>>0;let t=h;t=Math.imul(t^t>>>15,t|1);t^=t+Math.imul(t^t>>>7,t|61);return ((t^t>>>14)>>>0)/4294967296}}
-export function baseTier(result,seed=0,txn='preview'){return result?.cbVerdict?.baseTier??(result?judgeCooking(result,seed,txn).baseTier:0)}
-export function rarityOf(base,affixes){if(base!==3)return base;return affixes.some(a=>AFFIX[a.id]?.tier===3)?5:affixes.length>=2?4:3}
-export function signature(v){return [v.recipeId,v.vessel,v.formulaId||v.ingredientIds.slice().sort().join(','),v.baseTier,...v.affixes.map(a=>a.id+':'+a.value).sort()].join('|')}
-export function identify(result,seed,txn){
- const base=baseTier(result,seed,txn);if(!base)return null;const random=seeded(seed,txn,'cb2r1-affix-selection'),rollValue=seeded(seed,txn,'cb2r1-affix-value'),affixes=[];
- const weight=()=>1; // R1 open pool baseline; no technique-to-affix mapping.
- function add(tiers){const pool=Object.entries(AFFIX).filter(([id,a])=>tiers.includes(a.tier)&&!affixes.some(x=>AFFIX[x.id].group===a.group)&&(id!=='frugal'||result.ids.some(x=>['beef','chicken','chili','garlic','mushroom','cabbage','onion','potato','cloud_rice','sky_moss','storm_egg','sour_bell'].includes(x))));let n=random()*pool.reduce((s,[id])=>s+weight(id),0);const hit=pool.find(([id])=>(n-=weight(id))<0)||pool.at(-1);if(!hit)return false;const [id,a]=hit;affixes.push({id,value:a.min+Math.floor(rollValue()*(a.max-a.min+1))});return true}
- if(base===3){add([1]);const roll=random();if(roll<.05){if(add([3])&&random()<.5)add([1,2]);else if(affixes.length===1)add([1,2])}else if(roll<.25)add([1,2]);}
- const formula=result.formula||resolveCBFormula(result.ids,result.vessel,['cloud_rice','sky_moss','storm_egg','sour_bell','gale_core'].some(id=>result.ids.includes(id))?'cloud':'hearth');if(!formula||formula.recipeId!==result.recipeId)return null;
- const v={recipeId:result.recipeId,vessel:result.vessel,style:result.style,styleLabel:result.styleLabel,formulaId:formula.formulaId,basePrice:formula.basePrice,baseTime:formula.baseTime,materialCost:formula.materialCost,recipeTags:[...formula.recipeTags],ingredientIds:[...formula.ingredientIds],baseTier:base,rarity:rarityOf(base,affixes),affixes,source:txn};
- v.variantId='cb-'+hash(signature(v)).toString(36)+'-'+hash(signature(v),12345).toString(36);return v;
-}
 export function sample(id,affixes=[],base=affixes.length?3:1){const r=RECIPES[id],formula=resolveCBFormula(r.ids,recipeCookware(r),['cloud_rice','sky_moss','storm_egg','sour_bell','gale_core'].some(x=>r.ids.includes(x))?'cloud':'hearth');if(!formula||formula.recipeId!==id)throw Error('invalid sample '+id);const v={recipeId:id,vessel:recipeCookware(r),style:'sample',styleLabel:'预置工艺',formulaId:formula.formulaId,basePrice:formula.basePrice,baseTime:formula.baseTime,materialCost:formula.materialCost,recipeTags:[...formula.recipeTags],ingredientIds:[...formula.ingredientIds],baseTier:base,rarity:rarityOf(base,affixes),affixes,source:'sample'};v.variantId='cb-'+hash(signature(v)).toString(36)+'-'+hash(signature(v),12345).toString(36);return v}
 export function collect(s,v){if(!v)return false;const e=s.cbExperiment,formula=resolveCBFormula(v.ingredientIds,v.vessel,e.config.world);if(!formula||formula.recipeId!==v.recipeId||formula.formulaId!==v.formulaId)return false;const list=e.collection,existing=list.find(x=>signature(x)===signature(v));if(!existing&&list.filter(x=>x.recipeId===v.recipeId).length>=12)return false;if(v.source!=='sample'){e.discoveredRecipes??=[];e.discoveredFormulas??=[];if(!e.discoveredRecipes.includes(v.recipeId))e.discoveredRecipes.push(v.recipeId);if(!e.discoveredFormulas.includes(v.formulaId))e.discoveredFormulas.push(v.formulaId);}if(existing){if(existing.source==='sample'&&v.source!=='sample')list[list.indexOf(existing)]=v;return true;}list.push(v);s.recipes[v.recipeId]=Math.max(s.recipes[v.recipeId]||0,[0,66,76,86][v.baseTier]);s.learned[v.recipeId]=true;return true}
-export function budget(s,deck){const cfg=s.cbExperiment.config,variants=deck.map(id=>s.cbExperiment.collection.find(v=>v.variantId===id));const used=variants.reduce((n,v)=>n+(v?.rarity||0),0),limit=LEVELS[cfg.level-1],slots=cfg.level===4?4:3;const reasons=[];if(deck.length<3||deck.length>slots)reasons.push('需配置3至'+slots+'道菜');if(variants.some(v=>!v))reasons.push('未知工艺');if(new Set(variants.map(v=>v?.recipeId)).size!==variants.length)reasons.push('同菜不可重复');if(used>limit)reasons.push('超出容量');if(variants.some(v=>v&&(!chapterRecipeAvailable(s,v.recipeId)||!s.kitchen.slots.some(k=>k.type===v.vessel))))reasons.push('缺少对应厨具或章节不符');return {used,limit,slots,variants,valid:!reasons.length,reasons}}
+export function budget(s,deck){
+ const e=s.cbExperiment;return evaluateCBDeck(e.collection,deck,e.config.level,v=>chapterRecipeAvailable(s,v.recipeId)&&s.kitchen.slots.some(k=>k.type===v.vessel));
+}
 export function applyDeck(s,deck){
- const b=budget(s,deck);if(!b.valid)return false;const crafts={};s.menu=b.variants.map(v=>v.recipeId);s.premiumMenu=null;
- for(const v of b.variants){const r=RECIPES[v.recipeId],value=id=>v.affixes.find(x=>x.id===id)?.value||0;
- const discount=Math.max(value('quick'),b.variants.filter(x=>x.vessel===v.vessel).length===1?value('solo'):0);
- const gain=value('fine')+value('stars')*Math.min(3,b.variants.filter(x=>x!==v&&x.rarity===1).length);
- crafts[v.recipeId]={recipeId:v.recipeId,formulaId:v.formulaId,materialCost:v.materialCost,variantId:v.variantId,style:v.style,styleLabel:v.styleLabel,quality:[0,66,76,86][v.baseTier],ingredientIds:[...v.ingredientIds],price:Math.round(v.basePrice*(1+gain/100)),basePrice:v.basePrice,baseTime:v.baseTime,timeDelta:-Math.min(v.baseTime*.25,v.baseTime*discount/100),guestFitDelta:{},recipeTags:[...v.recipeTags],affixes:structuredClone(v.affixes),rarity:v.rarity,cb:{discount,gain,aroma:value('aroma'),sat:value('aftertaste'),wait:value('wait'),refund:value('frugal')}};
- s.recipes[v.recipeId]=Math.max(s.recipes[v.recipeId]||0,crafts[v.recipeId].quality);
- }
+ const b=budget(s,deck);if(!b.valid)return false;
+ const crafts=compileCBDeck(b.variants);s.menu=b.variants.map(v=>v.recipeId);s.premiumMenu=null;
+ for(const v of b.variants)s.recipes[v.recipeId]=Math.max(s.recipes[v.recipeId]||0,crafts[v.recipeId].quality);
  s.cbExperiment.crafts=crafts;s.cbExperiment.deck=[...deck];return true;
 }
 export const DEFAULT_CONFIG={world:'hearth',level:2,tables:3,stations:2,third:'GRILL',helper:true,waiter:true,guest:'normal',pressure:'normal',stock:'full',seed:15742};

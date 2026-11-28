@@ -1,3 +1,5 @@
+import {createCB3Staging,cb3MigrationCurrent,discardCB3Migration} from './cb3_formal_data.js?v=cb3a2';
+export {cb3MigrationCurrent,discardCB3Migration};
 import {cb3MigrationPlan} from './cb3_migration_a1.js?v=cb3a1';
 import {resolveCBFormula,cbFormulaIngredientsAllowed} from './cooking_formulas_p1.js?v=cb2p1';
 import {judgeCooking} from './cooking_quality_r1.js?v=cb2r1e';
@@ -1788,3 +1790,12 @@ export function resolveSpecialFieldEvent(s,choice){
 
 // Formal migration preflight: never enables experiment or mutates saves.
 export function inspectCB3Migration(s){return cb3MigrationPlan(s);}
+
+export function stageCB3Migration(s){
+ if(s.cbExperiment)return {status:'experiment'};
+ if(s.cbBuild)return {status:s.cbBuild.status==='staged'?(cb3MigrationCurrent(s)?'staged':'stale'):'already-active'};
+ const prepared=clone(s);ensureRecipeVariants(prepared);
+ const draft=createCB3Staging(s,prepared,recipeCraftSnapshot);
+ if(!draft)return {status:'unsafe'};
+ s.cbBuild=draft;return {status:'staged'};
+}
