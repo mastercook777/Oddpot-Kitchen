@@ -82,23 +82,21 @@ for(const [width,height] of [[320,568],[375,667],[390,844]]){
  let page;const errors=[];
  async function load(s,gate=null){if(page)await page.close();page=await browser.newPage({viewport:{width,height},deviceScaleFactor:2,isMobile:true,hasTouch:true});page.on('pageerror',e=>errors.push(e.message));page.on('console',m=>{if(m.type()==='warning'||m.type()==='error')console.log('browser',m.text());if(/Shader Error|VALIDATE_STATUS|GL_INVALID_OPERATION.*program/i.test(m.text()))errors.push(m.text());});
  await page.route('https://cdn.jsdelivr.net/npm/three@0.170.0/build/**',async route=>{const name=new URL(route.request().url()).pathname.split('/').at(-1);if(!/^three[.a-z]+\.js$/.test(name))return route.abort();await route.fulfill({status:200,contentType:'text/javascript',headers:{'access-control-allow-origin':'*'},body:await readFile('node_modules/three/build/'+name,'utf8')});});
- if(gate)await page.route(/\/src\/three_y2_diner\.js\?v=z2d3a(?:&.*)?$/,async route=>{await gate;await route.continue();});
+ if(gate)await page.route(/\/src\/three_y2_diner\.js\?v=z2ed1b(?:&.*)?$/,async route=>{await gate;await route.continue();});
  await page.addInitScript(s=>localStorage.setItem('oddpot-prototype-v04',JSON.stringify(s)),s);await page.goto(url+'?render=3d',{waitUntil:'domcontentloaded'});}
  // Growth preview must render actual geometry and update after a real purchase.
  const growth=newGame(15742);growth.onboarding.enabled=false;growth.phase='upgrade';growth.day=3;growth.reputation=2;growth.coins=500;
- await load(growth);const growth3d=page.locator('.z2c11-growth-scene canvas[data-phase="upgrade"]');
- await page.waitForFunction(()=>document.documentElement.dataset.oddpot3d==='active'&&document.querySelector('.z2c11-growth-scene canvas[data-phase="upgrade"]')?.dataset.tableCount==='2',null,{timeout:20000});
+ await load(growth);const growth3d=page.locator('.ui2-room-host canvas[data-phase="upgrade"]');
+ await page.waitForFunction(()=>document.documentElement.dataset.oddpot3d==='active'&&document.querySelector('.ui2-room-host canvas[data-phase="upgrade"]')?.dataset.tableCount==='2',null,{timeout:20000});
  assert.equal(await growth3d.count(),1);
- assert.equal(await growth3d.getAttribute('data-view'),'growth-preview');assert.ok(Number(await growth3d.getAttribute('data-camera-half'))<8.35);
- const g=await growth3d.boundingBox(),work=await page.locator('.z2c11-growth-work').boundingBox();assert.ok(g.height>100&&g.y+g.height<=work.y+1);
- await page.locator('[data-act="expand-room"]').click();
- await page.waitForFunction(()=>document.querySelector('.z2c11-growth-scene canvas[data-phase="upgrade"]')?.dataset.tableCount==='3',null,{timeout:10000});
+ assert.equal(await growth3d.getAttribute('data-view'),'restaurant');assert.ok(Number(await growth3d.getAttribute('data-camera-half'))>=8.35);
+ const g=await growth3d.boundingBox(),work=await page.locator('.z2ed1-growth-tools').boundingBox();assert.ok(g.height>100&&work.y>=g.y&&work.y+work.height<=g.y+g.height+1);
+ await page.locator('[data-act="growth-offer:table"]').click();assert.equal(await page.evaluate(()=>JSON.parse(localStorage.getItem('oddpot-prototype-v04')).coins),500);
+ await page.locator('[data-act="growth-buy:expand-room"]').click();
+ await page.waitForFunction(()=>document.querySelector('.ui2-room-host canvas[data-phase="upgrade"]')?.dataset.tableCount==='3',null,{timeout:10000});
  assert.equal(await page.evaluate(()=>JSON.parse(localStorage.getItem('oddpot-prototype-v04')).dining.tableCount),3);
- await page.waitForFunction(()=>document.querySelector('.z2c11-growth-scene canvas[data-phase="upgrade"]')?.dataset.view==='growth-tables');
- await page.screenshot({path:out+'/z2d2-growth-tables-'+width+'.png'});
- await page.locator('[data-act="growth-view:kitchen"]').click();
- await page.waitForFunction(()=>document.querySelector('.z2c11-growth-scene canvas[data-phase="upgrade"]')?.dataset.view==='growth-preview');
- await page.screenshot({path:out+'/z2d2-growth-kitchen-'+width+'.png'});
+ assert.equal(await growth3d.getAttribute('data-view'),'restaurant');
+ await page.screenshot({path:out+'/z2ed1-growth-'+width+'.png'});
  const s=newGame(15742);s.onboarding.enabled=false;s.phase='service';s.crew.helper.hired=true;s.dining.tableCount=width===320?2:width===375?3:4;assert.ok(createService(s,{walkable:true}));setServicePaused(s,false);for(let i=0;i<9;i++)tick(s,1);
  // Controlled test-only queue: force future guests to arrive while real seats remain occupied.
  const free=s.service.orders.filter(o=>o.tableId==null&&o.status==='waiting');for(const o of free)o.arrival=s.service.time;tick(s,1);const expectedQueue=s.service.orders.filter(o=>o.status==='waiting'&&o.arrival<=s.service.time).length;const ready=s.service.orders.find(o=>o.tableId!=null&&['queued','cooking','entering','ordering'].includes(o.status));assert.ok(ready,'fixture has a real seated order');Object.assign(ready,{status:'pickup',recipeId:ready.recipeId||'mushroom_stir',pickupAt:s.service.time});await load(s);
@@ -122,14 +120,23 @@ for(const [width,height] of [[320,568],[375,667],[390,844]]){
   for(const o of v.orders){o.status='review';o.reviewAt=v.time-.25;}
   await load(feast);await page.waitForFunction(()=>{const c=document.querySelector('canvas[data-phase="service"]');return c?.dataset.lifeVersion==='y6'&&Number(c.dataset.reviewCount)===6&&Number(c.dataset.mealCount)===6;},null,{timeout:20000});assert.equal(Number(await page.locator('canvas[data-phase="service"]').getAttribute('data-food-pieces')),0);await page.screenshot({path:out+'/y6-empty-plates.png'});
  }
- const prep=newGame(15742);prep.onboarding.enabled=false;prep.phase='prep';await load(prep);await page.waitForFunction(()=>document.querySelector('canvas[data-view="kitchen-preview"]')?.dataset.phase==='prep',null,{timeout:20000});const prepLayout=await page.locator('.z2b-prep-layout').evaluate(el=>{const a=el.querySelector('.z2b-prep-scene').getBoundingClientRect(),b=el.querySelector('.z2b-prep-work').getBoundingClientRect();return {height:a.height,ratio:a.height/el.getBoundingClientRect().height,disjoint:a.bottom<=b.top+1};});assert.ok(prepLayout.height>=135&&prepLayout.ratio>=.40&&prepLayout.disjoint,JSON.stringify(prepLayout));await page.screenshot({path:out+'/z2b-prep-'+width+'.png'});
+ const menuState=newGame(15742);menuState.onboarding.enabled=false;menuState.phase='menu';await load(menuState);
+ await page.waitForFunction(()=>document.querySelector('.ui2-room-host canvas[data-view="restaurant"]')?.dataset.phase==='menu'&&document.documentElement.dataset.oddpot3d==='active',null,{timeout:20000});
+ await page.locator('.ui2-room-dock [data-act="ui2-menu"]').click();assert.ok(await page.locator('.sheet').isVisible());
+ assert.equal(await page.locator('.ui2-room-host canvas[data-view="restaurant"]').getAttribute('data-phase'),'menu');
+ await page.screenshot({path:out+'/ui2-menu-3d-'+width+'.png'});
+ const prep=newGame(15742);prep.onboarding.enabled=false;prep.phase='prep';await load(prep);await page.waitForFunction(()=>document.querySelector('.ui2-room-host canvas[data-view="restaurant"]')?.dataset.phase==='prep',null,{timeout:20000});const prepLayout=await page.locator('.ui2-room-host').boundingBox();assert.ok(prepLayout.height>=height*.95);await page.locator('.ui2-room-dock [data-act="ui2-prep"]').click();assert.ok(await page.locator('.sheet .kitchen-config-slot').count()>0);await page.screenshot({path:out+'/ui2-prep-'+width+'.png'});
  const closing=newGame(15742);closing.onboarding.enabled=false;closing.phase='service';assert.ok(createService(closing,{walkable:true}));setServicePaused(closing,false);
  for(let t=0;t<160&&!closing.service.done;t++){if(closing.service.breakAt)resumeBreak(closing);tick(closing,1);}assert.ok(closing.service.done);
  await load(closing);
  await page.waitForFunction(()=>document.querySelector('canvas[data-phase="service"]')&&document.documentElement.dataset.oddpot3d==='active',null,{timeout:20000});
+ const finishBounds=await page.locator('.v075-finish').boundingBox(),worldBounds=await page.locator('.stage').boundingBox();
+ assert.ok(finishBounds.height<=worldBounds.height*.60&&finishBounds.width<worldBounds.width-20,'closing result does not cover the room');
+ assert.equal(await page.locator('.z2a-hud').isVisible(),false,'finished service HUD cannot cover closing result');
+ await page.screenshot({path:out+'/ui2-close-card-'+width+'.png'});
  await page.locator('.v075-finish [data-act="close"]').click();
- await page.waitForFunction(()=>document.querySelector('.z2d2-report-stage canvas[data-view="restaurant"]')?.dataset.phase==='report',null,{timeout:20000});
- const reportCanvas=page.locator('.z2d2-report-stage canvas[data-view="restaurant"]'),reportBox=await reportCanvas.boundingBox(),ledgerBox=await page.locator('.z2d2-report-layout .z2c10-ledger').boundingBox();
+ await page.waitForFunction(()=>document.querySelector('.ui2-room-host canvas[data-view="restaurant"]')?.dataset.phase==='report',null,{timeout:20000});
+ const reportCanvas=page.locator('.ui2-room-host canvas[data-view="restaurant"]'),reportBox=await reportCanvas.boundingBox(),ledgerBox=await page.locator('.z2d2-report-layout .z2c10-ledger').boundingBox();
  assert.ok(reportBox.height>=100&&ledgerBox.y>=reportBox.y&&ledgerBox.y+ledgerBox.height<=reportBox.y+reportBox.height+1);assert.equal(await reportCanvas.getAttribute('data-order-count'),'0');assert.equal(await reportCanvas.getAttribute('data-guest-count'),'0');
  await page.screenshot({path:out+'/z2d2-report-'+width+'.png'});
  const c=newGame(15742);c.onboarding.enabled=false;c.phase='research';assert.ok(beginLiveResearch(c,['mushroom','garlic'],'WOK'));assert.ok(dropLiveIngredient(c,'mushroom'));await load(c);await page.waitForFunction(()=>document.documentElement.dataset.oddpotResearch3d==='active',null,{timeout:20000});assert.ok(await page.locator('canvas[data-oddpot-research="3d"]').count());assert.ok(await page.locator('[data-live-drop="garlic"]').isEnabled());await page.locator('[data-live-drop="garlic"]').click();await page.waitForFunction(()=>document.querySelector('[data-live-drop="garlic"]')?.disabled);await page.screenshot({path:out+'/research-'+width+'.png'});
@@ -137,7 +144,7 @@ for(const [width,height] of [[320,568],[375,667],[390,844]]){
  const expedition=newGame(15742);expedition.onboarding.enabled=false;expedition.phase='field';expedition.kitchen.mastery={...expedition.kitchen.mastery,POT:2};await load(expedition);
  await page.waitForFunction(()=>document.documentElement.dataset.oddpotDeparture3d==='active',null,{timeout:20000});
  const landArt=page.locator('canvas[data-oddpot-departure="landscape"]'),toolArt=page.locator('canvas[data-oddpot-departure="equipment"]');
- assert.equal(await landArt.getAttribute('data-landscape'),'y5d');assert.ok(Number(await landArt.getAttribute('data-draw-calls'))>8);assert.equal(await toolArt.getAttribute('data-models'),'2');assert.match(await landArt.getAttribute('data-enemies'),/chicken/);assert.match(await landArt.getAttribute('data-enemies'),/boar/);assert.equal(await toolArt.getAttribute('data-portrait'),'z2c12');assert.equal(await toolArt.getAttribute('data-level'),'1');assert.equal(await toolArt.getAttribute('data-upgrade-parts'),'0');const sizeBefore=await page.locator('.z2c2-map').boundingBox();const heroBefore=await page.locator('.z2c4-hero').boundingBox();
+ assert.equal(await landArt.getAttribute('data-landscape'),'y5d');assert.ok(Number(await landArt.getAttribute('data-draw-calls'))>8);assert.equal(await toolArt.getAttribute('data-models'),'2');assert.match(await landArt.getAttribute('data-enemies'),/chicken/);assert.match(await landArt.getAttribute('data-enemies'),/boar/);assert.equal(await toolArt.getAttribute('data-portrait'),'z2c12');assert.equal(await toolArt.getAttribute('data-room'),'z2ed3a');assert.ok(Number(await toolArt.getAttribute('data-draw-calls'))>20,'actual room and chef geometry');assert.equal(await toolArt.getAttribute('data-level'),'1');assert.equal(await toolArt.getAttribute('data-upgrade-parts'),'0');const sizeBefore=await page.locator('.z2c2-map').boundingBox();const heroBefore=await page.locator('.z2c4-hero').boundingBox();
  assert.ok(await landArt.evaluate(c=>{const d=c.getContext('2d').getImageData(0,0,c.width,c.height).data;return new Set(Array.from({length:30},(_,i)=>d[(Math.floor(d.length/4*i/30))*4])).size>5;}));
  const frameStart=Number(await landArt.getAttribute('data-frames'));await page.waitForFunction(n=>Number(document.querySelector('canvas[data-oddpot-departure="landscape"]')?.dataset.frames)>=n+4,frameStart,{timeout:20000});assert.ok([30,60].includes(Number(await landArt.getAttribute('data-target-fps'))));
  await page.locator('[data-region="spring"]').click();await page.waitForFunction(()=>document.querySelector('canvas[data-oddpot-departure="landscape"]')?.dataset.region==='spring',null,{timeout:10000});assert.match(await landArt.getAttribute('data-enemies'),/steam_crab/);assert.match(await landArt.getAttribute('data-enemies'),/pepper/);assert.equal(await page.locator('.z2c4-routes [data-route]').count(),2);assert.equal((await page.locator('.z2c2-map').boundingBox()).height,sizeBefore.height);

@@ -42,23 +42,23 @@ try{
    if(width!==375&&['prep','report'].includes(phase))await page.screenshot({path:`${output}/${phase}-${width}.png`});
    if(phase==='forecast'){
     assert.ok(await page.locator('.z2c-hud').isVisible());assert.equal(await page.locator('.day-strip').count(),0);assert.ok(await page.locator('.z2c-hud [data-game-icon="coin"]').isVisible());
-    const scene=page.locator('.v016-scene');
+    const scene=page.locator('.ui2-room-host');
     assert.equal(await scene.count(),1,'border home uses the scene-first layout');
     const rect=await scene.boundingBox();
-    assert.ok(rect.height>=layout.stageHeight*.60,'scene occupies at least 60% of stage');
-    assert.equal(await scene.locator('canvas').count(),1);
+    assert.ok(rect.height>=layout.stageHeight*.98,'scene occupies at least 60% of stage');
+    assert.equal(await scene.locator('#diner-canvas').count(),1);await page.evaluate(()=>{globalThis.__ui2Shell=document.querySelector('.game-shell');globalThis.__ui2Room=document.querySelector('.ui2-room-host');globalThis.__ui2Canvas=document.querySelector('#diner-canvas')});
     await page.waitForFunction(async()=>{const art=await import('/src/hearth_assets_v016a21.js?v=0.16-a21');return art.a21AtlasReady();});
     assert.ok(await page.evaluate(async()=>{const a=await import('/src/hearth_assets_v016a21.js?v=0.16-a21');const c=document.createElement('canvas');c.width=44;c.height=36;const ctx=c.getContext('2d');if(!a.a21Sprite(ctx,'table',0,0,44,36))return false;const pixels=ctx.getImageData(0,0,44,36).data;return pixels.some((v,i)=>i%4===3&&v===255)&&pixels.some((v,i)=>i%4===3&&v===0);}), 'transparent table sprite actually decodes and draws');
 
     for(const act of ['stock','book','bento','crew']){
-     await scene.locator('[data-act="'+act+'"]').click();
+     await page.locator('.ui2-room-dock [data-act="'+act+'"]').click();
      assert.ok(await page.locator('.sheet').isVisible(),act+' uses the existing sheet');
      assert.equal(await page.locator('.z2c13-sheet .sheet-header h2').count(),1);
      assert.equal(await page.locator('.z2c13-sheet').getAttribute('data-sheet-kind'),act);
      assert.ok(await page.evaluate(()=>document.activeElement.matches('.sheet-close')&&[...document.querySelector('.game-shell').children].filter(e=>!e.matches('.sheet,.sheet-backdrop')).every(e=>e.inert)), 'drawer focuses close and isolates background');
      await page.keyboard.press('Shift+Tab');assert.ok(await page.evaluate(()=>document.activeElement.closest('.z2c13-sheet')&&!document.activeElement.matches('.sheet-close')));
      await page.keyboard.press('Tab');assert.ok(await page.evaluate(()=>document.activeElement.matches('.sheet-close')));
-     const head=await page.locator('.sheet-header').boundingBox(),body=await page.locator('.sheet-body').boundingBox();assert.ok(head.y+head.height<=body.y+1);
+     const head=await page.locator('.sheet-header').boundingBox(),body=await page.locator('.sheet-body').boundingBox(),windowBox=await page.locator('.sheet').boundingBox();assert.ok(head.y+head.height<=body.y+1);assert.ok(Math.abs(windowBox.y+windowBox.height/2-height/2)<3);assert.ok(await page.evaluate(()=>globalThis.__ui2Shell===document.querySelector('.game-shell')&&globalThis.__ui2Room===document.querySelector('.ui2-room-host')&&globalThis.__ui2Canvas===document.querySelector('#diner-canvas')));if(['stock','book','crew'].includes(act))assert.ok(await page.locator('.ui2-slots .ui2-slot').count()>0);
      if(act==='book'){
       assert.ok(await page.locator('.z2c13-atlas-count').isVisible());
       await page.locator('[data-book-region="all"]').click();assert.ok(await page.evaluate(()=>document.activeElement.dataset.bookRegion==='all'));assert.ok((await page.locator('[data-book-region="all"]').boundingBox()).height>=44);
@@ -72,9 +72,15 @@ try{
      assert.equal(await page.locator('.sheet').count(),0);assert.ok(await page.evaluate(a=>document.activeElement.dataset.act===a,act),'focus returns to original scene action');
     }
     await page.locator('[data-act="settings"]').first().click();assert.equal(await page.locator('[data-act="stick-mode:floating"]').getAttribute('aria-pressed'),'true');await page.locator('[data-act="stick-mode:fixed"]').click();assert.equal(await page.locator('[data-act="stick-mode:fixed"]').getAttribute('aria-pressed'),'true');assert.equal(await page.evaluate(()=>localStorage.getItem('oddpot-ui-joystick-mode')),'fixed');await page.keyboard.press('Escape');await page.reload({waitUntil:'networkidle'});await page.locator('[data-act="settings"]').first().click();assert.equal(await page.locator('[data-act="stick-mode:fixed"]').getAttribute('aria-pressed'),'true');await page.locator('[data-act="stick-mode:floating"]').click();await page.keyboard.press('Escape');
-    const door=scene.locator('.z2c2-threshold');assert.ok(await door.isVisible());assert.equal(await scene.locator('.v076-home-primary').count(),0);assert.ok((await door.boundingBox()).height>=44);await page.screenshot({path:`${output}/z2c2-home-${width}.png`});
-    await scene.locator('[data-act="to-field"]').click();assert.ok(await page.locator('.z2c-hud').isVisible());assert.equal(await page.locator('.z2c4-routes [data-route]').count(),2);assert.equal(await page.locator('.z2c2-map-art').count(),1);assert.equal(await page.locator('.region-tabs,.route-options').count(),0);const map=await page.locator('.z2c2-map').boundingBox();assert.ok(map.height>=layout.stageHeight*.35);await page.locator('[data-region="spring"]').click();assert.ok(await page.locator('[data-route="spring_safe"]').isVisible());await page.locator('[data-weapon="POT"]').click();assert.equal(await page.locator('[data-weapon="POT"]').getAttribute('aria-pressed'),'true');await page.screenshot({path:output+'/z2c2-expedition-'+width+'.png'});
+    const door=page.locator('.ui2-spot[data-act="to-field"]');assert.ok(await door.isVisible());assert.equal(await scene.locator('.v076-home-primary').count(),0);assert.ok((await door.boundingBox()).height>=44);await page.screenshot({path:`${output}/z2c2-home-${width}.png`});
+    await door.click();assert.ok(await page.locator('.z2c-hud').isVisible());assert.equal(await page.locator('.z2c4-routes [data-route]').count(),2);assert.equal(await page.locator('.z2c2-map-art').count(),1);assert.equal(await page.locator('.region-tabs,.route-options').count(),0);const map=await page.locator('.z2c2-map').boundingBox();assert.ok(map.height>=layout.stageHeight*.35);await page.locator('[data-region="spring"]').click();assert.ok(await page.locator('[data-route="spring_safe"]').isVisible());await page.locator('[data-weapon="POT"]').click();assert.equal(await page.locator('[data-weapon="POT"]').getAttribute('aria-pressed'),'true');await page.screenshot({path:output+'/z2c2-expedition-'+width+'.png'});
     assert.equal(await page.locator('.stage.field').count(),1,'door opens the real field preparation');
+    const departure=page.locator('.z2ed3-departure');assert.ok(await departure.isVisible());const travelLayout=await departure.evaluate(el=>({client:el.clientHeight,scroll:el.scrollHeight}));assert.ok(travelLayout.scroll<=travelLayout.client+2,JSON.stringify(travelLayout));for(const act of ['back-from-departure','departure-notebook','bento','skip-field'])assert.ok(await page.locator('[data-act="'+act+'"]').isVisible());await page.locator('[data-act="departure-notebook"]').click();assert.ok(await page.locator('.sheet .v013h-supply-hint').isVisible());assert.ok(await page.locator('.sheet .z2ed3-travel-details').isVisible());await page.keyboard.press('Escape');await page.locator('[data-act="back-from-departure"]').click();assert.equal(await page.locator('.stage.forecast').count(),1);await page.locator('.ui2-spot[data-act="to-field"]').click();assert.equal(await page.locator('[data-weapon="POT"]').getAttribute('aria-pressed'),'true');
+    await page.locator('[data-route="spring_safe"]').click();
+    await page.locator('[data-act="settings"]').click();await page.locator('[data-act="stick-mode:fixed"]').click();await page.keyboard.press('Escape');
+    const geometry=await page.evaluate(()=>{const box=s=>document.querySelector(s)?.getBoundingClientRect();const a=box('#field-stick'),b=box('.field-skill'),d=box('.field-compact-dock');return {stick:a?.bottom,dock:d?.top,skill:b?.bottom};});
+    assert.ok(geometry.stick<=geometry.dock&&geometry.skill<=geometry.dock,'player screenshot regression: field controls must not overlap dock '+JSON.stringify(geometry));
+    await page.screenshot({path:output+'/ui2-field-controls-'+width+'.png'});
     assert.deepEqual(errors,[],`A1 home runtime errors at ${width}`);
     await page.close();
     continue;
@@ -104,6 +110,7 @@ try{
     await page.screenshot({path:output+'/z2b-live-'+width+'.png'});
    }
    if(phase==='menu'){
+    await page.evaluate(()=>globalThis.__menuRoom=document.querySelector('#diner-canvas'));await page.locator('.ui2-room-dock [data-act="ui2-menu"]').click();
     assert.equal(await page.locator('.menu-line').count(),3);
     assert.equal(await page.locator('.v014-menu-value').count(),3);
     assert.equal(await page.locator('.menu-line .z2b-dish-art').count(),3);
@@ -111,14 +118,14 @@ try{
     const before=await page.evaluate(k=>JSON.parse(localStorage.getItem(k)).menu[0],storageKey);
     const choices=await page.locator('[data-menu-pick]:enabled').evaluateAll(es=>es.map(e=>e.dataset.menuPick));
     const picked=choices.find(x=>x.split(':')[1]!==before)||choices[0];assert.ok(picked);
-    await page.locator('[data-menu-pick="'+picked+'"]').click();assert.equal(await page.locator('.sheet').count(),0);
-    assert.equal(await page.evaluate(k=>JSON.parse(localStorage.getItem(k)).menu[0],storageKey),picked.split(':')[1]);
+    const allPicks=await page.locator('[data-menu-pick]').evaluateAll(es=>es.map(e=>e.dataset.menuPick));await page.locator('.ui2-slots .ui2-slot').nth(allPicks.indexOf(picked)).click();await page.locator('[data-menu-pick="'+picked+'"]').click();assert.equal(await page.locator('.sheet').getAttribute('data-sheet-kind'),'ui2-menu');
+    assert.equal(await page.evaluate(k=>JSON.parse(localStorage.getItem(k)).menu[0],storageKey),picked.split(':')[1]);await page.keyboard.press('Escape');assert.ok(await page.evaluate(()=>globalThis.__menuRoom===document.querySelector('#diner-canvas')));await page.locator('[data-act="to-prep"]').click();assert.equal(await page.locator('.stage.prep').count(),1);assert.ok(await page.evaluate(()=>globalThis.__menuRoom===document.querySelector('#diner-canvas')),'same canvas from menu into preparation');
    }
    if(phase==='prep'){
     assert.ok(await page.locator('[data-act="open"]').isVisible());
-    const scene=page.locator('.z2b-prep-scene'),work=page.locator('.z2b-prep-work'),a=await scene.boundingBox(),d=await work.boundingBox();assert.ok(a.height>=135&&a.y+a.height<=d.y+1&&a.height>=layout.stageHeight*.40);
+    const scene=page.locator('.ui2-room-host'),a=await scene.boundingBox();assert.ok(a.height>=layout.stageHeight*.98);await page.locator('.ui2-room-dock [data-act="ui2-prep"]').click();const d=await page.locator('.sheet').boundingBox();assert.ok(d.y>a.y&&d.y+d.height<a.y+a.height);
     assert.equal(await page.locator('.kitchen-config-slot').count(),2);
-    const stock=await page.locator('.z2b-stock-shortcut').count();assert.equal(stock,1);
+    const stock=await page.locator('.ui2-room-dock [data-act="stock"]').count();assert.equal(stock,1);
     const dish=page.locator('.prep-item:enabled').first();if(await dish.count()){
       const id=(await dish.getAttribute('data-act')).split(':')[1],before=await page.evaluate(k=>JSON.parse(localStorage.getItem(k)),storageKey);
       await dish.click();const after=await page.evaluate(k=>JSON.parse(localStorage.getItem(k)),storageKey);
@@ -130,11 +137,11 @@ try{
     await page.locator('[data-act="promo:flyer"]').click();
     assert.ok(await page.locator('.v014-marketing').getAttribute('open')!==null,'campaign choice stays expanded');
    }
-   if(phase==='service'){assert.ok(await page.locator('#diner-canvas').isVisible());await page.locator('[data-act="service-ledger"]').click();await page.locator('.sheet [data-act="settings"]').click();await page.locator('[data-act="stick-mode:fixed"]').click();await page.keyboard.press('Escape');const pad=page.locator('#diner-stick');await pad.waitFor({state:'visible'});assert.ok(await pad.evaluate(e=>e.classList.contains('z2ed0-fixed')));const box=await pad.boundingBox();const center={x:box.x+box.width/2,y:box.y+box.height/2};await page.mouse.move(center.x,center.y);await page.mouse.down();await page.mouse.move(center.x+30,center.y-15);assert.notEqual(await page.locator('#diner-stick-knob').evaluate(e=>e.style.transform),'translate(0px, 0px)');await page.mouse.up();assert.ok(await pad.evaluate(e=>e.classList.contains('z2ed0-fixed')));assert.equal(await page.locator('#diner-stick-knob').evaluate(e=>e.style.transform),'translate(0px, 0px)');}
+   if(phase==='service'){assert.ok(await page.locator('#diner-canvas').isVisible());const guideRect=await page.locator('.v4d-service-guide').boundingBox();assert.ok(guideRect&&guideRect.height<=60,'player screenshot regression: service guidance cannot stretch vertically');await page.locator('[data-act="service-ledger"]').click();await page.locator('.sheet [data-act="settings"]').click();await page.locator('[data-act="stick-mode:fixed"]').click();await page.keyboard.press('Escape');assert.equal(await page.locator('.sheet').getAttribute('data-sheet-kind'),'service-ledger');await page.keyboard.press('Escape');const pad=page.locator('#diner-stick');await pad.waitFor({state:'visible'});assert.ok(await pad.evaluate(e=>e.classList.contains('z2ed0-fixed')));const box=await pad.boundingBox();const center={x:box.x+box.width/2,y:box.y+box.height/2};await page.mouse.move(center.x,center.y);await page.mouse.down();await page.mouse.move(center.x+30,center.y-15);assert.notEqual(await page.locator('#diner-stick-knob').evaluate(e=>e.style.transform),'translate(0px, 0px)');await page.mouse.up();assert.ok(await pad.evaluate(e=>e.classList.contains('z2ed0-fixed')));assert.equal(await page.locator('#diner-stick-knob').evaluate(e=>e.style.transform),'translate(0px, 0px)');}
    if(phase==='report'){
     const sceneBox=await page.locator('.z2d2-report-stage').boundingBox(),ledgerBox=await page.locator('.z2d2-report-layout .z2c10-ledger').boundingBox();
-    const resultBox=await page.locator('.z2ed1-result').boundingBox(),actions=await page.locator('.z2ed1-result-actions').boundingBox();assert.ok(sceneBox.height>=layout.stageHeight*.90&&resultBox.y>=sceneBox.y&&resultBox.y+resultBox.height<=sceneBox.y+sceneBox.height+1&&ledgerBox.y+ledgerBox.height<=actions.y+1&&actions.height>=44,'mandatory result overlays full restaurant, scroll body separate from actions');assert.equal(await page.locator('.z2ed1-result').getAttribute('role'),'dialog');await page.evaluate(()=>globalThis.__d1Canvas=document.querySelector('#diner-canvas'));await page.keyboard.press('Escape');assert.equal(await page.locator('.stage.report').count(),1);
-    assert.equal(await page.locator('.z2d2-report-stage #diner-canvas').count(),1);
+    const resultBox=await page.locator('.z2ed1-result').boundingBox(),actions=await page.locator('.z2ed1-result-actions').boundingBox();assert.ok(sceneBox.height>=layout.stageHeight*.90&&resultBox.y>=sceneBox.y&&resultBox.y+resultBox.height<=sceneBox.y+sceneBox.height+1&&ledgerBox.y+ledgerBox.height<=actions.y+1&&actions.height>=44,'mandatory result overlays full restaurant, scroll body separate from actions');assert.equal(await page.locator('.z2ed1-result').getAttribute('role'),'dialog');assert.ok(resultBox.height<=layout.stageHeight*.66,'compact result must leave scene visible');assert.equal(await page.locator('.z2a-hud').isVisible(),false,'no HUD over mandatory result');await page.evaluate(()=>globalThis.__d1Canvas=document.querySelector('#diner-canvas'));await page.keyboard.press('Escape');assert.equal(await page.locator('.stage.report').count(),1);
+    assert.equal(await page.locator('.ui2-room-host #diner-canvas').count(),1);
     assert.ok(await page.locator('.z2c10-paper .report-stats').isVisible());
     const title=await page.locator('.z2c10-paper .report-header').evaluate(el=>({color:getComputedStyle(el).color,weight:Number(getComputedStyle(el).fontWeight),size:parseFloat(getComputedStyle(el).fontSize)}));assert.equal(title.color,'rgb(69, 51, 40)');assert.ok(title.weight>=700&&title.size>=17);
     assert.equal(await page.locator('.z2c10-hud').count(),1);assert.equal(await page.locator('.brand,.day-strip').count(),0);
@@ -151,26 +158,28 @@ try{
     await page.locator('[data-act="close-sheet"]').last().click();
     assert.notEqual(await page.locator('.v014-report-more').getAttribute('open'),null);
     await page.screenshot({path:output+'/z2c10-report-'+width+'.png'});
-    await page.locator('[data-act="to-upgrade"]').click();assert.equal(await page.locator('.stage.upgrade').count(),1);assert.ok(await page.evaluate(()=>globalThis.__d1Canvas===document.querySelector('#diner-canvas')),'same canvas survives report to growth');
+    await page.locator('[data-act="to-upgrade"]').click();assert.equal(await page.locator('.stage.upgrade').count(),1);if(await page.locator('[data-act="ui2-star-confirm"]').count())await page.locator('[data-act="ui2-star-confirm"]').click();assert.ok(await page.evaluate(()=>globalThis.__d1Canvas===document.querySelector('#diner-canvas')),'same canvas survives report to growth');
    }
    if(phase==='upgrade'){
     assert.equal(await page.locator('.z2c11-hud').count(),1);
-    const scene=page.locator('.z2c11-growth-scene'),work=page.locator('.z2c11-growth-work');
-    const a=await scene.boundingBox(),d=await work.boundingBox();assert.ok(a.height>=110&&a.y+a.height<=d.y+1&&a.height>=layout.stageHeight*.39);
-    assert.equal(await scene.locator('#diner-canvas').count(),1);
-    assert.equal(await page.locator('.z2c11-growth-group').count(),3);
+    const scene=page.locator('.z2c11-growth-scene'),work=page.locator('.z2ed1-growth-tools');
+    const a=await scene.boundingBox(),d=await work.boundingBox();assert.ok(a.height>=layout.stageHeight*.90&&d.y>=a.y&&d.y+d.height<=a.y+a.height+1);
+    const layers=await page.evaluate(()=>{const r=s=>document.querySelector(s)?.getBoundingClientRect();return {hud:r('.ui2-hud-stack').bottom,caption:r('.z2c11-scene-caption').top,tools:r('.z2ed1-growth-tools').bottom,dock:r('.dock').top}});assert.ok(layers.hud<=layers.caption&&layers.tools<=layers.dock+1,'growth HUD/controls do not overlap '+JSON.stringify(layers));
+    assert.equal(await page.locator('.ui2-room-host #diner-canvas').count(),1);
+    await page.evaluate(()=>globalThis.__growthRoom=document.querySelector('#diner-canvas'));
+    assert.equal(await page.locator('.z2c11-growth-group').count(),0);await page.locator('[data-act="growth-overview"]').click();assert.equal(await page.locator('.z2c11-growth-group').count(),3);await page.keyboard.press('Escape');
     const before=await page.evaluate(k=>JSON.parse(localStorage.getItem(k)),storageKey);
-    await page.locator('[data-act="expand-room"]').click();
+    await page.locator('[data-act="growth-offer:table"]').click();assert.equal(await page.evaluate(k=>JSON.parse(localStorage.getItem(k)).coins,storageKey),before.coins);await page.locator('[data-act="growth-buy:expand-room"]').click();
     const after=await page.evaluate(k=>JSON.parse(localStorage.getItem(k)),storageKey);
     assert.equal(after.dining.tableCount,3);assert.equal(after.coins,before.coins-ROOM_EXPANSION_COST);
     assert.match(await page.locator('.z2c11-scene-caption').innerText(),/3 桌 · 6 席/);
     const a2=await scene.boundingBox();assert.ok(Math.abs(a2.y-a.y)<1&&Math.abs(a2.height-a.height)<1);
-    await page.locator('[data-act="upgrade-bag"]').click();
+    await page.locator('[data-act="growth-offer:bag"]').click();await page.locator('[data-act="growth-buy:upgrade-bag"]').click();
     const bag=await page.evaluate(k=>JSON.parse(localStorage.getItem(k)),storageKey);
     assert.equal(bag.bagSlots,(after.bagSlots||8)+2);
     assert.equal(bag.coins,after.coins-60);
     await page.screenshot({path:output+'/z2c11-growth-'+width+'.png'});
-    await page.locator('[data-act="next-day"]').click();assert.equal(await page.locator('.stage.forecast').count(),1);
+    await page.locator('[data-act="next-day"]').click();assert.equal(await page.locator('.stage.forecast').count(),1);assert.ok(await page.evaluate(()=>globalThis.__growthRoom===document.querySelector('#diner-canvas')),'same room across new business day');
    }
    assert.deepEqual(errors,[],`${phase} runtime errors at ${width}`);
    if(width!==375)await page.screenshot({path:`${output}/${phase}${['prep','report'].includes(phase)?'-details':''}-${width}.png`});
@@ -198,13 +207,13 @@ try{
  const offline=await browser.newPage({viewport:{width:390,height:844},isMobile:true,hasTouch:true,locale:'zh-CN'});
  await offline.addInitScript(([key,state])=>localStorage.setItem(key,JSON.stringify(state)),[storageKey,fixture('menu')]);
  await offline.goto(url+'standalone.html',{waitUntil:'networkidle'});
- assert.equal(await offline.locator('.v014-menu-value').count(),3,'offline menu uses same UI');
+ await offline.locator('.ui2-room-dock [data-act="ui2-menu"]').click();assert.equal(await offline.locator('.v014-menu-value').count(),3,'offline menu uses same UI');
  await offline.close();
  const offlineHome=await browser.newPage({viewport:{width:390,height:844},isMobile:true,hasTouch:true,locale:'zh-CN'});
  await offlineHome.addInitScript(([key,state])=>localStorage.setItem(key,JSON.stringify(state)),[storageKey,fixture('forecast')]);
  await offlineHome.goto(url+'standalone.html',{waitUntil:'networkidle'});
- assert.equal(await offlineHome.locator('.v016-scene').count(),1,'offline uses A1 home');
- await offlineHome.locator('.v016-scene [data-act="stock"]').click();
+ assert.equal(await offlineHome.locator('.ui2-room-host').count(),1,'offline uses same permanent world');
+ await offlineHome.locator('.ui2-room-dock [data-act="stock"]').click();
  assert.ok(await offlineHome.locator('.sheet').isVisible(),'offline scene action works');
  await offlineHome.close();
  console.log('v0.14 real Chrome: eight stages at 320/375/390, sheets, marketing, ledger and offline menu passed');

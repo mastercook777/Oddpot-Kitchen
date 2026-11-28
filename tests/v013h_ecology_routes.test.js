@@ -94,7 +94,7 @@ test('route selection screen has two strategies and no clickable or forced mater
  const app=readFileSync(new URL('../src/app.js',import.meta.url),'utf8');
  const data=readFileSync(new URL('../src/data.js',import.meta.url),'utf8');
  assert.match(app,/经营备料提示/);
- assert.match(app,/const lowStock=\[\.\.\.new Set\(\(game\.menu\|\|\[\]\)/);
+ assert.match(app,/function departureLowStock\(\)\{return \[\.\.\.new Set\(\(game\.menu\|\|\[\]\)/);
  assert.match(app,/filter\(id=>\(game\.inventory\[id\]\|\|0\)<6\)/);
  assert.match(app,/z2c2Departure\(activeRoutes,lowStock\)/);
  assert.match(app,/data-route="\$\{r.id\}"/);

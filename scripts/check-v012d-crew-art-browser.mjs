@@ -43,7 +43,7 @@ try{
    if(level<3){
     for(const role of ['helper','waiter']){
      const previous=await read();const cash=previous.coins;
-     await page.locator('[data-act="promote:'+role+'"]').click();
+     await page.locator('.ui2-crew-slots .ui2-slot').nth(role==='helper'?0:1).click();await page.locator('[data-act="promote:'+role+'"]').click();
      const after=await read();
      assert.equal(after.crew[role].level,level+1);
      assert.equal(after.coins,cash-(level===1?28:64));

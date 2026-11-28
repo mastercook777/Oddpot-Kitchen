@@ -65,7 +65,7 @@ test('new movable service screen never constructs legacy queue-priority or custo
  assert.match(modern,/v075-event-shade/);
  assert.match(modern,/v075-finish/);
  assert.match(app,/const walk=game\.phase==='service'&&game\.service\?\.walkable/);
- assert.match(app,/walk\|\|home\?'':/,'no service dock and no separate forecast dock');
+ assert.match(app,/walk\?'':`<nav class="dock">/,'no service dock; home uses shared floating dock');
  assert.match(css,/\.v075-world:before\{display:none!important\}/);
 });
 test('event appears directly, action choice is once-only and resumes without extra button',()=>{

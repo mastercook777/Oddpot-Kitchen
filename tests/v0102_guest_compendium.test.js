@@ -72,5 +72,5 @@ test('existing recipe tab, variant selection and guest tab are a single sheet wi
  assert.match(app,/bookTab=tab.dataset.bookTab/);
  assert.match(css,/\.v102-book-tabs/);
  assert.match(css,/@media\(max-width:350px\)/);
- assert.match(app,/data-act="book"/);
+ assert.match(app,/ui2Tool\('book','ledger','图鉴'\)/);
 });

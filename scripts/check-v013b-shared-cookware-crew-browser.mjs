@@ -20,14 +20,19 @@ try{
   page.on('pageerror',e=>errors.push(e.message));
   const s=make();await page.addInitScript(([k,v])=>localStorage.setItem(k,JSON.stringify(v)),[key,s]);
   await page.goto('http://127.0.0.1:5173/index.html',{waitUntil:'networkidle'});
+  await page.locator('[data-act="growth-overview"]').click();
   assert.equal(await page.locator('[data-act="upgrade-kitchen:WOK"]').count(),1);
   assert.equal(await page.locator('[data-act="upgrade-kitchen:POT"]').count(),1);
   assert.equal(await page.locator('[data-act^="upgrade-kitchen:"]').count(),2);
-  await page.locator('[data-act="upgrade-kitchen:WOK"]').click();
+  await page.keyboard.press('Escape');
+  await page.locator('[data-act="growth-offer:left"]').click();
+  await page.locator('[data-act="growth-buy:upgrade-kitchen:WOK"]').click();
   const after=await page.evaluate(k=>JSON.parse(localStorage.getItem(k)),key);
   assert.equal(after.kitchen.mastery.WOK,2);
   assert.equal(after.kitchen.slots[0].level,2);assert.equal(after.kitchen.slots[2].level,2);
+  await page.locator('[data-act="growth-overview"]').click();
   assert.equal(await page.locator('[data-act="upgrade-kitchen:WOK"]').isDisabled(),true);
+  await page.keyboard.press('Escape');
   await page.screenshot({path:dir+'/global-upgrade-'+width+'.png',fullPage:true});
   const prep=structuredClone(after);prep.phase='prep';prep.service=null;
   await page.addInitScript(([k,v])=>localStorage.setItem(k,JSON.stringify(v)),[key,prep]);await page.reload({waitUntil:'networkidle'});
@@ -59,6 +64,7 @@ try{
  await offline.addInitScript(([k,obj])=>localStorage.setItem(k,JSON.stringify(obj)),[key,make()]);
  await offline.goto('http://127.0.0.1:5173/standalone.html',{waitUntil:'networkidle'});
  assert.match(await offline.title(),/0\.\d+\.\d+-alpha\.\d+/);
+ await offline.locator('[data-act="growth-overview"]').click();
  assert.equal(await offline.locator('[data-act^="upgrade-kitchen:"]').count(),2);
  await offline.close();
  console.log('v0.13-B: independent cookware mastery, simple crew positions, staff travel display, 320/375/390 Chrome and offline: PASS');

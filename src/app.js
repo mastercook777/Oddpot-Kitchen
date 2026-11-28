@@ -1,3 +1,4 @@
+import {ui2Mount,ui2SlotGrid,ui2SyncPortraits} from './formal_ui_v2.js?v=ui2';
 import {departureEcologyZ2c4} from './field_ecology_v011b2.js?v=z2c4';
 import {z2a2Icon} from './ui_icons_z2a2.js?v=z2a3';
 import {selectOutdoorQueueSpeech} from './outdoor_queue_speech_v012f.js';
@@ -30,6 +31,7 @@ let walking=null,drag=null,selectedRegion=activeWorld(game)==='cloud'?'cloud':'f
 const deviceStorage=()=>{try{return globalThis.localStorage}catch{return null}};let stickMode=readStickMode(deviceStorage());
 const stick={x:0,y:0,knobX:0,knobY:0,pointer:null,originX:0,originY:0,phase:null};const gestureTouches=new Set();const keys=new Set();let lastFrame=0,lastSave=0;let gameClock=0;let serviceTickAt=0;const touched=new Map();
 const app=document.getElementById('app');
+const ui2Selection=Object.create(null);let ui2Back='',ui2Warehouse='',ui2PrepSlot=-1,ui2DiscardId='';
 const esc=s=>String(s??'').replaceAll('&','&amp;').replaceAll('<','&lt;').replaceAll('>','&gt;').replaceAll('"','&quot;');
 const b=(act,text,klass='',disabled=false)=>`<button class="game-btn ${klass}" data-act="${act}" ${disabled?'disabled':''}>${text}</button>`;
 const recipeIds=Object.keys(game.recipes);
@@ -61,6 +63,12 @@ function hud(){
   </div>
 </header>`;}
  if(game.phase==='field'&&game.field?.action&&game.field.segmentStatus!=='choice'){const f=game.field;return `<header class="z2a-hud z2a-field-hud"><div class="action-hud" aria-label="探索状态"><span class="field-hp" data-hp="${f.hp}" aria-label="生命 ${f.hp}/3">${z2a2Health(f.hp)}</span><button data-act="field-bag" class="field-bag-chip" aria-label="查看野外背包">${z2a2Icon('bag')} <b id="field-bag-count">${fieldBagSlotsUsed(f)}/${f.capacity||8}</b></button><span class="field-clock" id="field-clock">${z2a2Icon('route')} <b id="z2a2-clock-value">${f.segmentIndex||1}/3 · ${Math.floor(f.elapsed)}s</b></span></div><button type="button" class="z2a-settings hud-gear" data-act="settings" aria-label="设置">${z2a2Icon('gear')}</button></header>`;}
+ if(game.phase!=='research'&&['forecast','menu','prep','report','upgrade','field'].includes(game.phase)){
+ const stars=activeWorld(game)==='cloud'?game.cloudProgress?.stars||0:game.chapterProgress?.stars||0,departure=game.phase==='field'&&!game.field;
+ const roomMeta=departure?z2a2Icon('bag')+' <span aria-label="背包容量">'+(game.bagSlots||8)+' 格</span>':z2a2Icon('rep')+' <span aria-label="声望 '+game.reputation+'">'+game.reputation+'</span>';
+ const klass=['menu','prep'].includes(game.phase)?'z2b-hud':game.phase==='report'?'z2c-hud z2c10-hud':game.phase==='upgrade'?'z2c-hud z2c11-hud':'z2c-hud';
+ return `<header class="z2a-hud ${klass} ui2-hud"><div class="ui2-hud-stack"><span class="ui2-hud-chip" aria-label="当前金币 ${game.coins}">${z2a2Icon('coin')} <b>${game.coins}</b></span><span class="ui2-hud-chip">${z2a2Icon('star')} ${stars} · 第 ${totalBusinessDay(game)} 天</span><span class="ui2-hud-chip ui2-hud-meta">${roomMeta}${game.phase==='forecast'?' · '+tableCapacity(game)+' 座':''}</span></div><div class="ui2-hud-side"><small class="ui2-mode-label">${esc(departure?'门前整装':phaseLabels[game.phase])}</small><button type="button" class="hud-gear" data-act="settings" aria-label="设置">${z2a2Icon('gear')}</button></div></header>`;
+ }
  if(['report','upgrade'].includes(game.phase))return `<header class="z2a-hud z2c-hud ${game.phase==='report'?'z2c10-hud':'z2c11-hud'}"><div class="z2b-phase-title">${z2a2Icon(game.phase==='report'?'ledger':'home')}<span><b>${game.phase==='report'?'收工 · 食堂账册':'食堂扩建'}</b><small>第 ${totalBusinessDay(game)} 天</small></span></div><span class="z2c-resource" aria-label="当前金币 ${game.coins}">${z2a2Icon('coin')} <b>${game.coins}</b></span><span class="z2c-resource" aria-label="声望 ${game.reputation}">${z2a2Icon('rep')} <b>${game.reputation}</b></span><button class="hud-gear" data-act="settings" aria-label="设置">${z2a2Icon('gear')}</button></header>`;
  if(z2bPhase())return `<header class="z2a-hud z2b-hud"><div class="z2b-phase-title">${z2a2Icon(game.phase==='research'?'cook':game.phase==='menu'?'menu':'home')}<span><b>${phaseLabels[game.phase]}</b><small>第 ${totalBusinessDay(game)} 天</small></span></div><span class="z2b-coins">${z2a2Icon('coin')} <b>${game.coins}</b></span><button class="hud-gear" data-act="settings" aria-label="设置">${z2a2Icon('gear')}</button></header>`;
  const home=game.phase==='forecast';
@@ -68,7 +76,7 @@ function hud(){
  const step=journey.indexOf(game.phase);
  return `<div class="hud ${home?'v076-home-hud':''}"><div class="brand"><span class="logo" aria-hidden="true">🍳</span><div><strong>怪味食堂</strong><small>第 ${totalBusinessDay(game)} 天 · ${tableCapacity(game)} 座</small></div></div><div class="hud-meta"><span aria-label="金币">🪙 ${game.coins}</span><span aria-label="声望">⭐ ${game.reputation}</span></div><button class="hud-gear" data-act="settings" aria-label="设置">⚙</button></div><div class="day-strip ${home?'v076-home-day':''}" aria-label="当前阶段：${phaseLabels[game.phase]}"><b>${phaseLabels[game.phase]}</b><div class="v014-journey" aria-hidden="true">${journey.slice(0,7).map((phase,i)=>`<i class="${i===step?'current':i<step?'passed':''}"></i>`).join('')}</div><span class="day-phase">${step<5?'☀ 白天':'☾ 夜晚'}</span></div>`;
 }
-function toast(){return `<div class="game-toast" role="status"><span>${esc(message)}</span></div>`}
+function toast(){return `<div class="game-toast" role="status" ${performance.now()>flashUntil?'hidden':''}><span>${esc(message)}</span></div>`}
 function playablePhase(){return game.phase==='service'||(game.phase==='field'&&!!game.field?.action)}
 function sceneNotice(){return `<div class="ingame-notice" role="status" id="ingame-notice" ${performance.now()>flashUntil?'hidden':''}>${esc(message.slice(0,28))}</div>`}
 function guideMarkup(){
@@ -78,7 +86,7 @@ function guideMarkup(){
 }
 function shell(stage,dock){
  const walk=game.phase==='service'&&game.service?.walkable,home=game.phase==='forecast',fieldLive=game.phase==='field'&&game.field?.action&&game.field.segmentStatus!=='choice';
- return `<div class="game-shell ${activeWorld(game)==='cloud'?'world-cloud':''} ${walk?'v075-game-shell is-diner-playing z2a-live z2a-diner':''} ${fieldLive?'z2a-live z2a-field':game.phase==='field'?'z2c-route':''} ${home?'v076-home-shell z2c-home':''} ${z2bPhase()?'z2b-shell z2b-'+game.phase:''} ${game.phase==='field'&&game.field?.action?'is-field-playing':''}">${hud()}${guideMarkup()}<main class="stage ${game.phase}${game.cook?' wok-active':''}">${stage}${playablePhase()?sceneNotice():''}</main>${playablePhase()||home?'':toast()}${walk||home?'':`<nav class="dock">${dock}</nav>`}${overlayMarkup()}</div>`;
+ return `<div class="game-shell ${activeWorld(game)==='cloud'?'world-cloud':''} ${walk?'v075-game-shell is-diner-playing z2a-live z2a-diner':''} ${fieldLive?'z2a-live z2a-field':game.phase==='field'?'z2c-route':''} ${home?'v076-home-shell z2c-home':''} ${z2bPhase()?'z2b-shell z2b-'+game.phase:''} ${game.phase==='field'&&game.field?.action?'is-field-playing':''}">${hud()}${guideMarkup()}<main class="stage ${game.phase}${game.cook?' wok-active':''}">${stage}${playablePhase()?sceneNotice():''}</main>${playablePhase()||home||game.phase==='menu'||game.phase==='prep'?'':toast()}${walk?'':`<nav class="dock">${dock}</nav>`}${overlayMarkup()}</div>`;
 }
 function earnedPromotions(){
  return Object.keys(CREW_ROLES).map(role=>({role,name:crewRoleName(game,role),promotion:crewPromotion(game,role)}))
@@ -133,9 +141,10 @@ function overlayMarkup(){if(!overlay)return '';
   };
   // Other warehouse inventory is reference only, not a fifth "missing" shop slot.
   const elsewhere=Object.entries(ING).filter(([id])=>!market.goods[id]);
+ const warehouse=Object.entries(ING).filter(([id])=>(game.inventory[id]||0)>0),selectedWarehouse=warehouse.find(([id])=>id===ui2Warehouse)||warehouse[0];
   body=`<h2>食材采购</h2><p class="sheet-lead">每天从 8 种普通食材随机上架 4 种，四种均有当日限额；售罄后次日换货。野外也可获取普通食材。</p>
   <h3>第 ${totalBusinessDay(game)} 天 · 今日上架 ${offers.length} 种</h3>${activeWorld(game)==='cloud'?`<section class="v015-ferry" aria-label="航运委托三选一"><strong>🪁 航运委托 ×${game.ferryCredits||0}</strong><small>原店真实成交获得 · 每个云港营业日可消耗 1 张，三选一接收 <b>8 份边境进口食材</b>，搭配云港材料研发融合料理。</small><div class="v015-ferry-packs">${Object.entries(FERRY_SUPPLY_PACKS).map(([id,pack])=>`<div class="v015-ferry-pack"><div><b>${esc(pack.name)}</b><small>${esc(pack.desc)}</small><div class="v015-ferry-ingredients">${Object.entries(pack.items).map(([item,n])=>`<span>${ingredientIconHtml(item,19)} ${esc(ING[item]?.name||item)} ×${n}<em>现有${game.inventory[item]||0}</em></span>`).join('')}</div></div><button type="button" data-act="ferry-supply:${id}" ${!ferrySupplyAvailable(game)?'disabled':''}>兑换这批 · 共 8 份</button></div>`).join('')}</div>${!ferrySupplyAvailable(game)?`<small class="v015-ferry-locked">${game.ledger?.some(x=>x.id===`ferry-supply-${game.cycle}-${game.day}`)?'今日已兑换，下一云港营业日可再领取。':(game.ferryCredits||0)<1?'需要先返回边境食堂真正营业，获得委托。':'当前阶段暂不能兑换。'}</small>`:''}</section>`:''}${managedFreightPanel()}<div class="stock-list" aria-label="今日可采购食材">${offers.map(stockLine).join('')}</div>
-  <details class="v013e-warehouse-details"><summary>查看其他仓库库存（非今日商品）</summary><div class="stock-list">${elsewhere.map(([id,ing])=>`<div class="detail-row">${ingredientIconHtml(id,20)} ${ing.name} · 库存 ×${game.inventory[id]||0}</div>`).join('')}</div></details>`;
+  <details class="v013e-warehouse-details" open><summary>食材柜 · 全部库存</summary><div class="ui2-slots">${warehouse.map(([id,ing])=>'<button type="button" class="ui2-slot" data-act="ui2-warehouse:'+id+'" aria-pressed="'+(selectedWarehouse?.[0]===id)+'">'+ingredientIconHtml(id,32)+'<small>'+esc(ing.name)+'</small><b>×'+(game.inventory[id]||0)+'</b></button>').join('')||'<p>仓库暂无食材</p>'}</div><div class="ui2-selected-detail">${selectedWarehouse?ingredientIconHtml(selectedWarehouse[0],36)+' '+esc(selectedWarehouse[1].name)+' · 库存 '+(game.inventory[selectedWarehouse[0]]||0)+' 份':'暂无食材'}</div></details>`;
  }else if(overlay==='premium'){
   const options=premiumMenuOptions(game),active=premiumMenuActive(game)?game.premiumMenu:null;
   body=`<h2>✨ 隐藏菜单</h2><p class="sheet-lead">每日仅选一款稀有菜，最多两份。只有鉴味师和关系深厚的熟客会获知，且不保证一定购买。食材将被保留，正式制作时才扣除。</p>
@@ -173,15 +182,37 @@ function overlayMarkup(){if(!overlay)return '';
    body='<h2>👩‍🍳 食堂伙伴</h2><p class="sheet-lead">'+(activeWorld(game)==='cloud'?'云港可在首枚星章后再聘一名跑堂，双跑堂各自认领一盘并行送餐、各计工资与经验；':'')+'每位帮厨按本人实际完成的订单获得经验；增加厨位必须配备人手才能真正出餐。开门前直接选择左、中、右优先站位；已选位置不可重复安排。营业时，空闲帮厨仍会自动走到缺人的炉台支援。</p><div class="staff-roster">'+row('helper')+row('waiter')+(crew.helper2.hired?row('helper2'):'')+(activeWorld(game)==='cloud'?row('waiter2'):'')+'</div>';
  }else if(overlay==='settings'){
   body=`<h2>⚙ 游戏设置</h2><p class="sheet-lead">ODDPOT · v0.15.0-alpha.11 · 单机本地存档</p><section class="z2ed0-controls"><h3>移动摇杆</h3><div class="z2ed0-stick-options" role="group" aria-label="移动摇杆模式">${['floating','fixed'].map(m=>`<button type="button" class="game-btn secondary" data-act="stick-mode:${m}" aria-pressed="${stickMode===m}">${m==='floating'?'浮动摇杆':'固定摇杆'}</button>`).join('')}</div><p class="sheet-lead">${stickMode==='floating'?'在场景内按下即可移动。':'左下常驻摇杆，按住拖动。'} 野外与营业共用，自动保存。</p></section>${b('guide-replay','重看第一轮引导','secondary')}${b('reset','重置存档，从第 1 天重新开始','danger')}<p class="sheet-lead">切到后台时营业会自动暂停。更换设备不会同步存档。</p>`;
+ }else if(overlay==='ui2-discard'){
+  const st=game.field?.bagStacks?.find(x=>x.stackId===ui2DiscardId);body=st?'<div class="ui2-summary">'+ingredientIconHtml(st.ingredientId,48)+'<h3>丢弃 '+esc(ING[st.ingredientId]?.name)+' ×'+st.quantity+'？</h3><p>只减少本次探索的收获，无法撤销。</p></div>'+b('ui2-discard-confirm','确认丢弃','danger')+b('close-sheet','保留','secondary'):'<p>这个背包格已不存在。</p>';
+ }else if(overlay==='ui2-star'){
+  const r=game.report,stars=r?.thirdRating?.passed?3:r?.secondRating?.passed&&r.secondRating.stage===2?2:r?.rating?.passed?1:0;
+  body='<section class="ui2-star-hero">'+z2a2Icon('star')+'<h3>第 '+stars+' 枚万味星章</h3><strong>食堂荣誉提升</strong><p>星章已正式获得，无需重复领取。</p>'+b('ui2-star-confirm','继续 · 食堂成长','primary wide')+'</section>';
+ }else if(overlay==='ui2-forecast'){
+  body=forecastPanel();
+ }else if(overlay==='ui2-menu'){
+  body=ui2MenuPanel();
+ }else if(overlay==='ui2-prep'){
+  body=ui2PrepPanel();
+ }else if(overlay==='harvest-result'){
+  body=harvestResult(game.field);
+ }else if(overlay==='departure-notebook'){
+  body=departureNotebook();
+ }else if(overlay==='growth-overview'){
+  body=growthOverview();
+ }else if(overlay==='growth-portal'){
+  body=portalPanel();
+ }else if(overlay.startsWith('growth-offer:')){
+  body=growthOfferWindow(overlay.slice(13));
  }else if(overlay==='details'){
   const r=game.report;body=r?`<h2>营业账本详情</h2><p class="sheet-lead">本日订单由真实食材库存、工位工作秒数和顾客等待事件计算。</p><div class="book-list">${Object.entries(r.byDish).map(([id,d])=>`<div class="detail-row">${RECIPES[id].emoji} ${RECIPES[id].name}：售出 ${d.count} 份 · 满意 ${Math.round(d.totalSat/d.count)}</div>`).join('')}<div class="detail-row">左厨位占用 ${r.congestion.WOK||0} 秒 / 右厨位 ${r.congestion.POT||0} 秒${r.congestion.CENTER!==undefined?' / 中厨位 '+r.congestion.CENTER+' 秒':''}</div><div class="detail-row">食材耗用估值 ${r.cost} · 宣传 ${r.finance?.marketingCost||0} · 工资 ${r.finance?.wage||0} · 招待支出 ${r.hospitalityCost||0} · 收入 ${r.revenue} · 经营利润 ${r.profit} · 现金净变动 ${r.finance?.cashChange??'旧版无记录'}</div></div>`:'';
  }
- const kind=overlay.startsWith('menu:')?'menu':overlay;
- const titles={book:bookTab==='guests'?'客人图鉴':'料理工艺图鉴','service-ledger':'营业账册','field-bag':kind==='field-bag'&&game.field?'野外背包 · '+fieldBagSlotsUsed(game.field)+'/'+(game.field.capacity||8)+' 格':'野外背包',stock:'食材采购',premium:'隐藏菜单',menu:'更换第 '+(Number(overlay.split(':')[1])+1)+' 道上架菜',bento:'今日探索便当',crew:'食堂伙伴',settings:'游戏设置',details:'营业账本详情'};
- const icons={book:bookTab==='guests'?'queue':'ledger','service-ledger':'ledger','field-bag':'bag',stock:'bag',premium:'star',menu:'menu',bento:'bento',crew:'queue',settings:'gear',details:'ledger'};
+ const kind=overlay.startsWith('menu:')?'menu':overlay.startsWith('growth-offer:')?'growth-offer':overlay;
+ const titles={book:bookTab==='guests'?'客人图鉴':'料理工艺图鉴','service-ledger':'营业账册','field-bag':kind==='field-bag'&&game.field?'野外背包 · '+fieldBagSlotsUsed(game.field)+'/'+(game.field.capacity||8)+' 格':'野外背包',stock:'食材采购',premium:'隐藏菜单',menu:'更换第 '+(Number(overlay.split(':')[1])+1)+' 道上架菜',bento:'今日探索便当',crew:'食堂伙伴',settings:'游戏设置',details:'营业账本详情','growth-overview':'食堂成长总览','growth-offer':'扩建与强化','growth-portal':'传送门','departure-notebook':'旅厨笔记','harvest-result':'探索收获','ui2-forecast':'今日预报','ui2-menu':'今晚菜单','ui2-prep':'厨位与备餐','ui2-star':'万味星章','ui2-discard':'整理背包'};
+ const icons={book:bookTab==='guests'?'queue':'ledger','service-ledger':'ledger','field-bag':'bag',stock:'bag',premium:'star',menu:'menu',bento:'bento',crew:'queue',settings:'gear',details:'ledger','growth-overview':'ledger','growth-offer':'home','growth-portal':'route','departure-notebook':'ledger','harvest-result':'bag','ui2-forecast':'target','ui2-menu':'menu','ui2-prep':'cook','ui2-star':'star','ui2-discard':'bag'};
  const title=titles[kind]||'游戏面板';body=body.replace(/<h2>[\s\S]*?<\/h2>/,'');
  let nav='';if(kind==='book'){const m=body.match(/^<div class="v102-book-tabs z2c13-book-nav"[\s\S]*?<\/div>/);if(m){nav=m[0];body=body.slice(nav.length);}}
- return `<div class="sheet-backdrop" data-act="close-sheet"></div><section class="sheet z2c13-sheet ${kind==='book'?'v104-book-sheet':''}" data-sheet-kind="${kind}" role="dialog" aria-modal="true" aria-labelledby="z2c13-sheet-title"><div class="sheet-header"><span class="sheet-handle" aria-hidden="true"></span><h2 id="z2c13-sheet-title">${z2a2Icon(icons[kind]||'ledger')} ${esc(title)}</h2><button type="button" class="game-btn sheet-close" data-act="close-sheet" aria-label="关闭面板">✕</button></div>${nav}<div class="sheet-body" tabindex="0">${body}</div></section>`;
+ const mandatory=['harvest-result','ui2-star'].includes(overlay);
+ return `<div class="sheet-backdrop" ${mandatory?'':'data-act="close-sheet"'}></div><section class="sheet z2c13-sheet ${kind==='book'?'v104-book-sheet':''}" data-sheet-kind="${kind}" data-ui2-context="${esc(kind==='book'?bookTab+'-'+bookRegion+'-'+recipeType:overlay)}" role="dialog" aria-modal="true" aria-labelledby="z2c13-sheet-title"><div class="sheet-header"><span class="sheet-handle" aria-hidden="true"></span><h2 id="z2c13-sheet-title">${z2a2Icon(icons[kind]||'ledger')} ${esc(title)}</h2>${mandatory?'':'<button type="button" class="game-btn sheet-close" data-act="close-sheet" aria-label="关闭面板">✕</button>'}</div>${nav}<div class="sheet-body" tabindex="0">${body}</div></section>`;
 }
 
 let growthCameraZ2d2='kitchen';
@@ -262,14 +293,23 @@ function z2c2WeaponText(type,level){
  const stats={WOK:level>1?'挥击 0.62 秒 · 格挡 0.70 秒':'挥击 0.70 秒 · 格挡 0.45 秒',POT:level>1?'投弹 0.30 秒 · 爆炸半径 0.75 格':'投弹 0.38 秒 · 爆炸半径 0.65 格',GRILL:level>1?'前刺 0.72 秒 · 喷焰 3.0 格':'前刺 0.88 秒 · 喷焰 2.7 格',STEAM:level>1?'云汽脉冲 1.9 格 · 减速雾域 3.4 秒':'云汽脉冲 1.6 格 · 减速雾域 2.8 秒'};
  return {name:names[type]?.[0]||type,flavor:names[type]?.[1]||'',stats:stats[type]||''};
 }
+function departureRoutes(){return activeWorld(game)==='cloud'?[{id:'cloud_safe',name:'顺风采集',emoji:'☁️',subtitle:'云谷米、浮苔叶与酸铃果'},{id:'cloud_risk',name:'雷羽狩猎',emoji:'⚡',subtitle:'雷羽巢缘 · 高风险取得雷羽蛋'}]:selectedRegion==='forest'?ROUTES:[{id:'spring_safe',name:'采集路线',emoji:'♨',subtitle:'热泉水岸 · 土豆、洋葱和火椒优先'},{id:'spring_risk',name:'狩猎路线',emoji:'🌋',subtitle:'熔岩兽群 · 椒怪、蟹群与战斗战利品'}];}
+function departureLowStock(){return [...new Set((game.menu||[]).flatMap(id=>RECIPES[id]?.ids||[]))].filter(id=>(game.inventory[id]||0)<6);}
+function departureNotebook(){const routes=departureRoutes(),lowStock=departureLowStock();
+ const cloud=activeWorld(game)==='cloud',region=cloud?'cloud':selectedRegion==='spring'?'spring':'forest';
+ const choices=fieldWeaponChoices(game),selected=selectedFieldWeaponType(game),w=choices.find(q=>q.type===selected)||choices[0];
+ const info=w?z2c2WeaponText(w.type,w.level):null;
+
+ return ` <section class="v013h-supply-hint z2c2-note" aria-label="经营备料提示"><div class="z2c2-note-pin"></div><div><b>今日备料便笺</b><span>${lowStock.length?'菜单库存偏低 · 先找这些食材':'库存相对充足，今天不妨寻找新味道。'}</span></div>${lowStock.length?`<div class="z2c2-note-food">${lowStock.map(id=>`<span>${ingredientIconHtml(id,22)} ${esc(ING[id].name)} <small>${game.inventory[id]||0}份</small></span>`).join('')}</div>`:''}</section> <section class="z2ed3-travel-details"><h3>路线与装备</h3><div>${routes.map(r=>`<p><b>${r.name}</b> · ${esc(r.subtitle)}${/risk/.test(r.id)&&!cloud?' · 第三段挑战'+bossHint(region).boss+'，预留背包格':''}</p>`).join('')}${info?`<p><b>${info.name}</b> · ${w.fitted?(['左','右','中'][w.slotIndex]||'')+'厨位装配':'背包备用'} · ${info.stats}</p><p>${esc(info.flavor||'')}</p>`:''}<p>${cloud?'三段航路，可随时返港。':'三段路，可随时回店。'}生态决定主要产物，不保证指定食材掉落。库存少于6份时标为偏低。</p></div></section>`;
+}
 function z2c2Departure(routes,lowStock){
  const cloud=activeWorld(game)==='cloud',region=cloud?'cloud':selectedRegion==='spring'?'spring':'forest';
  const regions=cloud?[['cloud','云港浮岛']]:[['forest','晨露森林'],['spring','热泉峡谷']];
  const eco=departureEcologyZ2c4(region),supplies=eco.resources,enemyNames={"chicken":"鸡怪","boar":"铁角野牛","sporeling":"孢怪","steam_crab":"蒸汽蟹","pepper":"椒怪","gust_moth":"风蛾"};
  const choices=fieldWeaponChoices(game),selected=selectedFieldWeaponType(game),w=choices.find(q=>q.type===selected)||choices[0];
  const info=w?z2c2WeaponText(w.type,w.level):null;
- return `<div class="forest-scene route-scene z2c2-expedition"><div class="route-panel z2c2-scroll">
- <section class="v013h-supply-hint z2c2-note" aria-label="经营备料提示"><div class="z2c2-note-pin"></div><div><b>今日备料便笺</b><span>${lowStock.length?'菜单库存偏低 · 先找这些食材':'库存相对充足，今天不妨寻找新味道。'}</span></div>${lowStock.length?`<div class="z2c2-note-food">${lowStock.map(id=>`<span>${ingredientIconHtml(id,22)} ${esc(ING[id].name)} <small>${game.inventory[id]||0}份</small></span>`).join('')}</div>`:''}</section>
+ return `<div class="forest-scene route-scene z2c2-expedition"><div class="route-panel z2c2-scroll z2ed3-departure">
+
  <section class="z2c2-map" data-departure-region="${region}" aria-label="食堂周边旅行示意地图">
   ${z2c2MapArt(region)}
   <div class="z2c2-map-regions" role="group" aria-label="选择探索地区">${regions.map(([id,name])=>cloud?`<span class="z2c2-region current">${name}</span>`:`<button class="z2c2-region ${id===region?'current':''}" data-region="${id}" aria-pressed="${id===region}">${name}</button>`).join('')}</div>
@@ -277,61 +317,23 @@ function z2c2Departure(routes,lowStock){
   <div class="z2c4-ecology" aria-label="本地区可能遭遇"><small>可能遭遇</small><span>${eco.enemies.map(id=>enemyNames[id]||id).join(' · ')}</span></div>
  </section>
  <div class="z2c4-routes" role="group" aria-label="选择当前地区路线">${routes.map((r,i)=>`<button class="z2c4-route-card ${/risk/.test(r.id)?'danger':'gather'}" data-route="${r.id}" aria-label="${esc(r.name)} · ${esc(r.subtitle)}"><div class="z2c4-route-head">${z2a2Icon(/risk/.test(r.id)?'wok':'route')}<b>${r.name}</b><i aria-hidden="true">›</i></div><span class="z2c4-route-food">${supplies[i].map(id=>ingredientIconHtml(id,20)).join('')}</span><small>${/risk/.test(r.id)?'敌人更多 · 战利品':'采集为主 · 仍有敌人'}</small></button>`).join('')}</div>
- <section class="z2c2-rack z2c4-loadout" aria-label="上路厨具"><div class="z2c4-loadout-head"><b>今日装备</b><small>点选切换</small></div><div class="z2c4-loadout-body"><div class="z2c4-hero" aria-label="当前主角装备预览"><div class="z2c4-hero-fallback">${w?z2bCookIcon(w.type):''}<small>${info?.name||''} Lv.${w?.level||1}</small></div></div><div class="z2c2-tools z2c4-tool-list">${choices.map(q=>`<button data-weapon="${q.type}" data-weapon-level="${q.level}" class="z2c2-tool ${q.type===selected?'chosen':''}" aria-pressed="${q.type===selected}" aria-label="${z2c2WeaponText(q.type,q.level).name} Lv${q.level}">${z2bCookIcon(q.type)}<span>${z2c2WeaponText(q.type,q.level).name}<small>Lv.${q.level}</small></span><i aria-hidden="true">${q.type===selected?'✓':'›'}</i></button>`).join('')}</div></div>${info?`<div class="z2c2-tool-flavor">${info.flavor}</div>`:''}</section>
- <details class="z2c2-travel-notes"><summary>翻开旅行笔记</summary><div>${routes.map(r=>`<p><b>${r.name}</b> · ${esc(r.subtitle)}${/risk/.test(r.id)&&!cloud?' · 第三段挑战'+bossHint(region).boss+'，预留背包格':''}</p>`).join('')}${info?`<p><b>${info.name}</b> · ${w.fitted?(['左','右','中'][w.slotIndex]||'')+'厨位装配':'背包备用'} · ${info.stats}</p>`:''}<p>${cloud?'三段航路，可随时返港。':'三段路，可随时回店。'}生态决定主要产物，不保证指定食材掉落。库存少于6份时标为偏低。</p></div></details>
+ <section class="z2c2-rack z2c4-loadout" aria-label="上路厨具"><div class="z2c4-loadout-head"><b>旅厨装备角</b><small>点选换装</small></div><div class="z2c4-loadout-body"><div class="z2c4-hero" aria-label="当前主角装备预览"><div class="z2c4-hero-fallback z2ed3-room-fallback">${w?z2bCookIcon(w.type):''}<small>${info?.name||''} Lv.${w?.level||1}</small></div></div><div class="z2c2-tools z2c4-tool-list">${choices.map(q=>`<button data-weapon="${q.type}" data-weapon-level="${q.level}" class="z2c2-tool ${q.type===selected?'chosen':''}" aria-pressed="${q.type===selected}" aria-label="${z2c2WeaponText(q.type,q.level).name} Lv${q.level}">${z2bCookIcon(q.type)}<span>${z2c2WeaponText(q.type,q.level).name}<small>Lv.${q.level}</small></span><i aria-hidden="true">${q.type===selected?'✓':'›'}</i></button>`).join('')}</div></div></section>
+
  </div></div>`;
 }
 
+function ui2Tool(act,glyph,label,primary=false,disabled=false){return '<button type="button" class="ui2-tool '+(primary?'ui2-gold':'')+'" data-act="'+act+'" '+(disabled?'disabled':'')+' aria-label="'+esc(label)+'">'+z2a2Icon(glyph)+'<span>'+esc(label)+'</span></button>'}
+function ui2Spot(act,glyph,label,at){return '<button type="button" class="ui2-spot" data-act="'+act+'" data-ui2-anchor="'+at.x+','+at.y+'" style="left:'+at.x*100+'%;top:'+at.y*100+'%" aria-label="'+esc(label)+'">' +z2a2Icon(glyph)+'</button>'}
+function ui2Room(mode,spots,tools,primary='',hint=''){return ['<div class="ui2-room-mode" data-room-mode="'+mode+'">'+restaurantView(false)+'<div class="ui2-hotspots">'+spots+'</div></div>','<div class="ui2-room-dock">'+tools+primary+'</div>'+ (hint?'<div class="ui2-hint" role="status">'+esc(performance.now()<flashUntil?message:hint)+'</div>':'')]}
+function forecastPanel(){
+ const plan=serviceDayPlan(game),stock=Object.values(game.inventory).reduce((sum,n)=>sum+n,0);
+ return '<div class="ui2-summary">'+z2a2Icon('target')+'<h3>'+esc(firstChallenge(game)?'爆炎厨王踢馆':plan.pressure)+'</h3><p>'+esc(plan.goal.label)+' · 预计 '+plan.count+' 位客人</p><p>仓库 '+stock+' 份食材</p></div>'+starInvite()+portalPanel();
+}
 function forecast(){
- const plan=serviceDayPlan(game);
- const stock=Object.values(game.inventory).reduce((sum,n)=>sum+n,0);
- const market=ensureDailyMarket(game);
- const bentoReady=game.bento?.day===game.cycle+'-'+game.day;
- const title=firstChallenge(game)?'爆炎厨王踢馆':plan.pressure;
- const brief=firstChallenge(game)?'评委会关注辛辣与爆香。':'达成目标，积累食堂口碑。';
- if(activeWorld(game)!=='cloud'){
-  const milestone=starInvite()+portalPanel();
-  return [`
-   <div class="v076-home v016-home${milestone?' has-milestone':''}">
-    <section class="v016-notice" aria-label="今日营业目标">
-     <div><strong>${esc(title)}</strong><span> · ${esc(plan.goal.label)}</span></div>
-     <small>预计 ${plan.count} 位客人 · 食材 ${stock} 份</small>
-    </section>
-    <section class="v076-preview v016-scene" aria-label="边境食堂 · 点击场景中的物件">
-     ${restaurantView(false)}
-     <div class="v076-home-shortcuts v016-world-actions" aria-label="场景互动">
-      <button type="button" class="v016-stock" data-act="stock" aria-label="打开食材柜和采购">食材柜</button>
-      <button type="button" class="v016-book" data-act="book" aria-label="翻开料理图鉴">料理笔记</button>
-      <button type="button" class="v016-bento" data-act="bento">便当${bentoReady?' ✓':''}</button>
-      <button type="button" class="v016-crew" data-act="crew">伙伴</button>
-      ${z2c2Door()}
-     </div>
-    </section>
-    ${milestone?'<div class="v016-milestone">'+milestone+'</div>':''}
-    <div class="v016-foot"><span>边境食堂 · 开店前</span><span>门外天色正好</span></div>
-   </div>`,'' ];
- }
- return [`
- <div class="v076-home v016-home z2c2-cloud-home">
-  <section class="v076-mission v016-notice" aria-label="今日营业目标">
-    <div class="v076-mission-meta"><span>店门口的今日告示</span><span>预计 ${plan.count} 位客人</span></div>
-    <h1>${esc(title)}</h1>
-    <p>${z2a2Icon('target')} ${esc(plan.goal.label)}</p>
-    <details><summary>看看今晚的安排</summary><small>${brief}</small></details>
-  </section>
-  ${starInvite()}${portalPanel()}
-  <section class="v076-preview v016-scene" aria-label="云港食堂 · 点击门槛出发">
-    ${restaurantView(false)}<div class="v016-world-actions" aria-label="门口互动">${z2c2Door()}</div>
-  </section>
-  <section class="v076-home-controls" aria-label="开店前可用操作">
-    <div class="v076-home-resources"><strong>今天先备料</strong><span>🎒 ${stock} 份 · 市场 ${Object.keys(market.goods).length} 款</span></div>
-    <div class="v076-home-shortcuts">
-      <button type="button" data-act="stock">${z2a2Icon('bag')} 采购</button>
-      <button type="button" data-act="bento">${z2a2Icon('bento')} 便当${bentoReady?' ✓':''}</button>
-      <button type="button" data-act="book">${z2a2Icon('ledger')} 图鉴</button>
-    </div>
-   </section>
- </div>`,'' ];
+ // Preserve the pre-UI2 market migration on entering the morning room.
+ ensureDailyMarket(game);
+ const g=dinerFloor(game),ready=game.bento?.day===game.cycle+'-'+game.day;
+ return ui2Room('morning',ui2Spot('to-field','route','整装出发',g.entrance)+ui2Spot('ui2-forecast','target','今日预报',g.passFurniture),ui2Tool('stock','bag','采购')+ui2Tool('book','ledger','图鉴')+ui2Tool('crew','queue','伙伴')+ui2Tool('bento','bento',ready?'便当 ✓':'便当'),ui2Tool('ui2-depart','route','出发',true),'今日营业 · '+serviceDayPlan(game).goal.label);
 }
 function bossHint(region){
  if(region==='cloud')return {boss:'风暴之王',name:ING.gale_core.name,qty:1,icon:ingredientIconHtml('gale_core',20)};
@@ -339,16 +341,23 @@ function bossHint(region){
  const first=!game.bossCleared?.[hot?'ember_king':'spore_king'];
  return {boss,name:ING[ingredient].name,qty:first?2:1,icon:ingredientIconHtml(ingredient,20)};
 }
+function harvestResult(f){
+ if(!f?.settled||!f.winnings)return '';
+ const entries=Object.entries(f.winnings).filter(([id,n])=>ING[id]&&n>0),total=entries.reduce((n,[,q])=>n+q,0);
+ const loss=Object.entries(f.bag||{}).reduce((n,[id,q])=>n+Math.max(0,q-(f.winnings[id]||0)),0);
+ const title=f.reason==='faint'?'安全回到食堂':f.reason==='completed'?'探索完成':'带着收获回店';
+ return `<section class="z2ed3-harvest"><div class="z2ed3-harvest-head">${z2a2Icon('bag')}<strong>${title}</strong><span>${total} 份食材已入库</span></div>${f.reason==='faint'?'<p class="z2ed3-loss">晕倒损失 '+loss+' 份本次收获，原仓库未受影响。</p>':''}<div class="z2ed3-harvest-items">${entries.length?entries.map(([id,q])=>'<div>'+ingredientIconHtml(id,42)+'<b>×'+q+'</b><small>'+esc(ING[id].name)+'</small></div>').join(''):'<p>这次没有带回食材。</p>'}</div><p class="sheet-lead">收获已结算，无需再次领取。</p>${b('harvest-confirm','继续 · 料理研发','primary wide')}</section>`;
+}
 function field(){
  const f=game.field;
  if(!f){
-  const activeRoutes=activeWorld(game)==='cloud'?[{id:'cloud_safe',name:'顺风采集',emoji:'☁️',subtitle:'云谷米、浮苔叶与酸铃果'},{id:'cloud_risk',name:'雷羽狩猎',emoji:'⚡',subtitle:'雷羽巢缘 · 高风险取得雷羽蛋'}]:selectedRegion==='forest'?ROUTES:[{id:'spring_safe',name:'采集路线',emoji:'♨',subtitle:'热泉水岸 · 土豆、洋葱和火椒优先'},{id:'spring_risk',name:'狩猎路线',emoji:'🌋',subtitle:'熔岩兽群 · 椒怪、蟹群与战斗战利品'}];
-  const lowStock=[...new Set((game.menu||[]).flatMap(id=>RECIPES[id]?.ids||[]))].filter(id=>(game.inventory[id]||0)<6);
-  return [z2c2Departure(activeRoutes,lowStock),`<div class="action-row">${b('bento',z2a2Icon('bento')+' 带上便当','secondary')}${b('skip-field',z2a2Icon('cook')+' 先回灶台试菜','secondary wide')}</div>`];
+  const activeRoutes=departureRoutes();
+  const lowStock=departureLowStock();
+  return [z2c2Departure(activeRoutes,lowStock),`<div class="action-row">${b('back-from-departure',z2a2Icon('home')+' 回店','secondary')}${b('departure-notebook',z2a2Icon('ledger')+' 笔记','secondary')}${b('bento',z2a2Icon('bento')+' 便当','secondary')}${b('skip-field',z2a2Icon('cook')+' 试菜','secondary')}</div>`];
  }
  if(f.segmentStatus==='choice'){
   const boss=bossHint(f.region),slots=fieldBagSlotsUsed(f),full=slots>=f.capacity;
-  return [`<div class="forest-scene v08-branch-scene"><div class="v08-branch-panel"><small>第 ${f.segmentIndex}/3 段探索完成</small><h2>${f.region==='cloud'?'继续穿过风道，还是返港？':'继续深入，还是回饭店？'}</h2>
+  return [`<div class="forest-scene v08-branch-scene z2ed3-branch-scene"><canvas id="forest-canvas" class="forest-canvas" aria-hidden="true"></canvas><div class="v08-branch-panel z2ed3-field-dialog" role="dialog" aria-modal="true" aria-label="探索路线选择"><div class="z2ed3-field-title">${z2a2Icon('route')} <b>旅途分岔</b></div><div class="z2ed3-field-body"><small>第 ${f.segmentIndex}/3 段探索完成</small><h2>${f.region==='cloud'?'继续穿过风道，还是返港？':'继续深入，还是回饭店？'}</h2>
   <p>背包 ${slots}/${f.capacity} 格 · 生命 ${f.hp}/3 · ${f.weapon?.type||'WOK'} Lv${f.weapon?.level||1}</p>
   ${f.dangerCommitment&&f.region!=='cloud'?`<div class="v082-boss-promise">⚔️ 第三段必遇 ${boss.boss} · ${boss.icon}${boss.name} ×${boss.qty}</div>`:''}
   <div class="v08-branch-cards">${f.choices.map(c=>`<button class="v08-branch-card" data-branch="${c.choiceId}">
@@ -356,12 +365,12 @@ function field(){
   <small>${c.danger?`狩猎深入 · 最终挑战 ${boss.boss}，击败可拾取 ${boss.name}`:'🌱 采集为主 · 普通食材与奇遇'}</small>
   </button>`).join('')}</div>
   ${full?`<div class="v082-bag-warning">🎒 背包已满！Boss 奖励需要空格。可从背包丢弃一格材料。</div><button class="v082-manage-bag" data-act="field-bag">整理背包</button>`:`<p class="v082-bag-reminder">🎒 建议为后续稀有食材保留至少 1 格。</p>`}
-  <button type="button" class="v08-home-choice" data-act="retreat">${z2a2Icon('home')} 带着收获回饭店</button></div></div>`, ''];
+  </div><footer class="z2ed3-field-actions"><button type="button" class="v08-home-choice" data-act="retreat">${z2a2Icon('home')} 带着收获回饭店</button></footer></div></div>`, ''];
  }
  const readyToFinish=f.nodes?.some(n=>n.key==='target'&&n.claimed)&&!(f.segmentIndex===3&&f.enemies?.some(e=>e.isBoss&&e.hp>0));
  const bag=Object.entries(f.bag).map(([id,n])=>`${ING[id].name}${n}`).join(' · ')||'空';
  const event=f.activeEvent&&f.nodes.find(n=>n.key===f.activeEvent);
- return [`<div class="forest-scene action-forest" ${event?`data-z2d3-event-key="field:${esc(event.key)}"`:''}><canvas id="forest-canvas" class="forest-canvas"></canvas><div class="floating-joystick" id="field-stick" aria-hidden="true"><div class="floating-joystick-knob" id="field-stick-knob"></div></div><div class="field-action-notice" id="field-action-notice" hidden></div>${f.weapon?.type==='WOK'?`<div class="v082-shield-status" id="v082-shield-status" aria-label="锅盖被动防御状态">${z2a2Icon('shield')} <span id="z2a2-shield-value">${f.shieldCharge!==false?'就绪':'蓄能 '+Math.ceil(f.shieldCooldown||0)+'s'}</span></div>`:''}${f.bento?`<div class="v063-field-bento">${z2a2Icon('bento')} <span id="v063-bento-effect">${f.bento.used?"已触发":"待触发"}</span></div>`:""}<button data-act="skill" data-cookware="${f.weapon?.type||'WOK'}" class="field-skill" aria-label="${f.weapon?.type==='GRILL'?'扇形火焰':f.weapon?.type==='POT'?'沸汤爆裂':f.weapon?.type==='STEAM'?'凝雾结界':'旋风斩'}"><span class="skill-glyph" aria-hidden="true">${z2a2Icon(({GRILL:'grill',WOK:'wok',STEAM:'steam',POT:'pot'})[f.weapon?.type]||'wok')}</span><span class="skill-caption">${f.weapon?.type==='GRILL'?'喷焰':f.weapon?.type==='POT'?'爆裂':f.weapon?.type==='STEAM'?'凝雾':'旋风'}</span><span class="skill-cooldown" id="skill-cooldown" hidden></span></button>${event?(event.offer?specialEncounterHtml(game,event):`<div class="field-event"><strong>野外遭遇 · 流浪调味师</strong><p>你在野外遇见流浪调味师。本次机会只有一次，要交换还是继续赶路？</p><button data-event="trade">蘑菇 ×1 → 火椒 ×1（野外背包）</button><button data-event="forage">深入调查：损失生命，争取两份材料</button><button data-event="leave">绕开，保留现有收获</button></div>`):''}</div>`,
+ return [`<div class="forest-scene action-forest" ${event?`data-z2d3-event-key="field:${esc(event.key)}"`:''}><canvas id="forest-canvas" class="forest-canvas"></canvas><div class="floating-joystick" id="field-stick" aria-hidden="true"><div class="floating-joystick-knob" id="field-stick-knob"></div></div><div class="field-action-notice" id="field-action-notice" hidden></div>${f.weapon?.type==='WOK'?`<div class="v082-shield-status" id="v082-shield-status" aria-label="锅盖被动防御状态">${z2a2Icon('shield')} <span id="z2a2-shield-value">${f.shieldCharge!==false?'就绪':'蓄能 '+Math.ceil(f.shieldCooldown||0)+'s'}</span></div>`:''}${f.bento?`<div class="v063-field-bento">${z2a2Icon('bento')} <span id="v063-bento-effect">${f.bento.used?"已触发":"待触发"}</span></div>`:""}<button data-act="skill" data-cookware="${f.weapon?.type||'WOK'}" class="field-skill" aria-label="${f.weapon?.type==='GRILL'?'扇形火焰':f.weapon?.type==='POT'?'沸汤爆裂':f.weapon?.type==='STEAM'?'凝雾结界':'旋风斩'}"><span class="skill-glyph" aria-hidden="true">${z2a2Icon(({GRILL:'grill',WOK:'wok',STEAM:'steam',POT:'pot'})[f.weapon?.type]||'wok')}</span><span class="skill-caption">${f.weapon?.type==='GRILL'?'喷焰':f.weapon?.type==='POT'?'爆裂':f.weapon?.type==='STEAM'?'凝雾':'旋风'}</span><span class="skill-cooldown" id="skill-cooldown" hidden></span></button>${event?(event.offer?specialEncounterHtml(game,event):`<div class="field-event z2ed3-field-dialog" role="dialog" aria-modal="true" aria-label="野外遭遇"><strong>野外遭遇 · 流浪调味师</strong><p>你在野外遇见流浪调味师。本次机会只有一次，要交换还是继续赶路？</p><button data-event="trade">蘑菇 ×1 → 火椒 ×1（野外背包）</button><button data-event="forage">深入调查：损失生命，争取两份材料</button><button data-event="leave">绕开，保留现有收获</button></div>`):''}</div>`,
  `<div class="action-field-dock field-compact-dock"><span class="field-touch-tip" aria-label="按住场景拖动移动">${z2a2Icon('move')} 移动</span>${readyToFinish?b('finish-segment',z2a2Icon('next')+' '+(f.segmentIndex===3?'结束探索':'下一站'),'primary'):''}${b('retreat',z2a2Icon('home')+' 回店','secondary')} </div>`]
 }
 
@@ -462,10 +471,9 @@ function research(){const c=game.cook;
  return [`<div class="research-scene"><div class="research-board"><div class="cauldron">🍳</div><div class="research-label">自由搭配食材，解锁新的料理</div><div class="ingredients-board">${Object.entries(ING).map(([id,ing])=>`<button class="ingredient-tile ${selectedIngredients.includes(id)?'picked':''}" data-ingredient="${id}" ${!game.inventory[id]&&!selectedIngredients.includes(id)?'disabled':''}><span>${ingredientIconHtml(id,24)}</span><strong>${ing.name}</strong><small>×${game.inventory[id]||0}</small></button>`).join('')}</div><div class="selected-caption">已下料：${selectedIngredients.map(id=>ingredientIconHtml(id,22)).join(' + ')} ${selectedIngredients.length}/3</div><div class="hint-glow">📖 已掌握 ${itemCount()}/${recipeCount} 道菜 · ${recipeCount-itemCount()} 道等待发现</div></div></div>`,
  `<div class="action-row method-pick">${b('method:stir','🔥 爆炒',selectedMethod==='stir'?'chosen':'secondary')}${b('method:stew','🍲 焖煮',selectedMethod==='stew'?'chosen':'secondary')}${b('book','📖 图鉴','secondary')}</div><div class="action-row">${b('start-research','开锅实验','primary wide',selectedIngredients.length<2||!canUse(game,selectedIngredients))}${b('to-menu','去上架 →','secondary')}</div>`]
 }
-function menu(){const syn=synergyFor(game.menu);const wok=game.menu.filter(id=>recipeCookware(RECIPES[id])==='WOK').length,pot=game.menu.filter(id=>recipeCookware(RECIPES[id])==='POT').length,steam=game.menu.filter(id=>recipeCookware(RECIPES[id])==='STEAM').length,grill=game.menu.filter(id=>recipeCookware(RECIPES[id])==='GRILL').length;
- return [`<div class="menu-scene z2b-menu-board"><div class="menu-title">${z2a2Icon('menu')} 今晚的三道菜 <small>轻点菜签更换</small></div><div class="menu-blackboard">${game.menu.map((id,i)=>{const r=RECIPES[id],craft=recipeCraftSnapshot(game,id),count=recipeAvailableServings(game,id);if(!r)return `<button class="menu-line" data-edit-slot="${i}"><span class="menu-num">0${i+1}</span><strong>＋ 选择本地料理</strong></button>`;return `<button class="menu-line" data-edit-slot="${i}" aria-label="替换第 ${i+1} 道菜：${esc(r?.name||'未选择')}，售价 ${craft?.price}，制作 ${r?.time+(craft?.timeDelta||0)} 秒，可做 ${count} 份"><span class="menu-num">0${i+1}</span>${z2bDishArt(craft?.ingredientIds||r.ids,recipeCookware(r))}<div><strong>${r?.name||'未选择'}</strong><span class="v014-menu-value"><b>${z2a2Icon('coin')} ${craft?.price}</b><em>${z2a2Icon('wait')} ${r?.time+(craft?.timeDelta||0)} 秒</em><i class="${count===0?'shortage':''}">可做 ${count} 份</i></span><small>${esc(activeRecipeVariant(game,id)?.styleLabel||'标准工艺')}</small></div><span class="menu-switch" aria-hidden="true">${z2a2Icon('next')}</span></button>`}).join('')}</div><div class="synergy-box">${z2a2Icon('rep')} ${syn?`主共鸣：${syn}`:'当前没有主共鸣'}</div><button type="button" class="v010-premium-entry" data-act="premium"><span>${z2a2Icon('star')} 隐藏菜</span><strong>${premiumMenuActive(game)?esc(RECIPES[game.premiumMenu.recipeId]?.name)+' · 限'+game.premiumMenu.limit+'份':'未设置 · 可选稀有料理'}</strong><span>›</span></button><details class="v014-menu-notes"><summary>客人口味与厨房安排</summary><p>${esc(today(game).hint)}</p><div class="menu-balance"><div>🍳 炒锅 <strong>${wok} 道</strong></div><div>🍲 炖锅 <strong>${pot} 道</strong></div>${steam?`<div>♨️ 蒸笼 <strong>${steam} 道</strong></div>`:''}${grill?`<div>🍢 烤架 <strong>${grill} 道</strong></div>`:''}</div><small>可做份数按单道菜计算；多道菜共用的食材不可相加。</small></details></div>`,
- `<div class="action-row">${b('book',z2a2Icon('ledger')+' 图鉴','secondary')}${b('to-prep','确认菜单 '+z2a2Icon('next'),'primary wide',!canMenu(game))}</div>`]
-}
+function ui2MenuPanel(){const syn=synergyFor(game.menu);const wok=game.menu.filter(id=>recipeCookware(RECIPES[id])==='WOK').length,pot=game.menu.filter(id=>recipeCookware(RECIPES[id])==='POT').length,steam=game.menu.filter(id=>recipeCookware(RECIPES[id])==='STEAM').length,grill=game.menu.filter(id=>recipeCookware(RECIPES[id])==='GRILL').length;
+ return `<div class="ui2-menu-board"><div class="menu-title">${z2a2Icon('menu')} 今晚的三道菜 <small>${game.phase==='menu'?'轻点菜签更换':'菜单已确认'}</small></div><div class="ui2-menu-slots">${game.menu.map((id,i)=>{const r=RECIPES[id],craft=recipeCraftSnapshot(game,id),count=recipeAvailableServings(game,id);if(!r)return `<button class="menu-line" data-edit-slot="${i}" ${game.phase!=='menu'?'disabled':''}><span class="menu-num">0${i+1}</span><strong>＋ 选择本地料理</strong></button>`;return `<button class="menu-line" data-edit-slot="${i}" ${game.phase!=='menu'?'disabled':''} aria-label="替换第 ${i+1} 道菜：${esc(r?.name||'未选择')}，售价 ${craft?.price}，制作 ${r?.time+(craft?.timeDelta||0)} 秒，可做 ${count} 份"><span class="menu-num">0${i+1}</span>${z2bDishArt(craft?.ingredientIds||r.ids,recipeCookware(r))}<div><strong>${r?.name||'未选择'}</strong><span class="v014-menu-value"><b>${z2a2Icon('coin')} ${craft?.price}</b><em>${z2a2Icon('wait')} ${r?.time+(craft?.timeDelta||0)} 秒</em><i class="${count===0?'shortage':''}">可做 ${count} 份</i></span><small>${esc(activeRecipeVariant(game,id)?.styleLabel||'标准工艺')}</small></div><span class="menu-switch" aria-hidden="true">${z2a2Icon('next')}</span></button>`}).join('')}</div><div class="synergy-box">${z2a2Icon('rep')} ${syn?`主共鸣：${syn}`:'当前没有主共鸣'}</div><button type="button" class="v010-premium-entry" data-act="premium"><span>${z2a2Icon('star')} 隐藏菜</span><strong>${premiumMenuActive(game)?esc(RECIPES[game.premiumMenu.recipeId]?.name)+' · 限'+game.premiumMenu.limit+'份':'未设置 · 可选稀有料理'}</strong><span>›</span></button><details class="v014-menu-notes"><summary>客人口味与厨房安排</summary><p>${esc(today(game).hint)}</p><div class="menu-balance"><div>🍳 炒锅 <strong>${wok} 道</strong></div><div>🍲 炖锅 <strong>${pot} 道</strong></div>${steam?`<div>♨️ 蒸笼 <strong>${steam} 道</strong></div>`:''}${grill?`<div>🍢 烤架 <strong>${grill} 道</strong></div>`:''}</div><small>可做份数按单道菜计算；多道菜共用的食材不可相加。</small></details></div>`;}
+function menu(){const g=dinerFloor(game);return ui2Room('menu',ui2Spot('ui2-menu','menu','今晚菜单',g.passFurniture),ui2Tool('ui2-menu','menu','菜单')+ui2Tool('book','ledger','图鉴')+ui2Tool('stock','bag','库存'),ui2Tool('to-prep','next','备餐',true,!canMenu(game)),'点击菜单槽更换料理');}
 // The pre-opening stock check is deliberately small, unlike the full stock
 // sheet. It forecasts a three-dish split of expected visitors, never a
 // guaranteed number of orders or a forced purchase before opening.
@@ -486,14 +494,13 @@ function preOpenMarketing(){
  const campaign=selectedCampaign(game),m=ensureManagement(game),wage=Object.entries(ensureCrew(game)).reduce((n,[role,c])=>n+(c.hired&&c.onDuty?crewWage(role,c.level):0),0);
  return '<details class="v014-marketing"><summary>📣 揽客：'+esc(campaign.name)+' · '+(campaign.cost?'🪙'+campaign.cost:'免费')+'</summary><section class="v12c-marketing" aria-label="今晚揽客计划"><div class="v12c-marketing-title"><b>选择今晚的揽客方式</b><span>工资 '+wage+' · 欠薪 '+m.wageDebt+'</span></div><div class="v12c-campaigns">'+Object.values(CAMPAIGNS).map(c=>'<button type="button" data-act="promo:'+c.id+'" aria-pressed="'+(campaign.id===c.id)+'" class="'+(campaign.id===c.id?'selected':'')+'" '+(c.stars&&(activeWorld(game)==='cloud'?game.cloudProgress?.stars||0:game.chapterProgress?.stars||0)<c.stars?'disabled':'')+'><b>'+esc(c.name)+'</b><small>'+(c.cost?'🪙'+c.cost:'免费')+' · +'+c.guests.length+'客</small></button>').join('')+'</div><small class="v12c-marketing-note">'+esc(campaign.desc)+' · 开门时才扣费；真实成交后才有收入。</small></section></details>';
 }
-function prep(){
+function ui2PrepPanel(){
  const k=ensureKitchen(game),preview=kitchenPreview(game);
- const slotCards=k.slots.map((slot,i)=>`<div class="kitchen-config-slot"><div class="z2b-station-identity">${z2bCookIcon(slot.type)}<span><b>${['左厨位','右厨位','中厨位'][i]}</b><small>Lv.${slot.level}${slot.level===2?' · -2s':''}</small></span></div><div class="kitchen-choice">${['WOK','POT',...(k.steamerOwned?['STEAM']:[]),...(k.grillOwned?['GRILL']:[])].map(type=>`<button data-act="kitchen:${i}:${type}" class="${slot.type===type?'active':''}" aria-pressed="${slot.type===type}" aria-label="${['左厨位','右厨位','中厨位'][i]}：${cookName(type)}">${z2bCookIcon(type)}<small>${type==='STEAM'?'蒸笼':cookName(type)}</small></button>`).join('')}</div></div>`).join('');
+ const slotCards=k.slots.map((slot,i)=>`<div class="kitchen-config-slot" ${ui2PrepSlot>=0&&ui2PrepSlot!==i?'hidden':''}><div class="z2b-station-identity">${z2bCookIcon(slot.type)}<span><b>${['左厨位','右厨位','中厨位'][i]}</b><small>Lv.${slot.level}${slot.level===2?' · -2s':''}</small></span></div><div class="kitchen-choice">${['WOK','POT',...(k.steamerOwned?['STEAM']:[]),...(k.grillOwned?['GRILL']:[])].map(type=>`<button data-act="kitchen:${i}:${type}" class="${slot.type===type?'active':''}" aria-pressed="${slot.type===type}" aria-label="${['左厨位','右厨位','中厨位'][i]}：${cookName(type)}">${z2bCookIcon(type)}<small>${type==='STEAM'?'蒸笼':cookName(type)}</small></button>`).join('')}</div></div>`).join('');
  const dayPlan=serviceDayPlan(game),availableUpgrades=earnedPromotions(),stockForecast=prepStockForecast(game);
  const pressure=preview.pressure.map(p=>`${cookName(p.type)} ${p.menu}菜 / ${p.capacity}位`).join('　');
- return [`<div class="z2b-prep-layout"><div class="z2b-prep-scene" aria-label="真实餐厅预览">${restaurantView(false)}<div class="z2b-prep-caption">${z2a2Icon('moon')} 今晚预计 ${dayPlan.count} 位客人</div><button class="z2b-stock-shortcut ${stockForecast.shortageCount?'risk':''}" data-act="stock" aria-label="打开库存账册">${z2a2Icon(stockForecast.shortageCount?'warn':'bag')} ${stockForecast.shortageCount?'缺料 '+stockForecast.shortageCount:'库存'}</button></div><div class="z2b-prep-work"><div class="prep-card kitchen-prep-card"><h2>${z2a2Icon('cook')} 厨位与备餐</h2><div class="kitchen-config-head">${preview.valid?'设备覆盖菜单':'缺少：'+preview.risk.map(t=>cookName(t)).join(' / ')}</div><div class="kitchen-config-slots">${slotCards}</div><p class="kitchen-pressure">${pressure}</p><p class="kitchen-refit">本日首次换锅免费 · 后续每次 ${kitchenRefitCost(game)||12} 金币</p><div class="prep-divider">开业前预制</div><div class="prep-items">${game.menu.map(id=>`<button class="prep-item" data-act="prep:${id}" ${!canUse(game,recipeCraftSnapshot(game,id).ingredientIds)?'disabled':''}>${z2bDishArt(recipeCraftSnapshot(game,id).ingredientIds,recipeCookware(RECIPES[id]))}<div><b>${esc(RECIPES[id].name)}</b><small>已备 ${game.prep[id]||0}</small></div><strong>＋1</strong></button>`).join('')}</div><button class="staff-open-prep ${availableUpgrades.length?'v12e-staff-ready':''}" data-act="crew">👩‍🍳 排班、工资与晋升 <span>${availableUpgrades.length?availableUpgrades.length+'人可晋升 ✦':Object.values(ensureCrew(game)).filter(x=>x.hired).length+'/'+(k.thirdUnlocked?'3':'2')+' 人 ›'}</span></button><div class="service-day-brief"><b>${dayPlan.pressure}${dayPlan.starred?' · ✦ 星章口碑热潮':''}</b><span>预计 ${dayPlan.count} 人 · ${dayPlan.goal.label}${dayPlan.starred?' · 高峰可能等位':''}</span></div>${premiumMenuActive(game)?`<div class="v101-premium-summary" aria-label="今晚隐藏菜单"><span aria-hidden="true">✨</span><div><strong>隐藏菜 · ${esc(RECIPES[game.premiumMenu.recipeId]?.name)}</strong><small>限量 ${game.premiumMenu.limit} 份 · 食材已预留</small></div></div>`:''}${starInvite()}${preOpenMarketing()}${prepInventoryCheck()}</div></div></div>`,
- `<div class="dock-head"><span>${preview.valid?'厨房就绪，可开业': '先给菜单配置所需锅具'}</span></div><div class="action-row">${b('crew',z2a2Icon('queue')+' 员工','secondary')}${b('open',z2a2Icon('home')+' 开门迎客','primary wide',!preview.valid)}</div>`]
-}
+ return `<div class="prep-card kitchen-prep-card"><h2>${z2a2Icon('cook')} 厨位与备餐</h2><div class="kitchen-config-head">${preview.valid?'设备覆盖菜单':'缺少：'+preview.risk.map(t=>cookName(t)).join(' / ')}</div><div class="ui2-kitchen-slots">${k.slots.map((slot,i)=>`<button class="ui2-slot" data-act="ui2-prep:${i}" aria-pressed="${ui2PrepSlot===i}">${z2bCookIcon(slot.type)}<small>${['左厨位','右厨位','中厨位'][i]}</small><b>Lv.${slot.level}</b></button>`).join('')}<button class="ui2-slot" data-act="ui2-prep" aria-pressed="${ui2PrepSlot<0}">${z2a2Icon('cook')}<small>全部</small></button></div><div class="kitchen-config-slots">${slotCards}</div><p class="kitchen-pressure">${pressure}</p><p class="kitchen-refit">本日首次换锅免费 · 后续每次 ${kitchenRefitCost(game)||12} 金币</p><div class="prep-divider">开业前预制</div><div class="prep-items">${game.menu.map(id=>`<button class="prep-item" data-act="prep:${id}" ${!canUse(game,recipeCraftSnapshot(game,id).ingredientIds)?'disabled':''}>${z2bDishArt(recipeCraftSnapshot(game,id).ingredientIds,recipeCookware(RECIPES[id]))}<div><b>${esc(RECIPES[id].name)}</b><small>已备 ${game.prep[id]||0}</small></div><strong>＋1</strong></button>`).join('')}</div><button class="staff-open-prep ${availableUpgrades.length?'v12e-staff-ready':''}" data-act="crew">👩‍🍳 排班、工资与晋升 <span>${availableUpgrades.length?availableUpgrades.length+'人可晋升 ✦':Object.values(ensureCrew(game)).filter(x=>x.hired).length+'/'+(k.thirdUnlocked?'3':'2')+' 人 ›'}</span></button><div class="service-day-brief"><b>${dayPlan.pressure}${dayPlan.starred?' · ✦ 星章口碑热潮':''}</b><span>预计 ${dayPlan.count} 人 · ${dayPlan.goal.label}${dayPlan.starred?' · 高峰可能等位':''}</span></div>${premiumMenuActive(game)?`<div class="v101-premium-summary" aria-label="今晚隐藏菜单"><span aria-hidden="true">✨</span><div><strong>隐藏菜 · ${esc(RECIPES[game.premiumMenu.recipeId]?.name)}</strong><small>限量 ${game.premiumMenu.limit} 份 · 食材已预留</small></div></div>`:''}${starInvite()}${preOpenMarketing()}${prepInventoryCheck()}</div>`;}
+function prep(){const g=dinerFloor(game),k=ensureKitchen(game),preview=kitchenPreview(game),slots=[g.stoveLeft,g.stoveRight,g.reservedStove];return ui2Room('prep',k.slots.map((s,i)=>ui2Spot('ui2-prep:'+i,s.type.toLowerCase(),['左厨位','右厨位','中厨位'][i],slots[i])).join(''),ui2Tool('ui2-menu','menu','菜单')+ui2Tool('stock','bag','库存')+ui2Tool('crew','queue','伙伴')+ui2Tool('ui2-prep','cook','备餐'),ui2Tool('open','play','开业',true,!preview.valid),preview.valid?'厨房就绪 · 点击开业':'先配置菜单需要的厨具');}
 function serviceLegacy(){const v=game.service;if(!v)return ['<div class="empty">餐厅正在准备...</div>',b('open','开业','primary')];
  const served=v.orders.filter(o=>o.status==='served').length;
  const events=v.events.slice(-2).reverse().map(e=>e.type==='served'?`😋 ${RECIPES[e.recipeId]?.name} 获赞 ${e.sat}分`:e.type==='left'?'😟 客人久等离开':e.type==='guest_care'?'💛 招待了等待的客人':e.type==='started'?'🍳 后厨开始制作':'').filter(Boolean);
@@ -523,7 +530,7 @@ function service(){
  }).join(''):'';
  const modal=event?'<div class="v075-event-shade" role="dialog" aria-modal="true" aria-label="突发经营事件"><div class="v075-event-card" data-z2d3-event-key="service:'+v.breakAt+'"><div class="v075-event-kicker">⚡ 第 '+v.breakAt+' 波事件</div><h2>'+esc(event.title)+'</h2><p>'+esc(event.description)+'</p><div class="v075-event-options">'+choices+'</div><small>选择后将自动继续营业</small></div></div>':'';
  const paused=v.paused&&!v.breakAt&&!v.done?'<div class="v075-pause-screen"><strong>⏸ 已暂停</strong><button data-act="toggle-service">▶ 继续营业</button></div>':'';
- const end=v.done?'<div class="v075-finish"><h2>🌙 今日打烊</h2><p>成功上菜 '+complete+' / '+total+' · 厨房已经收工</p><button data-act="close">📊 查看经营日报</button></div>':'';
+ const end=v.done?'<div class="v075-finish" role="dialog" aria-modal="true" aria-label="今日打烊"><h2>'+z2a2Icon('moon')+' 今日打烊</h2><p>成功上菜 <strong>'+complete+' / '+total+'</strong></p><button data-act="close">'+z2a2Icon('ledger')+' 查看经营日报</button></div>':'';
  const warn=serviceSupplyStatus(game);
  return [`<div class="scene-bg diner-bg service-scene v075-service">${restaurantView(true)}
   <div id="v075-notification" class="v075-notification" ${warn.shortages.length?'':'hidden'}>${z2a2Icon('warn')} 缺料 · 查账册</div>
@@ -559,10 +566,29 @@ function roomUpgradePanel(){
   '解锁条件：营业至少3天 · 声望达到2';
  return `<div class="v09-room-upgrade"><strong>${z2a2Icon('home')} ${count} 桌 · ${tableCapacity(game)} 席</strong><span>${description}</span>${count<4?b('expand-room',count===2?'扩建第三桌 · '+cost+' 金币':'扩建第四桌 · '+cost+' 金币','primary wide',!roomExpansionAvailable(game)):''}</div>`;
 }
-function upgrade(){
+
+function growthOffers(s){
+ if(s.phase!=='upgrade')return [];
+ const k=ensureKitchen(s),g=dinerFloor(s),count=s.dining?.tableCount||2,stars=activeWorld(s)==='cloud'?s.cloudProgress?.stars||0:s.chapterProgress?.stars||0,offers=[];
+ const add=(id,group,title,icon,cost,at,detail)=>offers.push({id,group,title,icon,cost,at,detail,affordable:s.coins>=cost});
+ if(count===2&&totalBusinessDay(s)>=3&&s.reputation>=2||count===3&&stars>=1){const at=dinerFloor({...s,dining:{tableCount:count+1}}).tables[count];add('expand-room','table','新增第'+(count+1)+'张餐桌','home',count===2?ROOM_EXPANSION_COST:FOURTH_TABLE_COST,at,'新增两个真实座位。')}
+ if(!k.thirdUnlocked&&count>=4&&stars>=1)add('third-kitchen-bundle','center','中央厨位与帮厨','cook',THIRD_KITCHEN_BUNDLE_COST,g.reservedStove,'新增真实第三炉及第二帮厨。');
+ if(k.thirdUnlocked&&stars>=2&&!k.grillOwned)add('buy-grill','center','购入双面烤架与烤叉','grill',GRILL_COST,g.reservedStove,'解锁烤制料理及探索武器。');
+ if(activeWorld(s)==='cloud'&&s.cloudProgress?.explored&&!k.steamerOwned)add('buy-steamer','center','购入云汽蒸笼','steam',STEAMER_COST,g.reservedStove,'解锁云港蒸制料理与探索厨具。');
+ for(const type of ['WOK','POT','GRILL','STEAM']){const cost=cookwareUpgradeCost(s,type);if(cost===null)continue;const i=k.slots.findIndex(x=>x.type===type),slot=i===0?'left':i===1?'right':'center',at=i===0?g.stoveLeft:i===1?g.stoveRight:g.reservedStove;add('upgrade-kitchen:'+type,slot,cookName(type)+' Lv.2',({WOK:'wok',POT:'pot',GRILL:'grill',STEAM:'steam'})[type],cost,at,'同类厨具全店永久强化，每单节约2秒，探索武器同步强化。')}
+ const bag=bagUpgradePrice(s);if(bag!==null)add('upgrade-bag','bag','行囊扩容','bag',bag,null,'背包 '+(s.bagSlots||8)+' → '+Math.min(12,(s.bagSlots||8)+2)+' 格。');
+ return offers;
+}
+function growthGroups(){const groups=new Map();for(const o of growthOffers(game)){if(!groups.has(o.group))groups.set(o.group,[]);groups.get(o.group).push(o)}return groups;}
+function growthOfferWindow(group){const offers=growthGroups().get(group)||[];return offers.length?offers.map(o=>'<article class="z2ed1-growth-offer"><div class="z2ed1-offer-icon">'+z2a2Icon(o.icon)+'</div><div><strong>'+esc(o.title)+'</strong><p>'+esc(o.detail)+'</p><span>'+z2a2Icon('coin')+' '+o.cost+' 金币</span>'+(!o.affordable?'<small>金币不足，还差 '+(o.cost-game.coins)+'</small>':'')+'</div>'+b('growth-buy:'+o.id,'确认购买','primary',!o.affordable)+'</article>').join(''):'<p class="sheet-lead">当前没有可进行的升级。</p>';}
+function growthOverview(){
  const k=ensureKitchen(game);
- return [`<div class="z2c11-growth-layout"><section class="z2c11-growth-scene" aria-label="当前真实餐厅预览">${restaurantView(false)}${activeWorld(game)!=='cloud'?`<div class="z2d2-view-switch" role="group" aria-label="餐厅预览视角"><button type="button" data-act="growth-view:kitchen" aria-pressed="${growthCameraZ2d2==='kitchen'}">后厨</button><button type="button" data-act="growth-view:tables" aria-pressed="${growthCameraZ2d2==='tables'}">餐桌</button></div>`:''}<div class="z2c11-scene-caption">${z2a2Icon('home')} <b>${game.dining?.tableCount||2} 桌 · ${tableCapacity(game)} 席</b><span>${z2a2Icon('cook')} ${k.thirdUnlocked?3:2} 厨位</span></div></section><div class="z2c11-growth-work"><div class="upgrade-card kitchen-upgrade-card"><h2>${z2a2Icon('home')} 扩建工坊</h2><section class="z2c11-growth-group" aria-label="空间扩建"><h3>餐厅与后厨</h3>${roomUpgradePanel()}<div class="v13a-bundle-panel" aria-label="第三厨位与第二帮厨组合扩建"><strong>${k.thirdUnlocked?`✓ 中央厨位与${crewRoleName(game,'helper2')}已到岗`:`🔥 后厨扩编 · 中央厨位＋${crewRoleName(game,'helper2')}`}</strong><small>${k.thirdUnlocked?'中央炉可独立接单；下一次备餐配置锅具、员工餐及两名帮厨的岗位。':`同时增加真实第三炉与帮厨${crewRoleName(game,'helper2')}；首星和第四桌后解锁。`}</small>${k.thirdUnlocked?'<span>已完成扩建</span>':b('third-kitchen-bundle','扩建＋雇佣 · '+THIRD_KITCHEN_BUNDLE_COST+' 金币','primary wide',!thirdKitchenBundleAvailable(game))}</div>${(activeWorld(game)==='cloud'?game.cloudProgress?.stars||0:game.chapterProgress?.stars||0)>=2?`<div class="v014b-grill-unlock"><strong>🍢 双面烤架与烤叉</strong><small>${k.grillOwned?'已拥有 · 备餐时任意厨位可装烤架，探索可选烤叉':'十道精选烤菜 · 任意厨位真实接单 · 探索新增穿刺武器'}</small>${k.grillOwned?'<span>已购入</span>':b('buy-grill','购入组合 · '+GRILL_COST+' 金币','secondary',!grillAvailable(game))}</div>`:''}</section><section class="z2c11-growth-group" aria-label="厨具强化"><div class="upgrade-feature z2c11-history">${z2a2Icon('ledger')} 累计收入 ${(game.history||[]).reduce((n,x)=>n+x.revenue,0)} · 招待 ${(game.history||[]).reduce((n,x)=>n+x.served,0)} 位</div><h3 class="v014-upgrade-label">${z2a2Icon('cook')} 厨具强化</h3>${['WOK','POT',...(k.grillOwned?['GRILL']:[]),...(activeWorld(game)==='cloud'&&k.steamerOwned?['STEAM']:[])].map(type=>{const level=k.mastery[type],cost=cookwareUpgradeCost(game,type),name=type==='WOK'?'炒锅':type==='POT'?'炖锅':type==='STEAM'?'云汽蒸笼':'烤架';const gain=type==='WOK'?'挥击 0.70→0.62 秒 · 格挡 0.45→0.70 秒':type==='POT'?'投弹 0.38→0.30 秒 · 爆炸 0.65→0.75 格':type==='STEAM'?'云汽涌流 1.6→1.9 格 · 凝雾结界 2.8→3.4 秒':'前刺 0.88→0.72 秒 · 喷焰 2.7→3.0 格';return `<div class="kitchen-upgrade-row"><div><strong>${name} · 全店共享 Lv.${level}</strong><small>${level>=2?'✓ 已生效 · 每单 -2 秒 · '+gain:'每单 -2 秒 · '+gain}</small></div>${b(`upgrade-kitchen:${type}`,cost===null?'已满级':`${cost} 金币升级`, 'secondary',cost===null||game.coins<cost)}</div>`}).join('')}</section><section class="z2c11-growth-group" aria-label="行囊扩容"><h3>${z2a2Icon('bag')} 行囊扩容</h3><div class="upgrade-feature">背包 ${game.bagSlots||8}/12 格 · ${bagUpgradePrice(game)===null?'已满级':`扩容 ${bagUpgradePrice(game)} 金币`}</div>${b('upgrade-bag','增加背包 2 格','secondary',bagUpgradePrice(game)===null||game.coins<bagUpgradePrice(game))}</section><details class="v014-upgrade-notes"><summary>升级规则</summary><p>厨位决定产能，厨具等级全店共享。换装同类厨具不会重复收费。${game.tech?'猛火掌控已解锁':'赢得厨王赛后解锁猛火掌控'}。</p></details></div></div></div>`,
- `<div class="action-row">${b('next-day','开始营业第 '+(totalBusinessDay(game)+1)+' 天','primary wide')}</div>`]
+ return `<div class="upgrade-card kitchen-upgrade-card"><h2>${z2a2Icon('home')} 扩建工坊</h2><section class="z2c11-growth-group" aria-label="空间扩建"><h3>餐厅与后厨</h3>${roomUpgradePanel()}<div class="v13a-bundle-panel" aria-label="第三厨位与第二帮厨组合扩建"><strong>${k.thirdUnlocked?`✓ 中央厨位与${crewRoleName(game,'helper2')}已到岗`:`🔥 后厨扩编 · 中央厨位＋${crewRoleName(game,'helper2')}`}</strong><small>${k.thirdUnlocked?'中央炉可独立接单；下一次备餐配置锅具、员工餐及两名帮厨的岗位。':`同时增加真实第三炉与帮厨${crewRoleName(game,'helper2')}；首星和第四桌后解锁。`}</small>${k.thirdUnlocked?'<span>已完成扩建</span>':b('third-kitchen-bundle','扩建＋雇佣 · '+THIRD_KITCHEN_BUNDLE_COST+' 金币','primary wide',!thirdKitchenBundleAvailable(game))}</div>${(activeWorld(game)==='cloud'?game.cloudProgress?.stars||0:game.chapterProgress?.stars||0)>=2?`<div class="v014b-grill-unlock"><strong>🍢 双面烤架与烤叉</strong><small>${k.grillOwned?'已拥有 · 备餐时任意厨位可装烤架，探索可选烤叉':'十道精选烤菜 · 任意厨位真实接单 · 探索新增穿刺武器'}</small>${k.grillOwned?'<span>已购入</span>':b('buy-grill','购入组合 · '+GRILL_COST+' 金币','secondary',!grillAvailable(game))}</div>`:''}</section><section class="z2c11-growth-group" aria-label="厨具强化"><div class="upgrade-feature z2c11-history">${z2a2Icon('ledger')} 累计收入 ${(game.history||[]).reduce((n,x)=>n+x.revenue,0)} · 招待 ${(game.history||[]).reduce((n,x)=>n+x.served,0)} 位</div><h3 class="v014-upgrade-label">${z2a2Icon('cook')} 厨具强化</h3>${['WOK','POT',...(k.grillOwned?['GRILL']:[]),...(activeWorld(game)==='cloud'&&k.steamerOwned?['STEAM']:[])].map(type=>{const level=k.mastery[type],cost=cookwareUpgradeCost(game,type),name=type==='WOK'?'炒锅':type==='POT'?'炖锅':type==='STEAM'?'云汽蒸笼':'烤架';const gain=type==='WOK'?'挥击 0.70→0.62 秒 · 格挡 0.45→0.70 秒':type==='POT'?'投弹 0.38→0.30 秒 · 爆炸 0.65→0.75 格':type==='STEAM'?'云汽涌流 1.6→1.9 格 · 凝雾结界 2.8→3.4 秒':'前刺 0.88→0.72 秒 · 喷焰 2.7→3.0 格';return `<div class="kitchen-upgrade-row"><div><strong>${name} · 全店共享 Lv.${level}</strong><small>${level>=2?'✓ 已生效 · 每单 -2 秒 · '+gain:'每单 -2 秒 · '+gain}</small></div>${b(`upgrade-kitchen:${type}`,cost===null?'已满级':`${cost} 金币升级`, 'secondary',cost===null||game.coins<cost)}</div>`}).join('')}</section><section class="z2c11-growth-group" aria-label="行囊扩容"><h3>${z2a2Icon('bag')} 行囊扩容</h3><div class="upgrade-feature">背包 ${game.bagSlots||8}/12 格 · ${bagUpgradePrice(game)===null?'已满级':`扩容 ${bagUpgradePrice(game)} 金币`}</div>${b('upgrade-bag','增加背包 2 格','secondary',bagUpgradePrice(game)===null||game.coins<bagUpgradePrice(game))}</section><details class="v014-upgrade-notes"><summary>升级规则</summary><p>厨位决定产能，厨具等级全店共享。换装同类厨具不会重复收费。${game.tech?'猛火掌控已解锁':'赢得厨王赛后解锁猛火掌控'}。</p></details></div>`;
+}
+function upgrade(){
+ const k=ensureKitchen(game),groups=growthGroups();
+ return [`<div class="z2c11-growth-layout z2ed1-growth"><section class="z2c11-growth-scene" aria-label="当前真实餐厅预览">${restaurantView(false)}<div class="z2c11-scene-caption">${z2a2Icon('home')} <b>${game.dining?.tableCount||2} 桌 · ${tableCapacity(game)} 席</b><span>${z2a2Icon('cook')} ${k.thirdUnlocked?3:2} 厨位</span></div><div class="z2ed1-hotspots">${[...groups].filter(([key])=>key!=='bag').map(([key,os])=>{const o=os[0];return '<button type="button" class="z2ed1-growth-hotspot" data-act="growth-offer:'+key+'" data-growth-x="'+o.at.x+'" data-growth-y="'+o.at.y+'" style="left:'+(o.at.x*100)+'%;top:'+(o.at.y*100)+'%" aria-label="'+esc(os.map(x=>x.title).join('、'))+'">'+z2a2Icon(o.icon)+'<span>'+({table:'扩建餐桌',left:'强化',right:'强化',center:'后厨'})[key]+'</span><i>+</i></button>'}).join('')}</div></section><div class="z2ed1-growth-tools">${groups.has('bag')?b('growth-offer:bag',z2a2Icon('bag')+' 行囊','secondary'):''}${portalAvailable(game)?b('growth-portal',z2a2Icon('route')+' 传送门','secondary'):''}${b('growth-overview',z2a2Icon('ledger')+' 成长总览','secondary')}</div></div>`,
+ `<div class="action-row">${b('next-day','开始营业第 '+(totalBusinessDay(game)+1)+' 天','primary wide')}</div>`];
 }
 // Z2d.1: DOM-only focus state; never persisted with the game.
 const drawerFocusable='button,input,select,textarea,a[href],summary,[tabindex]';
@@ -590,7 +616,7 @@ function drawerFocusAfterRender(previousKind,previousFocus,origin){
   if(!previousKind)drawerReturnFocus={phase:game.phase,snapshot:origin};
   for(const child of shell.children)if(child!==sheet&&!child.classList.contains('sheet-backdrop'))child.inert=true;
   const target=previousKind===sheet.dataset.sheetKind?drawerFindFocus(sheet,previousFocus):null;
-  (target||sheet.querySelector('.sheet-close'))?.focus({preventScroll:true});
+  (target||sheet.querySelector('.sheet-close')||drawerControls(sheet)[0])?.focus({preventScroll:true});
  }else if(previousKind){
   if(drawerReturnFocus?.phase===game.phase)drawerFindFocus(shell,drawerReturnFocus.snapshot)?.focus({preventScroll:true});
   drawerReturnFocus=null;
@@ -627,6 +653,7 @@ function render(){
  // Restoring horizontal chip position prevents the target selector from snapping
  // back to the first ingredient on every tap; same for an open reference sheet.
  const previousEvent=eventScrollState(app);
+ if(game.phase==='research'&&game.field?.settled&&game.field.winnings&&app.querySelector('.stage.field'))overlay='harvest-result';
  const prevTargetScroll=app.querySelector('.target-scroller')?.scrollLeft||0;
  const prevPantryScroll=app.querySelector('.z2b-pantry')?.scrollTop||0;
  const previousSheet=app.querySelector('.z2c13-sheet');
@@ -634,7 +661,7 @@ function render(){
  const previousFocus=previousSheet?(drawerClickFocus||drawerFocusSnapshot(previousSheet,document.activeElement)):null;
  const origin=previousSheet?null:(drawerClickFocus||drawerFocusSnapshot(app.querySelector('.game-shell'),document.activeElement));
  drawerClickFocus=null;
- const prevSheetScroll=previousSheet?.dataset.sheetKind===(overlay.startsWith('menu:')?'menu':overlay)?app.querySelector('.sheet-body')?.scrollTop||0:0;
+ const prevSheetScroll=previousSheet?.dataset.sheetKind===(overlay.startsWith('menu:')?'menu':overlay.startsWith('growth-offer:')?'growth-offer':overlay)?app.querySelector('.sheet-body')?.scrollTop||0:0;
  if(overlay){if(stick.pointer!==null)releaseStick();livePanPointer=null;drag=null;gestureTouches.clear();}
  if(!keyboardMovementAllowed(game,overlay))keys.clear();
  const prevMarketingOpen=app.querySelector('.v014-marketing')?.open||false;
@@ -642,12 +669,12 @@ function render(){
  const prevLastCookOpen=app.querySelector('.z2b-last-cook')?.open||false;
  const stageScrollSelector='.route-panel,.v063-setup,.menu-scene,.z2b-prep-work,.kitchen-prep-card,.report-scene,.z2c11-growth-work,.kitchen-upgrade-card';
  const prevStageScroll=app.querySelector('.stage')?.classList.contains(game.phase)?app.querySelector(stageScrollSelector)?.scrollTop||0:0;
- const previousDiner=app.querySelector('#diner-canvas'),previousDinerPhase=app.querySelector('.stage')?.classList;
+ const previousDiner=app.querySelector('#diner-canvas'),previousDinerPhase=app.querySelector('.stage')?.classList,previousForest=app.querySelector('#forest-canvas');
  const [stage,dock]=({forecast,field,research,menu,prep,service,report,upgrade}[game.phase])();
- app.innerHTML=shell(stage,dock);
- const nextDiner=app.querySelector('#diner-canvas');if(previousDiner&&nextDiner&&['service','report','upgrade','forecast','prep'].includes(game.phase))nextDiner.replaceWith(previousDiner);
+ ui2Mount(app,shell(stage,dock),game.phase,!!game.field);
+ ui2SlotGrid(app.querySelector('.z2c13-sheet'),ui2Selection);
  globalThis.__oddpotDepartureRenderer?.rebind?.(app);
- if(game.phase==='upgrade'&&portalAvailable(game))app.querySelector('.upgrade-card')?.insertAdjacentHTML('afterbegin',portalPanel());
+ if(game.phase==='upgrade'&&portalAvailable(game)&&overlay==='growth-overview')app.querySelector('.upgrade-card')?.insertAdjacentHTML('afterbegin',portalPanel());
  if(game.phase==='upgrade'&&activeWorld(game)==='cloud')app.querySelector('.upgrade-card')?.insertAdjacentHTML('afterbegin',`<section class="v014b-grill-unlock"><strong>♨️ 云汽蒸笼 · 云港特有厨具</strong><small>${game.cloudProgress?.explored?'使用深锅厨位，但通过封笼与排汽研发独立的蒸制菜谱。':'先完成一次云港探索并带回食材，才能向港口匠人订制。'}</small>${game.kitchen.steamerOwned?'<span>已购入 · 探索可携带，成长页还可升至 Lv2</span>':b('buy-steamer','购入蒸笼 · '+STEAMER_COST+' 金币','secondary',!steamerAvailable(game))}</section>`);
  if(prevLastCookOpen&&game.phase==='research')app.querySelector('.z2b-last-cook')?.setAttribute('open','');
  if(prevMarketingOpen&&game.phase==='prep')app.querySelector('.v014-marketing')?.setAttribute('open','');
@@ -664,16 +691,18 @@ function render(){
   const feedback=document.createElement('section');feedback.className='z2c10-feedback';feedback.setAttribute('aria-label','今晚成果与明日线索');
   for(const name of ['daily-goal-result','guest-verdict','recipe-lead']){const block=scene.querySelector('.'+name);if(block)feedback.append(block);}
   const receipts=[...scene.children].filter(x=>x.classList.contains('v12-rating-result')||x.classList.contains('v12e-promotion-alert')||x.classList.contains('v015-ferry')||x.classList.contains('boss-mini'));
-  (receipts.at(-1)||scene.querySelector('.z2c10-paper')).insertAdjacentElement('afterend',feedback);
+  const paper=scene.querySelector('.z2c10-paper');for(const receipt of receipts)more.append(receipt);more.append(feedback);const brief=document.createElement('p');brief.className='ui2-report-brief';brief.textContent=game.report.sat>=80?'客人评价良好 · 查看完整经营记录':'查看完整经营记录与客人反馈';paper.append(brief);
  }
  if(overlay==='book'&&bookTab==='guests')drawGuestPortraits(app);
  if(overlay==='crew')drawCrewPortraits(app);
+ if(overlay==='crew'||overlay==='book')ui2SyncPortraits(app);
  const pantry=app.querySelector('.z2b-pantry');if(pantry)pantry.scrollTop=prevPantryScroll;
  const target=app.querySelector('.target-scroller');if(target)target.scrollLeft=prevTargetScroll;
  const sheet=app.querySelector('.sheet-body');if(sheet)sheet.scrollTop=prevSheetScroll;
  const scroller=app.querySelector(stageScrollSelector);if(scroller)scroller.scrollTop=prevStageScroll;
  restoreEventScroll(app,previousEvent);
  drawerFocusAfterRender(previousKind,previousFocus,origin);
+ if(game.phase==='field'&&!overlay&&(game.field?.segmentStatus==='choice'||game.field?.activeEvent)){const dialog=app.querySelector('.z2ed3-field-dialog,.field-event');if(dialog){for(const child of app.querySelector('.game-shell').children)if(!child.classList.contains('stage'))child.inert=true;for(const child of dialog.parentElement.children)if(child!==dialog)child.inert=true;if(!dialog.contains(document.activeElement))drawerControls(dialog)[0]?.focus({preventScroll:true});}}
  if(game.phase==='report'&&!overlay){const result=app.querySelector('.z2ed1-result');const shell=app.querySelector('.game-shell');for(const child of shell.children)if(!child.classList.contains('stage'))child.inert=true;if(result&&(!previousDinerPhase?.contains('report')||!result.contains(document.activeElement)))result.querySelector('[data-act="to-upgrade"]')?.focus({preventScroll:true});}
  // Preserve the on-screen floating stick when a second finger uses the skill.
  if(stick.pointer!==null&&(!playingGameGestures()||stick.phase!==game.phase))releaseStick();
@@ -685,6 +714,9 @@ function stepMove(dx,dy){const result=moveExplorer(game,dx,dy);if(result.ok)mess
 function findPath(x,y){const f=game.field;if(!f)return [];const start=[f.x,f.y];const seen=new Set([start.join(',')]);let paths=[[...start,[]]];while(paths.length){const [cx,cy,path]=paths.shift();if(cx===x&&cy===y)return path;for(const [dx,dy] of [[0,-1],[1,0],[0,1],[-1,0]]){const nx=cx+dx,ny=cy+dy,key=`${nx},${ny}`;if(nx<0||ny<0||nx>=f.worldW||ny>=f.worldH||seen.has(key)||f.obstacles.some(o=>o.x===nx&&o.y===ny))continue;seen.add(key);paths.push([nx,ny,[...path,[dx,dy]]]);}}return []}
 function walkTo(x,y){if(walking)clearInterval(walking);const path=findPath(x,y);if(!path.length){note('点击可到达的地图格，或用方向键行走。');return}walking=setInterval(()=>{const step=path.shift();if(!step||game.phase!=='field'||!game.field||game.field.settled){clearInterval(walking);walking=null;return}const old=game.field.nodes.filter(n=>n.claimed).length;stepMove(...step);if(game.phase!=='field'||game.field.nodes.filter(n=>n.claimed).length>old||!path.length){clearInterval(walking);walking=null;}},130)}
 function action(act){
+ if(game.phase==='upgrade'&&(act==='growth-overview'||act==='growth-portal'||act.startsWith('growth-offer:'))){overlay=act;render();return}
+ if(act.startsWith('growth-buy:')){const id=act.slice(11),o=growthOffers(game).find(o=>o.id===id);if(!o?.affordable)return;overlay='';action(id);return}
+ if(game.phase==='upgrade'&&overlay==='growth-overview'){const o=growthOffers(game).find(o=>o.id===act);if(o){overlay='growth-offer:'+o.group;render();return}}
  if(act==='stick-mode:fixed'||act==='stick-mode:floating'){releaseStick();keys.clear();stickMode=writeStickMode(deviceStorage(),act.split(':')[1]);render();return}
  if(game.phase==='upgrade'&&['growth-view:kitchen','growth-view:tables'].includes(act)){growthCameraZ2d2=act.split(':')[1];render();return}
  if(act==='guide-ack'){game.onboarding.seen??=[];if(!game.onboarding.seen.includes(game.phase))game.onboarding.seen.push(game.phase);render();return}
@@ -701,30 +733,38 @@ function action(act){
   else note('只能在预告或日结后的成长阶段、没有未完成探索时穿越。');return;
  }
  if(act==='hero-special'){if(activateWalkableSpecial(game)){message='主厨技能发动！';render()}return}
- if(act==='close-sheet'){overlay='';render();return}
+ if(act.startsWith('ui2-slot:')){const parts=act.slice(9).split(':');const index=Number(parts.pop());ui2Selection[parts.join(':')]=index;render();return}
+ if(act.startsWith('ui2-warehouse:')){ui2Warehouse=act.slice(14);render();return}
+ if(act==='ui2-forecast'||act==='ui2-menu'||act==='ui2-prep'||act.startsWith('ui2-prep:')){ui2Back='';ui2PrepSlot=act.startsWith('ui2-prep:')?Number(act.split(':')[1]):-1;overlay=act.startsWith('ui2-prep:')?'ui2-prep':act;render();return}
+ if(act==='ui2-discard-confirm'&&overlay==='ui2-discard'){const ok=discardFieldStack(game,ui2DiscardId);ui2DiscardId='';ui2Back='';overlay='field-bag';note(ok?'已丢弃本次探索的食材格，仓库库存未受影响。':'无法丢弃该材料。');return}
+ if(act==='ui2-star-confirm'&&overlay==='ui2-star'){overlay='';ui2Back='';render();return}
+ if(act==='harvest-confirm'&&overlay==='harvest-result'){overlay='';ui2Back='';render();return}
+ if(act==='close-sheet'){if(['harvest-result','ui2-star'].includes(overlay))return;overlay=ui2Back;ui2Back='';render();return}
  if(act==='service-ledger'&&game.phase==='service'&&game.service?.walkable){releaseStick();overlay='service-ledger';render();return}
- if(act==='crew'){overlay='crew';render();return}
+ if(act==='crew'){ui2Back=overlay==='ui2-prep'?'ui2-prep':'';overlay='crew';render();return}
  if(act.startsWith('promo:')){note(chooseCampaign(game,act.slice(6))?'揽客方案已选好，将于开门时生效。':'该活动尚未解锁或不能更改。');return}
  if(act.startsWith('duty:')){const [,role,enabled]=act.split(':');note(setCrewDuty(game,role,enabled==='on')?'已调整今晚排班。':'排班未变化。');return}
  if(act.startsWith('promote:')){note(promoteCrew(game,act.slice(8))?'员工成功晋升！新形象立即可见，效率与新工资从下次营业起生效。':'经验不足、资金不足或暂不能晋升。');return}
  if(act.startsWith('hire:')){note(hireCrew(game,act.slice(5))?'伙伴加入食堂！':'需要足够金币；云港第二跑堂需先取得当地首枚星章。');return}
  if(act==='field-bag'){if(game.phase==='field'&&game.field){releaseStick();overlay='field-bag';render()}return}
  if(act==='book'){bookTab='recipes';overlay='book';render();return}
- if(act==='stock'||act==='premium'||act==='settings'||act==='details'||act==='bento'){overlay=act;render();return}
+ if(act==='stock'||act==='premium'||act==='settings'||act==='details'||act==='bento'){ui2Back=overlay&&overlay!==act&&['ui2-prep','ui2-menu','service-ledger'].includes(overlay)?overlay:'';overlay=act;render();return}
  if(act==='managed-freight-claim'){const st=managedFreightStatus(game),box=st.pending;note(claimManagedFreight(game)?'到港物资入库：'+Object.entries(box.items).map(([id,n])=>ING[id].name+'×'+n).join('、'):'当前无待收货物，或尚不可签收。');return}
  if(act.startsWith('managed-freight:')){const id=act.slice('managed-freight:'.length);note(configureManagedFreight(game,id)?(id==='off'?'后续发车暂停；已出货物仍可领取。':'已开通 '+MANAGED_FREIGHT_FOCUS[id].name+'，两晚云港营业后尝试真实旧仓调拨。'):'需要在云港、安全营业阶段且旧店已有真实雇员。');return}
  if(act==='ferry-supply'||act.startsWith('ferry-supply:')){const id=act.split(':')[1]||'staple',pack=Object.hasOwn(FERRY_SUPPLY_PACKS,id)?FERRY_SUPPLY_PACKS[id]:null;note(redeemFerrySupply(game,id)?'已兑 '+pack.name+'：'+Object.entries(pack.items).map(([item,n])=>ING[item].name+'×'+n).join('、')+'，合计8份入云港仓库。':'今天已兑换、委托不足或当前阶段不可领取。');return}
  if(act==='reset'){if(confirm('清空本设备的 v0.4 试玩存档？')){localStorage.removeItem('oddpot-prototype-v04');game=newGame();selectedIngredients=['chicken','chili'];overlay='';note('新旅程开始，祝你研究出奇味料理！')}return}
  if(act.startsWith('buy:')){const [,id,n]=act.split(':'),count=n?Number(n):1;
   note(purchase(game,id,count)?'已采购 '+count+' 份，食材进入仓库。':'金币不足、当日售罄或当前阶段不能采购。');return}
- if(act==='to-field'){nextPhase(game,'field');note('想做什么菜，就去寻找那道菜缺少的食材。');return}
+ if(act==='to-field'||act==='ui2-depart'){overlay='';ui2Back='';nextPhase(game,'field');note('想做什么菜，就去寻找那道菜缺少的食材。');return}
+ if(act==='back-from-departure'&&game.phase==='field'&&!game.field){overlay='';nextPhase(game,'forecast');note('返回食堂，尚未开始探索。');return}
+ if(act==='departure-notebook'&&game.phase==='field'&&!game.field){overlay='departure-notebook';render();return}
  if(act==='skip-field'){skipField(game);note('跳过探索，直接开始今天的料理研发。');return}
  if(act==='skill'){if(useFieldSkill(game)){message=game.field.actionMessage;render()}return}
  if(act==='finish-segment'){releaseStick();if(completeFieldSegment(game))note(game.phase==='research'?'探索结束，收获已入库！':'本区完成，请选择前进或回饭店。');else note('尚未达成采集目标，或 Mini Boss 仍在战斗。');return}
  if(act==='retreat'){releaseStick();if(walking){clearInterval(walking);walking=null}const result=settleField(game);note(result?'已带着背包回店，收获已入库！':'本次探索已结算。');return}
  if(act.startsWith('method:')){selectedMethod=act.slice(7);render();return}
  if(act==='receipt-retry'||act==='receipt-finish'){if(act==='receipt-retry'&&game.lastCook?.ids){selectedIngredients=[...game.lastCook.ids];selectedMethod=game.lastCook.vessel==='STEAM'?'steam':game.lastCook.vessel==='GRILL'?'grill':game.lastCook.vessel==='POT'?'stew':'stir';}game.researchReceipt=false;note(act==='receipt-retry'?'保留食材组合，再来一锅。':'研发成果已收好，可以继续研究。');return}
- if(act==='receipt-menu'){game.researchReceipt=false;nextPhase(game,'menu');note('将研发出的工艺用于今晚的餐馆经营。');return}
+ if(act==='receipt-menu'){overlay='';ui2Back='';game.researchReceipt=false;nextPhase(game,'menu');note('将研发出的工艺用于今晚的餐馆经营。');return}
  if(act==='start-research'){note(beginLiveResearch(game,selectedIngredients,selectedMethod==='steam'?'STEAM':selectedMethod==='grill'?'GRILL':selectedMethod==='stir'?'WOK':'POT')?(selectedMethod==='grill'?'依次穿串，再选火位。':'开锅！轻点食材投入锅中，再按自己的时机掌勺。'):'请选择 2–3 种有库存的食材，蒸笼需先购入。');return}
  if(act.startsWith('live-action:')){note(performLiveAction(game,act.slice(12))?(game.cook?.mode==='v014c-grill'?'烤串已经'+(act.endsWith('turn')?'翻面':'刷料')+'。':'掌勺成功，锅内风味正在变化。'):'这个动作尚不可用。');return}
  if(act==='live-finish'){const r=finishLiveResearch(game);note(r?.sellable?'🎉 '+r.recipeName+' · '+r.styleLabel+' · '+r.affinityLabel+' · 品质 '+r.quality+'！已加入工艺图鉴。':'🍲 '+(r?.reason||'锅还没热起来')+'。本次失败不能上架。');return}
@@ -732,11 +772,11 @@ function action(act){
  if(act==='toss'){note(tossWok(game)?'↻ 颠锅成功，食材沿锅边移动一格。':'本拍已经换过位置，不能再颠锅。');return}
  if(act==='heat'){if(beat(game))note('食材正在受热！观察实际热量与下一拍预测。');return}
  if(act==='finish'){const r=finishCook(game);note(r?.sellable?`🎉 ${RECIPES[r.recipeId].name} 研发成功，品质 ${r.quality}！已写入图鉴。`:`料理还没成功：${r?.reason||'火候不足'}。试试其他食材位置或火力。`);return}
- if(act==='to-menu'){nextPhase(game,'menu');note('把今天的发现写在店门前的菜单上。');return}
- if(act==='to-prep'){if(canMenu(game)){nextPhase(game,'prep');note('安排员工和预制餐点，营业时靠近厨位工作、到餐桌上菜。')}return}
+ if(act==='to-menu'){overlay='';ui2Back='';nextPhase(game,'menu');note('把今天的发现写在店门前的菜单上。');return}
+ if(act==='to-prep'){if(canMenu(game)){overlay='';ui2Back='';nextPhase(game,'prep');note('安排员工和预制餐点，营业时靠近厨位工作、到餐桌上菜。')}return}
  if(act.startsWith('kitchen:')){const [,i,type]=act.split(':');note(configureKitchenSlot(game,Number(i),type)?`设备已改为${type==='GRILL'?'烤架':type==='WOK'?'炒锅':'炖锅'}；订单将按新配置分流。`:'配置未更改，或改装金币不足。');return}
  if(act.startsWith('prep:')){note(prepDish(game,act.slice(5))?'备好一份餐点，稍后可直接上桌。':'食材不足，备餐失败。');return}
- if(act==='open'){if(game.coins<selectedCampaign(game).cost){note('金币不足以支付宣传费用，请选自然营业。');return}if(!kitchenHasMenuCoverage(game)){note('菜单里的料理没有对应锅具，请先调整厨房。');return}nextPhase(game,'service');if(!createService(game,{walkable:true})){game.phase='prep';note('厨房未就绪，暂不能开业');return}setServicePaused(game,false);servicePanel='';selectedOrderId=null;note('开门营业！到锅边做菜，再去出餐台取菜、送到餐桌。');return}
+ if(act==='open'){if(game.coins<selectedCampaign(game).cost){note('金币不足以支付宣传费用，请选自然营业。');return}if(!kitchenHasMenuCoverage(game)){note('菜单里的料理没有对应锅具，请先调整厨房。');return}overlay='';nextPhase(game,'service');if(!createService(game,{walkable:true})){game.phase='prep';note('厨房未就绪，暂不能开业');return}setServicePaused(game,false);servicePanel='';selectedOrderId=null;note('开门营业！到锅边做菜，再去出餐台取菜、送到餐桌。');return}
  if(act==='toggle-service'){setServicePaused(game,!game.service.paused);serviceTickAt=performance.now();note(game.service.paused?'已暂停营业。':'开始迎客！到厨位工作，出餐台取菜再送到桌边。');return}
  if(act==='resume-break'){servicePanel='';resumeBreak(game);serviceTickAt=performance.now();note('下一波开始，注意哪一口锅更忙。');return}
  if(act==='show-management'){servicePanel='event';render();return}
@@ -747,7 +787,7 @@ function action(act){
  if(act.startsWith('soothe:')){note(sootheGuest(game,act.slice(7))?'💛 花费 5 金币招待客人，延长其耐心 9 秒。':'今晚的招待机会已用或该客人已经离开。');return}
  if(act==='clear-table'){selectedOrderId=null;note('点餐桌查看客人的实时订单，再决定是否优先出餐。');return}
  if(act==='close'){const r=closeService(game);note(r?'日报已经生成。今天的客人会告诉你该研发什么新菜。':'请先完成本晚营业。');return}
- if(act==='to-upgrade'){growthCameraZ2d2='kitchen';nextPhase(game,'upgrade');note('所有食材与新菜都会保留到下一天。');return}
+ if(act==='to-upgrade'){growthCameraZ2d2='kitchen';const r=game.report;overlay=r?.thirdRating?.passed||r?.secondRating?.passed&&r.secondRating.stage===2||r?.rating?.passed?'ui2-star':'';nextPhase(game,'upgrade');note('所有食材与新菜都会保留到下一天。');return}
  if(act.startsWith('upgrade-kitchen:')){const i=Number(act.split(':')[1]);const ok=buyCookwareUpgrade(game,act.split(':')[1]);if(ok)growthCameraZ2d2='kitchen';note(ok?'该类厨具全店永久升到 Lv.2！所有同类厨位和探索装备都共享。':'金币不足或此类厨具已升级。');return}
  if(act==='upgrade'){note(buyUpgrade(game)?'厨位升级成功。':'已经升级或金币不足。');return}
  if(act==='upgrade-bag'){note(buyBagUpgrade(game)?`背包扩容完成！下次探索可带 ${game.bagSlots} 格。`:'金币不足或已经升满背包。');return}
@@ -755,7 +795,7 @@ function action(act){
   if(act==='expand-room'){const ok=expandDiningRoom(game);if(ok)growthCameraZ2d2='tables';note(ok?`扩建完成！餐厅现有 ${tableCapacity(game)} 个真实座位。`:'请先满足当前桌位的星章、营业进度和金币条件。');return}
  if(act==='buy-grill'){note(buyGrill(game)?'烤架与烤叉已到店！备餐时把中央工位配置为烤架。':'需要第二星、中央厨位和足够金币。');return}
  if(act==='buy-steamer'){note(buySteamer(game)?'云汽蒸笼已购入！备餐时把一个厨位设为蒸笼，就能供应蒸菜。':'先完成一次云港探索并准备足够金币。');return}
- if(act==='next-day'){advanceDay(game);note('🌅 新的一天！客人偏好与探索路线在变化。');return}
+ if(act==='next-day'){overlay='';ui2Back='';advanceDay(game);note('🌅 新的一天！客人偏好与探索路线在变化。');return}
 }
 app.addEventListener('click',e=>{
  const focusRoot=app.querySelector('.z2c13-sheet')||app.querySelector('.game-shell');
@@ -767,7 +807,7 @@ app.addEventListener('click',e=>{
  const drop=e.target.closest('[data-live-drop]');if(drop){if(dropLiveIngredient(game,drop.dataset.liveDrop))note('食材入锅！正在连续受热。');return}
  const variant=e.target.closest('[data-choose-variant]');if(variant){const value=variant.dataset.chooseVariant,cut=value.indexOf('::');if(cut>0){const id=value.slice(0,cut),variantId=value.slice(cut+2);if(chooseRecipeVariant(game,id,variantId))note('已设为默认工艺，它的真实售价、时间和顾客适配会在营业时生效。')}return}
  const tile=e.target.closest('[data-tile]');if(tile&&game.cook){const i=+tile.dataset.tile;if(tileSelected===null){if(game.cook.tiles[i]){tileSelected=i;note('再点一次目的格，交换或移动食材。');}}else{const from=tileSelected;tileSelected=null;note(moveTile(game,from,i)?'已翻动锅内食材。':'本拍换位机会已用完。')}return}
- const discard=e.target.closest('[data-discard]');if(discard){const ok=discardFieldStack(game,discard.dataset.discard);overlay='';note(ok?'已丢弃本次探索的食材格，仓库库存未受影响。':'无法丢弃该材料。');return}
+ const discard=e.target.closest('[data-discard]');if(discard){ui2DiscardId=discard.dataset.discard;ui2Back='field-bag';overlay='ui2-discard';render();return}
  const ev=e.target.closest('[data-event]');if(ev){resolveFieldEvent(game,ev.dataset.event);releaseStick();message=game.field.actionMessage;render();return}
  const ch=e.target.closest('[data-choice]');if(ch){if(chooseServiceEvent(game,ch.dataset.choice)){if(game.service?.walkable)resumeBreak(game);servicePanel='';releaseStick();note(game.service.decisionFlash+'，已继续营业。')}else note('目前条件不足或已经处理过本波事件。');return}
  const bp=e.target.closest('[data-breakprep]');if(bp){servicePanel='';note(breakPrep(game,bp.dataset.breakprep)?game.service.decisionFlash+'，下波同款订单将优先出餐。':'原料不足或本波应急机会已用。');return}
@@ -790,8 +830,8 @@ app.addEventListener('click',e=>{
  const book=e.target.closest('[data-book]');if(book){const id=book.dataset.book,r=RECIPES[id],access=recipeResearchAccess(game,id);if(!r)return;if(!access.ready){note(access.reason);return}selectedIngredients=[...r.ids];selectedMethod=r.method;if(beginLiveResearch(game,r.ids,access.type)){overlay='';note('已载入'+r.name+'，请亲自下料并掌握工艺。');}else note('研发条件已变化，请核对当前材料和厨具。');return}
  const special=e.target.closest('[data-premium-set]');if(special){const [id,n]=special.dataset.premiumSet.split(':');const ok=setPremiumMenu(game,id,Number(n));overlay=ok?'':overlay;note(ok?'已准备隐藏菜（只有合资格食客可能点单），真实稀有原料已预留。':'库存不足或菜谱尚未研发。');return}
  const clear=e.target.closest('[data-premium-clear]');if(clear){if(setPremiumMenu(game,null)){overlay='';note('已撤下今晚的隐藏菜。')}return}
- const slot=e.target.closest('[data-edit-slot]');if(slot){overlay=`menu:${slot.dataset.editSlot}`;render();return}
- const pick=e.target.closest('[data-menu-pick]');if(pick){const [slot,id]=pick.dataset.menuPick.split(':');if(!selectMenuRecipe(game,Number(slot),id)){note('当前厨具未购买，或菜单超出厨位可覆盖的种类。');return}if(game.premiumMenu?.recipeId===id)setPremiumMenu(game,null);overlay='';note(`已上架 ${RECIPES[id].name}。`);return}
+ const slot=e.target.closest('[data-edit-slot]');if(slot){if(game.phase!=='menu'||slot.disabled)return;ui2Back=overlay==='ui2-menu'?'ui2-menu':'';overlay=`menu:${slot.dataset.editSlot}`;render();return}
+ const pick=e.target.closest('[data-menu-pick]');if(pick){const [slot,id]=pick.dataset.menuPick.split(':');if(!selectMenuRecipe(game,Number(slot),id)){note('当前厨具未购买，或菜单超出厨位可覆盖的种类。');return}if(game.premiumMenu?.recipeId===id)setPremiumMenu(game,null);overlay=ui2Back;ui2Back='';note(`已上架 ${RECIPES[id].name}。`);return}
  const seat=e.target.closest('[data-seat]');if(seat){const id=+seat.dataset.seat,seatTarget=e.target.closest('[data-seat-index]');const seats=tableSeatState(game.service,id);const o=seatTarget?seats[Number(seatTarget.dataset.seatIndex)]:seats.find(Boolean);selectedOrderId=o?.id||null;note(o?`${CUSTOMERS[o.segment].name}：${o.recipeId?'点了'+RECIPES[o.recipeId].name:'正在挑选菜单'}。`:'这把椅子目前空着。');return}
  const station=e.target.closest('[data-station]');if(station){const pos=station.dataset.station,v=game.service,idx=['WOK','POT','CENTER'].indexOf(pos),slot=(v?.kitchenSnapshot||ensureKitchen(game).slots)[idx];if(!slot)return;const queue=v?v.queued.filter(id=>RECIPES[v.orders.find(o=>o.id===id)?.recipeId]?.station===slot.type).length:0;note(`${['左','右','中'][idx]}厨位：${cookName(slot.type)} Lv.${slot.level}，同类候餐 ${queue} 单。`);return}
  // Realtime field uses the thumb joystick; no grid click-to-walk.
@@ -932,12 +972,12 @@ function advanceFrame(now){const delta=Math.min(.045,(now-(lastFrame||now))/1000
    }
   }
  }
- const notice=app.querySelector('#ingame-notice');if(notice&&now>flashUntil)notice.hidden=true;
+ const notice=app.querySelector('#ingame-notice');if(notice&&now>flashUntil)notice.hidden=true;const transient=app.querySelector('.game-toast');if(transient&&now>flashUntil)transient.hidden=true;
  const forest=app.querySelector('#forest-canvas'),diner=app.querySelector('#diner-canvas'),research3d=globalThis.__oddpotY4bRenderer,departure3d=globalThis.__oddpotDepartureRenderer;
  // Release inactive contexts before the next scene allocates its context.
  if(!forest)globalThis.__oddpotY3Renderer?.leave();if(!diner)globalThis.__oddpotY2Renderer?.leave();if(game.phase!=='research')research3d?.leave();
  if(forest)safeSceneFrame('forest',()=>drawField(forest,game,gameClock));
- if(diner)safeSceneFrame('diner',()=>drawDiner(diner,game.phase==='upgrade'?{...game,growthCameraZ2d2}:game.phase==='report'?{...game,z2ed1FullRoom:true}:game,gameClock,restaurantSimTime(now)));
+ if(diner)safeSceneFrame('diner',()=>drawDiner(diner,['forecast','menu','prep','upgrade','report'].includes(game.phase)?{...game,z2ed1FullRoom:true}:game,gameClock,restaurantSimTime(now)));
  if(game.phase==='research')safeSceneFrame('research',()=>research3d?.draw(app,game,researchPreviewCache,now));
  if(game.phase==='field'&&!game.field)safeSceneFrame('departure',()=>departure3d?.draw(app,game,now));else departure3d?.leave();
  for(const [name,present] of [['forest',!!forest],['diner',!!diner],['research',game.phase==='research']])if(!present){const key='frame-'+name;sceneFrameErrors.delete(key);if(globalThis.__oddpotBuild?.sceneErrors)delete globalThis.__oddpotBuild.sceneErrors[key];}
@@ -1047,4 +1087,4 @@ app.addEventListener('pointerup',e=>{
 },{passive:false});
 
 // Close a reference drawer without altering the underlying game phase.
-document.addEventListener('keydown',e=>{if(!overlay){if(game.phase==='report')drawerTab(e,app.querySelector('.z2ed1-result'),document.activeElement);return}if(e.key==='Escape'){e.preventDefault();overlay='';render();return;}drawerTab(e,app.querySelector('.z2c13-sheet'),document.activeElement);});
+document.addEventListener('keydown',e=>{if(!overlay){if(game.phase==='report')drawerTab(e,app.querySelector('.z2ed1-result'),document.activeElement);else if(game.phase==='field'&&(game.field?.segmentStatus==='choice'||game.field?.activeEvent))drawerTab(e,app.querySelector('.z2ed3-field-dialog,.field-event'),document.activeElement);return}if(e.key==='Escape'){e.preventDefault();if(['harvest-result','ui2-star'].includes(overlay))return;overlay=ui2Back;ui2Back='';render();return;}drawerTab(e,app.querySelector('.z2c13-sheet'),document.activeElement);});

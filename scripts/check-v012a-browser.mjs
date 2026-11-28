@@ -34,8 +34,8 @@ try{
  for(const [w,h] of [[320,568],[375,667],[390,844]]){
   width=w;height=h;
   await open('index.html',base());
-  await visible('[data-act="first-star-request"]',width,height);
-  await visible('[data-act="to-field"]',width,height);
+  await visible('.ui2-spot[data-act="to-field"]',width,height);
+  await page.locator('[data-act="ui2-forecast"]').click();await visible('[data-act="first-star-request"]',width,height);
   assert.equal(await page.locator('.v12-star-invite').count(),1);
   await page.screenshot({path:`${out}/forecast-${width}.png`});
   await page.locator('[data-act="first-star-request"]').click();
@@ -46,7 +46,7 @@ try{
  }
  const prep=base();prep.phase='prep';
  await open('index.html',prep);
- assert.equal(await page.locator('.stage.prep [data-act="first-star-request"]').count(),1);
+ await page.locator('.ui2-room-dock [data-act="ui2-prep"]').click();assert.equal(await page.locator('.sheet [data-act="first-star-request"]').count(),1);
  await page.locator('[data-act="first-star-request"]').click();
  assert.equal((await read(page)).chapterProgress.requestDay,'2-1');
  await page.screenshot({path:`${out}/prep-390.png`});
@@ -63,18 +63,18 @@ try{
  const report=closeService(rated);assert.ok(report.rating?.passed);
  await open('index.html',rated);
  assert.equal(await page.locator('.v12-rating-result').count(),1);
- assert.match(await page.locator('.v12-rating-result').innerText(),/第一枚万味星章/);
+ await page.locator('.v014-report-more summary').click();assert.match(await page.locator('.v12-rating-result').innerText(),/第一枚万味星章/);
  await page.screenshot({path:`${out}/report-390.png`,fullPage:true});
 
  const room=base();room.phase='upgrade';room.chapterProgress.stars=1;
  room.dining.tableCount=3;room.coins=500;
  await open('index.html',room);
- await page.locator('[data-act="expand-room"]').click();
+ await page.locator('[data-act="growth-offer:table"]').click();await page.locator('[data-act="growth-buy:expand-room"]').click();
  const expanded=await read(page);
  assert.equal(expanded.dining.tableCount,4);
  assert.equal(expanded.coins,280);
  assert.equal(expanded.ledger.filter(x=>x.id==='expand-fourth-table').length,1);
- assert.match(await page.locator('.v09-room-upgrade').innerText(),/8 席/);
+ assert.match(await page.locator('.z2c11-scene-caption').innerText(),/8 席/);assert.equal(await page.locator('[data-act="growth-offer:table"]').count(),0,'all four tables built');await page.locator('[data-act="growth-overview"]').click();assert.match(await page.locator('.v09-room-upgrade').innerText(),/8 席/);await page.keyboard.press('Escape');
  await page.screenshot({path:`${out}/upgrade-four-tables-390.png`});
 
  const service=base();service.phase='service';service.chapterProgress.stars=1;
@@ -85,7 +85,7 @@ try{
  await page.screenshot({path:`${out}/service-four-tables-390.png`});
 
  await open('standalone.html',base());
- await page.locator('[data-act="first-star-request"]').click();
+ await page.locator('[data-act="ui2-forecast"]').click();await page.locator('[data-act="first-star-request"]').click();
  assert.equal((await read(page)).chapterProgress.requestDay,'2-1');
  await page.screenshot({path:`${out}/offline-forecast-390.png`});
  assert.deepEqual(errors,[]);

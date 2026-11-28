@@ -15,7 +15,7 @@ import {mealLife} from './three_y6_life.js?v=y6';
 import {makeGuestFactory} from './three_y6_guests.js?v=y6';
 import {makeDishFactory} from './three_y6_dishes.js?v=y6';
 
-export function y2Eligible(s){return s?.activeWorld!=='cloud'&&(['forecast','prep','report','upgrade'].includes(s?.phase)&&(!s.service||['report','upgrade'].includes(s.phase))||s?.phase==='service'&&!!s.service?.walkable);}
+export function y2Eligible(s){return s?.activeWorld!=='cloud'&&(['forecast','menu','prep','report','upgrade'].includes(s?.phase)&&(!s.service||['report','upgrade'].includes(s.phase))||s?.phase==='service'&&!!s.service?.walkable);}
 export function y2Layout(s){
  const g=dinerFloor(s),v=s.service,slots=v?.kitchenSnapshot||s.kitchen?.slots||[];
  const n=v?v.kitchenSnapshot?.length||2:s.kitchen?.thirdUnlocked?3:2;
@@ -162,6 +162,8 @@ function createDiner(T){
    const anchors={stock:[.155,1.73/12,1.72],book:[.83,1.6/12,1.63],bento:[.245,.408,1.15],crew:[.755,.408,1.18],door:[.50,.93,.05]};
    for(const [key,[x,z,y]] of Object.entries(anchors)){const el=section.querySelector('.v016-'+key);if(!el)continue;const pt=project(x,z,y,w,h),q=y2bHotspotPosition(pt.x,pt.y,w,h);el.style.left=q.x+'px';el.style.top=q.y+'px';el.style.bottom='auto';el.style.transform='translate(-50%,-50%)';el.dataset.y2bAnchor='1';}
   }}else resetHotspots();
+  if(s.phase==='upgrade'&&s.z2ed1FullRoom){for(const el of parent.closest('.stage')?.querySelectorAll('[data-growth-x]')||[]){const pt=project(Number(el.dataset.growthX),Number(el.dataset.growthY),.55,w,h);el.style.left=Math.max(36,Math.min(w-36,pt.x))+'px';el.style.top=Math.max(55,Math.min(h-45,pt.y))+'px';}}
+  if(!v&&s.z2ed1FullRoom){const used=[];for(const el of parent.closest('.stage')?.querySelectorAll('[data-ui2-anchor]')||[]){const [x,z]=el.dataset.ui2Anchor.split(',').map(Number),pt=project(x,z,.62,w,h);let px=Math.max(36,Math.min(w-36,pt.x)),py=Math.max(100,Math.min(h-120,pt.y));while(used.some(q=>Math.hypot(px-q.x,py-q.y)<60)&&py<h-180)py+=60;used.push({x:px,y:py});el.style.left=px+'px';el.style.top=py+'px';}}
   const home=!v?homeKitchenChatter(s,t,globalThis.matchMedia?.('(prefers-reduced-motion: reduce)').matches||false):null;
   const anchors=actors.map(a=>{const m=byId.get(a.id),staff=!a.order,kind=a.kind,headY=(a.seat?.37:0)+(staff?1.12:kind==='regular'?.93:kind==='critic'?1.42:kind==='gardener'?1.60:kind==='stargazer'?1.61:1.38),p=project(a.x,a.y,headY,w,h),feet=project(a.x,a.y,a.seat?.37:0,w,h);return {id:a.id,x:p.x,y:p.y,width:Math.max(20,Math.min(42,(feet.y-p.y)*.78)),height:Math.max(19,feet.y-p.y)};}).filter(a=>a.x>=0&&a.x<=w&&a.y>=0&&a.y<=h);
   const dialogue=v?z2a2LiveSpeech(s,t,anchors,w,h):[],speaking=new Set(dialogue.map(p=>p.actorId)),points=new Map(anchors.map(a=>[a.id,a]));

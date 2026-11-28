@@ -69,7 +69,7 @@ test('home preview has no kitchen and seating badge overlays; purchasing keeps s
  const app=readFileSync(new URL('../src/app.js',import.meta.url),'utf8');
  const home=app.slice(app.indexOf('function forecast(){'),app.indexOf('\nfunction field(){'));
  assert.doesNotMatch(home,/v076-preview-info/);
- assert.match(home,/restaurantView\(false\)/);
+ assert.match(home,/ui2Room\('morning'/);assert.match(app,/function ui2Room[^\n]*restaurantView\(false\)/);
  assert.match(app,/买 3 份/);
  assert.doesNotMatch(app,/今日缺货/);
  assert.match(app,/今日上架/);assert.match(app,/Object.entries\(market.goods\)/);
