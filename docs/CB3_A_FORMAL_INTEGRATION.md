@@ -13,3 +13,7 @@ A2 在原engine内区分正式Build与实验状态，建立版本化、幂等的
 ## A1 实施记录（候选）
 - 新增src/cb3_migration_a1.js 与正式engine inspectCB3Migration：198旧菜映射、实际材料优先、原工艺快照、历史退休、两章节菜单及重复、未结保护；仅只读预审，未启用新规则或修改存档。补离线构建作用域封装，正式离线也包含共享配方、质量模块与预审，不引入实验fixture。无经济/研究行为更改。
 - 实际V8对原配方/数据与预审模块执行1478项断言通过；组合离线脚本语法解析通过。离线由现有包精确替换，并同步Python生成器；未运行本地Python/Node/Chrome，远程CI、截图、Pages和玩家验收待核。A2为正式迁移与引擎分离，不能将A1当新玩法已上线。
+
+
+## A1正式发布及A2a
+PR164 20/20 Actions并合main dd6d52c，候选与合并文件树相同；Pages及真机视觉另核。A2a已启动，见[CB3_A2_FORMAL_DATA](CB3_A2_FORMAL_DATA.md)；不自动启用Build。

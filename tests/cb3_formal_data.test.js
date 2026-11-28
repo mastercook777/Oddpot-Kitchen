@@ -1,7 +1,7 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import {newGame,stageCB3Migration,discardCB3Migration,cb3MigrationCurrent,recipeCraftSnapshot} from '../src/engine.js';
-import {evaluateCBDeck,compileCBDeck,identify} from '../src/cb_build_rules.js';
+import {evaluateCBDeck,compileCBDeck,identify} from '../src/cb_build_rules.js?v=cb3a2';
 import {fixture,budget,applyDeck,identify as workshopIdentify} from '../src/cooking_build_v2.js';
 test('formal staging preserves original data and historical economic values, no activation',()=>{
  const s=newGame(),before=structuredClone(s);
