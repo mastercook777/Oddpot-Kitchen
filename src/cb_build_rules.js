@@ -39,14 +39,14 @@ export function evaluateCBDeck(collection,deck,level,eligible){
  if(!Number.isInteger(level)||level<1||level>4)reasons.push('未知厨房等级');
  return {used,limit,slots,variants,valid:!reasons.length,reasons};
 }
-export function compileCBDeck(variants){
+export function compileCBDeck(variants,premiumRecipeId=null){
  const crafts={};
  for(const v of variants){
   // Historical crafts carry exact prior economics, never re-roll or stack new affixes.
   if(v.legacySnapshot){crafts[v.recipeId]={...structuredClone(v.legacySnapshot),recipeId:v.recipeId,formulaId:v.formulaId,variantId:v.variantId,rarity:v.rarity,affixes:[],cb:{discount:0,gain:0,aroma:0,sat:0,wait:0,refund:0}};continue;}
   const value=id=>v.affixes.find(x=>x.id===id)?.value||0;
   const discount=Math.max(value('quick'),variants.filter(x=>x.vessel===v.vessel).length===1?value('solo'):0);
-  const gain=value('fine')+value('stars')*Math.min(3,variants.filter(x=>x!==v&&x.rarity===1).length);
+  const gain=value('fine')+value('stars')*Math.min(3,variants.filter(x=>x!==v&&x.rarity===1&&x.recipeId!==premiumRecipeId).length);
   crafts[v.recipeId]={recipeId:v.recipeId,formulaId:v.formulaId,materialCost:v.materialCost,variantId:v.variantId,style:v.style,styleLabel:v.styleLabel,quality:[0,66,76,86][v.baseTier],ingredientIds:[...v.ingredientIds],price:Math.round(v.basePrice*(1+gain/100)),basePrice:v.basePrice,baseTime:v.baseTime,timeDelta:-Math.min(v.baseTime*.25,v.baseTime*discount/100),guestFitDelta:{},recipeTags:[...v.recipeTags],affixes:structuredClone(v.affixes),rarity:v.rarity,cb:{discount,gain,aroma:value('aroma'),sat:value('aftertaste'),wait:value('wait'),refund:value('frugal')}};
  }
  return crafts;
