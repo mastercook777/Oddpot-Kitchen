@@ -1,6 +1,7 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import {readFileSync} from 'node:fs';
+const publishedBuild=()=>{const index=readFileSync(new URL('../index.html',import.meta.url),'utf8');const m=index.match(/const build='(v0\.16-[A-Za-z0-9.-]+)'/);assert.ok(m,'published build must be declared');return m[1];};
 import {loadoutAccent,portraitIdle} from '../src/three_z2c7_chef_portrait.js';
 test('loadout appraisal has smooth endpoints, bounded values and tool-specific expression',()=>{
  for(const type of ['WOK','POT','GRILL','STEAM']){
@@ -20,6 +21,6 @@ test('departure restores original Y2 chef and keeps rig and version marker',()=>
  assert.match(src,/hero.update\(t,\{facing:'front',moving:false,working:false,carrying:false\}\);rig.update/);
  assert.match(src,/createWeaponRig\(T,hero,rounded\)/);
  assert.match(src,/dataset.portrait='z2c12'/);
- assert.match(index,/v0\.16-Z\.2e-D2/);
+ assert.ok(index.includes('当前构建版本">'+publishedBuild()+' · Loading'));
  assert.match(index,/three_z2c3_departure\.js\?v=z2c12/);
 });

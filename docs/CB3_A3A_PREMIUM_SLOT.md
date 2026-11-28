@@ -12,3 +12,6 @@
 基于A2b已合main 2a72cd3；代码提交 2a0f544。src/engine.js、src/cb_build_rules.js、src/app.js及standalone.html同步。正式已有Deck中稀有菜才可标记1–2份，保存variantId；冻结开业特供craft，普通点单、预制、应急备餐、共鸣排除特供，众星捧月不计特供白菜，特供槽禁止波次换菜；先取消特供才可改Deck，日切回普通菜单。旧模式限量额外菜单保留；不自动激活，不新增食材、概率、货币。
 实际验证：V8解析完整离线组合JS，执行真实离线引擎（JSON兼容structuredClone shim）8种seed 1/2/3/4/5/20261009/42/99共266断言，8场均售出1份真实特供，库存非负、交易ID唯一、模式清晨重置；seed99总营收249/特供63。测试主动设置已研发旧工艺及充足库存为夹具，不是自然多日经济结论。新增Node tests/cb3_premium_slot.test.js（尚未本地执行）；真实Chrome、WebGL、完整CI、Pages与真机待核。离线对已存在对应片段精确替换，未本地运行Python生成器（在线app与离线原基线整体存在差异，仍需CI核验）。
 范围外/风险：大师4槽与正式等级提升、跨章节安全迁移、评星/手动订单与真实配方兼容（旧markManual读取主菜材料，需要专项核查）、10日多seed真实经济、玩家入口与视觉触控未完成。此次暂用已上架菜切换特供模式；至少三道总槽、初级两道普通菜+一道特供，可能减少普通客覆盖，待真实平衡验证。三份主文档已同步候选记录，CI完成前不得合main或宣称已上线。
+
+## R2 · HUD3基线重整
+旧候选190d8db实际19/20 Actions；full UI在320px forecast尚未初始化，HUD3已加正式boot ready等待。基线 main e5ac6cb（HUD3已20/20并部署）；将原特供app/engine/rules/离线补丁精确应用，完整保留HUD3 CSS和回归，更新线上/离线/设置版本及app/engine/rules缓存。实际V8执行原Node测试（真实离线引擎，JSON structuredClone shim）346断言通过，完整离线JS解析、HUD3 CSS完全一致。未运行本地npm/Chrome，新的20项CI及Pages待核，真机待验收。原八seed夹具不是自然经济。未改变CB3激活边界，不开放玩家。下一A3b跨章。

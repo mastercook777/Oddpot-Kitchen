@@ -1,6 +1,7 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import {readFileSync} from 'node:fs';
+const publishedBuild=()=>{const index=readFileSync(new URL('../index.html',import.meta.url),'utf8');const m=index.match(/const build='(v0\.16-[A-Za-z0-9.-]+)'/);assert.ok(m,'published build must be declared');return m[1];};
 import {
  newGame,travelPortal,activeWorld,steamerAvailable,buySteamer,buyCookwareUpgrade,
  cookwareUpgradeCost,ensureKitchen,fieldWeaponChoices,fieldWeaponSnapshot,
@@ -124,5 +125,5 @@ test('Cloud assets have their own furniture shapes, station and field FX in main
  assert.match(offline,/function drawCloudCrystalTable/);
  assert.match(offline,/function drawPixelSteamBasket/);
  assert.match(offline,/function steamPulseTargets/);
- assert.match(offline,/v0\.15\.0-alpha\.11 离线版/);
+ assert.ok(offline.includes('怪味食堂 · '+publishedBuild()+' 离线版'));
 });

@@ -1,6 +1,7 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import {readFileSync} from 'node:fs';
+const publishedBuild=()=>{const index=readFileSync(new URL('../index.html',import.meta.url),'utf8');const m=index.match(/const build='(v0\.16-[A-Za-z0-9.-]+)'/);assert.ok(m,'published build must be declared');return m[1];};
 import {spawnSync} from 'node:child_process';
 import {DINER_VOICES,diningSpeechCue,selectStaffSpeech,selectDiningSpeech} from '../src/diner_ambience_v077.js';
 import {newGame,createService,setServicePaused,tick,recipeCraftSnapshot} from '../src/engine.js';
@@ -127,13 +128,13 @@ test('long daily report scrolls from TOP and semantic title does not clip or dra
 test('version, offline bundle and complete JavaScript stay parseable',()=>{
  const html=source('../index.html'),app=source('../src/app.js'),build=source('../scripts/build-standalone.py');
  assert.equal(JSON.parse(source('../package.json')).version,'0.15.0-alpha.11');
- assert.match(html,/Oddpot Kitchen v0\.16-[YZ]\.\d+(?:[a-z]\d*)?/);
+ assert.ok(html.includes('Oddpot Kitchen '+publishedBuild()+'</title>'));
  assert.match(html,/coreVersion:\s*['"]0\.15\.0-alpha\.11['"]/);
  assert.match(html,/id="oddpot-build-label"/);
  assert.match(html,/app\.js\?v=0\.15\.0-alpha\.11/);
- assert.match(app,/ODDPOT · v0\.15\.0-alpha\.11/);
+ assert.ok(app.includes('ODDPOT · '+publishedBuild()+' · 单机本地存档'));
  assert.match(build,/diner_polish_v078\.css/);
- assert.match(build,/v0\.15\.0-alpha\.11 离线版/);
+ assert.ok(build.includes('怪味食堂 · '+publishedBuild()+' 离线版'));
  for(const path of ['../src/app.js','../src/diner_ambience_v077.js','../src/engine.js','../src/scenes_v04.js']){
   const p=spawnSync(process.execPath,['--check',new URL(path,import.meta.url).pathname],{encoding:'utf8'});
   assert.equal(p.status,0,path+' '+p.stderr);

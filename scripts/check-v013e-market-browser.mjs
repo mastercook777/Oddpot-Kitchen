@@ -1,6 +1,7 @@
 // v0.13-E acceptance MUST use the actual game UI rather than only the RNG.
 import {chromium} from 'playwright';
 import assert from 'node:assert/strict';
+import {expectedOfflineTitle} from './published-build.mjs';
 import {spawn} from 'node:child_process';
 import {mkdir} from 'node:fs/promises';
 import {newGame,ensureDailyMarket} from '../src/engine.js';
@@ -86,7 +87,7 @@ try{
  }
  const offline=await browser.newPage({viewport:{width:390,height:844}});
  const s=states();await launchState(offline,s,'standalone.html');
- assert.match(await offline.title(),/0\.\d+\.\d+-alpha\.\d+/);
+ assert.equal(await offline.title(),expectedOfflineTitle(),'offline release must match production build');
  await checkFour(offline,s);
  await offline.close();
  const legacyOffline=await browser.newPage({viewport:{width:390,height:844}});

@@ -1,6 +1,7 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import {readFileSync} from 'node:fs';
+const publishedBuild=()=>{const index=readFileSync(new URL('../index.html',import.meta.url),'utf8');const m=index.match(/const build='(v0\.16-[A-Za-z0-9.-]+)'/);assert.ok(m,'published build must be declared');return m[1];};
 import {spawnSync} from 'node:child_process';
 import {diningSpeechCue,selectDiningSpeech,speechOpacity,diningBubbleLines} from '../src/diner_ambience_v077.js';
 import {newGame,createService,tick,setServicePaused} from '../src/engine.js';
@@ -87,13 +88,13 @@ test('all visible game versions, entrypoint and offline build are aligned',()=>{
  const html=src('../index.html'),script=src('../scripts/build-standalone.py'),
  app=src('../src/app.js'),pkg=JSON.parse(src('../package.json'));
  assert.equal(pkg.version,'0.15.0-alpha.11');
- assert.match(html,/Oddpot Kitchen v0\.16-[YZ]\.\d+(?:[a-z]\d*)?/);
+ assert.ok(html.includes('Oddpot Kitchen '+publishedBuild()+'</title>'));
  assert.match(html,/coreVersion:\s*['"]0\.15\.0-alpha\.11['"]/);
  assert.match(html,/id="oddpot-build-label"/);
  assert.match(html,/app\.js\?v=0\.15\.0-alpha\.11/);
- assert.match(app,/ODDPOT · v0\.15\.0-alpha\.11/);
+ assert.ok(app.includes('ODDPOT · '+publishedBuild()+' · 单机本地存档'));
  assert.match(script,/diner_ambience_v077\.js/);
- assert.match(script,/v0\.15\.0-alpha\.11 离线版/);
+ assert.ok(script.includes('怪味食堂 · '+publishedBuild()+' 离线版'));
  for(const name of ['../src/diner_ambience_v077.js','../src/scenes_v04.js']){
   const check=spawnSync(process.execPath,['--check',new URL(name,import.meta.url).pathname],{encoding:'utf8'});
   assert.equal(check.status,0,check.stderr);

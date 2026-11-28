@@ -135,16 +135,16 @@
 .ui2-shell .ui2-hud-meta{font-size:11px;min-height:23px}.ui2-shell .ui2-hud-meta .z2a3-art{width:17px;height:17px}.ui2-shell .ui2-hud-side>.ui2-mode-label{display:block;font-size:10px;padding:3px 6px}.ui2-shell[data-ui2-mode=upgrade] .z2c11-scene-caption{top:calc(var(--ui2-hud-top) + 106px)!important}.ui2-shell:not([data-ui2-mode=research])>.v013j-guide{top:calc(var(--ui2-hud-top) + 90px)!important}
 
 /* F2.5: compact resource row, scoped to non-service restaurant phases. */
-#app .ui2-shell:is([data-ui2-mode=forecast],[data-ui2-mode=menu],[data-ui2-mode=prep],[data-ui2-mode=upgrade])>.ui2-hud{display:flex!important;align-items:center;gap:5px;left:8px!important;right:8px!important}
-.ui2-shell:is([data-ui2-mode=forecast],[data-ui2-mode=menu],[data-ui2-mode=prep],[data-ui2-mode=upgrade]) .ui2-hud-stack{display:flex;align-items:center;gap:4px;flex:1;min-width:0}
-.ui2-shell:is([data-ui2-mode=forecast],[data-ui2-mode=menu],[data-ui2-mode=prep],[data-ui2-mode=upgrade]) .ui2-hud-chip{flex:1 1 auto;min-width:0;min-height:32px;padding:3px 5px;justify-content:center;gap:3px;font-size:12px;line-height:1.2;overflow:hidden;text-overflow:ellipsis}
-.ui2-shell:is([data-ui2-mode=forecast],[data-ui2-mode=menu],[data-ui2-mode=prep],[data-ui2-mode=upgrade]) .ui2-hud-chip .z2a3-art{width:18px;height:18px}
-.ui2-shell:is([data-ui2-mode=forecast],[data-ui2-mode=menu],[data-ui2-mode=prep],[data-ui2-mode=upgrade]) .ui2-hud-side{display:flex;align-items:center;flex:none;gap:0}
-.ui2-shell:is([data-ui2-mode=forecast],[data-ui2-mode=menu],[data-ui2-mode=prep],[data-ui2-mode=upgrade]) .ui2-hud-side>.ui2-mode-label{position:absolute;width:1px;height:1px;padding:0;overflow:hidden;clip-path:inset(50%);white-space:nowrap}
-#app .ui2-shell:is([data-ui2-mode=forecast],[data-ui2-mode=menu],[data-ui2-mode=prep],[data-ui2-mode=upgrade]) .ui2-hud-side .hud-gear{width:44px!important;height:44px!important;min-height:44px!important;padding:4px}
+#app .ui2-shell:is([data-ui2-mode=forecast],[data-ui2-mode=menu],[data-ui2-mode=prep],[data-ui2-mode=upgrade],[data-ui2-scene=departure])>.ui2-hud{display:flex!important;align-items:center;gap:5px;left:8px!important;right:8px!important}
+.ui2-shell:is([data-ui2-mode=forecast],[data-ui2-mode=menu],[data-ui2-mode=prep],[data-ui2-mode=upgrade],[data-ui2-scene=departure]) .ui2-hud-stack{display:flex;align-items:center;gap:4px;flex:1;min-width:0}
+.ui2-shell:is([data-ui2-mode=forecast],[data-ui2-mode=menu],[data-ui2-mode=prep],[data-ui2-mode=upgrade],[data-ui2-scene=departure]) .ui2-hud-chip{flex:1 1 auto;min-width:0;min-height:32px;padding:3px 5px;justify-content:center;gap:3px;font-size:12px;line-height:1.2;overflow:hidden;text-overflow:ellipsis}
+.ui2-shell:is([data-ui2-mode=forecast],[data-ui2-mode=menu],[data-ui2-mode=prep],[data-ui2-mode=upgrade],[data-ui2-scene=departure]) .ui2-hud-chip .z2a3-art{width:18px;height:18px}
+.ui2-shell:is([data-ui2-mode=forecast],[data-ui2-mode=menu],[data-ui2-mode=prep],[data-ui2-mode=upgrade],[data-ui2-scene=departure]) .ui2-hud-side{display:flex;align-items:center;flex:none;gap:0}
+.ui2-shell:is([data-ui2-mode=forecast],[data-ui2-mode=menu],[data-ui2-mode=prep],[data-ui2-mode=upgrade],[data-ui2-scene=departure]) .ui2-hud-side>.ui2-mode-label{position:absolute;width:1px;height:1px;padding:0;overflow:hidden;clip-path:inset(50%);white-space:nowrap}
+#app .ui2-shell:is([data-ui2-mode=forecast],[data-ui2-mode=menu],[data-ui2-mode=prep],[data-ui2-mode=upgrade],[data-ui2-scene=departure]) .ui2-hud-side .hud-gear{width:44px!important;height:44px!important;min-height:44px!important;padding:4px}
 .ui2-shell[data-ui2-mode=upgrade] .z2c11-scene-caption{top:calc(var(--ui2-hud-top) + 52px)!important}
 #app .ui2-shell:is([data-ui2-mode=forecast],[data-ui2-mode=menu],[data-ui2-mode=prep])>.v013j-guide{top:calc(var(--ui2-hud-top) + 52px)!important}
-@media(max-width:350px){.ui2-shell:is([data-ui2-mode=forecast],[data-ui2-mode=menu],[data-ui2-mode=prep],[data-ui2-mode=upgrade]) .ui2-hud-chip{font-size:10px;padding-inline:3px;gap:2px}.ui2-shell:is([data-ui2-mode=forecast],[data-ui2-mode=menu],[data-ui2-mode=prep],[data-ui2-mode=upgrade]) .ui2-hud-chip .z2a3-art{width:15px;height:15px}}
+@media(max-width:350px){.ui2-shell:is([data-ui2-mode=forecast],[data-ui2-mode=menu],[data-ui2-mode=prep],[data-ui2-mode=upgrade],[data-ui2-scene=departure]) .ui2-hud-chip{font-size:10px;padding-inline:3px;gap:2px}.ui2-shell:is([data-ui2-mode=forecast],[data-ui2-mode=menu],[data-ui2-mode=prep],[data-ui2-mode=upgrade],[data-ui2-scene=departure]) .ui2-hud-chip .z2a3-art{width:15px;height:15px}}
 
 /* CB3: the same scene-first workbench renderer as CB2-R2b, not a separate page. */
 .z2b-shell .cb3-live-workbench .v063-live-pan,.z2b-shell .cb3-live-workbench .v014c-hearth{flex:1 1 auto;min-height:130px;max-height:none;position:relative;overflow:hidden}
@@ -153,3 +153,10 @@
 
 /* Formal CB3 uses the existing game window and research stage. */
 .cb3-craft-card{display:grid;gap:4px;text-align:left;padding:8px;border:2px solid var(--craft-color,#b18a58);border-radius:8px;background:#f0dfba;color:#49351e}.cb3-craft-card small,.cb3-craft-card span{font-size:11px;line-height:1.35}.cb3-craft-card strong{font-size:13px}.cb3-deck{display:grid;gap:7px}.cb3-deck .menu-line{display:block;width:100%;text-align:left;background:#e2c998;border:1px solid #a68050;border-radius:8px;color:#49351e;padding:5px}.cb3-deck .menu-line:disabled{opacity:.55}.cb3-atlas-entry{margin:6px 0;padding:6px;border:1px solid #b78e59;border-radius:8px}.cb3-atlas-entry summary{min-height:44px;display:flex;align-items:center;font-weight:800}.cb3-formula{display:flex;align-items:center;justify-content:space-between;gap:5px;font-size:12px}.cb3-formula button{flex:none}.cb3-atlas-entry .cb3-craft-card{margin-top:6px}
+
+/* Departure HUD: fixed clear header and dock, never scroll map beneath them. */
+.ui2-shell[data-ui2-scene=departure] .z2c2-expedition{position:absolute!important;inset:calc(var(--ui2-hud-top) + 52px) 0 calc(62px + env(safe-area-inset-bottom))!important;height:auto!important;min-height:0!important}
+.ui2-shell[data-ui2-scene=departure] .z2ed3-departure{padding-top:0!important;padding-bottom:4px!important;grid-template-rows:minmax(calc(35dvh + 2px),1.2fr) auto minmax(112px,1fr)!important}
+
+/* Explicit map minimum avoids fractional viewport rounding below the 35% contract. */
+.ui2-shell[data-ui2-scene=departure] .z2ed3-departure .z2c2-map{min-height:calc(35dvh + 2px)!important}

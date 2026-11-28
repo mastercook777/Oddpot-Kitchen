@@ -1,4 +1,4 @@
-import {identify,evaluateCBDeck,compileCBDeck} from './cb_build_rules.js?v=cb3a2';
+import {identify,evaluateCBDeck,compileCBDeck} from './cb_build_rules.js?v=cb3a3a';
 import {cb3SafeBoundary} from './cb3_migration_a1.js?v=cb3a1';
 import {createCB3Staging,cb3MigrationCurrent,discardCB3Migration} from './cb3_formal_data.js?v=cb3a2';
 export {cb3MigrationCurrent,discardCB3Migration};

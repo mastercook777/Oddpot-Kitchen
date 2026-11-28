@@ -2,6 +2,7 @@ import {chromium} from 'playwright';
 import {spawn} from 'node:child_process';
 import {mkdir} from 'node:fs/promises';
 import assert from 'node:assert/strict';
+import {expectedOfflineTitle} from './published-build.mjs';
 import {newGame,buyThirdKitchenBundle,createService,reassignIdleCooks} from '../src/engine.js';
 const dir='docs/screenshots/v013b-workforce';await mkdir(dir,{recursive:true});
 const server=spawn(process.execPath,['node_modules/vite/bin/vite.js','--host','127.0.0.1','--port','5173','--strictPort'],{stdio:'ignore'});
@@ -63,7 +64,7 @@ try{
  const offline=await browser.newPage({viewport:{width:390,height:844}});
  await offline.addInitScript(([k,obj])=>localStorage.setItem(k,JSON.stringify(obj)),[key,make()]);
  await offline.goto('http://127.0.0.1:5173/standalone.html',{waitUntil:'networkidle'});
- assert.match(await offline.title(),/0\.\d+\.\d+-alpha\.\d+/);
+ assert.equal(await offline.title(),expectedOfflineTitle(),'offline release must match production build');
  await offline.locator('[data-act="growth-overview"]').click();
  assert.equal(await offline.locator('[data-act^="upgrade-kitchen:"]').count(),2);
  await offline.close();
