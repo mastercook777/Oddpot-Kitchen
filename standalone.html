@@ -1,4 +1,4 @@
-<!doctype html><html lang="zh-CN"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1.0,maximum-scale=1.0,viewport-fit=cover,user-scalable=no"><meta name="apple-mobile-web-app-capable" content="yes"><meta name="theme-color" content="#1b3c2b"><title>怪味食堂 · v0.16-CB3-A2b-HUD3 离线版</title><style>.ingredient-icon{display:inline-block;width:var(--ingredient-size,24px);height:var(--ingredient-size,24px);max-width:none;object-fit:contain;image-rendering:pixelated;vertical-align:-.24em;flex:none;pointer-events:none;user-select:none}
+<!doctype html><html lang="zh-CN"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1.0,maximum-scale=1.0,viewport-fit=cover,user-scalable=no"><meta name="apple-mobile-web-app-capable" content="yes"><meta name="theme-color" content="#1b3c2b"><title>怪味食堂 · v0.16-CB3-A3a 离线版</title><style>.ingredient-icon{display:inline-block;width:var(--ingredient-size,24px);height:var(--ingredient-size,24px);max-width:none;object-fit:contain;image-rendering:pixelated;vertical-align:-.24em;flex:none;pointer-events:none;user-select:none}
 .stock-line>span .ingredient-icon{margin-right:3px}.target-chip .ingredient-icon{vertical-align:middle}.book-icon .ingredient-icon{display:block}
 .v063-food-icon .ingredient-icon{width:1em;height:1em;vertical-align:top;filter:none}.v063-receipt-line .ingredient-icon{vertical-align:middle}
 .v063-food-picker button>span,.v063-drop>span{line-height:1}.v063-food-picker .ingredient-icon,.v063-drop .ingredient-icon{vertical-align:top}
@@ -5170,14 +5170,14 @@ function evaluateCBDeck(collection,deck,level,eligible){
  if(!Number.isInteger(level)||level<1||level>4)reasons.push('未知厨房等级');
  return {used,limit,slots,variants,valid:!reasons.length,reasons};
 }
-function compileCBDeck(variants){
+function compileCBDeck(variants,premiumRecipeId=null){
  const crafts={};
  for(const v of variants){
   // Historical crafts carry exact prior economics, never re-roll or stack new affixes.
   if(v.legacySnapshot){crafts[v.recipeId]={...structuredClone(v.legacySnapshot),recipeId:v.recipeId,formulaId:v.formulaId,variantId:v.variantId,rarity:v.rarity,affixes:[],cb:{discount:0,gain:0,aroma:0,sat:0,wait:0,refund:0}};continue;}
   const value=id=>v.affixes.find(x=>x.id===id)?.value||0;
   const discount=Math.max(value('quick'),variants.filter(x=>x.vessel===v.vessel).length===1?value('solo'):0);
-  const gain=value('fine')+value('stars')*Math.min(3,variants.filter(x=>x!==v&&x.rarity===1).length);
+  const gain=value('fine')+value('stars')*Math.min(3,variants.filter(x=>x!==v&&x.rarity===1&&x.recipeId!==premiumRecipeId).length);
   crafts[v.recipeId]={recipeId:v.recipeId,formulaId:v.formulaId,materialCost:v.materialCost,variantId:v.variantId,style:v.style,styleLabel:v.styleLabel,quality:[0,66,76,86][v.baseTier],ingredientIds:[...v.ingredientIds],price:Math.round(v.basePrice*(1+gain/100)),basePrice:v.basePrice,baseTime:v.baseTime,timeDelta:-Math.min(v.baseTime*.25,v.baseTime*discount/100),guestFitDelta:{},recipeTags:[...v.recipeTags],affixes:structuredClone(v.affixes),rarity:v.rarity,cb:{discount,gain,aroma:value('aroma'),sat:value('aftertaste'),wait:value('wait'),refund:value('frugal')}};
  }
  return crafts;
@@ -5443,19 +5443,38 @@ function guestBookEntries(s){
 }
 const currentPremiumDay=s=>`${s.cycle}-${s.day}`;
 function premiumMenuActive(s){
- const p=s.premiumMenu;
+ const p=s.premiumMenu,formal=formalCBChapter(s);
+ if(formal)return !!(p&&p.dayKey===currentPremiumDay(s)&&Number.isInteger(p.limit)&&p.limit>=1&&p.limit<=PREMIUM_MAX_SERVINGS&&s.menu.includes(p.recipeId)&&RECIPES[p.recipeId]?.rare&&formal.crafts[p.recipeId]?.variantId===p.variantId&&formal.deck.includes(p.variantId));
  return !!(p&&p.dayKey===currentPremiumDay(s)&&p.recipeId&&p.limit>0&&
   s.recipes?.[p.recipeId]&&chapterRecipeAvailable(s,p.recipeId)&&RECIPES[p.recipeId]?.rare&&cookwareOwned(s,RECIPES[p.recipeId])&&!s.menu.includes(p.recipeId));
 }
+function formalCBRegularMenu(s){
+ return formalCBChapter(s)&&premiumMenuActive(s)?s.menu.filter(id=>id!==s.premiumMenu.recipeId):s.menu;
+}
 function premiumMenuOptions(s){
+ const formal=formalCBChapter(s);
+ if(formal)return s.menu.filter(id=>RECIPES[id]?.rare&&chapterRecipeAvailable(s,id)&&cookwareOwned(s,RECIPES[id])).map(id=>{
+  const recipe=RECIPES[id],craft=formal.crafts[id];return craft?{id,name:recipe.name,stock:recipeAvailableServings(s,id,{ignorePremium:true}),price:Math.round(craft.price*PREMIUM_PRICE_FACTOR),quality:craft.quality,variantId:craft.variantId,rarity:craft.rarity,recipe}:null;
+ }).filter(Boolean);
  return Object.entries(RECIPES).filter(([id,r])=>r.rare&&chapterRecipeAvailable(s,id)&&cookwareOwned(s,r)&&s.recipes?.[id]&&!s.menu.includes(id))
   .map(([id,r])=>{const craft=recipeCraftSnapshot(s,id);
    const stock=recipeAvailableServings(s,id,{ignorePremium:true});
    return {id,name:r.name,stock,price:Math.round(craft.price*PREMIUM_PRICE_FACTOR),quality:craft.quality,recipe:r};});
 }
 function setPremiumMenu(s,id,limit=1){
- if(formalCBChapter(s)&&id!==null)return false; // Until shared premium budget is wired.
  if(s.phase!=='menu')return false;
+ const formal=formalCBChapter(s);
+ if(formal){
+  if(Object.values(s.prep||{}).some(n=>n>0)||s.service)return false;
+  const deck=formalCBDeck(s,formal.deck);
+  if(id===null){s.premiumMenu=null;if(deck?.valid)formal.crafts=compileCBDeck(deck.variants);return true;}
+  if(!deck?.valid||!canMenu(s)||!Number.isInteger(limit)||limit<1||limit>PREMIUM_MAX_SERVINGS)return false;
+  const option=premiumMenuOptions(s).find(x=>x.id===id);
+  if(!option||option.stock<limit)return false;
+  formal.crafts=compileCBDeck(deck.variants,id);
+  s.premiumMenu={dayKey:currentPremiumDay(s),recipeId:id,variantId:option.variantId,limit};
+  return true;
+ }
  if(id===null){s.premiumMenu=null;return true}
  if(!Number.isInteger(limit)||limit<1||limit>PREMIUM_MAX_SERVINGS)return false;
  const option=premiumMenuOptions(s).find(x=>x.id===id);
@@ -5466,7 +5485,7 @@ function setPremiumMenu(s,id,limit=1){
 }
 function premiumReserved(s){
  if(!premiumMenuActive(s)||!['menu','prep','service'].includes(s.phase))return {};
- const p=s.premiumMenu,craft=recipeCraftSnapshot(s,p.recipeId);
+ const p=s.premiumMenu,craft=s.service?.premiumOffered?.craft||recipeCraftSnapshot(s,p.recipeId);
  if(!craft)return {};
  const remaining=Math.max(0,p.limit-(s.service?.premiumConsumed||0));
  return Object.fromEntries(Object.entries(countIds(craft.ingredientIds)).map(([id,n])=>[id,n*remaining]));
@@ -6091,7 +6110,7 @@ function selectMenuRecipe(s,slot,id){
 // again. No material, gold, customer or save ledger mutations occur here.
 function prepStockForecast(s){
  const plan=serviceDayPlan(s),guestCount=plan.count;
- const menu=Array.isArray(s.menu)?s.menu:[];
+ const menu=Array.isArray(s.menu)?formalCBRegularMenu(s):[];
  const planned={};
  if(menu.length){
   const base=Math.floor(guestCount/menu.length),extra=guestCount%menu.length;
@@ -6120,7 +6139,7 @@ function prepStockForecast(s){
   estimated:true};
 }
 function prepDish(s,id){
- if(s.phase!=='prep'||!s.menu.includes(id)||!s.recipes[id])return false;
+ if(s.phase!=='prep'||!formalCBRegularMenu(s).includes(id)||!s.recipes[id])return false;
  const craft=recipeCraftSnapshot(s,id);if(!craft||!canUse(s,craft.ingredientIds))return false;
  if(!consume(s,craft.ingredientIds,'prep-'+s.cycle+'-'+s.day+'-'+s.step++))return false;
  s.prep[id]=(s.prep[id]||0)+1;
@@ -6131,7 +6150,7 @@ function customerFit(r,customerId,syn,craft=null){if(craft?.formulaId)r={...r,ta
 function selectArrivalDish(s,o){
  // Only select food when the customer reaches the door: changing a menu at
  // intermission affects future orders, never rewrites an already seated order.
- const syn=synergyFor(s.menu,s.cbExperiment?.crafts||formalCBChapter(s)?.crafts),options=[...new Set(s.menu)].filter(id=>s.recipes[id]&&chapterRecipeAvailable(s,id)&&RECIPES[id]).map(id=>{const craft=recipeCraftSnapshot(s,id);return {id,craft,score:customerFit(RECIPES[id],o.segment,syn,craft),price:craft.price}}).sort((a,b)=>b.score-a.score||a.price-b.price||a.id.localeCompare(b.id));
+ const regularMenu=formalCBRegularMenu(s),syn=synergyFor(regularMenu,s.cbExperiment?.crafts||formalCBChapter(s)?.crafts),options=[...new Set(regularMenu)].filter(id=>s.recipes[id]&&chapterRecipeAvailable(s,id)&&RECIPES[id]).map(id=>{const craft=recipeCraftSnapshot(s,id);return {id,craft,score:customerFit(RECIPES[id],o.segment,syn,craft),price:craft.price}}).sort((a,b)=>b.score-a.score||a.price-b.price||a.id.localeCompare(b.id));
  const themed=firstChallenge(s)&&o.id===(s.service?.judgeOrderId||s.service?.orders?.[6]?.id)?options.filter(x=>(x.craft.recipeTags||RECIPES[x.id].tags).some(t=>['辣','爆香'].includes(t))):[];
  const stocked=(s.cbExperiment||formalCBChapter(s))?options.filter(x=>canUse(s,x.craft.ingredientIds)||(s.prepVariants?.[x.id]||[]).some(p=>p.variantId===x.craft.variantId)):options;
  const eligible=themed.length?themed:stocked.length?stocked:options,best=eligible[0];
@@ -6153,9 +6172,9 @@ function selectArrivalDish(s,o){
  for(let i=0;i<choices.length;i++){cursor-=weights[i];if(cursor<0||i===choices.length-1){chosen=choices[i];break;}}
  const p=s.service?.premiumOffered,servedPremium=s.service?.orders?.filter(x=>x.premium).length||0;
  if(p&&p.dayKey===currentPremiumDay(s)&&premiumGuestEligible(s,o)&&servedPremium<p.limit){
-  const special=RECIPES[p.recipeId],craft=recipeCraftSnapshot(s,p.recipeId);
+  const special=RECIPES[p.recipeId],craft=p.craft||recipeCraftSnapshot(s,p.recipeId);
   if(special&&craft&&canUse(s,craft.ingredientIds,true)){
-   const overlap=special.tags.filter(t=>CUSTOMERS[o.segment].likes.includes(t)).length;
+   const overlap=(p.craft?.recipeTags||special.tags).filter(t=>CUSTOMERS[o.segment].likes.includes(t)).length;
    const fit=clamp(53+overlap*18+(craft.quality>=85?8:0)+(craft.guestFitDelta?.[o.segment]||0),0,100);
    // A qualified diner can reject the dish: price/quality/style fit do matter.
    if(fit>=63&&fit>=((best?.score||50)-24)){
@@ -6316,7 +6335,7 @@ function createService(s,options={}){if(s.phase!=='service'||s.service||!kitchen
   queued:[],wave:0,done:false,events:[],income:0,cost:0,tableCount:s.dining?.tableCount||2,congestion:Object.fromEntries(ensureKitchen(s).slots.map((_,i)=>[stationId(i),0])),initialInventory:clone(s.inventory),
   reportBuilt:false,manualUsed:0,treatUsed:false,paused:true,breakAt:0,breakSeen:[],breakUsed:false,eventChoiceMade:[],
   eventEffects:{WOK:0,POT:0},eventExpense:0,guestMood:0,
-  premiumConsumed:0,premiumOffered:premiumMenuActive(s)?{...s.premiumMenu}:null,
+  premiumConsumed:0,premiumOffered:premiumMenuActive(s)?{...s.premiumMenu,...(formalCBChapter(s)?{craft:clone(recipeCraftSnapshot(s,s.premiumMenu.recipeId))}:{})}:null,
   walkable:options.walkable===true,sceneVersion:options.walkable===true?'0.9.0':null,hero:options.walkable===true?newServiceHero():null};
  spawnArrivals(s);return true;
 }
@@ -6335,7 +6354,7 @@ function resumeBreak(s){
 }
 function breakPrep(s,recipeId){
  const v=s.service,recipe=RECIPES[recipeId],craft=recipeCraftSnapshot(s,recipeId);
- if(s.phase!=='service'||!v||!v.breakAt||v.breakUsed||!recipe||!s.menu.includes(recipeId)||!s.recipes[recipeId]||!craft||!canUse(s,craft.ingredientIds))return false;
+ if(s.phase!=='service'||!v||!v.breakAt||v.breakUsed||!recipe||!formalCBRegularMenu(s).includes(recipeId)||!s.recipes[recipeId]||!craft||!canUse(s,craft.ingredientIds))return false;
  if(!consume(s,craft.ingredientIds,`emergency-prep-${s.cycle}-${s.day}-${v.breakAt}`))return false;
  s.prep[recipeId]=(s.prep[recipeId]||0)+1;s.prepVariants??={};(s.prepVariants[recipeId]??=[]).push(clone(craft));
  v.cost+=materialCost(craft.ingredientIds);v.breakUsed=true;v.decisionFlash=`应急预制：${recipe.name}`;v.decisionAt=v.time;
@@ -6779,14 +6798,14 @@ const premiumReport={recipeId:v.premiumOffered?.recipeId||null,limit:v.premiumOf
 const regularGuests=v.events.filter(e=>e.type==='regular_visit').map(e=>({guestId:e.guestId,name:s.guestRelationships?.[e.guestId]?.name||'熟客',happyMeals:e.happyMeals,sat:e.sat}));
 const salvageStats=v.salvageStats||{recovered:0,reused:0};
  const salvageExpired=Math.max(0,(salvageStats.recovered||0)-(salvageStats.reused||0));
-s.report={salvage:{recovered:salvageStats.recovered||0,reused:salvageStats.reused||0,expired:salvageExpired},ferryEarned,rating,secondRating,premium:premiumReport,regularGuests,day:s.day,absoluteDay:totalBusinessDay(s),tableCount:v.tableCount,unseated:v.orders.filter(o=>o.tableId==null).length,queuePeak:v.queuePeak||0,queue:queueServiceReport(v),goal,scenario:v.scenario||'常规晚餐',totalOrders:v.orders.length,revenue,cost,profit:revenue-cost-hospitalityCost-eventExpense-finance.wage-(v.marketing?.cost||0),finance:{...finance,marketingCost:v.marketing?.cost||0,campaignId:v.marketing?.id||'none',promotionGuests:v.marketing?.guests||0,marketingArrived:v.orders.filter(o=>o.promotionGuest&&o.arrival<=v.time).length,marketingSeated:v.orders.filter(o=>o.promotionGuest&&o.doorAt!==undefined).length,marketingServed:served.filter(o=>o.promotionGuest).length,marketingRevenue:served.filter(o=>o.promotionGuest).reduce((n,o)=>n+(o.craft?.price??RECIPES[o.recipeId]?.price??0),0),cashChange:s.coins-ensureManagement(s).openingCoins},growth,hospitalityCost,eventExpense,choices:v.events.filter(e=>e.type==='management_choice'||e.type==='menu_swap'),served:served.length,left:left.length,rejected:rej.length,sat:Math.round(served.reduce((a,o)=>a+o.sat,0)/Math.max(1,served.length)),byDish,byCraft,orderedByDish,guestReviews:v.events.filter(e=>e.type==='reviewed').map(e=>({recipeId:e.recipeId,sat:e.sat,text:e.text,reason:e.reason})),congestion:v.congestion,kitchen:{slots:clone(v.kitchenSnapshot||ensureKitchen(s).slots),stats:clone(v.stationStats||{})},staff:{crew:clone(v.crew||{}),stats:clone(v.staffStats||{}),foodCost:staffFoodCost},synergy:synergyFor(s.menu,s.cbExperiment?.crafts||formalCBChapter(s)?.crafts),...(formalCBChapter(s)?{cbAffixEvents:clone(v.events.filter(e=>e.type==='cb_affix'))}:{}),suggested,challenge,won};s.result=won?'win':challenge?'loss':null;
+s.report={salvage:{recovered:salvageStats.recovered||0,reused:salvageStats.reused||0,expired:salvageExpired},ferryEarned,rating,secondRating,premium:premiumReport,regularGuests,day:s.day,absoluteDay:totalBusinessDay(s),tableCount:v.tableCount,unseated:v.orders.filter(o=>o.tableId==null).length,queuePeak:v.queuePeak||0,queue:queueServiceReport(v),goal,scenario:v.scenario||'常规晚餐',totalOrders:v.orders.length,revenue,cost,profit:revenue-cost-hospitalityCost-eventExpense-finance.wage-(v.marketing?.cost||0),finance:{...finance,marketingCost:v.marketing?.cost||0,campaignId:v.marketing?.id||'none',promotionGuests:v.marketing?.guests||0,marketingArrived:v.orders.filter(o=>o.promotionGuest&&o.arrival<=v.time).length,marketingSeated:v.orders.filter(o=>o.promotionGuest&&o.doorAt!==undefined).length,marketingServed:served.filter(o=>o.promotionGuest).length,marketingRevenue:served.filter(o=>o.promotionGuest).reduce((n,o)=>n+(o.craft?.price??RECIPES[o.recipeId]?.price??0),0),cashChange:s.coins-ensureManagement(s).openingCoins},growth,hospitalityCost,eventExpense,choices:v.events.filter(e=>e.type==='management_choice'||e.type==='menu_swap'),served:served.length,left:left.length,rejected:rej.length,sat:Math.round(served.reduce((a,o)=>a+o.sat,0)/Math.max(1,served.length)),byDish,byCraft,orderedByDish,guestReviews:v.events.filter(e=>e.type==='reviewed').map(e=>({recipeId:e.recipeId,sat:e.sat,text:e.text,reason:e.reason})),congestion:v.congestion,kitchen:{slots:clone(v.kitchenSnapshot||ensureKitchen(s).slots),stats:clone(v.stationStats||{})},staff:{crew:clone(v.crew||{}),stats:clone(v.staffStats||{}),foodCost:staffFoodCost},synergy:synergyFor(formalCBRegularMenu(s),s.cbExperiment?.crafts||formalCBChapter(s)?.crafts),...(formalCBChapter(s)?{cbAffixEvents:clone(v.events.filter(e=>e.type==='cb_affix'))}:{}),suggested,challenge,won};s.result=won?'win':challenge?'loss':null;
  s.report.thirdRating=thirdRating;
  s.history??=[];s.history.push({day:totalBusinessDay(s),revenue:s.report.revenue,profit:s.report.profit,
    served:s.report.served,arrivals:s.report.totalOrders,unseated:s.report.unseated,
    reputation:s.reputation,tables:v.tableCount,satisfaction:s.report.sat,marketing:v.marketing?.id||'none',payroll:finance.wage,cashDelta:s.report.finance.cashChange});
  const dispatched=advanceManagedFreightOnCloudClose(s);if(dispatched)s.report.managedFreight=dispatched;
  nextPhase(s,'report');return s.report}
-function advanceDay(s){if(s.phase!=='upgrade')return false;const day=s.day;s.day=day===3?1:day+1;if(day===3)s.cycle++;s.phase='forecast';ensureChapterProgress(s).requestDay=null;ensureSecondAppraisal(s).requestDay=null;ensureThirdAppraisal(s).requestDay=null;s.premiumMenu=null;s.market=null;s.route=null;s.field=null;s.bento=null;s.cook=null;s.report=null;s.lastCook=null;s.researchReceipt=false;s.prep={};s.prepVariants={};s.prepCost=0;s.manualCost=0;s.service=null;s.step++;ensureManagement(s);return true}
+function advanceDay(s){if(s.phase!=='upgrade')return false;const day=s.day;s.day=day===3?1:day+1;if(day===3)s.cycle++;s.phase='forecast';ensureChapterProgress(s).requestDay=null;ensureSecondAppraisal(s).requestDay=null;ensureThirdAppraisal(s).requestDay=null;s.premiumMenu=null;const formal=formalCBChapter(s);if(formal){const deck=formalCBDeck(s,formal.deck);if(deck.valid)formal.crafts=compileCBDeck(deck.variants);}s.market=null;s.route=null;s.field=null;s.bento=null;s.cook=null;s.report=null;s.lastCook=null;s.researchReceipt=false;s.prep={};s.prepVariants={};s.prepCost=0;s.manualCost=0;s.service=null;s.step++;ensureManagement(s);return true}
 function buyUpgrade(s){return buyKitchenUpgrade(s,0)}
 function bagUpgradePrice(s){return (s.bagSlots||8)>=12?null:(s.bagSlots||8)<=8?60:110}
 function buyBagUpgrade(s){const price=bagUpgradePrice(s);if(s.phase!=='upgrade'||price===null||s.coins<price)return false;const next=Math.min(12,(s.bagSlots||8)+2);if(!transact(s,`bag-upgrade-${next}`,'upgrade',{},-price))return false;s.bagSlots=next;return true}
@@ -7055,7 +7074,7 @@ function toggleFormalCBLock(s,id){
 function formalCBWaveOptions(s,slot){
  const c=formalCBChapter(s),v=s.service;if(!c||s.phase!=='service'||!v?.breakAt||v.breakUsed||!Number.isInteger(slot)||slot<0||slot>=c.deck.length)return [];
  return s.cbBuild.collection.filter(craft=>{
-  if(craft.recipeId===s.menu[slot]||!v.kitchenSnapshot.some(k=>k.type===craft.vessel))return false;
+  if((premiumMenuActive(s)&&s.menu[slot]===s.premiumMenu.recipeId)||craft.recipeId===s.menu[slot]||!v.kitchenSnapshot.some(k=>k.type===craft.vessel))return false;
   const deck=[...c.deck];deck[slot]=craft.variantId;
   const b=formalCBDeck(s,deck);
   return b.valid&&b.variants.every(x=>v.kitchenSnapshot.some(k=>k.type===x.vessel));
@@ -7065,7 +7084,7 @@ function swapFormalCBWave(s,slot,variantId){
  const choice=formalCBWaveOptions(s,slot).find(v=>v.variantId===variantId);if(!choice)return false;
  const c=formalCBChapter(s),v=s.service,before=s.menu[slot],deck=[...c.deck];deck[slot]=variantId;
  const b=formalCBDeck(s,deck);if(!b.valid)return false;
- c.deck=deck;c.crafts=compileCBDeck(b.variants);s.menu=b.variants.map(x=>x.recipeId);
+ c.deck=deck;c.crafts=compileCBDeck(b.variants,premiumMenuActive(s)?s.premiumMenu.recipeId:null);s.menu=b.variants.map(x=>x.recipeId);
  v.breakUsed=true;v.decisionFlash='下一波新上架：'+RECIPES[choice.recipeId].name;v.decisionAt=v.time;
  record(s,{type:'menu_swap',wave:v.breakAt,slot,before,after:choice.recipeId,variantId});return true;
 }
@@ -11807,12 +11826,12 @@ function overlayMarkup(){if(!overlay)return '';
   <details class="v013e-warehouse-details" open><summary>食材柜 · 全部库存</summary><div class="ui2-slots">${warehouse.map(([id,ing])=>'<button type="button" class="ui2-slot" data-act="ui2-warehouse:'+id+'" aria-pressed="'+(selectedWarehouse?.[0]===id)+'">'+ingredientIconHtml(id,32)+'<small>'+esc(ing.name)+'</small><b>×'+(game.inventory[id]||0)+'</b></button>').join('')||'<p>仓库暂无食材</p>'}</div><div class="ui2-selected-detail">${selectedWarehouse?ingredientIconHtml(selectedWarehouse[0],36)+' '+esc(selectedWarehouse[1].name)+' · 库存 '+(game.inventory[selectedWarehouse[0]]||0)+' 份':'暂无食材'}</div></details>`;
  }else if(overlay==='premium'){
   const options=premiumMenuOptions(game),active=premiumMenuActive(game)?game.premiumMenu:null;
-  body=`<h2>✨ 隐藏菜单</h2><p class="sheet-lead">每日仅选一款稀有菜，最多两份。只有鉴味师和关系深厚的熟客会获知，且不保证一定购买。食材将被保留，正式制作时才扣除。</p>
+  body=`<h2>✨ 隐藏菜单</h2><p class="sheet-lead">${formalCBChapter(game)?'从已上架稀有料理中选择，占用原有槽位和Cost。撤下特供后恢复普通上架。':'每日仅选一款稀有菜，最多两份。'}只有鉴味师和关系深厚的熟客会获知，且不保证一定购买。食材将被保留，正式制作时才扣除。</p>
    ${active?`<div class="v010-premium-selected"><strong>今晚：${esc(RECIPES[active.recipeId]?.name||'隐藏菜')}</strong><small>供应 ${active.limit} 份 · ${Math.round(recipeCraftSnapshot(game,active.recipeId).price*1.7)} 金币/份</small><button data-premium-clear>撤下</button></div>`:''}
    <div class="v010-premium-options">${options.length?options.map(x=>`<div class="v010-premium-option">
-    <div class="v010-premium-meta"><span>${x.recipe.emoji}</span><div><strong>${esc(x.name)}</strong><small>${stationName(x.recipe.station)} · 品质 ${x.quality} · ${x.price} 金币/份 · 可做 ${x.stock} 份</small></div></div>
+    <div class="v010-premium-meta"><span>${x.recipe.emoji}</span><div><strong>${esc(x.name)}</strong><small>${stationName(x.recipe.station)} · ${formalCBChapter(game)?'Cost '+x.rarity:'品质 '+x.quality} · ${x.price} 金币/份 · 可做 ${x.stock} 份</small></div></div>
     <div class="v010-premium-actions"><button data-premium-set="${x.id}:1" ${x.stock<1?'disabled':''}>限量 1 份</button><button data-premium-set="${x.id}:2" ${x.stock<2?'disabled':''}>限量 2 份</button></div>
-   </div>`).join(''):'<p class="sheet-lead">暂时没有已研发的稀有料理。尝试击败食材首领，研发特别菜谱。</p>'}</div>`;
+   </div>`).join(''):'<p class="sheet-lead">暂无可选稀有料理。请先研发并检查上架条件。</p>'}</div>`;
  }else if(overlay.startsWith('menu:')&&formalCBChapter(game)){body=cb3DeckPicker(Number(overlay.split(':')[1]));
  }else if(overlay.startsWith('menu:')){
   const slot=Number(overlay.split(':')[1]);body=`<h2>更换第 ${slot+1} 道上架菜</h2><p class="sheet-lead">本章可上架的已研发菜；厨具种类不能超过实际厨位数量。“可做份数”按当前库存计算。</p><div class="book-list">${Object.keys(game.recipes).filter(id=>chapterRecipeAvailable(game,id)).sort((a,b)=>['WOK','POT','GRILL','STEAM'].indexOf(recipeCookware(RECIPES[a]))-['WOK','POT','GRILL','STEAM'].indexOf(recipeCookware(RECIPES[b]))).map((id,index,ids)=>{const r=RECIPES[id],craft=recipeCraftSnapshot(game,id),isPremium=game.premiumMenu?.recipeId===id&&premiumMenuActive(game),count=recipeAvailableServings(game,id,{ignorePremium:!!isPremium}),owned=cookwareOwned(game,r),next=[...game.menu];next[slot]=id;const tooMany=new Set(next.filter(x=>game.recipes[x]&&chapterRecipeAvailable(game,x)).map(x=>recipeCookware(RECIPES[x]))).size>ensureKitchen(game).slots.length;const type=recipeCookware(r),group=index===0||recipeCookware(RECIPES[ids[index-1]])!==type;return `${group?`<h3 class="z2b-menu-group">${z2bCookIcon(type)} ${cookName(type)}</h3>`:''}<button ${!owned||tooMany?'disabled':''} data-menu-pick="${slot}:${id}" class="book-item v101-menu-option">${z2bDishArt(craft?.ingredientIds||r.ids,type)}<div><strong>${esc(r.name)} · ${cookName(recipeCookware(r))}</strong><small>${r.time+(craft?.timeDelta||0)}秒 · ${craft?.price}金币 · ${craft?.ingredientIds.map(onlyName).join(' + ')}</small><span class="v101-serving-tag ${count===0?'shortage':''}">${!owned?'未购买厨具 · ':tooMany?'超出厨位种类 · ':count===0?'缺料 · ':''}可做 ${count} 份${isPremium?' · 选为日常将撤下隐藏菜':''}</span></div><span>›</span></button>`}).join('')||'<p class="sheet-lead">还没有可上架的本地料理；先探索并研发。</p>'}</div>`;
@@ -11842,7 +11861,7 @@ function overlayMarkup(){if(!overlay)return '';
    };
    body='<h2>👩‍🍳 食堂伙伴</h2><p class="sheet-lead">'+(activeWorld(game)==='cloud'?'云港可在首枚星章后再聘一名跑堂，双跑堂各自认领一盘并行送餐、各计工资与经验；':'')+'每位帮厨按本人实际完成的订单获得经验；增加厨位必须配备人手才能真正出餐。开门前直接选择左、中、右优先站位；已选位置不可重复安排。营业时，空闲帮厨仍会自动走到缺人的炉台支援。</p><div class="staff-roster">'+row('helper')+row('waiter')+(crew.helper2.hired?row('helper2'):'')+(activeWorld(game)==='cloud'?row('waiter2'):'')+'</div>';
  }else if(overlay==='settings'){
-  body=`<h2>⚙ 游戏设置</h2><p class="sheet-lead">ODDPOT · v0.16-CB3-A2b-HUD3 · 单机本地存档</p><section class="z2ed0-controls"><h3>移动摇杆</h3><div class="z2ed0-stick-options" role="group" aria-label="移动摇杆模式">${['floating','fixed'].map(m=>`<button type="button" class="game-btn secondary" data-act="stick-mode:${m}" aria-pressed="${stickMode===m}">${m==='floating'?'浮动摇杆':'固定摇杆'}</button>`).join('')}</div><p class="sheet-lead">${stickMode==='floating'?'在场景内按下即可移动。':'左下常驻摇杆，按住拖动。'} 野外与营业共用，自动保存。</p></section>${b('guide-replay','重看第一轮引导','secondary')}${b('reset','重置存档，从第 1 天重新开始','danger')}<p class="sheet-lead">切到后台时营业会自动暂停。更换设备不会同步存档。</p>`;
+  body=`<h2>⚙ 游戏设置</h2><p class="sheet-lead">ODDPOT · v0.16-CB3-A3a · 单机本地存档</p><section class="z2ed0-controls"><h3>移动摇杆</h3><div class="z2ed0-stick-options" role="group" aria-label="移动摇杆模式">${['floating','fixed'].map(m=>`<button type="button" class="game-btn secondary" data-act="stick-mode:${m}" aria-pressed="${stickMode===m}">${m==='floating'?'浮动摇杆':'固定摇杆'}</button>`).join('')}</div><p class="sheet-lead">${stickMode==='floating'?'在场景内按下即可移动。':'左下常驻摇杆，按住拖动。'} 野外与营业共用，自动保存。</p></section>${b('guide-replay','重看第一轮引导','secondary')}${b('reset','重置存档，从第 1 天重新开始','danger')}<p class="sheet-lead">切到后台时营业会自动暂停。更换设备不会同步存档。</p>`;
  }else if(overlay==='ui2-discard'){
   const st=game.field?.bagStacks?.find(x=>x.stackId===ui2DiscardId);body=st?'<div class="ui2-summary">'+ingredientIconHtml(st.ingredientId,48)+'<h3>丢弃 '+esc(ING[st.ingredientId]?.name)+' ×'+st.quantity+'？</h3><p>只减少本次探索的收获，无法撤销。</p></div>'+b('ui2-discard-confirm','确认丢弃','danger')+b('close-sheet','保留','secondary'):'<p>这个背包格已不存在。</p>';
  }else if(overlay==='ui2-star'){
@@ -12057,8 +12076,8 @@ function cb3AtlasPanel(){
  }).join('');
 }
 function cb3MenuPanel(){
- const c=formalCBChapter(game),d=formalCBDeck(game,c.deck);
- return '<div class="ui2-menu-board"><div class="menu-title">今晚菜单 · Cost '+d.used+'/'+d.limit+' · '+c.deck.length+'/'+d.slots+' 槽</div><div class="cb3-deck">'+c.deck.map((id,i)=>{const v=game.cbBuild.collection.find(v=>v.variantId===id),craft=v&&c.crafts[v.recipeId];return '<button class="menu-line" data-edit-slot="'+i+'" '+(game.phase==='menu'?'':'disabled')+'>'+ (v?cb3CraftDetails(v)+'<small>实际售价 '+craft.price+'G · '+(craft.baseTime+craft.timeDelta)+'s</small>':'空槽')+'</button>';}).join('')+'</div>'+(d.valid?'':'<p>'+esc(d.reasons.join(' · '))+'</p>')+'<p>同菜不可重复 · 每次选择即时核算实际容量。</p></div>';
+ const c=formalCBChapter(game),d=formalCBDeck(game,c.deck),premium=premiumMenuActive(game)?game.premiumMenu:null;
+ return '<div class="ui2-menu-board"><div class="menu-title">今晚菜单 · Cost '+d.used+'/'+d.limit+' · '+c.deck.length+'/'+d.slots+' 槽</div><div class="cb3-deck">'+c.deck.map((id,i)=>{const v=game.cbBuild.collection.find(v=>v.variantId===id),craft=v&&c.crafts[v.recipeId];return '<button class="menu-line" data-edit-slot="'+i+'" '+(game.phase==='menu'&&!premium?'':'disabled')+'>'+ (v?(premium?.variantId===v.variantId?'<small>特供 · 限'+premium.limit+'份 · 占用本槽</small>':'')+cb3CraftDetails(v)+'<small>实际售价 '+craft.price+'G · '+(craft.baseTime+craft.timeDelta)+'s</small>':'空槽')+'</button>';}).join('')+'</div>'+(d.valid?'':'<p>'+esc(d.reasons.join(' · '))+'</p>')+'<p>同菜不可重复 · 每次选择即时核算实际容量。</p><button class="v010-premium-entry" data-act="premium" '+(game.phase==='menu'?'':'disabled')+'><span>特供（占原槽及Cost）</span><strong>'+(premium?esc(RECIPES[premium.recipeId].name)+' · 限'+premium.limit+'份':'未设置')+'</strong></button>'+(premium?'<p>先撤下特供模式，才能修改菜单。</p>':'')+'</div>';
 }
 function cb3DeckPicker(slot){
  const c=formalCBChapter(game);
@@ -12193,7 +12212,7 @@ function ui2PrepPanel(){
  const slotCards=k.slots.map((slot,i)=>`<div class="kitchen-config-slot" ${ui2PrepSlot>=0&&ui2PrepSlot!==i?'hidden':''}><div class="z2b-station-identity">${z2bCookIcon(slot.type)}<span><b>${['左厨位','右厨位','中厨位'][i]}</b><small>Lv.${slot.level}${slot.level===2?' · -2s':''}</small></span></div><div class="kitchen-choice">${['WOK','POT',...(k.steamerOwned?['STEAM']:[]),...(k.grillOwned?['GRILL']:[])].map(type=>`<button data-act="kitchen:${i}:${type}" class="${slot.type===type?'active':''}" aria-pressed="${slot.type===type}" aria-label="${['左厨位','右厨位','中厨位'][i]}：${cookName(type)}">${z2bCookIcon(type)}<small>${type==='STEAM'?'蒸笼':cookName(type)}</small></button>`).join('')}</div></div>`).join('');
  const dayPlan=serviceDayPlan(game),availableUpgrades=earnedPromotions(),stockForecast=prepStockForecast(game);
  const pressure=preview.pressure.map(p=>`${cookName(p.type)} ${p.menu}菜 / ${p.capacity}位`).join('　');
- return `<div class="prep-card kitchen-prep-card"><h2>${z2a2Icon('cook')} 厨位与备餐</h2><div class="kitchen-config-head">${preview.valid?'设备覆盖菜单':'缺少：'+preview.risk.map(t=>cookName(t)).join(' / ')}</div><div class="ui2-kitchen-slots">${k.slots.map((slot,i)=>`<button class="ui2-slot" data-act="ui2-prep:${i}" aria-pressed="${ui2PrepSlot===i}">${z2bCookIcon(slot.type)}<small>${['左厨位','右厨位','中厨位'][i]}</small><b>Lv.${slot.level}</b></button>`).join('')}<button class="ui2-slot" data-act="ui2-prep" aria-pressed="${ui2PrepSlot<0}">${z2a2Icon('cook')}<small>全部</small></button></div><div class="kitchen-config-slots">${slotCards}</div><p class="kitchen-pressure">${pressure}</p><p class="kitchen-refit">本日首次换锅免费 · 后续每次 ${kitchenRefitCost(game)||12} 金币</p><div class="prep-divider">开业前预制</div><div class="prep-items">${game.menu.map(id=>`<button class="prep-item" data-act="prep:${id}" ${!canUse(game,recipeCraftSnapshot(game,id).ingredientIds)?'disabled':''}>${z2bDishArt(recipeCraftSnapshot(game,id).ingredientIds,recipeCookware(RECIPES[id]))}<div><b>${esc(RECIPES[id].name)}</b><small>已备 ${game.prep[id]||0}</small></div><strong>＋1</strong></button>`).join('')}</div><button class="staff-open-prep ${availableUpgrades.length?'v12e-staff-ready':''}" data-act="crew">👩‍🍳 排班、工资与晋升 <span>${availableUpgrades.length?availableUpgrades.length+'人可晋升 ✦':Object.values(ensureCrew(game)).filter(x=>x.hired).length+'/'+(k.thirdUnlocked?'3':'2')+' 人 ›'}</span></button><div class="service-day-brief"><b>${dayPlan.pressure}${dayPlan.starred?' · ✦ 星章口碑热潮':''}</b><span>预计 ${dayPlan.count} 人 · ${dayPlan.goal.label}${dayPlan.starred?' · 高峰可能等位':''}</span></div>${premiumMenuActive(game)?`<div class="v101-premium-summary" aria-label="今晚隐藏菜单"><span aria-hidden="true">✨</span><div><strong>隐藏菜 · ${esc(RECIPES[game.premiumMenu.recipeId]?.name)}</strong><small>限量 ${game.premiumMenu.limit} 份 · 食材已预留</small></div></div>`:''}${starInvite()}${preOpenMarketing()}${prepInventoryCheck()}</div>`;}
+ return `<div class="prep-card kitchen-prep-card"><h2>${z2a2Icon('cook')} 厨位与备餐</h2><div class="kitchen-config-head">${preview.valid?'设备覆盖菜单':'缺少：'+preview.risk.map(t=>cookName(t)).join(' / ')}</div><div class="ui2-kitchen-slots">${k.slots.map((slot,i)=>`<button class="ui2-slot" data-act="ui2-prep:${i}" aria-pressed="${ui2PrepSlot===i}">${z2bCookIcon(slot.type)}<small>${['左厨位','右厨位','中厨位'][i]}</small><b>Lv.${slot.level}</b></button>`).join('')}<button class="ui2-slot" data-act="ui2-prep" aria-pressed="${ui2PrepSlot<0}">${z2a2Icon('cook')}<small>全部</small></button></div><div class="kitchen-config-slots">${slotCards}</div><p class="kitchen-pressure">${pressure}</p><p class="kitchen-refit">本日首次换锅免费 · 后续每次 ${kitchenRefitCost(game)||12} 金币</p><div class="prep-divider">开业前预制</div><div class="prep-items">${game.menu.filter(id=>!(formalCBChapter(game)&&premiumMenuActive(game)&&game.premiumMenu.recipeId===id)).map(id=>`<button class="prep-item" data-act="prep:${id}" ${!canUse(game,recipeCraftSnapshot(game,id).ingredientIds)?'disabled':''}>${z2bDishArt(recipeCraftSnapshot(game,id).ingredientIds,recipeCookware(RECIPES[id]))}<div><b>${esc(RECIPES[id].name)}</b><small>已备 ${game.prep[id]||0}</small></div><strong>＋1</strong></button>`).join('')}</div><button class="staff-open-prep ${availableUpgrades.length?'v12e-staff-ready':''}" data-act="crew">👩‍🍳 排班、工资与晋升 <span>${availableUpgrades.length?availableUpgrades.length+'人可晋升 ✦':Object.values(ensureCrew(game)).filter(x=>x.hired).length+'/'+(k.thirdUnlocked?'3':'2')+' 人 ›'}</span></button><div class="service-day-brief"><b>${dayPlan.pressure}${dayPlan.starred?' · ✦ 星章口碑热潮':''}</b><span>预计 ${dayPlan.count} 人 · ${dayPlan.goal.label}${dayPlan.starred?' · 高峰可能等位':''}</span></div>${premiumMenuActive(game)?`<div class="v101-premium-summary" aria-label="今晚隐藏菜单"><span aria-hidden="true">✨</span><div><strong>隐藏菜 · ${esc(RECIPES[game.premiumMenu.recipeId]?.name)}</strong><small>限量 ${game.premiumMenu.limit} 份 · 食材已预留</small></div></div>`:''}${starInvite()}${preOpenMarketing()}${prepInventoryCheck()}</div>`;}
 function prep(){const g=dinerFloor(game),k=ensureKitchen(game),preview=kitchenPreview(game),slots=[g.stoveLeft,g.stoveRight,g.reservedStove];return ui2Room('prep',k.slots.map((s,i)=>ui2Spot('ui2-prep:'+i,s.type.toLowerCase(),['左厨位','右厨位','中厨位'][i],slots[i])).join(''),ui2Tool('ui2-menu','menu','菜单')+ui2Tool('stock','bag','库存')+ui2Tool('crew','queue','伙伴')+ui2Tool('ui2-prep','cook','备餐'),ui2Tool('open','play','开业',true,!preview.valid),preview.valid?'厨房就绪 · 点击开业':'先配置菜单需要的厨具');}
 function serviceLegacy(){const v=game.service;if(!v)return ['<div class="empty">餐厅正在准备...</div>',b('open','开业','primary')];
  const served=v.orders.filter(o=>o.status==='served').length;

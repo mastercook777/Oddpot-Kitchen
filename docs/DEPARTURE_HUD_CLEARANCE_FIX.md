@@ -17,3 +17,6 @@ R4 实际13/20成功，7失败的原始日志均为 offline.title() 的历史 al
 
 ## R6 · 最后一处旧版本断言
 R5 19/20，v0.13-B 独立脚本在66行仍检查旧alpha格式；日志 https://github.com/mastercook777/Oddpot-Kitchen/actions/runs/46123663708 。R6改用共享expectedOfflineTitle严格相等，未改变实际游戏与其他验收合同。语法检查通过，待20/20及Pages。
+
+## 正式发布结果
+PR168 R6 088f09a 20/20 Actions全部成功，main e5ac6cb0c60122391330cfc17dc50b8f29f798f4 与已测树 d67185ac681d07433880cc1a2cd573f107237788 一致，Pages run 46127520789 已success。正式入口显示 v0.16-CB3-A2b-HUD3；真机待玩家确认。CB3仍未开放。

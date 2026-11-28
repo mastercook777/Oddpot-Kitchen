@@ -1,5 +1,7 @@
 # 《怪味食堂》ROADMAP · 当前经营与章节开发路线
 
+> **2026-11-28 · CB3-A3a 特供占槽 R2（候选）**：HUD3 PR168 已20/20并合main e5ac6cb、Pages 46127520789成功、候选和合并树一致；玩家真机待验收。PR167旧候选19/20，唯一full UI早读forecast；本轮将原特供实际改动精确叠加到HUD3，保留所有HUD、版本断言和boot等待修复，在线/离线/设置统一候选 v0.16-CB3-A3a，更新app/engine/rules缓存。实际V8运行原Node测试共346断言通过（真实引擎/八seed，外生库存夹具），新完整CI、Pages待核。正式CB3不开放，下一A3b跨章、A3c成长、B多日/评星/手动、C正式入口。[规格](CB3_A3A_PREMIUM_SLOT.md)。
+
 > **2026-11-28 · HUD R6（候选）**：R5真实19/20，唯一失败v0.13-B shared-cookware-crew独立脚本仍要求旧alpha离线title；原日志 run 46123663708。R6复用已验证共享published-build，保留严格真实title等值及所有玩法检查，仅此脚本和文档变化；游戏/存档/资源不变。全CI与Pages待核，未合main。
 
 > **2026-11-28 · 整备 HUD R5（候选）**：R4 13/20 CI，Core、完整移动UI、WebGL与完整玩法回归通过；七个失败工作流日志均为离线title旧alpha格式（六脚本）。R5共享published-build.mjs，浏览器实际title严格等于线上声明的build，所有操作/玩法断言保留。发布标识v0.16-CB3-A2b-HUD3，未改游戏或存档。全CI与Pages待核，未合main。[记录](DEPARTURE_HUD_CLEARANCE_FIX.md)。
